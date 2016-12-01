@@ -8,9 +8,7 @@ To build the source, run
 
 Note, the first time you open the shell you'll need to run
 
-`
-> shell.bat
-`
+```> shell.bat```
 
 This sets the shell environment for building the source. This only needs to be done once per shell.
 
@@ -18,6 +16,4 @@ This sets the shell environment for building the source. This only needs to be d
 
 Once the source is built, run
 
-`
-> devenv win_handmade.exe
-`
+```> devenv win_handmade.exe```
