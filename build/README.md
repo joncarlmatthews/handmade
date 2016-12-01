@@ -4,9 +4,7 @@
 
 To build the source, run
 
-`
-> build.bat
-`
+```> build.bat```
 
 Note, the first time you open the shell you'll need to run
 
