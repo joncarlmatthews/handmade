@@ -1,0 +1,7 @@
+Thumbs.db
+.DS_Store
+*.obj
+*.exe
+build/*
+!build/README.md
+!build/*.bat
