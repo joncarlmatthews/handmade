@@ -10,6 +10,3 @@ Debug/
 *.vcxproj
 *.filters
 *.user
-build/*
-!build/README.md
-!build/*.bat
