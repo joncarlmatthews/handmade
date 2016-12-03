@@ -7,6 +7,8 @@ Debug/
 *.opendb
 *.db
 *.sln
+*.pdb
+*.ilk
 *.vcxproj
 *.filters
 *.user

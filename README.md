@@ -11,3 +11,9 @@ Note, the first time you open the shell you'll need to run the shell batch file 
 ```> shell.bat```
 
 This sets the shell environment for building the source. This only needs to be done once per shell environment.
+
+To debug the executable in Visual Studio once the source is built, run
+
+```> devenv win32_handmade.exe```
+
+When Visual Studio has loaded, hit F11 to start the debugging process.
