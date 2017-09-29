@@ -2,7 +2,11 @@
 
 ## Editing Source Files
 
-Open Visual Studio (tested version Visual Studio Community 2015). Click File -> News -> Project From Existing Code... Browse to the root of this directory, enter a Project Name and click next. Select "Console "
+Open Visual Studio (tested version Visual Studio Community 2015). Click File -> New -> Project From Existing Code... Browse to the root of this directory. Enter the Project Name so that it matches that of the build file's exe (win32_handmade) and click Next. 
+
+Within the Specify Project Settings window select "Use external build system" Click Next.
+
+...
 
 ## Building
 
