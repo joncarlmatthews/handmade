@@ -1,5 +1,9 @@
 # Handmade Hero
 
+## Editing Source Files
+
+Open Visual Studio (tested version Visual Studio Community 2015). Click File -> News -> Project From Existing Code... Browse to the root of this directory, enter a Project Name and click next. Select "Console "
+
 ## Building
 
 To build the source open the shell and run the build batch file.

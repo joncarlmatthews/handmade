@@ -32,9 +32,9 @@ LRESULT CALLBACK mainWindowCallback(HWND Window,
 		default:
 		{
 			OutputDebugString("MESSAGE: ");
-			char msgbuf;
-			sprintf(msgbuf, "%i", Message);
-			OutputDebugString(msgbuf);
+			//char msgbuf;
+			//sprintf(msgbuf, "%i", Message);
+			//OutputDebugString(msgbuf);
 			OutputDebugString("\n");
 
 		} break;
