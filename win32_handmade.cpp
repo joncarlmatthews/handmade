@@ -98,7 +98,7 @@ int CALLBACK WinMain(HINSTANCE Instance,
 
 	}else{
 		// TODO(JM) Log error.
-		OutputDebugString("Error 1\n");
+		OutputDebugString("Error 2\n");
 	}
 
 	return(0);

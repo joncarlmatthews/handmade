@@ -6,8 +6,6 @@ Open Visual Studio (tested version Visual Studio Community 2015). Click File -> 
 
 Within the Specify Project Settings window select "Use Visual Studio" with a Project Type of `Windows application project`. Click Next. Click Finish.
 
-...
-
 ## Building
 
 To build the source open the shell and run the build batch file.
