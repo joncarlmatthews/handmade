@@ -2,9 +2,9 @@
 
 ## Editing Source Files
 
-Open Visual Studio (tested version Visual Studio Community 2015). Click File -> New -> Project From Existing Code... Browse to the root of this directory. Enter the Project Name so that it matches that of the build file's exe (win32_handmade) and click Next. 
+Open Visual Studio (tested version Visual Studio Community 2015). Click File -> New -> Project From Existing Code... Select `Visual C++`. Browse to the root of this directory. Enter the Project Name so that it matches that of the build file's exe (`win32_handmade`) and click Next. 
 
-Within the Specify Project Settings window select "Use external build system" Click Next.
+Within the Specify Project Settings window select "Use Visual Studio" with a Project Type of `Windows application project`. Click Next. Click Finish.
 
 ...
 
@@ -19,6 +19,8 @@ Note, the first time you open the shell you'll need to run the shell batch file 
 ```> shell.bat```
 
 This sets the shell environment for building the source. This only needs to be done once per shell environment.
+
+### Not sure about this bit now:
 
 To debug the executable in Visual Studio once the source is built, run
 
