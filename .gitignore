@@ -3,6 +3,8 @@ Thumbs.db
 .vs/
 Debug/
 Release/
+build/*
+!build/README.md
 *.obj
 *.exe
 *.opendb
