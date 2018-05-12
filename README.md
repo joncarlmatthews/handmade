@@ -2,7 +2,7 @@
 
 ## Editing Source Files
 
-Open Visual Studio (tested version Visual Studio Community 2015). Click File -> New -> Project From Existing Code... Select `Visual C++`. Browse to the root of this directory. Enter the Project Name so that it matches that of the build file's exe (`win32_handmade`) and click Next. 
+Open Visual Studio (tested version Visual Studio Community 2015). Click File -> New -> Project From Existing Code... Select `Visual C++`. Browse to the root of this directory. Enter the Project Name and click Next. 
 
 Within the Specify Project Settings window select "Use Visual Studio" with a Project Type of `Windows application project`. Click Next. Click Finish.
 
