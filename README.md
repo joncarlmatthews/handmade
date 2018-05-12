@@ -4,7 +4,14 @@
 
 Open Visual Studio (tested version Visual Studio Community 2015). Click File -> New -> Project From Existing Code... Select `Visual C++`. Browse to the root of this directory. Enter the Project Name and click Next. 
 
-Within the Specify Project Settings window select "Use Visual Studio" with a Project Type of `Windows application project`. Click Next. Click Finish.
+Within the Specify Project Settings window select "Use external build system" and click Next.
+
+Within the Debug Configuration Settings window use the following values:
+
+**Build command line:** build.bat
+**Output (for debugging):** win32_handmade.exe
+
+Click Finish.
 
 ## Building
 
