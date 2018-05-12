@@ -1,101 +1,55 @@
 #include <windows.h>
-#include <stdio.h>
 
-LRESULT CALLBACK mainWindowCallback(HWND Window, 
-									UINT Message, 
-									WPARAM wParam, 
-									LPARAM lParam)
-{
-	LRESULT result = 0;
-	switch(Message){
+/*
+ *  Callback method for WNDCLASS struct. Processes messages sent to the window.
+ */
+LRESULT CALLBACK mainWindowCallback(HWND window,
+									UINT message,
+									WPARAM wParam,
+									LPARAM lParam);
 
-		case WM_SIZE:
-		{
-			OutputDebugString("WM_SIZE\n");
-		} break;
-
-		case WM_DESTROY:
-		{
-			OutputDebugString("WM_DESTROY\n");
-		} break;
-
-		case WM_CLOSE:
-		{
-			OutputDebugString("WM_CLOSE\n");
-		} break;
-
-		case WM_ACTIVATEAPP:
-		{
-			OutputDebugString("WM_ACTIVATEAPP\n");
-		} break;
-
-		default:
-		{
-			OutputDebugString("MESSAGE: ");
-			//char msgbuf;
-			//sprintf(msgbuf, "%i", Message);
-			//OutputDebugString(msgbuf);
-			OutputDebugString("\n");
-
-		} break;
-	}
-
-	return result;
-}
-
-struct person
-{
-	char *forename;
-	unsigned char age;
-};
-
-int CALLBACK WinMain(HINSTANCE Instance, 
-						HINSTANCE PrevInstance, 
+/*
+ * The entry point for this graphical Windows-based application.
+ * 
+ * @param HINSTANCE A handle to the current instance of the application.
+ * @param HINSTANCE A handle to the previous instance of the application.
+ * @param LPSTR Command line arguments sent to the application.
+ * @param in tHow the user has specified the window to be shown
+ */
+int CALLBACK WinMain(HINSTANCE instance, 
+						HINSTANCE prevInstance, 
 						LPSTR commandLine, 
 						int showCode)
 {
-
-	person person1;
-
-	person1.forename = "John";
-	person1.age = 30;
-
-	// Create enough menory to hold 40 persons.
-	person persons[10];
-
-	persons[4].forename = "Bill";
-	persons[4].age = 75;
-
-	// Same as
-	person *pPersons = persons;
-
-	(pPersons + 4)->forename = "150";
-	(pPersons + 4)->age = 70;
-
-	OutputDebugString("Error 0\n");
-
+	// Create a new window struct.
 	WNDCLASS WindowClass = {};
+
+	// Define the window's attributes. @see https://msdn.microsoft.com/en-us/library/windows/desktop/ff729176(v=vs.85).aspx
 	WindowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
-	WindowClass.lpfnWndProc = mainWindowCallback;
-	WindowClass.hInstance = Instance;
+
+	// Callback to handle any messages sent to the window (resize etc).
+	WindowClass.lpfnWndProc = mainWindowCallback; 
+
+	// Instance of the running application.
+	WindowClass.hInstance = instance;
 	WindowClass.lpszClassName = "handmadeHeroWindowClass";
 
+	// Registers the window class for subsequent use in calls to 
+	// the CreateWindowEx function.
 	if (RegisterClass(&WindowClass)){
 
-		HWND WindowHandle = CreateWindowEx(
-			NULL,
-			WindowClass.lpszClassName,
-			"Handmade Hero",
-			WS_TILEDWINDOW|WS_VISIBLE,
-			CW_USEDEFAULT,
-		 	CW_USEDEFAULT,
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
-		   	NULL,
-			NULL,
-			Instance,
-			NULL
-		);
+		HWND WindowHandle = CreateWindowEx(NULL,
+											WindowClass.lpszClassName,
+											"Handmade Hero",
+											WS_TILEDWINDOW|WS_VISIBLE,
+											CW_USEDEFAULT,
+		 									CW_USEDEFAULT,
+											CW_USEDEFAULT,
+											CW_USEDEFAULT,
+		   									NULL,
+											NULL,
+											instance,
+											NULL);
 
 		if (WindowHandle){
 
@@ -103,8 +57,7 @@ int CALLBACK WinMain(HINSTANCE Instance,
 
 			int getMessageRes;
 
-			while( (getMessageRes = GetMessage(&Message, WindowHandle, 0, 0)) != 0)
-			{ 
+			while( (getMessageRes = GetMessage(&Message, WindowHandle, 0, 0)) != 0){ 
 			    if (getMessageRes == -1){
 			        // handle the error and exit
 			        break;
@@ -117,13 +70,50 @@ int CALLBACK WinMain(HINSTANCE Instance,
 
 		}else{
 			// TODO(JM) Log error.
-			OutputDebugString("Error 1\n");
+			OutputDebugString("Error 1. WindowHandle not created\n");
 		}
 
 	}else{
 		// TODO(JM) Log error.
-		OutputDebugString("Error 2\n");
+		OutputDebugString("Error 2. WindowClass not registered\n");
 	}
 
 	return(0);
+}
+
+LRESULT CALLBACK mainWindowCallback(HWND window,
+	UINT message,
+	WPARAM wParam,
+	LPARAM lParam)
+{
+	LRESULT result = 0;
+	switch (message) {
+
+	case WM_SIZE:
+	{
+		OutputDebugString("WM_SIZE\n");
+	} break;
+
+	case WM_DESTROY:
+	{
+		OutputDebugString("WM_DESTROY\n");
+	} break;
+
+	case WM_CLOSE:
+	{
+		OutputDebugString("WM_CLOSE\n");
+	} break;
+
+	case WM_ACTIVATEAPP:
+	{
+		OutputDebugString("WM_ACTIVATEAPP\n");
+	} break;
+
+	default:
+	{
+		result = DefWindowProc(window, message, wParam, lParam);
+	} break;
+	}
+
+	return result;
 }
