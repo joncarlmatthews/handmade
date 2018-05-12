@@ -9,6 +9,7 @@ Within the Specify Project Settings window select "Use external build system" an
 Within the Debug Configuration Settings window use the following values:
 
 **Build command line:** build.bat
+
 **Output (for debugging):** "build\win32_handmade_debug.exe
 
 Click Finish.
