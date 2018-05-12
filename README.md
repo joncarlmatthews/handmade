@@ -14,15 +14,11 @@ Within the Debug Configuration Settings window use the following values:
 
 Click Finish.
 
-## Building
+## Running
 
-Once the project is open in  Visual Studio Community 2015, hit *F5* to build the program with the debugger attached. To build the program without the debugger attached hit *Ctrl* + *F5*.
+Once the project is open in  Visual Studio Community 2015, hit *F5* to run the program with the debugger attached. To run the program without the debugger attached hit *Ctrl* + *F5*.
 
-### Old Notes
-
-To build the source open the shell and run the build batch file.
-
-```> build.bat```
+To just build the program, hit **Ctrl** + **Shift** + **B**
 
 Note, the first time you open the shell you'll need to run the shell batch file first.
 
