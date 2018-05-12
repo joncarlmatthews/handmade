@@ -16,7 +16,7 @@ Click Finish.
 
 ## Running
 
-Once the project is open in  Visual Studio Community 2015, hit *F5* to run the program with the debugger attached. To run the program without the debugger attached hit *Ctrl* + *F5*.
+Once the project is open in  Visual Studio Community 2015, hit **F5** to run the program with the debugger attached. To run the program without the debugger attached hit **Ctrl** + **F5**.
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
