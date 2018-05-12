@@ -21,25 +21,25 @@ int CALLBACK WinMain(HINSTANCE instance,
 						LPSTR commandLine, 
 						int showCode)
 {
-	// Create a new window struct.
-	WNDCLASS WindowClass = {};
+	// Create a new window struct and set all of it's values to 0.
+	WNDCLASS windowClass = {};
 
 	// Define the window's attributes. @see https://msdn.microsoft.com/en-us/library/windows/desktop/ff729176(v=vs.85).aspx
-	WindowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
+	windowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
 
 	// Callback to handle any messages sent to the window (resize etc).
-	WindowClass.lpfnWndProc = mainWindowCallback; 
+	windowClass.lpfnWndProc = mainWindowCallback; 
 
 	// Instance of the running application.
-	WindowClass.hInstance = instance;
-	WindowClass.lpszClassName = "handmadeHeroWindowClass";
+	windowClass.hInstance = instance;
+	windowClass.lpszClassName = "handmadeHeroWindowClass";
 
 	// Registers the window class for subsequent use in calls to 
 	// the CreateWindowEx function.
-	if (RegisterClass(&WindowClass)){
+	if (RegisterClass(&windowClass)){
 
 		HWND WindowHandle = CreateWindowEx(NULL,
-											WindowClass.lpszClassName,
+											windowClass.lpszClassName,
 											"Handmade Hero",
 											WS_TILEDWINDOW|WS_VISIBLE,
 											CW_USEDEFAULT,
@@ -75,16 +75,16 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 	}else{
 		// TODO(JM) Log error.
-		OutputDebugString("Error 2. WindowClass not registered\n");
+		OutputDebugString("Error 2. windowClass not registered\n");
 	}
 
 	return(0);
 }
 
 LRESULT CALLBACK mainWindowCallback(HWND window,
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam)
+									UINT message,
+									WPARAM wParam,
+									LPARAM lParam)
 {
 	LRESULT result = 0;
 	switch (message) {

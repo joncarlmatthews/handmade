@@ -2,6 +2,7 @@ Thumbs.db
 .DS_Store
 .vs/
 Debug/
+Release/
 *.obj
 *.exe
 *.opendb
