@@ -43,11 +43,35 @@ LRESULT CALLBACK mainWindowCallback(HWND Window,
 	return result;
 }
 
+struct person
+{
+	char *forename;
+	unsigned char age;
+};
+
 int CALLBACK WinMain(HINSTANCE Instance, 
 						HINSTANCE PrevInstance, 
 						LPSTR commandLine, 
 						int showCode)
 {
+
+	person person1;
+
+	person1.forename = "John";
+	person1.age = 30;
+
+	// Create enough menory to hold 40 persons.
+	person persons[10];
+
+	persons[4].forename = "Bill";
+	persons[4].age = 75;
+
+	// Same as
+	person *pPersons = persons;
+
+	(pPersons + 4)->forename = "150";
+	(pPersons + 4)->age = 70;
+
 	OutputDebugString("Error 0\n");
 
 	WNDCLASS WindowClass = {};
