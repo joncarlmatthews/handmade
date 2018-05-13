@@ -38,10 +38,11 @@ int CALLBACK WinMain(HINSTANCE instance,
 	// the CreateWindowEx function.
 	if (RegisterClass(&windowClass)){
 
-		HWND WindowHandle = CreateWindowEx(NULL,
+		// Physically open the window using CreateWindowEx
+		HWND windowHandle = CreateWindowEx(NULL,
 											windowClass.lpszClassName,
 											"Handmade Hero",
-											WS_TILEDWINDOW|WS_VISIBLE,
+											WS_OVERLAPPEDWINDOW|WS_VISIBLE,
 											CW_USEDEFAULT,
 		 									CW_USEDEFAULT,
 											CW_USEDEFAULT,
@@ -51,26 +52,29 @@ int CALLBACK WinMain(HINSTANCE instance,
 											instance,
 											NULL);
 
-		if (WindowHandle){
+		if (windowHandle){
 
-			MSG Message;
+			MSG message;
 
-			int getMessageRes;
+			char getMessageRes;
 
-			while( (getMessageRes = GetMessage(&Message, WindowHandle, 0, 0)) != 0){ 
+			// Message loop. Retrieves all messages (from the calling thread's message queue)
+			// that are sent to the window. E.g. clicks and key inputs.
+			// Keeps looping until message received is WM_QUIT.
+			while( (getMessageRes = GetMessage(&message, windowHandle, 0, 0)) != 0){
 			    if (getMessageRes == -1){
 			        // handle the error and exit
 			        break;
 			    }else{
-			        TranslateMessage(&Message);
-			        DispatchMessage(&Message);
+			        TranslateMessage(&message);
+			        DispatchMessage(&message);
 			    }
 			}
 
 
 		}else{
 			// TODO(JM) Log error.
-			OutputDebugString("Error 1. WindowHandle not created\n");
+			OutputDebugString("Error 1. windowHandle not created via CreateWindowEx\n");
 		}
 
 	}else{
@@ -89,30 +93,32 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
 	LRESULT result = 0;
 	switch (message) {
 
-	case WM_SIZE:
-	{
-		OutputDebugString("WM_SIZE\n");
-	} break;
+		case WM_SIZE: {
+			OutputDebugString("WM_SIZE\n");
+		} break;
 
-	case WM_DESTROY:
-	{
-		OutputDebugString("WM_DESTROY\n");
-	} break;
+		case WM_DESTROY: {
+			OutputDebugString("WM_DESTROY\n");
+		} break;
 
-	case WM_CLOSE:
-	{
-		OutputDebugString("WM_CLOSE\n");
-	} break;
+		case WM_CLOSE: {
+			OutputDebugString("WM_CLOSE\n");
+		} break;
 
-	case WM_ACTIVATEAPP:
-	{
-		OutputDebugString("WM_ACTIVATEAPP\n");
-	} break;
+		case WM_ACTIVATEAPP: {
+			OutputDebugString("WM_ACTIVATEAPP\n");
+		} break;
 
-	default:
-	{
-		result = DefWindowProc(window, message, wParam, lParam);
-	} break;
+		case WM_PAINT: {
+			OutputDebugString("WM_PAINT\n");
+			PAINTSTRUCT paint;
+			HDC device = BeginPaint(window, &paint);
+			EndPaint(window, &paint);
+		} break;
+
+		default: {
+			result = DefWindowProc(window, message, wParam, lParam);
+		} break;
 	}
 
 	return result;

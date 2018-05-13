@@ -20,7 +20,7 @@ Once the project is open in  Visual Studio Community 2015, hit **F5** to run the
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
-Note, before you can build the program for the first time you'll need to run the shell batch file first.
+Note, if you're running the `build.bat` file outside the context of Visual Studio you'll need to run the shell batch file first.
 
 ```> shell.bat```
 
