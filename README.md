@@ -16,12 +16,33 @@ Click Finish.
 
 ## Running
 
-Once the project is open in  Visual Studio Community 2015, hit **F5** to run the program with the debugger attached. To run the program without the debugger attached hit **Ctrl** + **F5**.
+Once the project is open in Visual Studio Community 2015, hit **F5** to run the program with the debugger attached. To run the program without the debugger attached hit **Ctrl** + **F5**.
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
-Note, if you're running the `build.bat` file outside the context of Visual Studio you'll need to run the shell batch file first.
+All three of the above will invoke the custom build script (`build.bat`). You can verify this by viewing the build script debug. You will see the batch file's signature.
 
-```> shell.bat```
+Note, if you're running the `build.bat` file outside the context of Visual Studio, you'll need to run the shell batch file first.
+
+`> shell.bat`
+
+If you don't you'll receive the following error message:
+
+```
+> build.bat
+*********************************
+CUSTOM HANDMADE HERO BUILD SCRIPT
+*********************************
+A subdirectory or file build already exists.
+'cl' is not recognized as an internal or external command,
+operable program or batch file.
+```
+
 
 This sets the shell environment for building the source. This only needs to be done once per shell environment.
+
+Then, you'll be able to run
+
+```
+> build.bat
+```
