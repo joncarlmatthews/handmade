@@ -1,5 +1,11 @@
 #include <windows.h>
 
+#define internal_func		static;
+#define local_persist_var	static;
+#define global_var			static;
+
+global_var bool running;
+
 /*
  *  Callback method for WNDCLASS struct. Processes messages sent to the window.
  */
@@ -54,29 +60,35 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 		if (windowHandle){
 
-			MSG message;
+			running = true;
 
-			char getMessageRes;
+			while (running) {
 
-			// Message loop. Retrieves all messages (from the calling thread's message queue)
-			// that are sent to the window. E.g. clicks and key inputs.
-			// Keeps looping until message received is WM_QUIT.
-			while( (getMessageRes = GetMessage(&message, windowHandle, 0, 0)) != 0){
-			    if (getMessageRes == -1){
-			        // handle the error and exit
-					OutputDebugString("Error during message loop\n");
-			        break;
-			    }else{
+				MSG message;
 
-					// Get the message ready for despatch.
-			        TranslateMessage(&message);
+				char getMessageRes;
 
-					// Dispatch the message to the application's window procedure.
-					// @link mainWindowCallback
-			        DispatchMessage(&message);
-			    }
-			}
+				// Message loop. Retrieves all messages (from the calling thread's message queue)
+				// that are sent to the window. E.g. clicks and key inputs.
+				// Keeps looping until message received is WM_QUIT.
+				while ((getMessageRes = GetMessage(&message, windowHandle, 0, 0)) != 0) {
+					if (getMessageRes == -1) {
+						// handle the error and exit
+						OutputDebugString("Error\n");
+						break;
+					}else {
 
+						// Get the message ready for despatch.
+						TranslateMessage(&message);
+
+						// Dispatch the message to the application's window procedure.
+						// @link mainWindowCallback
+						DispatchMessage(&message);
+					}
+
+				} // GetMessages
+
+			} // running
 
 		}else{
 			// TODO(JM) Log error.
@@ -105,11 +117,15 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
 		} break;
 
 		case WM_DESTROY: {
+			// @TODO(JM) Handle as an error. Recreate window?
 			OutputDebugString("WM_DESTROY\n");
+			running = false;
 		} break;
 
 		case WM_CLOSE: {
+			// @TODO(JM) Display "are you sure" message to user?
 			OutputDebugString("WM_CLOSE\n");
+			running = false;
 		} break;
 
 		case WM_ACTIVATEAPP: {
