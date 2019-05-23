@@ -24,25 +24,17 @@ All three of the above will invoke the custom build script (`build.bat`). You ca
 
 Note, if you're running the `build.bat` file outside the context of Visual Studio, you'll need to run the shell batch file first.
 
-`> shell.bat`
+```
+> shell.bat
+> build.bat
+```
 
 If you don't you'll receive the following error message:
 
 ```
 > build.bat
-*********************************
-CUSTOM HANDMADE HERO BUILD SCRIPT
-*********************************
-A subdirectory or file build already exists.
 'cl' is not recognized as an internal or external command,
 operable program or batch file.
 ```
 
-
-This sets the shell environment for building the source. This only needs to be done once per shell environment.
-
-Then, you'll be able to run
-
-```
-> build.bat
-```
+The `shell.bat` script sets the shell environment for building the source. This only needs to be run once per shell environment, not every time before you want to build the source.

@@ -14,7 +14,7 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
  * @param HINSTANCE A handle to the current instance of the application.
  * @param HINSTANCE A handle to the previous instance of the application.
  * @param LPSTR Command line arguments sent to the application.
- * @param in tHow the user has specified the window to be shown
+ * @param int How the user has specified the window to be shown
  */
 int CALLBACK WinMain(HINSTANCE instance, 
 						HINSTANCE prevInstance, 
@@ -64,9 +64,15 @@ int CALLBACK WinMain(HINSTANCE instance,
 			while( (getMessageRes = GetMessage(&message, windowHandle, 0, 0)) != 0){
 			    if (getMessageRes == -1){
 			        // handle the error and exit
+					OutputDebugString("Error during message loop\n");
 			        break;
 			    }else{
+
+					// Get the message ready for despatch.
 			        TranslateMessage(&message);
+
+					// Dispatch the message to the application's window procedure.
+					// @link mainWindowCallback
 			        DispatchMessage(&message);
 			    }
 			}
@@ -93,6 +99,7 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
 	LRESULT result = 0;
 	switch (message) {
 
+		// Sent after the window's size has changed.
 		case WM_SIZE: {
 			OutputDebugString("WM_SIZE\n");
 		} break;
@@ -109,11 +116,28 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
 			OutputDebugString("WM_ACTIVATEAPP\n");
 		} break;
 
+		// Request to paint a portion of an application's window.
 		case WM_PAINT: {
 			OutputDebugString("WM_PAINT\n");
+
 			PAINTSTRUCT paint;
-			HDC device = BeginPaint(window, &paint);
+
+			// Prepare the window for painting and get the device context.
+			HDC deviceHandle = BeginPaint(window, &paint);
+
+			// Grab the x and y coords and the width and height from the paint struct
+			// written to by BeginPaint
+			int x = paint.rcPaint.left;
+			int y = paint.rcPaint.top;
+			int width = paint.rcPaint.right;
+			int height = paint.rcPaint.bottom;
+
+			// Call PatBlt to paint a black rectangle on within the window
+			PatBlt(deviceHandle, x, y, width, height, BLACKNESS);
+
+			// End the paint request and releases the device context.
 			EndPaint(window, &paint);
+
 		} break;
 
 		default: {
