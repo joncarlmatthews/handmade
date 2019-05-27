@@ -4,15 +4,88 @@
 #define local_persist_var	static; // Static variables within a local scope (e.g. case statement, function)
 #define internal_func		static; // Functions that are only available within the file they're declared in
 
+// Whether or not the application is running
 global_var bool running;
 
+// Bitmap info for creating when creating the DIB.
+global_var BITMAPINFO bitmapInfo;
+
+// Bitmap memory for when creating the DIB.
+global_var void *bitmapMemory;
+
+// Bitmap handle for when creating the DIB.
+global_var HBITMAP bitmapHandle;
+
+global_var HDC bitmapDeviceHandleForWindow;
+
 /*
- *  Callback method for WNDCLASS struct. Processes messages sent to the window.
+ * Callback method for WNDCLASS struct. Processes messages sent to the window.
  */
-LRESULT CALLBACK mainWindowCallback(HWND window,
-									UINT message,
-									WPARAM wParam,
-									LPARAM lParam);
+LRESULT CALLBACK win32MainWindowCallback(HWND window,
+											UINT message,
+											WPARAM wParam,
+											LPARAM lParam);
+
+/*
+ * A Device Independent Bitmap (DIB) is what Windows calls things
+ * that we can write into which it can then display to the screen
+ * using it's internal Graphics Device Interface (GDI).
+ *
+ * This method will create a new DIB, or resize it if its already been created.
+ * 
+ * Called each time the message WM_SIZE is sent to the message callback handler.
+ *
+ * @param width		The client viewport width
+ * @param height	The client viewport height
+ */
+internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long height)
+{
+	// Does the bitmapHandle already exist?
+	if (bitmapHandle) {
+		// Yes, then call the GDI method DeleteObject to delete the object
+		// and free all system resources associated with it.
+		// We do this because we have to redraw it as this method
+		// is called by WN_SIZE
+		DeleteObject(bitmapHandle);
+	}
+
+	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
+	bitmapInfo.bmiHeader.biWidth = width;
+	bitmapInfo.bmiHeader.biHeight = height;
+	bitmapInfo.bmiHeader.biPlanes = 1;
+	bitmapInfo.bmiHeader.biBitCount = 32;
+	bitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+	HDC bitmapDeviceHandleForWindow = CreateCompatibleDC(0);
+
+	bitmapHandle = CreateDIBSection(bitmapDeviceHandleForWindow,
+									&bitmapInfo,
+									DIB_RGB_COLORS,
+									&bitmapMemory,
+									NULL,
+									NULL);
+
+}
+
+/*
+* Updates the client's viewport using the DIB created in win32CreateDeviceIndependentBitmapSeciton().
+*
+* @param window		The window handle
+* @param x			The client viewport top left position
+* @param y			The client viewport bottom right position
+* @param width		The client viewport width
+* @param height		The client viewport height
+*/
+internal_func void win32UpdateViewport(HDC deviceHandleForWindow, long x, long y, long width, long height)
+{
+	// StretchDIBits function copies the data of a rectangle of pixels to the specified destination.
+	StretchDIBits(deviceHandleForWindow, x, y, width, height, x, y, width, height,
+		bitmapMemory,
+		&bitmapInfo,
+		DIB_RGB_COLORS,
+		SRCCOPY
+	);
+}
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -34,7 +107,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 	windowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
 
 	// Callback to handle any messages sent to the window (resize etc).
-	windowClass.lpfnWndProc = mainWindowCallback; 
+	windowClass.lpfnWndProc = win32MainWindowCallback;
 
 	// Instance of the running application.
 	windowClass.hInstance = instance;
@@ -77,7 +150,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 					TranslateMessage(&message);
 
 					// Dispatch the message to the application's window procedure.
-					// @link mainWindowCallback
+					// @link win32MainWindowCallback
 					DispatchMessage(&message);
 						
 				}else {
@@ -100,14 +173,14 @@ int CALLBACK WinMain(HINSTANCE instance,
 		OutputDebugString("Error 2. windowClass not registered\n");
 	}
 
-
+	// Close the application.
 	return(0);
 }
 
-LRESULT CALLBACK mainWindowCallback(HWND window,
-									UINT message,
-									WPARAM wParam,
-									LPARAM lParam)
+LRESULT CALLBACK win32MainWindowCallback(HWND window,
+											UINT message,
+											WPARAM wParam,
+											LPARAM lParam)
 {
 	LRESULT result = 0;
 
@@ -116,6 +189,13 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
 		// Sent after the window's size has changed.
 		case WM_SIZE: {
 			OutputDebugString("WM_SIZE\n");
+
+			RECT clientRect;
+
+			GetClientRect(window, &clientRect);
+
+			win32ResizeDeviceIndependentBitmapSeciton(clientRect.right, clientRect.bottom);
+
 		} break;
 
 		case WM_DESTROY: {
@@ -124,12 +204,14 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
 			running = false;
 		} break;
 
+		// Called when the user requests to close the window.
 		case WM_CLOSE: {
 			// @TODO(JM) Display "are you sure" message to user?
 			OutputDebugString("WM_CLOSE\n");
 			running = false;
 		} break;
 
+		// Called when the user makes the window active (e.g. by tabbing to it).
 		case WM_ACTIVATEAPP: {
 			OutputDebugString("WM_ACTIVATEAPP\n");
 		} break;
@@ -141,27 +223,30 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
 			PAINTSTRUCT paint;
 
 			// Prepare the window for painting and get the device context.
-			HDC deviceHandle = BeginPaint(window, &paint);
+			HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
 			// Grab the x and y coords and the width and height from the paint struct
 			// written to by BeginPaint
-			int x = paint.rcPaint.left;
-			int y = paint.rcPaint.top;
-			int width = paint.rcPaint.right;
-			int height = paint.rcPaint.bottom;
+			long x = paint.rcPaint.left;
+			long y = paint.rcPaint.top;
+			long width = paint.rcPaint.right;
+			long height = paint.rcPaint.bottom;
 
-			// Call PatBlt to paint a black rectangle on within the window
-			PatBlt(deviceHandle, x, y, width, height, BLACKNESS);
+			win32UpdateViewport(deviceHandleForWindow, x, y, width, height);
 
 			// End the paint request and releases the device context.
 			EndPaint(window, &paint);
 
 		} break;
 
+		// The standard request from GetMessage().
 		default: {
+			//OutputDebugString("default\n");
+			// The default window procedure to provide default processing for any window messages not explicitly handled.
 			result = DefWindowProc(window, message, wParam, lParam);
 		} break;
 	}
 
 	return result;
 }
+
