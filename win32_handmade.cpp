@@ -1,8 +1,8 @@
 #include <windows.h>
 
-#define internal_func		static;
-#define local_persist_var	static;
-#define global_var			static;
+#define global_var			static; // Global variables
+#define local_persist_var	static; // Static variables within a local scope (e.g. case statement, function)
+#define internal_func		static; // Functions that are only available within the file they're declared in
 
 global_var bool running;
 
@@ -66,27 +66,27 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 				MSG message;
 
-				char getMessageRes;
+				BOOL getMessageRes;
 
 				// Message loop. Retrieves all messages (from the calling thread's message queue)
 				// that are sent to the window. E.g. clicks and key inputs.
-				// Keeps looping until message received is WM_QUIT.
-				while ((getMessageRes = GetMessage(&message, windowHandle, 0, 0)) != 0) {
-					if (getMessageRes == -1) {
-						// handle the error and exit
-						OutputDebugString("Error\n");
-						break;
-					}else {
+				getMessageRes = GetMessage(&message, windowHandle, 0, 0);
+				if (getMessageRes > 0) {
 
-						// Get the message ready for despatch.
-						TranslateMessage(&message);
+					// Get the message ready for despatch.
+					TranslateMessage(&message);
 
-						// Dispatch the message to the application's window procedure.
-						// @link mainWindowCallback
-						DispatchMessage(&message);
-					}
+					// Dispatch the message to the application's window procedure.
+					// @link mainWindowCallback
+					DispatchMessage(&message);
+						
+				}else {
 
-				} // GetMessages
+					// handle the error and exit
+					OutputDebugString("Error\n");
+					break;
+						
+				}
 
 			} // running
 
@@ -100,6 +100,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 		OutputDebugString("Error 2. windowClass not registered\n");
 	}
 
+
 	return(0);
 }
 
@@ -109,6 +110,7 @@ LRESULT CALLBACK mainWindowCallback(HWND window,
 									LPARAM lParam)
 {
 	LRESULT result = 0;
+
 	switch (message) {
 
 		// Sent after the window's size has changed.
