@@ -13,11 +13,6 @@ global_var BITMAPINFO bitmapInfo;
 // Bitmap memory for when creating the DIB.
 global_var void *bitmapMemory;
 
-// Bitmap handle for when creating the DIB.
-global_var HBITMAP bitmapHandle;
-
-global_var HDC bitmapDeviceHandleForWindow;
-
 /*
  * Callback method for WNDCLASS struct. Processes messages sent to the window.
  */
@@ -40,22 +35,13 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
  */
 internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long height)
 {
-	// Does the bitmapHandle already exist from a previous WM_SIZE call?
-	if (bitmapHandle != NULL) {
+	// Does the bitmapMemory already exist from a previous WM_SIZE call?
+	if (bitmapMemory != NULL) {
 
-		// Yes, then call the GDI method DeleteObject to delete the object
-		// and free all system resources associated with it.
+		// Yes, then free the memorty allocated.
 		// We do this because we have to redraw it as this method
 		// is called on a window resize.
-		DeleteObject(bitmapHandle);
-	}
-
-	// Do we have a bitmap device handle for the window?
-	if (NULL == bitmapDeviceHandleForWindow) {
-
-		// No. Create one here. Otherwise, use the one created on the previous
-		// call to WM_SIZE
-		bitmapDeviceHandleForWindow = CreateCompatibleDC(0);
+		VirtualFree(bitmapMemory, NULL, MEM_RELEASE);
 	}
 
 	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
@@ -65,13 +51,19 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long he
 	bitmapInfo.bmiHeader.biBitCount = 32;
 	bitmapInfo.bmiHeader.biCompression = BI_RGB;
 
-	bitmapHandle = CreateDIBSection(bitmapDeviceHandleForWindow,
-									&bitmapInfo,
-									DIB_RGB_COLORS,
-									&bitmapMemory,
-									NULL,
-									NULL);
+	// How many bytes do we need per pixel? Our pixels
+	// will be rendered using RBG colours. Therefore we need
+	// 1 byte for R, 1 byte for G and 1 byte for B. 
+	// and 1 extra byte for padding so we align with
+	// bitmapInfo.bmiHeader.biBitCount
+	int bytesPerPixel = 4;
 
+	// How many bytes do we need for our bitmap?
+	// viewport width * viewport height = viewport area
+	// then viewport area * how many bytes we need per pixel.
+	int bitmapMemorySize = ((width * height) * bytesPerPixel);
+
+	bitmapMemory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
 }
 
 /*
