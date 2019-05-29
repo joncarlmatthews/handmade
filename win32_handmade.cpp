@@ -40,13 +40,22 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
  */
 internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long height)
 {
-	// Does the bitmapHandle already exist?
-	if (bitmapHandle) {
+	// Does the bitmapHandle already exist from a previous WM_SIZE call?
+	if (bitmapHandle != NULL) {
+
 		// Yes, then call the GDI method DeleteObject to delete the object
 		// and free all system resources associated with it.
 		// We do this because we have to redraw it as this method
-		// is called by WN_SIZE
+		// is called on a window resize.
 		DeleteObject(bitmapHandle);
+	}
+
+	// Do we have a bitmap device handle for the window?
+	if (NULL == bitmapDeviceHandleForWindow) {
+
+		// No. Create one here. Otherwise, use the one created on the previous
+		// call to WM_SIZE
+		bitmapDeviceHandleForWindow = CreateCompatibleDC(0);
 	}
 
 	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
@@ -55,8 +64,6 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long he
 	bitmapInfo.bmiHeader.biPlanes = 1;
 	bitmapInfo.bmiHeader.biBitCount = 32;
 	bitmapInfo.bmiHeader.biCompression = BI_RGB;
-
-	HDC bitmapDeviceHandleForWindow = CreateCompatibleDC(0);
 
 	bitmapHandle = CreateDIBSection(bitmapDeviceHandleForWindow,
 									&bitmapInfo,
@@ -68,7 +75,7 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long he
 }
 
 /*
-* Updates the client's viewport using the DIB created in win32CreateDeviceIndependentBitmapSeciton().
+* Updates the client's viewport using the DIB created in win32ResizeDeviceIndependentBitmapSeciton().
 *
 * @param window		The window handle
 * @param x			The client viewport top left position
@@ -79,12 +86,19 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long he
 internal_func void win32UpdateViewport(HDC deviceHandleForWindow, long x, long y, long width, long height)
 {
 	// StretchDIBits function copies the data of a rectangle of pixels to the specified destination.
-	StretchDIBits(deviceHandleForWindow, x, y, width, height, x, y, width, height,
-		bitmapMemory,
-		&bitmapInfo,
-		DIB_RGB_COLORS,
-		SRCCOPY
-	);
+	StretchDIBits(deviceHandleForWindow, 
+					x,
+					y, 
+					width, 
+					height, 
+					x, 
+					y, 
+					width, 
+					height,
+					bitmapMemory,
+					&bitmapInfo,
+					DIB_RGB_COLORS,
+					SRCCOPY);
 }
 
 /*
