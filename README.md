@@ -2,7 +2,7 @@
 
 ## Pre-req
 
-Install Visual Studio Community 2017. Once Visual Studio is installed navigate to **Tools** -> **Get Tools and Features** options and check that the Windows 10 SDK is installed. The Windows SDK gives you access to `windows.h`. If it's not installed you'll receive the `cannot open source file "windows.h"` error message when attempting the build the source code.
+Install Visual Studio Community 2017. Once Visual Studio is installed navigate to **Tools** -> **Get Tools and Features** options and check that the latest version of the Windows 10 SDK is installed. The Windows SDK gives you access to `windows.h`. If it's not installed you'll receive the `cannot open source file "windows.h"` error message when attempting the build the source code. The other setting I had to change to resolve this issue was to change the **Platform** from **Win32** to **x64** under **Project -> Properties**. This will then show the **Windows SDK Version** option where you can select the latest version of the Windows SDK which was installed in the first step.
 
 ## Editing Source Files
 
