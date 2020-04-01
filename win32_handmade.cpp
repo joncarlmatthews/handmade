@@ -1,8 +1,8 @@
 #include <windows.h>
 
-#define global_var			static; // Global variables
-#define local_persist_var	static; // Static variables within a local scope (e.g. case statement, function)
-#define internal_func		static; // Functions that are only available within the file they're declared in
+#define global_var          static; // Global variables
+#define local_persist_var   static; // Static variables within a local scope (e.g. case statement, function)
+#define internal_func       static; // Functions that are only available within the file they're declared in
 
 // I know this wont change, but it's to help me read the code, instead of seeing
 //things multiplied by 8 all over the place.
