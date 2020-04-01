@@ -4,6 +4,10 @@
 #define local_persist_var	static; // Static variables within a local scope (e.g. case statement, function)
 #define internal_func		static; // Functions that are only available within the file they're declared in
 
+// I know this wont change, but it's to help me read the code, instead of seeing
+//things multiplied by 8 all over the place.
+global_var int bitsPerByte = 8;
+
 // Whether or not the application is running
 global_var bool running;
 
@@ -13,85 +17,10 @@ global_var BITMAPINFO bitmapInfo;
 // Bitmap memory for when creating the DIB.
 global_var void *bitmapMemory;
 
-/*
- * Callback method for WNDCLASS struct. Processes messages sent to the window.
- */
-LRESULT CALLBACK win32MainWindowCallback(HWND window,
-											UINT message,
-											WPARAM wParam,
-											LPARAM lParam);
-
-/*
- * A Device Independent Bitmap (DIB) is what Windows calls things
- * that we can write into which it can then display to the screen
- * using it's internal Graphics Device Interface (GDI).
- *
- * This method will create a new DIB, or resize it if its already been created.
- * 
- * Called each time the message WM_SIZE is sent to the message callback handler.
- *
- * @param width		The client viewport width
- * @param height	The client viewport height
- */
-internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long height)
-{
-	// Does the bitmapMemory already exist from a previous WM_SIZE call?
-	if (bitmapMemory != NULL) {
-
-		// Yes, then free the memorty allocated.
-		// We do this because we have to redraw it as this method
-		// is called on a window resize.
-		VirtualFree(bitmapMemory, NULL, MEM_RELEASE);
-	}
-
-	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
-	bitmapInfo.bmiHeader.biWidth = width;
-	bitmapInfo.bmiHeader.biHeight = height;
-	bitmapInfo.bmiHeader.biPlanes = 1;
-	bitmapInfo.bmiHeader.biBitCount = 32;
-	bitmapInfo.bmiHeader.biCompression = BI_RGB;
-
-	// How many bytes do we need per pixel? Our pixels
-	// will be rendered using RBG colours. Therefore we need
-	// 1 byte for R, 1 byte for G and 1 byte for B. 
-	// and 1 extra byte for padding so we align with
-	// bitmapInfo.bmiHeader.biBitCount
-	int bytesPerPixel = 4;
-
-	// How many bytes do we need for our bitmap?
-	// viewport width * viewport height = viewport area
-	// then viewport area * how many bytes we need per pixel.
-	int bitmapMemorySize = ((width * height) * bytesPerPixel);
-
-	bitmapMemory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
-}
-
-/*
-* Updates the client's viewport using the DIB created in win32ResizeDeviceIndependentBitmapSeciton().
-*
-* @param window		The window handle
-* @param x			The client viewport top left position
-* @param y			The client viewport bottom right position
-* @param width		The client viewport width
-* @param height		The client viewport height
-*/
-internal_func void win32UpdateViewport(HDC deviceHandleForWindow, long x, long y, long width, long height)
-{
-	// StretchDIBits function copies the data of a rectangle of pixels to the specified destination.
-	StretchDIBits(deviceHandleForWindow, 
-					x,
-					y, 
-					width, 
-					height, 
-					x, 
-					y, 
-					width, 
-					height,
-					bitmapMemory,
-					&bitmapInfo,
-					DIB_RGB_COLORS,
-					SRCCOPY);
-}
+// Function signatures
+LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
+internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long height);
+internal_func void win32UpdateViewport(HDC deviceHandleForWindow, long x, long y, long width, long height);
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -112,7 +41,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 	// Define the window's attributes. @see https://msdn.microsoft.com/en-us/library/windows/desktop/ff729176(v=vs.85).aspx
 	windowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
 
-	// Callback to handle any messages sent to the window (resize etc).
+	// Callback to handle any messages sent to the window (resize, close etc).
 	windowClass.lpfnWndProc = win32MainWindowCallback;
 
 	// Instance of the running application.
@@ -121,68 +50,91 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 	// Registers the window class for subsequent use in calls to 
 	// the CreateWindowEx function.
-	if (RegisterClass(&windowClass)){
+	if (!RegisterClass(&windowClass)) {
 
-		// Physically open the window using CreateWindowEx
-		HWND windowHandle = CreateWindowEx(NULL,
-											windowClass.lpszClassName,
-											"Handmade Hero",
-											WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-											CW_USEDEFAULT,
-		 									CW_USEDEFAULT,
-											CW_USEDEFAULT,
-											CW_USEDEFAULT,
-		   									NULL,
-											NULL,
-											instance,
-											NULL);
+		// TODO(JM) Log error.
+		OutputDebugString("Error 1. windowClass not registered\n");
+		return FALSE;
+	}
 
-		if (windowHandle){
+	// Physically open the window using CreateWindowEx
+	HWND windowHandle = CreateWindowEx(NULL,
+										windowClass.lpszClassName,
+										"Handmade Hero",
+										WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+										CW_USEDEFAULT,
+		 								CW_USEDEFAULT,
+										CW_USEDEFAULT,
+										CW_USEDEFAULT,
+		   								NULL,
+										NULL,
+										instance,
+										NULL);
 
-			running = true;
+	if (!windowHandle) {
 
-			while (running) {
+		// TODO(JM) Log error.
+		OutputDebugString("Error 2. windowHandle not created via CreateWindowEx\n");
+		return FALSE;
+	}
 
-				MSG message;
+	running = true;
 
-				BOOL getMessageRes;
+	while (running) {
 
-				// Message loop. Retrieves all messages (from the calling thread's message queue)
-				// that are sent to the window. E.g. clicks and key inputs.
-				getMessageRes = GetMessage(&message, windowHandle, 0, 0);
-				if (getMessageRes > 0) {
+		MSG message;
 
-					// Get the message ready for despatch.
-					TranslateMessage(&message);
+		BOOL getMessageRes;
 
-					// Dispatch the message to the application's window procedure.
-					// @link win32MainWindowCallback
-					DispatchMessage(&message);
+		// Message loop. Retrieves all messages (from the calling thread's message queue)
+		// that are sent to the window. E.g. clicks and key inputs.
+		getMessageRes = GetMessage(&message, windowHandle, 0, 0);
+		if (getMessageRes > 0) {
+
+			// Get the message ready for despatch.
+			TranslateMessage(&message);
+
+			// Dispatch the message to the application's window procedure.
+			// @link win32MainWindowCallback
+			DispatchMessage(&message);
 						
-				}else {
+		}else {
 
-					// handle the error and exit
-					OutputDebugString("Error\n");
-					break;
+			// handle the error and exit
+			OutputDebugString("Error\n");
+			break;
 						
-				}
-
-			} // running
-
-		}else{
-			// TODO(JM) Log error.
-			OutputDebugString("Error 1. windowHandle not created via CreateWindowEx\n");
 		}
 
-	}else{
-		// TODO(JM) Log error.
-		OutputDebugString("Error 2. windowClass not registered\n");
-	}
+	} // running
 
 	// Close the application.
 	return(0);
 }
 
+/*
+ * Callback method for WNDCLASS struct. Processes messages sent to the window.
+ * E.g. resize, close etc.
+ *
+ * @see https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms633573(v=vs.85)
+ *
+ * If you observe the console log, you'll notice that:
+ * 
+ * When the app first loads it sends messages to the queue in this order:
+ *
+ * 1) WM_ACTIVATEAPP
+ * 2) WM_SIZE
+ * 3) WM_PAINT
+ *
+ * When the app is focused on, or clicked away from it sends: WM_ACTIVATEAPP
+ *
+ * When the app's window is resized it sends WM_SIZE immediately followed by
+ * WM_PAINT
+ *
+ * When the app's window position is moved (not resized) it sends WM_PAINT
+ *
+ * When the app is closed it sends WM_CLOSE
+ */
 LRESULT CALLBACK win32MainWindowCallback(HWND window,
 											UINT message,
 											WPARAM wParam,
@@ -192,12 +144,12 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
 	switch (message) {
 
-		// Sent after the window's size has changed.
+		// Sent after the window's size has changed (window resize).
 		case WM_SIZE: {
 			OutputDebugString("WM_SIZE\n");
 
+			// Get the coordinates of the window's client area.
 			RECT clientRect;
-
 			GetClientRect(window, &clientRect);
 
 			win32ResizeDeviceIndependentBitmapSeciton(clientRect.right, clientRect.bottom);
@@ -224,6 +176,7 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
 		// Request to paint a portion of an application's window.
 		case WM_PAINT: {
+
 			OutputDebugString("WM_PAINT\n");
 
 			PAINTSTRUCT paint;
@@ -254,5 +207,86 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 	}
 
 	return result;
+}
+
+/*
+ * Function for handling WM_SIZE message.
+ *
+ * This method will create a new DIB, or resize it if its already been created.
+ *
+ * A Device Independent Bitmap (DIB) is what Windows calls things
+ * that we can write into, which it can then display to the screen
+ * using it's internal Graphics Device Interface (GDI).
+ *
+ *
+ * @param width		The client viewport width
+ * @param height	The client viewport height
+ */
+internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long height)
+{
+	// Does the bitmapMemory already exist from a previous WM_SIZE call?
+	if (bitmapMemory != NULL) {
+
+		// Yes, then free the memorty allocated.
+		// We do this because we have to redraw it as this method
+		// (win32ResizeDeviceIndependentBitmapSeciton) is called on a window resize.
+		VirtualFree(bitmapMemory, NULL, MEM_RELEASE);
+	}
+
+	// How many bytes do we need per pixel? Our pixels will be rendered using
+	// RBG colours. Therefore we need 1 byte for R, 1 byte for G and 1 byte for B (3)
+	// However you should always align your bytes in alignment with the byte 
+	// boundaries. E.g. 4, 8, 16, 32 etc. Therefore will will add 1 extra byte 
+	// for padding. Apparently there is a penalty of some sort for not doing so. 
+	// (Day 004)
+	int bytesPerPixel = 4;
+
+	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
+	bitmapInfo.bmiHeader.biWidth = width;
+	bitmapInfo.bmiHeader.biHeight = height;
+	bitmapInfo.bmiHeader.biPlanes = 1;
+	bitmapInfo.bmiHeader.biBitCount = (bytesPerPixel * bitsPerByte);
+	bitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+	// How many bytes do we need for our bitmap?
+	// viewport width * viewport height = viewport area
+	// then viewport area * how many bytes we need per pixel.
+	int bitmapMemorySize = ((width * height) * bytesPerPixel);
+
+	bitmapMemory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+}
+
+/*
+* Updates the client's viewport using the DIB created in win32ResizeDeviceIndependentBitmapSeciton().
+* 
+* @NOTE(JM) does this need to be it's own function? Currently just one line.
+*
+* @param window		The window handle
+* @param x			The client viewport top left position
+* @param y			The client viewport bottom right position
+* @param width		The client viewport width
+* @param height		The client viewport height
+*/
+internal_func void win32UpdateViewport(HDC deviceHandleForWindow, 
+										long x, 
+										long y, 
+										long width, 
+										long height)
+{
+	// StretchDIBits function copies the data of a rectangle of pixels to 
+	// the specified destination.
+	StretchDIBits(deviceHandleForWindow,
+					x,
+					y,
+					width,
+					height,
+					x,
+					y,
+					width,
+					height,
+					bitmapMemory,
+					&bitmapInfo,
+					DIB_RGB_COLORS,
+					SRCCOPY);
 }
 

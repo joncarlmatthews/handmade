@@ -1,0 +1,7 @@
+# All files
+[*]
+
+# This directive sets the print margin width. You'll need Paul Harrington's 
+# Editor Guidelines extension. Install with Tools -> Extensions and Updates.
+# @link https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelines
+guidelines = 80
