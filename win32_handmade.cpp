@@ -31,9 +31,9 @@ internal_func void win32UpdateViewport(HDC deviceHandleForWindow, long x, long y
  * @param int How the user has specified the window to be shown
  */
 int CALLBACK WinMain(HINSTANCE instance, 
-						HINSTANCE prevInstance, 
-						LPSTR commandLine, 
-						int showCode)
+                        HINSTANCE prevInstance, 
+                        LPSTR commandLine, 
+                        int showCode)
 {
 	// Create a new window struct and set all of it's values to 0.
 	WNDCLASS windowClass = {};
