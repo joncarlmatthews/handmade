@@ -59,17 +59,17 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 	// Physically open the window using CreateWindowEx
 	HWND windowHandle = CreateWindowEx(NULL,
-										windowClass.lpszClassName,
-										"Handmade Hero",
-										WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-										CW_USEDEFAULT,
-		 								CW_USEDEFAULT,
-										CW_USEDEFAULT,
-										CW_USEDEFAULT,
-		   								NULL,
-										NULL,
-										instance,
-										NULL);
+                                        windowClass.lpszClassName,
+                                        "Handmade Hero",
+                                        WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+                                        CW_USEDEFAULT,
+                                        CW_USEDEFAULT,
+                                        CW_USEDEFAULT,
+                                        CW_USEDEFAULT,
+                                        NULL,
+                                        NULL,
+                                        instance,
+                                        NULL);
 
 	if (!windowHandle) {
 
@@ -268,25 +268,25 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long he
 * @param height		The client viewport height
 */
 internal_func void win32UpdateViewport(HDC deviceHandleForWindow, 
-										long x, 
-										long y, 
-										long width, 
-										long height)
+                                        long x, 
+                                        long y, 
+                                        long width, 
+                                        long height)
 {
 	// StretchDIBits function copies the data of a rectangle of pixels to 
 	// the specified destination.
 	StretchDIBits(deviceHandleForWindow,
-					x,
-					y,
-					width,
-					height,
-					x,
-					y,
-					width,
-					height,
-					bitmapMemory,
-					&bitmapInfo,
-					DIB_RGB_COLORS,
-					SRCCOPY);
+                    x,
+                    y,
+                    width,
+                    height,
+                    x,
+                    y,
+                    width,
+                    height,
+                    bitmapMemory,
+                    &bitmapInfo,
+                    DIB_RGB_COLORS,
+                    SRCCOPY);
 }
 
