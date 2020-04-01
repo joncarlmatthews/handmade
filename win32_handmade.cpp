@@ -136,9 +136,9 @@ int CALLBACK WinMain(HINSTANCE instance,
  * When the app is closed it sends WM_CLOSE
  */
 LRESULT CALLBACK win32MainWindowCallback(HWND window,
-											UINT message,
-											WPARAM wParam,
-											LPARAM lParam)
+                                            UINT message,
+                                            WPARAM wParam,
+                                            LPARAM lParam)
 {
 	LRESULT result = 0;
 
