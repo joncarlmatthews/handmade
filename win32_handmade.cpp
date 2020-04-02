@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <stdint.h>
 
 #define global_var          static; // Global variables
 #define local_persist_var   static; // Static variables within a local scope (e.g. case statement, function)
@@ -146,12 +147,15 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
 		// Sent after the window's size has changed (window resize).
 		case WM_SIZE: {
-			OutputDebugString("WM_SIZE\n");
+			OutputDebugString("WM_SIZE!\n");
 
-			// Get the coordinates of the window's client area.
+            // Window resized. Get the new window's viewport dimensions.
+			// We can do this by calling GetClientRect. RECT.right and RECT.bottom
+            // are effectively width and height.
 			RECT clientRect;
 			GetClientRect(window, &clientRect);
 
+            // Call our function for actually handling the window resize.
 			win32ResizeDeviceIndependentBitmapSeciton(clientRect.right, clientRect.bottom);
 
 		} break;
@@ -177,11 +181,10 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 		// Request to paint a portion of an application's window.
 		case WM_PAINT: {
 
-			OutputDebugString("WM_PAINT\n");
-
-			PAINTSTRUCT paint;
+			OutputDebugString("WM_PAINT!\n");
 
 			// Prepare the window for painting and get the device context.
+            PAINTSTRUCT paint;
 			HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
 			// Grab the x and y coords and the width and height from the paint struct
@@ -200,9 +203,16 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
 		// The standard request from GetMessage().
 		default: {
+
 			//OutputDebugString("default\n");
-			// The default window procedure to provide default processing for any window messages not explicitly handled.
+
+			// The default window procedure to provide default processing for 
+            // any window messages not explicitly handled. It's required by the
+            // Win32 API that every message is handled. And the docs specify
+            // that DefWindowProc is called for all non handled messages.
+            // @see https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-defwindowproca
 			result = DefWindowProc(window, message, wParam, lParam);
+
 		} break;
 	}
 
@@ -213,6 +223,7 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * Function for handling WM_SIZE message.
  *
  * This method will create a new DIB, or resize it if its already been created.
+ * during a previous call to WM_SIZE.
  *
  * A Device Independent Bitmap (DIB) is what Windows calls things
  * that we can write into, which it can then display to the screen
@@ -222,7 +233,7 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param width		The client viewport width
  * @param height	The client viewport height
  */
-internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long height)
+internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth, long viewportHeight)
 {
 	// Does the bitmapMemory already exist from a previous WM_SIZE call?
 	if (bitmapMemory != NULL) {
@@ -242,8 +253,8 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long he
 	int bytesPerPixel = 4;
 
 	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
-	bitmapInfo.bmiHeader.biWidth = width;
-	bitmapInfo.bmiHeader.biHeight = height;
+	bitmapInfo.bmiHeader.biWidth = viewportWidth;
+	bitmapInfo.bmiHeader.biHeight = -viewportHeight; // If negative, it's drawn top down. If positive it's drawn bottom up.
 	bitmapInfo.bmiHeader.biPlanes = 1;
 	bitmapInfo.bmiHeader.biBitCount = (bytesPerPixel * bitsPerByte);
 	bitmapInfo.bmiHeader.biCompression = BI_RGB;
@@ -251,22 +262,51 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long he
 	// How many bytes do we need for our bitmap?
 	// viewport width * viewport height = viewport area
 	// then viewport area * how many bytes we need per pixel.
-	int bitmapMemorySize = ((width * height) * bytesPerPixel);
+	int bitmapMemorySize = ((viewportWidth * viewportHeight) * bytesPerPixel);
 
+    // Now allocate the memory using VirtualAlloc to the size of the previously
+    // calculated bitmapMemorySize
 	bitmapMemory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+
+    // Now actually draw to the window.
+
+    // First cast the bitmapMemory from a void * so that C treats it as a pointer to just
+    // bytes in memory. To do this cast it as an 8-bit unsigned integer (aka unsigned char)
+    uint8_t *row = (uint8_t *)bitmapMemory;
+
+    //int pitch = (viewportWidth * bytesPerPixel);
+
+    OutputDebugString("Viewport height: ");
+
+    // Loop over each row. (Pixel row, from left to right)
+    for (int i = 0; i < viewportHeight; i++) {
+
+        //OutputDebugString("Row: %i \n", i);
+        //wsprintf("Row: %i \n", *i);
+        OutputDebugString("Row: ");
+        OutputDebugString((char *)i);
+        OutputDebugString("\n");
+
+        // For each row, loop over each pixel in the row
+        for (int i = 0; i < viewportWidth; i++){
+
+        }
+    }
 }
 
 /*
-* Updates the client's viewport using the DIB created in win32ResizeDeviceIndependentBitmapSeciton().
-* 
-* @NOTE(JM) does this need to be it's own function? Currently just one line.
-*
-* @param window		The window handle
-* @param x			The client viewport top left position
-* @param y			The client viewport bottom right position
-* @param width		The client viewport width
-* @param height		The client viewport height
-*/
+ * Function for handling WM_PAINT message.
+ *
+ * Paints to the client's viewport using the DIB created in win32ResizeDeviceIndependentBitmapSeciton().
+ * 
+ * @NOTE(JM) does this need to be it's own function? Currently just one line.
+ *
+ * @param window		The window handle
+ * @param x			The client viewport top left position
+ * @param y			The client viewport bottom right position
+ * @param width		The client viewport width
+ * @param height		The client viewport height
+ */
 internal_func void win32UpdateViewport(HDC deviceHandleForWindow, 
                                         long x, 
                                         long y, 
