@@ -46,7 +46,7 @@ global_var void *bitmapMemory;
 LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 internal_func void win32ResizeDeviceIndependentBitmapSeciton();
 internal_func void win32UpdateViewport(HDC deviceHandleForWindow, long x, long y, long width, long height);
-internal_func void writeToBitmap(int viewportWidth, int viewportHeight, int bytesPerPixel, int xOffset, int yOffset);
+internal_func void writeToBitmap(int viewportWidth, int viewportHeight, int bytesPerPixel, int redOffset, int greenOffset);
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -106,8 +106,8 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 	running = true;
 
-    int offsetOne = 0;
-    int offsetTwo = 0;
+    int redOffset = 0;
+    int greenOffset = 0;
 
 	while (running) {
 
@@ -134,8 +134,7 @@ int CALLBACK WinMain(HINSTANCE instance,
         // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
         // application has been launched, so we'll have built the window and 
         // declared viewport height, width etc by this point.
-        writeToBitmap(viewportWidth, viewportHeight, bytesPerPixel, offsetOne, offsetTwo);
-
+        writeToBitmap(viewportWidth, viewportHeight, bytesPerPixel, redOffset, greenOffset);
 
         HDC deviceHandleForWindow = GetDC(window);
 
@@ -148,8 +147,8 @@ int CALLBACK WinMain(HINSTANCE instance,
         win32UpdateViewport(deviceHandleForWindow, 0, 0, width, height);
         ReleaseDC(window, deviceHandleForWindow);
 
-        offsetOne = (offsetOne++);
-        offsetTwo = (offsetTwo++);
+        redOffset = (redOffset++);
+        greenOffset = (greenOffset++);
 
 	} // running
 
@@ -352,8 +351,8 @@ internal_func void win32UpdateViewport(HDC deviceHandleForWindow,
 internal_func void writeToBitmap(int viewportWidth, 
                                     int viewportHeight, 
                                     int bytesPerPixel,
-                                    int offsetOne, 
-                                    int offsetTwo) {
+                                    int redOffset,
+                                    int greenOffset) {
 
     // Calculate the width in bytes per row.
     int byteWidthPerRow = (viewportWidth * bytesPerPixel);
@@ -366,7 +365,8 @@ internal_func void writeToBitmap(int viewportWidth,
 
     // Create a loop that iterates for the same number of rows we have for the viewport. 
     // (We know the number of pixel rows from the viewport height)
-    for (int i = 0; i < viewportHeight; i++) {
+    // We name the iterator x to denote the x axis (along the corridor)
+    for (int x = 0; x < viewportHeight; x++) {
 
         // We know that each pixel is 4 bytes wide (bytesPerPixel) so we make
         // our pointer the same width to grab the relevant block of memory for
@@ -375,7 +375,8 @@ internal_func void writeToBitmap(int viewportWidth,
 
         // Create a loop that iterates for the same number of columns we have for the viewport.
         // (We know the number of pixel columns from the viewport width)
-        for (int x = 0; x < viewportWidth; x++) {
+        // We name the iterator y to denote the y axis (up the stairs)
+        for (int y = 0; y < viewportWidth; y++) {
 
             /*
              * Write to this pixel...
@@ -432,8 +433,8 @@ internal_func void writeToBitmap(int viewportWidth,
             *pixel = ((red << 16) | (green << 8) | blue);
             */
 
-            uint8_t red = (uint8_t)(x + offsetOne);  // Grab the first 8 bits of the variable x and add offset 1
-            uint8_t green = (uint8_t)(i + offsetTwo);  // Grab the first 8 bits of the variable i and add offset 2
+            uint8_t red = (uint8_t)(x + redOffset);  // Grab the first 8 bits of the variable x and add offset 1
+            uint8_t green = (uint8_t)(y + greenOffset);  // Grab the first 8 bits of the variable i and add offset 2
             uint8_t blue = 0;
             *pixel = ((red << 16) | (green << 8) | blue);
 
