@@ -346,9 +346,16 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
             // @JM(Note) Method three. Bit shifting and bitwise oring the 
             // individual 1 byte variables into the themselves, then setting
             // that to the pixel variable's value. (One write to memory)
+            /*
             uint8_t red     = 0xcf;
             uint8_t green   = 0x4a;
             uint8_t blue    = 0xb8;
+            *pixel = ((red << 16) | (green << 8) | blue);
+            */
+
+            uint8_t red     = (uint8_t)x;  // Grab the first 8 bits of the variable x
+            uint8_t green   = (uint8_t)i;  // Grab the first 8 bits of the variable i
+            uint8_t blue    = 0;
             *pixel = ((red << 16) | (green << 8) | blue);
             
             // Move the pointer forward to the start of the next 4 byte block
