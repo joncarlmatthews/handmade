@@ -1,12 +1,22 @@
+// Windows API.
 #include <windows.h>
+
+// Typedefs that specify exact-width integer types for increased code portability.
 #include <stdint.h>
+
+/*
+ * char:        (1)     int8_t  / uint8_t
+ * short:       (2)     int16_t / uint16_t
+ * int:         (4)     int32_t / uint32_t
+ * long long:   (8)     int64_t / uint64_t
+ */
 
 #define global_var          static; // Global variables
 #define local_persist_var   static; // Static variables within a local scope (e.g. case statement, function)
 #define internal_func       static; // Functions that are only available within the file they're declared in
 
 // I know this wont change, but it's to help me read the code, instead of seeing
-//things multiplied by 8 all over the place.
+// things multiplied by 8 all over the place.
 global_var int bitsPerByte = 8;
 
 // Whether or not the application is running
@@ -147,7 +157,7 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
 		// Sent after the window's size has changed (window resize).
 		case WM_SIZE: {
-			OutputDebugString("WM_SIZE!\n");
+			OutputDebugString("WM_SIZE\n");
 
             // Window resized. Get the new window's viewport dimensions.
 			// We can do this by calling GetClientRect. RECT.right and RECT.bottom
@@ -181,7 +191,7 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 		// Request to paint a portion of an application's window.
 		case WM_PAINT: {
 
-			OutputDebugString("WM_PAINT!\n");
+			OutputDebugString("WM_PAINT\n");
 
 			// Prepare the window for painting and get the device context.
             PAINTSTRUCT paint;
@@ -270,28 +280,57 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
 
     // Now actually draw to the window.
 
-    // First cast the bitmapMemory from a void * so that C treats it as a pointer to just
-    // bytes in memory. To do this cast it as an 8-bit unsigned integer (aka unsigned char)
+    // Calculate the width in bytes per row.
+    int byteWidthPerRow = (viewportWidth * bytesPerPixel);
+
+    // Create a pointer to bitmapMemory
+    // In order for us to have maximum control over the pointer arithmatic, we cast it to
+    // an 1 byte datatype. This enables us to step through the memory block 1 byte
+    // at a time.
     uint8_t *row = (uint8_t *)bitmapMemory;
 
-    //int pitch = (viewportWidth * bytesPerPixel);
-
-    OutputDebugString("Viewport height: ");
-
-    // Loop over each row. (Pixel row, from left to right)
+    // Create a loop that iterates for the same number of rows we have for the viewport. 
+    // (We know the number of pixel rows from the viewport height)
     for (int i = 0; i < viewportHeight; i++) {
 
-        //OutputDebugString("Row: %i \n", i);
-        //wsprintf("Row: %i \n", *i);
-        OutputDebugString("Row: ");
-        OutputDebugString((char *)i);
-        OutputDebugString("\n");
+        // We know that each pixel is 4 bytes wide (bytesPerPixel) so we make
+        // our pointer the same width to grab the relevant block of memory for
+        // each pixel. (32 bits = 4 bytes)
+        uint32_t *pixel = (uint32_t *)row;
 
-        // For each row, loop over each pixel in the row
-        for (int i = 0; i < viewportWidth; i++){
+        // Create a loop that iterates for the same number of columns we have for the viewport.
+        // (We know the number of pixel columns from the viewport width)
+        for (int x = 0; x < viewportWidth; x++){
 
+            // Write to this pixel...
+
+            /*
+             * Each pixel looks like this (in hex): 00 00 00 00
+             * Each of the 00 represents 1 byte
+            */
+
+            uint8_t *r = (uint8_t *)pixel;
+            r = (r + 2);
+            *r = 32;
+
+            uint8_t *g = (uint8_t *)pixel;
+            g = (g + 1);
+            *g = 70;
+
+            uint8_t *b = (uint8_t *)pixel;
+            *b = 166;
+            
+            // Move the pointer forward to the start of the next 4 byte block
+            pixel = (pixel + 1);
         }
+
+        // Move the row pointer forward by the byte width of the row so that for
+        // the next iteration of the row we're then starting at the first byte
+        // of that particular row
+        row = (row + byteWidthPerRow);
     }
+
+    
 }
 
 /*
