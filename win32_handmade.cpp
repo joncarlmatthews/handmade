@@ -95,27 +95,18 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 		MSG message;
 
-		BOOL getMessageRes;
-
 		// Message loop. Retrieves all messages (from the calling thread's message queue)
 		// that are sent to the window. E.g. clicks and key inputs.
-		getMessageRes = GetMessage(&message, windowHandle, 0, 0);
-		if (getMessageRes > 0) {
+        while (PeekMessage(&message, windowHandle, 0, 0, PM_REMOVE)) {
 
-			// Get the message ready for despatch.
-			TranslateMessage(&message);
+            // Get the message ready for despatch.
+            TranslateMessage(&message);
 
-			// Dispatch the message to the application's window procedure.
-			// @link win32MainWindowCallback
-			DispatchMessage(&message);
-						
-		}else {
+            // Dispatch the message to the application's window procedure.
+            // @link win32MainWindowCallback
+            DispatchMessage(&message);
 
-			// handle the error and exit
-			OutputDebugString("Error\n");
-			break;
-						
-		}
+        }
 
 	} // running
 
@@ -182,6 +173,11 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 			OutputDebugString("WM_CLOSE\n");
 			running = false;
 		} break;
+
+        case WM_QUIT: {
+            OutputDebugString("WM_QUIT\n");
+            running = false;
+        } break;
 
 		// Called when the user makes the window active (e.g. by tabbing to it).
 		case WM_ACTIVATEAPP: {
@@ -302,13 +298,23 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
         // (We know the number of pixel columns from the viewport width)
         for (int x = 0; x < viewportWidth; x++){
 
-            // Write to this pixel...
-
             /*
+             * Write to this pixel...
+             *
              * Each pixel looks like this (in hex): 00 00 00 00
-             * Each of the 00 represents 1 byte
+             * Each of the 00 represents 1 of our 4-byte pixels.
+             *
+             * As the order of bytes is little endian, the RGB bytes are backwards
+             * when writting to them:
+             *
+             * B    G   R   Padding
+             * 00   00  00  00
             */
 
+            // @JM(Note) Method one. Setting a pointer at the start of the pixel
+            // and then moving it into the coorect place in memory before the 
+            // write. (Three writes to memory)
+            /*
             uint8_t *r = (uint8_t *)pixel;
             r = (r + 2);
             *r = 32;
@@ -323,6 +329,27 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
             uint8_t *padding = (uint8_t *)pixel;
             padding = (padding + 3);
             *padding = 0;
+            */
+
+            // @JM(Note) Method two. Bit shifting the individual 1 byte variables
+            // into the pixel location, whilst bitwise oring them into the pixel
+            // to maintain pixel's previous values. (Three writes to memory)
+            /*
+            uint8_t red = 51;
+            uint8_t green = 193;
+            uint8_t blue = 67;
+            *pixel = (red << 16 | *pixel);
+            *pixel = (green << 8 | *pixel);
+            *pixel = (blue | *pixel);
+            */
+
+            // @JM(Note) Method three. Bit shifting and bitwise oring the 
+            // individual 1 byte variables into the themselves, then setting
+            // that to the pixel variable's value. (One write to memory)
+            uint8_t red     = 0xcf;
+            uint8_t green   = 0x4a;
+            uint8_t blue    = 0xb8;
+            *pixel = ((red << 16) | (green << 8) | blue);
             
             // Move the pointer forward to the start of the next 4 byte block
             pixel = (pixel + 1);
