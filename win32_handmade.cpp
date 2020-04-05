@@ -319,6 +319,10 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
 
             uint8_t *b = (uint8_t *)pixel;
             *b = 166;
+
+            uint8_t *padding = (uint8_t *)pixel;
+            padding = (padding + 3);
+            *padding = 0;
             
             // Move the pointer forward to the start of the next 4 byte block
             pixel = (pixel + 1);
