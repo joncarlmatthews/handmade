@@ -22,6 +22,20 @@ global_var int bitsPerByte = 8;
 // Whether or not the application is running
 global_var bool running;
 
+// The width in pixels of the applications viewport.
+global_var long viewportWidth;
+
+// The height in pixels of the applications viewport.
+global_var long viewportHeight;
+
+// How many bytes do we need per pixel? Our pixels will be writeToBitmaped using
+// RBG colours. Therefore we need 1 byte for R, 1 byte for G and 1 byte for B (3)
+// However you should always align your bytes in alignment with the byte 
+// boundaries. E.g. 4, 8, 16, 32 etc. Therefore will will add 1 extra byte 
+// for padding. Apparently there is a penalty of some sort for not doing so. 
+// (Day 004)
+global_var int bytesPerPixel = 4;
+
 // Bitmap info for creating when creating the DIB.
 global_var BITMAPINFO bitmapInfo;
 
@@ -30,8 +44,9 @@ global_var void *bitmapMemory;
 
 // Function signatures
 LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
-internal_func void win32ResizeDeviceIndependentBitmapSeciton(long width, long height);
+internal_func void win32ResizeDeviceIndependentBitmapSeciton();
 internal_func void win32UpdateViewport(HDC deviceHandleForWindow, long x, long y, long width, long height);
+internal_func void writeToBitmap(int viewportWidth, int viewportHeight, int bytesPerPixel, int xOffset, int yOffset);
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -69,7 +84,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 	}
 
 	// Physically open the window using CreateWindowEx
-	HWND windowHandle = CreateWindowEx(NULL,
+	HWND window = CreateWindowEx(NULL,
                                         windowClass.lpszClassName,
                                         "Handmade Hero",
                                         WS_OVERLAPPEDWINDOW|WS_VISIBLE,
@@ -82,14 +97,17 @@ int CALLBACK WinMain(HINSTANCE instance,
                                         instance,
                                         NULL);
 
-	if (!windowHandle) {
+	if (!window) {
 
 		// TODO(JM) Log error.
-		OutputDebugString("Error 2. windowHandle not created via CreateWindowEx\n");
+		OutputDebugString("Error 2. window not created via CreateWindowEx\n");
 		return FALSE;
 	}
 
 	running = true;
+
+    int offsetOne = 0;
+    int offsetTwo = 0;
 
 	while (running) {
 
@@ -97,7 +115,11 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 		// Message loop. Retrieves all messages (from the calling thread's message queue)
 		// that are sent to the window. E.g. clicks and key inputs.
-        while (PeekMessage(&message, windowHandle, 0, 0, PM_REMOVE)) {
+        while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
+
+            if (message.message == WM_QUIT) {
+                running = false;
+            }
 
             // Get the message ready for despatch.
             TranslateMessage(&message);
@@ -107,6 +129,27 @@ int CALLBACK WinMain(HINSTANCE instance,
             DispatchMessage(&message);
 
         }
+
+        // After processing our messages, we can now (in our while running = true
+        // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
+        // application has been launched, so we'll have built the window and 
+        // declared viewport height, width etc by this point.
+        writeToBitmap(viewportWidth, viewportHeight, bytesPerPixel, offsetOne, offsetTwo);
+
+
+        HDC deviceHandleForWindow = GetDC(window);
+
+        RECT clientRect;
+        GetClientRect(window, &clientRect);
+
+        long width = clientRect.right;
+        long height = clientRect.bottom;
+
+        win32UpdateViewport(deviceHandleForWindow, 0, 0, width, height);
+        ReleaseDC(window, deviceHandleForWindow);
+
+        offsetOne = (offsetOne++);
+        offsetTwo = (offsetTwo++);
 
 	} // running
 
@@ -156,8 +199,11 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 			RECT clientRect;
 			GetClientRect(window, &clientRect);
 
+            viewportWidth   = clientRect.right;
+            viewportHeight  = clientRect.bottom;
+
             // Call our function for actually handling the window resize.
-			win32ResizeDeviceIndependentBitmapSeciton(clientRect.right, clientRect.bottom);
+			win32ResizeDeviceIndependentBitmapSeciton();
 
 		} break;
 
@@ -239,7 +285,7 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param width		The client viewport width
  * @param height	The client viewport height
  */
-internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth, long viewportHeight)
+internal_func void win32ResizeDeviceIndependentBitmapSeciton()
 {
 	// Does the bitmapMemory already exist from a previous WM_SIZE call?
 	if (bitmapMemory != NULL) {
@@ -249,14 +295,6 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
 		// (win32ResizeDeviceIndependentBitmapSeciton) is called on a window resize.
 		VirtualFree(bitmapMemory, NULL, MEM_RELEASE);
 	}
-
-	// How many bytes do we need per pixel? Our pixels will be rendered using
-	// RBG colours. Therefore we need 1 byte for R, 1 byte for G and 1 byte for B (3)
-	// However you should always align your bytes in alignment with the byte 
-	// boundaries. E.g. 4, 8, 16, 32 etc. Therefore will will add 1 extra byte 
-	// for padding. Apparently there is a penalty of some sort for not doing so. 
-	// (Day 004)
-	int bytesPerPixel = 4;
 
 	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
 	bitmapInfo.bmiHeader.biWidth = viewportWidth;
@@ -272,9 +310,50 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySize
-	bitmapMemory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+	bitmapMemory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE); 
+}
 
-    // Now actually draw to the window.
+/*
+ * Function for handling WM_PAINT message.
+ *
+ * Paints to the client's viewport using the DIB created in win32ResizeDeviceIndependentBitmapSeciton().
+ * 
+ * @NOTE(JM) does this need to be it's own function? Currently just one line.
+ *
+ * @param window		The window handle
+ * @param x			The client viewport top left position
+ * @param y			The client viewport bottom right position
+ * @param width		The client viewport width
+ * @param height		The client viewport height
+ */
+internal_func void win32UpdateViewport(HDC deviceHandleForWindow, 
+                                        long x, 
+                                        long y, 
+                                        long width, 
+                                        long height)
+{
+	// StretchDIBits function copies the data of a rectangle of pixels to 
+	// the specified destination.
+	StretchDIBits(deviceHandleForWindow,
+                    x,
+                    y,
+                    width,
+                    height,
+                    x,
+                    y,
+                    width,
+                    height,
+                    bitmapMemory,
+                    &bitmapInfo,
+                    DIB_RGB_COLORS,
+                    SRCCOPY);
+}
+
+internal_func void writeToBitmap(int viewportWidth, 
+                                    int viewportHeight, 
+                                    int bytesPerPixel,
+                                    int offsetOne, 
+                                    int offsetTwo) {
 
     // Calculate the width in bytes per row.
     int byteWidthPerRow = (viewportWidth * bytesPerPixel);
@@ -296,7 +375,7 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
 
         // Create a loop that iterates for the same number of columns we have for the viewport.
         // (We know the number of pixel columns from the viewport width)
-        for (int x = 0; x < viewportWidth; x++){
+        for (int x = 0; x < viewportWidth; x++) {
 
             /*
              * Write to this pixel...
@@ -353,11 +432,11 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
             *pixel = ((red << 16) | (green << 8) | blue);
             */
 
-            uint8_t red     = (uint8_t)x;  // Grab the first 8 bits of the variable x
-            uint8_t green   = (uint8_t)i;  // Grab the first 8 bits of the variable i
-            uint8_t blue    = 0;
+            uint8_t red = (uint8_t)(x + offsetOne);  // Grab the first 8 bits of the variable x and add offset 1
+            uint8_t green = (uint8_t)(i + offsetTwo);  // Grab the first 8 bits of the variable i and add offset 2
+            uint8_t blue = 0;
             *pixel = ((red << 16) | (green << 8) | blue);
-            
+
             // Move the pointer forward to the start of the next 4 byte block
             pixel = (pixel + 1);
         }
@@ -367,43 +446,5 @@ internal_func void win32ResizeDeviceIndependentBitmapSeciton(long viewportWidth,
         // of that particular row
         row = (row + byteWidthPerRow);
     }
-
-    
-}
-
-/*
- * Function for handling WM_PAINT message.
- *
- * Paints to the client's viewport using the DIB created in win32ResizeDeviceIndependentBitmapSeciton().
- * 
- * @NOTE(JM) does this need to be it's own function? Currently just one line.
- *
- * @param window		The window handle
- * @param x			The client viewport top left position
- * @param y			The client viewport bottom right position
- * @param width		The client viewport width
- * @param height		The client viewport height
- */
-internal_func void win32UpdateViewport(HDC deviceHandleForWindow, 
-                                        long x, 
-                                        long y, 
-                                        long width, 
-                                        long height)
-{
-	// StretchDIBits function copies the data of a rectangle of pixels to 
-	// the specified destination.
-	StretchDIBits(deviceHandleForWindow,
-                    x,
-                    y,
-                    width,
-                    height,
-                    x,
-                    y,
-                    width,
-                    height,
-                    bitmapMemory,
-                    &bitmapInfo,
-                    DIB_RGB_COLORS,
-                    SRCCOPY);
 }
 
