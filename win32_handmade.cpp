@@ -2,51 +2,51 @@
 #include <windows.h>
 
 // Typedefs that specify exact-width integer types for increased code portability.
-#include <stdint.h>
-
 /*
  * char:        (1)     int8_t  / uint8_t
  * short:       (2)     int16_t / uint16_t
  * int:         (4)     int32_t / uint32_t
  * long long:   (8)     int64_t / uint64_t
  */
+#include <stdint.h>
 
 #define global_var          static; // Global variables
 #define local_persist_var   static; // Static variables within a local scope (e.g. case statement, function)
 #define internal_func       static; // Functions that are only available within the file they're declared in
 
 // I know this wont change, but it's to help me read the code, instead of seeing
-// things multiplied by 8 all over the place.
-global_var int bitsPerByte = 8;
+// things multiplied by what might seem like an arbitrary 8 all over the place.
+const int BITS_PER_BYTE = 8;
+
+struct win32OffScreenBuffer {
+
+    // The width in pixels of the buffer.
+    uint32_t width;
+
+    // The height in pixels of the buffer.
+    uint32_t height;
+
+    // 1 byte each for R, G & B and 1 byte for padding to match byte boundries (4)
+    uint16_t bytesPerPixel;
+
+    // The number of bytes per row. (width * bytesPerPixel)
+    uint32_t byteWidthPerRow;
+
+    // Bitmap parameters
+    BITMAPINFO info;
+
+    // Pointer to an allocated block of heap memory to hold the data of the buffer.
+    void *memory;
+};
 
 // Whether or not the application is running
 global_var bool running;
 
-// The width in pixels of the applications viewport.
-global_var long viewportWidth;
-
-// The height in pixels of the applications viewport.
-global_var long viewportHeight;
-
-// How many bytes do we need per pixel? Our pixels will be writeToBitmaped using
-// RBG colours. Therefore we need 1 byte for R, 1 byte for G and 1 byte for B (3)
-// However you should always align your bytes in alignment with the byte 
-// boundaries. E.g. 4, 8, 16, 32 etc. Therefore will will add 1 extra byte 
-// for padding. Apparently there is a penalty of some sort for not doing so. 
-// (Day 004)
-global_var int bytesPerPixel = 4;
-
-// Bitmap info for creating when creating the DIB.
-global_var BITMAPINFO bitmapInfo;
-
-// Bitmap memory for when creating the DIB.
-global_var void *bitmapMemory;
+// Create the Win32 off screen buffer.
+global_var win32OffScreenBuffer backBuffer;
 
 // Function signatures
-LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
-internal_func void win32ResizeDeviceIndependentBitmapSeciton();
-internal_func void win32UpdateViewport(HDC deviceHandleForWindow, long x, long y, long width, long height);
-internal_func void writeToBitmap(int viewportWidth, int viewportHeight, int bytesPerPixel, int redOffset, int greenOffset);
+#include "func_sig.h"
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -65,7 +65,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 	WNDCLASS windowClass = {};
 
 	// Define the window's attributes. @see https://msdn.microsoft.com/en-us/library/windows/desktop/ff729176(v=vs.85).aspx
-	windowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
+	windowClass.style = CS_HREDRAW|CS_VREDRAW;
 
 	// Callback to handle any messages sent to the window (resize, close etc).
 	windowClass.lpfnWndProc = win32MainWindowCallback;
@@ -85,17 +85,17 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 	// Physically open the window using CreateWindowEx
 	HWND window = CreateWindowEx(NULL,
-                                        windowClass.lpszClassName,
-                                        "Handmade Hero",
-                                        WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-                                        CW_USEDEFAULT,
-                                        CW_USEDEFAULT,
-                                        CW_USEDEFAULT,
-                                        CW_USEDEFAULT,
-                                        NULL,
-                                        NULL,
-                                        instance,
-                                        NULL);
+                                    windowClass.lpszClassName,
+                                    "Handmade Hero",
+                                    WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+                                    CW_USEDEFAULT,
+                                    CW_USEDEFAULT,
+                                    CW_USEDEFAULT,
+                                    CW_USEDEFAULT,
+                                    NULL,
+                                    NULL,
+                                    instance,
+                                    NULL);
 
 	if (!window) {
 
@@ -134,17 +134,15 @@ int CALLBACK WinMain(HINSTANCE instance,
         // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
         // application has been launched, so we'll have built the window and 
         // declared viewport height, width etc by this point.
-        writeToBitmap(viewportWidth, viewportHeight, bytesPerPixel, redOffset, greenOffset);
+        writeToBufferBitmap(backBuffer, redOffset, greenOffset);
 
         HDC deviceHandleForWindow = GetDC(window);
 
         RECT clientRect;
         GetClientRect(window, &clientRect);
 
-        long width = clientRect.right;
-        long height = clientRect.bottom;
+        win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientRect);
 
-        win32UpdateViewport(deviceHandleForWindow, 0, 0, width, height);
         ReleaseDC(window, deviceHandleForWindow);
 
         redOffset = (redOffset++);
@@ -188,7 +186,8 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
 	switch (message) {
 
-		// Sent after the window's size has changed (window resize).
+        // This message is *only* sent when the application is first loaded OR
+        // when the window is resized.
 		case WM_SIZE: {
 			OutputDebugString("WM_SIZE\n");
 
@@ -198,11 +197,11 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 			RECT clientRect;
 			GetClientRect(window, &clientRect);
 
-            viewportWidth   = clientRect.right;
-            viewportHeight  = clientRect.bottom;
+            int viewportWidth   = clientRect.right;
+            int viewportHeight  = clientRect.bottom;
 
             // Call our function for actually handling the window resize.
-			win32ResizeDeviceIndependentBitmapSeciton();
+			win32InitBuffer(&backBuffer, clientRect);
 
 		} break;
 
@@ -234,22 +233,17 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
 			OutputDebugString("WM_PAINT\n");
 
-			// Prepare the window for painting and get the device context.
+			// Prepare the window for painting.
             PAINTSTRUCT paint;
 			HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
-			// Grab the x and y coords and the width and height from the paint struct
-			// written to by BeginPaint
-			long x = paint.rcPaint.left;
-			long y = paint.rcPaint.top;
-			long width = paint.rcPaint.right;
-			long height = paint.rcPaint.bottom;
+            RECT clientRect;
+            GetClientRect(window, &clientRect);
 
-			win32UpdateViewport(deviceHandleForWindow, x, y, width, height);
+			win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientRect);
 
 			// End the paint request and releases the device context.
 			EndPaint(window, &paint);
-
 		} break;
 
 		// The standard request from GetMessage().
@@ -271,102 +265,103 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 }
 
 /*
- * Function for handling WM_SIZE message.
+ * This function will create a new DIB, or resize it if its already been created.
+ * during a previous call to this function.
  *
- * This method will create a new DIB, or resize it if its already been created.
- * during a previous call to WM_SIZE.
- *
- * A Device Independent Bitmap (DIB) is what Windows calls things
+ * A DIB (Device Independent Bitmap) is what Windows calls things
  * that we can write into, which it can then display to the screen
  * using it's internal Graphics Device Interface (GDI).
  *
- *
- * @param width		The client viewport width
- * @param height	The client viewport height
+ * @param win32OffScreenBuffer  *buffer     A pointer to the Win32 off screen buffer
+ * @param RECT                  clientRect  The window's client rect
  */
-internal_func void win32ResizeDeviceIndependentBitmapSeciton()
+internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, RECT clientRect)
 {
+    // buffer->foo is a dereferencing shorthand for (*buffer).foo
+
+    // Grab the window's viewport height and width.
+    int width = clientRect.right;
+    int height = clientRect.bottom;
+
 	// Does the bitmapMemory already exist from a previous WM_SIZE call?
-	if (bitmapMemory != NULL) {
+	if (buffer->memory != NULL) {
 
 		// Yes, then free the memorty allocated.
 		// We do this because we have to redraw it as this method
-		// (win32ResizeDeviceIndependentBitmapSeciton) is called on a window resize.
-		VirtualFree(bitmapMemory, NULL, MEM_RELEASE);
+		// (win32InitBuffer) is called on a window resize.
+		VirtualFree(buffer->memory, NULL, MEM_RELEASE);
 	}
 
-	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
-	bitmapInfo.bmiHeader.biWidth = viewportWidth;
-	bitmapInfo.bmiHeader.biHeight = -viewportHeight; // If negative, it's drawn top down. If positive it's drawn bottom up.
-	bitmapInfo.bmiHeader.biPlanes = 1;
-	bitmapInfo.bmiHeader.biBitCount = (bytesPerPixel * bitsPerByte);
-	bitmapInfo.bmiHeader.biCompression = BI_RGB;
+    buffer->bytesPerPixel   = 4;
+    buffer->width           = width;
+    buffer->height          = height;
+
+	buffer->info.bmiHeader.biSize = sizeof(buffer->info.bmiHeader);
+	buffer->info.bmiHeader.biWidth = width;
+	buffer->info.bmiHeader.biHeight = -height; // If negative, it's drawn top down. If positive it's drawn bottom up.
+	buffer->info.bmiHeader.biPlanes = 1;
+	buffer->info.bmiHeader.biBitCount = (buffer->bytesPerPixel * BITS_PER_BYTE);
+	buffer->info.bmiHeader.biCompression = BI_RGB;
 
 	// How many bytes do we need for our bitmap?
 	// viewport width * viewport height = viewport area
 	// then viewport area * how many bytes we need per pixel.
-	int bitmapMemorySize = ((viewportWidth * viewportHeight) * bytesPerPixel);
+	int bitmapMemorySize = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySize
-	bitmapMemory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE); 
+    buffer->memory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+
+    // Calculate the width in bytes per row.
+    buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
 }
 
 /*
  * Function for handling WM_PAINT message.
  *
- * Paints to the client's viewport using the DIB created in win32ResizeDeviceIndependentBitmapSeciton().
- * 
- * @NOTE(JM) does this need to be it's own function? Currently just one line.
+ * Copies a win32OffScreenBuffer's memory to the actual window - which will then
+ * display its contents to the screen.
  *
- * @param window		The window handle
- * @param x			The client viewport top left position
- * @param y			The client viewport bottom right position
- * @param width		The client viewport width
- * @param height		The client viewport height
+ *
+ * @param deviceHandleForWindow     The window handle
+ * @param win32OffScreenBuffer      The buffer
+ * @param width		                The window's viewport width
+ * @param height                    The window's viewport height
  */
-internal_func void win32UpdateViewport(HDC deviceHandleForWindow, 
-                                        long x, 
-                                        long y, 
-                                        long width, 
-                                        long height)
+internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow, 
+                                            win32OffScreenBuffer buffer,
+                                            RECT clientRect)
 {
 	// StretchDIBits function copies the data of a rectangle of pixels to 
 	// the specified destination.
 	StretchDIBits(deviceHandleForWindow,
-                    x,
-                    y,
-                    width,
-                    height,
-                    x,
-                    y,
-                    width,
-                    height,
-                    bitmapMemory,
-                    &bitmapInfo,
+                    0,
+                    0,
+                    clientRect.right,
+                    clientRect.bottom,
+                    0,
+                    0,
+                    buffer.width,
+                    buffer.height,
+                    buffer.memory,
+                    &buffer.info,
                     DIB_RGB_COLORS,
                     SRCCOPY);
 }
 
-internal_func void writeToBitmap(int viewportWidth, 
-                                    int viewportHeight, 
-                                    int bytesPerPixel,
-                                    int redOffset,
-                                    int greenOffset) {
-
-    // Calculate the width in bytes per row.
-    int byteWidthPerRow = (viewportWidth * bytesPerPixel);
+internal_func void writeToBufferBitmap(win32OffScreenBuffer buffer, int redOffset, int greenOffset) 
+{
 
     // Create a pointer to bitmapMemory
     // In order for us to have maximum control over the pointer arithmatic, we cast it to
     // an 1 byte datatype. This enables us to step through the memory block 1 byte
     // at a time.
-    uint8_t *row = (uint8_t *)bitmapMemory;
+    uint8_t *row = (uint8_t *)buffer.memory;
 
     // Create a loop that iterates for the same number of rows we have for the viewport. 
     // (We know the number of pixel rows from the viewport height)
     // We name the iterator x to denote the x axis (along the corridor)
-    for (int x = 0; x < viewportHeight; x++) {
+    for (int x = 0; x < buffer.height; x++) {
 
         // We know that each pixel is 4 bytes wide (bytesPerPixel) so we make
         // our pointer the same width to grab the relevant block of memory for
@@ -376,7 +371,7 @@ internal_func void writeToBitmap(int viewportWidth,
         // Create a loop that iterates for the same number of columns we have for the viewport.
         // (We know the number of pixel columns from the viewport width)
         // We name the iterator y to denote the y axis (up the stairs)
-        for (int y = 0; y < viewportWidth; y++) {
+        for (int y = 0; y < buffer.width; y++) {
 
             /*
              * Write to this pixel...
@@ -445,7 +440,7 @@ internal_func void writeToBitmap(int viewportWidth,
         // Move the row pointer forward by the byte width of the row so that for
         // the next iteration of the row we're then starting at the first byte
         // of that particular row
-        row = (row + byteWidthPerRow);
+        row = (row + buffer.byteWidthPerRow);
     }
 }
 
