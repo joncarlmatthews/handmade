@@ -61,30 +61,30 @@ int CALLBACK WinMain(HINSTANCE instance,
                         LPSTR commandLine, 
                         int showCode)
 {
-	// Create a new window struct and set all of it's values to 0.
-	WNDCLASS windowClass = {};
+    // Create a new window struct and set all of it's values to 0.
+    WNDCLASS windowClass = {};
 
-	// Define the window's attributes. @see https://msdn.microsoft.com/en-us/library/windows/desktop/ff729176(v=vs.85).aspx
-	windowClass.style = CS_HREDRAW|CS_VREDRAW;
+    // Define the window's attributes. @see https://msdn.microsoft.com/en-us/library/windows/desktop/ff729176(v=vs.85).aspx
+    windowClass.style = CS_HREDRAW|CS_VREDRAW;
 
-	// Callback to handle any messages sent to the window (resize, close etc).
-	windowClass.lpfnWndProc = win32MainWindowCallback;
+    // Callback to handle any messages sent to the window (resize, close etc).
+    windowClass.lpfnWndProc = win32MainWindowCallback;
 
-	// Instance of the running application.
-	windowClass.hInstance = instance;
-	windowClass.lpszClassName = "handmadeHeroWindowClass";
+    // Instance of the running application.
+    windowClass.hInstance = instance;
+    windowClass.lpszClassName = "handmadeHeroWindowClass";
 
-	// Registers the window class for subsequent use in calls to 
-	// the CreateWindowEx function.
-	if (!RegisterClass(&windowClass)) {
+    // Registers the window class for subsequent use in calls to 
+    // the CreateWindowEx function.
+    if (!RegisterClass(&windowClass)) {
 
-		// TODO(JM) Log error.
-		OutputDebugString("Error 1. windowClass not registered\n");
-		return FALSE;
-	}
+        // TODO(JM) Log error.
+        OutputDebugString("Error 1. windowClass not registered\n");
+        return FALSE;
+    }
 
-	// Physically open the window using CreateWindowEx
-	HWND window = CreateWindowEx(NULL,
+    // Physically open the window using CreateWindowEx
+    HWND window = CreateWindowEx(NULL,
                                     windowClass.lpszClassName,
                                     "Handmade Hero",
                                     WS_OVERLAPPEDWINDOW|WS_VISIBLE,
@@ -97,24 +97,24 @@ int CALLBACK WinMain(HINSTANCE instance,
                                     instance,
                                     NULL);
 
-	if (!window) {
+    if (!window) {
 
-		// TODO(JM) Log error.
-		OutputDebugString("Error 2. window not created via CreateWindowEx\n");
-		return FALSE;
-	}
+        // TODO(JM) Log error.
+        OutputDebugString("Error 2. window not created via CreateWindowEx\n");
+        return FALSE;
+    }
 
-	running = true;
+    running = true;
 
     int redOffset = 0;
     int greenOffset = 0;
 
-	while (running) {
+    while (running) {
 
-		MSG message;
+        MSG message;
 
-		// Message loop. Retrieves all messages (from the calling thread's message queue)
-		// that are sent to the window. E.g. clicks and key inputs.
+        // Message loop. Retrieves all messages (from the calling thread's message queue)
+        // that are sent to the window. E.g. clicks and key inputs.
         while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
 
             if (message.message == WM_QUIT) {
@@ -148,10 +148,10 @@ int CALLBACK WinMain(HINSTANCE instance,
         redOffset = (redOffset++);
         greenOffset = (greenOffset++);
 
-	} // running
+    } // running
 
-	// Close the application.
-	return(0);
+    // Close the application.
+    return(0);
 }
 
 /*
@@ -182,86 +182,86 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
                                             WPARAM wParam,
                                             LPARAM lParam)
 {
-	LRESULT result = 0;
+    LRESULT result = 0;
 
-	switch (message) {
+    switch (message) {
 
         // This message is *only* sent when the application is first loaded OR
         // when the window is resized.
-		case WM_SIZE: {
-			OutputDebugString("WM_SIZE\n");
+        case WM_SIZE: {
+            OutputDebugString("WM_SIZE\n");
 
             // Window resized. Get the new window's viewport dimensions.
-			// We can do this by calling GetClientRect. RECT.right and RECT.bottom
+            // We can do this by calling GetClientRect. RECT.right and RECT.bottom
             // are effectively width and height.
-			RECT clientRect;
-			GetClientRect(window, &clientRect);
+            RECT clientRect;
+            GetClientRect(window, &clientRect);
 
             int viewportWidth   = clientRect.right;
             int viewportHeight  = clientRect.bottom;
 
             // Call our function for actually handling the window resize.
-			win32InitBuffer(&backBuffer, clientRect);
+            win32InitBuffer(&backBuffer, clientRect);
 
-		} break;
+        } break;
 
-		case WM_DESTROY: {
-			// @TODO(JM) Handle as an error. Recreate window?
-			OutputDebugString("WM_DESTROY\n");
-			running = false;
-		} break;
+        case WM_DESTROY: {
+            // @TODO(JM) Handle as an error. Recreate window?
+            OutputDebugString("WM_DESTROY\n");
+            running = false;
+        } break;
 
-		// Called when the user requests to close the window.
-		case WM_CLOSE: {
-			// @TODO(JM) Display "are you sure" message to user?
-			OutputDebugString("WM_CLOSE\n");
-			running = false;
-		} break;
+        // Called when the user requests to close the window.
+        case WM_CLOSE: {
+            // @TODO(JM) Display "are you sure" message to user?
+            OutputDebugString("WM_CLOSE\n");
+            running = false;
+        } break;
 
         case WM_QUIT: {
             OutputDebugString("WM_QUIT\n");
             running = false;
         } break;
 
-		// Called when the user makes the window active (e.g. by tabbing to it).
-		case WM_ACTIVATEAPP: {
-			OutputDebugString("WM_ACTIVATEAPP\n");
-		} break;
+        // Called when the user makes the window active (e.g. by tabbing to it).
+        case WM_ACTIVATEAPP: {
+            OutputDebugString("WM_ACTIVATEAPP\n");
+        } break;
 
-		// Request to paint a portion of an application's window.
-		case WM_PAINT: {
+        // Request to paint a portion of an application's window.
+        case WM_PAINT: {
 
-			OutputDebugString("WM_PAINT\n");
+            OutputDebugString("WM_PAINT\n");
 
-			// Prepare the window for painting.
+            // Prepare the window for painting.
             PAINTSTRUCT paint;
-			HDC deviceHandleForWindow = BeginPaint(window, &paint);
+            HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
             RECT clientRect;
             GetClientRect(window, &clientRect);
 
-			win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientRect);
+            win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientRect);
 
-			// End the paint request and releases the device context.
-			EndPaint(window, &paint);
-		} break;
+            // End the paint request and releases the device context.
+            EndPaint(window, &paint);
+        } break;
 
-		// The standard request from GetMessage().
-		default: {
+        // The standard request from GetMessage().
+        default: {
 
-			//OutputDebugString("default\n");
+            //OutputDebugString("default\n");
 
-			// The default window procedure to provide default processing for 
+            // The default window procedure to provide default processing for 
             // any window messages not explicitly handled. It's required by the
             // Win32 API that every message is handled. And the docs specify
             // that DefWindowProc is called for all non handled messages.
             // @see https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-defwindowproca
-			result = DefWindowProc(window, message, wParam, lParam);
+            result = DefWindowProc(window, message, wParam, lParam);
 
-		} break;
-	}
+        } break;
+    }
 
-	return result;
+    return result;
 }
 
 /*
@@ -283,30 +283,30 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, RECT clientRect
     int width = clientRect.right;
     int height = clientRect.bottom;
 
-	// Does the bitmapMemory already exist from a previous WM_SIZE call?
-	if (buffer->memory != NULL) {
+    // Does the bitmapMemory already exist from a previous WM_SIZE call?
+    if (buffer->memory != NULL) {
 
-		// Yes, then free the memorty allocated.
-		// We do this because we have to redraw it as this method
-		// (win32InitBuffer) is called on a window resize.
-		VirtualFree(buffer->memory, NULL, MEM_RELEASE);
-	}
+        // Yes, then free the memorty allocated.
+        // We do this because we have to redraw it as this method
+        // (win32InitBuffer) is called on a window resize.
+        VirtualFree(buffer->memory, NULL, MEM_RELEASE);
+    }
 
     buffer->bytesPerPixel   = 4;
     buffer->width           = width;
     buffer->height          = height;
 
-	buffer->info.bmiHeader.biSize = sizeof(buffer->info.bmiHeader);
-	buffer->info.bmiHeader.biWidth = width;
-	buffer->info.bmiHeader.biHeight = -height; // If negative, it's drawn top down. If positive it's drawn bottom up.
-	buffer->info.bmiHeader.biPlanes = 1;
-	buffer->info.bmiHeader.biBitCount = (buffer->bytesPerPixel * BITS_PER_BYTE);
-	buffer->info.bmiHeader.biCompression = BI_RGB;
+    buffer->info.bmiHeader.biSize = sizeof(buffer->info.bmiHeader);
+    buffer->info.bmiHeader.biWidth = width;
+    buffer->info.bmiHeader.biHeight = -height; // If negative, it's drawn top down. If positive it's drawn bottom up.
+    buffer->info.bmiHeader.biPlanes = 1;
+    buffer->info.bmiHeader.biBitCount = (buffer->bytesPerPixel * BITS_PER_BYTE);
+    buffer->info.bmiHeader.biCompression = BI_RGB;
 
-	// How many bytes do we need for our bitmap?
-	// viewport width * viewport height = viewport area
-	// then viewport area * how many bytes we need per pixel.
-	int bitmapMemorySize = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
+    // How many bytes do we need for our bitmap?
+    // viewport width * viewport height = viewport area
+    // then viewport area * how many bytes we need per pixel.
+    int bitmapMemorySize = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySize
@@ -325,16 +325,16 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, RECT clientRect
  *
  * @param deviceHandleForWindow     The window handle
  * @param win32OffScreenBuffer      The buffer
- * @param width		                The window's viewport width
+ * @param width                        The window's viewport width
  * @param height                    The window's viewport height
  */
 internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow, 
                                             win32OffScreenBuffer buffer,
                                             RECT clientRect)
 {
-	// StretchDIBits function copies the data of a rectangle of pixels to 
-	// the specified destination.
-	StretchDIBits(deviceHandleForWindow,
+    // StretchDIBits function copies the data of a rectangle of pixels to 
+    // the specified destination.
+    StretchDIBits(deviceHandleForWindow,
                     0,
                     0,
                     clientRect.right,
