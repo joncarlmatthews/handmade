@@ -68,7 +68,7 @@ int CALLBACK WinMain(HINSTANCE instance,
                         int showCode)
 {
     // Firstly, create our back buffer.
-    win32InitBuffer(&backBuffer, 1024, 768);
+    win32InitBuffer(&backBuffer, 1024, 1023);
 
     // Create a new window struct and set all of it's values to 0.
     WNDCLASS windowClass = {};
@@ -300,14 +300,16 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
     // How many bytes do we need for our bitmap?
     // viewport width * viewport height = viewport area
     // then viewport area * how many bytes we need per pixel.
-    int bitmapMemorySize = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
+    int bitmapMemorySizeInBytes = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
-    // calculated bitmapMemorySize
-    buffer->memory = VirtualAlloc(NULL, bitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+    // calculated bitmapMemorySizeInBytes
+    buffer->memory = VirtualAlloc(NULL, bitmapMemorySizeInBytes, MEM_COMMIT, PAGE_READWRITE);
 
     // Calculate the width in bytes per row.
     buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
+
+    
 }
 
 /*
