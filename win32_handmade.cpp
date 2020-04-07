@@ -140,7 +140,7 @@ int CALLBACK WinMain(HINSTANCE instance,
         // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
         // application has been launched, so we'll have built the window and 
         // declared viewport height, width etc by this point.
-        writeToBufferBitmap(backBuffer, redOffset, greenOffset);
+        writeBitsToBufferMemory(backBuffer, redOffset, greenOffset);
 
         HDC deviceHandleForWindow = GetDC(window);
 
@@ -313,40 +313,13 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
 }
 
 /*
- * Function for handling WM_PAINT message.
+ * Writes bits to the buffer's memory. Sets the colour values for the individual 
+ * pixels (which are each 32 bits of the memory block).
  *
- * Copies a win32OffScreenBuffer's memory to the actual window - which will then
- * display its contents to the screen.
- *
- *
- * @param deviceHandleForWindow     The window handle
- * @param win32OffScreenBuffer      The buffer
- * @param width                        The window's viewport width
- * @param height                    The window's viewport height
+ * Once all the memory has been written to the buffer is ready to be drawn on
+ * screen
  */
-internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow, 
-                                            win32OffScreenBuffer buffer,
-                                            uint32_t width,
-                                            uint32_t height)
-{
-    // StretchDIBits function copies the data of a rectangle of pixels to 
-    // the specified destination.
-    StretchDIBits(deviceHandleForWindow,
-                    0,
-                    0,
-                    width,
-                    height,
-                    0,
-                    0,
-                    buffer.width,
-                    buffer.height,
-                    buffer.memory,
-                    &buffer.info,
-                    DIB_RGB_COLORS,
-                    SRCCOPY);
-}
-
-internal_func void writeToBufferBitmap(win32OffScreenBuffer buffer, int redOffset, int greenOffset) 
+internal_func void writeBitsToBufferMemory(win32OffScreenBuffer buffer, int redOffset, int greenOffset)
 {
 
     // Create a pointer to bitmapMemory
@@ -439,6 +412,40 @@ internal_func void writeToBufferBitmap(win32OffScreenBuffer buffer, int redOffse
         // of that particular row
         row = (row + buffer.byteWidthPerRow);
     }
+}
+
+/*
+ * Function for handling WM_PAINT message.
+ *
+ * Copies a win32OffScreenBuffer's memory to the actual window - which will then
+ * display its contents to the screen.
+ *
+ *
+ * @param deviceHandleForWindow     The window handle
+ * @param win32OffScreenBuffer      The buffer
+ * @param width                        The window's viewport width
+ * @param height                    The window's viewport height
+ */
+internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow, 
+                                            win32OffScreenBuffer buffer,
+                                            uint32_t width,
+                                            uint32_t height)
+{
+    // StretchDIBits function copies the data of a rectangle of pixels to 
+    // the specified destination.
+    StretchDIBits(deviceHandleForWindow,
+                    0,
+                    0,
+                    width,
+                    height,
+                    0,
+                    0,
+                    buffer.width,
+                    buffer.height,
+                    buffer.memory,
+                    &buffer.info,
+                    DIB_RGB_COLORS,
+                    SRCCOPY);
 }
 
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
