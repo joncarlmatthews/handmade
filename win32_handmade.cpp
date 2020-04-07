@@ -5,7 +5,7 @@
 /*
  * char:        (1)     int8_t  / uint8_t
  * short:       (2)     int16_t / uint16_t
- * int:         (4)     int32_t / uint32_t
+ * int & long:  (4)     int32_t / uint32_t
  * long long:   (8)     int64_t / uint64_t
  */
 #include <stdint.h>
@@ -18,8 +18,8 @@
 // things multiplied by what might seem like an arbitrary 8 all over the place.
 const int BITS_PER_BYTE = 8;
 
-struct win32OffScreenBuffer {
-
+struct win32OffScreenBuffer 
+{
     // The width in pixels of the buffer.
     uint32_t width;
 
@@ -37,6 +37,12 @@ struct win32OffScreenBuffer {
 
     // Pointer to an allocated block of heap memory to hold the data of the buffer.
     void *memory;
+};
+
+struct win32ClientDimensions 
+{
+    uint32_t width;
+    uint32_t height;
 };
 
 // Whether or not the application is running
@@ -138,10 +144,9 @@ int CALLBACK WinMain(HINSTANCE instance,
 
         HDC deviceHandleForWindow = GetDC(window);
 
-        RECT clientRect;
-        GetClientRect(window, &clientRect);
+        win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
-        win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientRect);
+        win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
 
         ReleaseDC(window, deviceHandleForWindow);
 
@@ -194,14 +199,10 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
             // Window resized. Get the new window's viewport dimensions.
             // We can do this by calling GetClientRect. RECT.right and RECT.bottom
             // are effectively width and height.
-            RECT clientRect;
-            GetClientRect(window, &clientRect);
-
-            int viewportWidth   = clientRect.right;
-            int viewportHeight  = clientRect.bottom;
+            win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
             // Call our function for actually handling the window resize.
-            win32InitBuffer(&backBuffer, clientRect);
+            win32InitBuffer(&backBuffer, clientDimensions.width, clientDimensions.height);
 
         } break;
 
@@ -237,10 +238,9 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
             PAINTSTRUCT paint;
             HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
-            RECT clientRect;
-            GetClientRect(window, &clientRect);
+            win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
-            win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientRect);
+            win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
 
             // End the paint request and releases the device context.
             EndPaint(window, &paint);
@@ -273,15 +273,11 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * using it's internal Graphics Device Interface (GDI).
  *
  * @param win32OffScreenBuffer  *buffer     A pointer to the Win32 off screen buffer
- * @param RECT                  clientRect  The window's client rect
+ * 
  */
-internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, RECT clientRect)
+internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width, uint32_t height)
 {
     // buffer->foo is a dereferencing shorthand for (*buffer).foo
-
-    // Grab the window's viewport height and width.
-    int width = clientRect.right;
-    int height = clientRect.bottom;
 
     // Does the bitmapMemory already exist from a previous WM_SIZE call?
     if (buffer->memory != NULL) {
@@ -330,15 +326,16 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, RECT clientRect
  */
 internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow, 
                                             win32OffScreenBuffer buffer,
-                                            RECT clientRect)
+                                            uint32_t width,
+                                            uint32_t height)
 {
     // StretchDIBits function copies the data of a rectangle of pixels to 
     // the specified destination.
     StretchDIBits(deviceHandleForWindow,
                     0,
                     0,
-                    clientRect.right,
-                    clientRect.bottom,
+                    width,
+                    height,
                     0,
                     0,
                     buffer.width,
@@ -444,3 +441,15 @@ internal_func void writeToBufferBitmap(win32OffScreenBuffer buffer, int redOffse
     }
 }
 
+internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
+{
+    RECT clientRect;
+    GetClientRect(window, &clientRect);
+
+    win32ClientDimensions dim;
+
+    dim.width = clientRect.right;
+    dim.height  = clientRect.bottom;
+
+    return dim;
+}
