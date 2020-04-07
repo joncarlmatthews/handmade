@@ -67,6 +67,9 @@ int CALLBACK WinMain(HINSTANCE instance,
                         LPSTR commandLine, 
                         int showCode)
 {
+    // Firstly, create our back buffer.
+    win32InitBuffer(&backBuffer, 1024, 768);
+
     // Create a new window struct and set all of it's values to 0.
     WNDCLASS windowClass = {};
 
@@ -195,15 +198,6 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
         // when the window is resized.
         case WM_SIZE: {
             OutputDebugString("WM_SIZE\n");
-
-            // Window resized. Get the new window's viewport dimensions.
-            // We can do this by calling GetClientRect. RECT.right and RECT.bottom
-            // are effectively width and height.
-            win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-
-            // Call our function for actually handling the window resize.
-            win32InitBuffer(&backBuffer, clientDimensions.width, clientDimensions.height);
-
         } break;
 
         case WM_DESTROY: {
@@ -265,18 +259,22 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
 }
 
 /*
- * This function will create a new DIB, or resize it if its already been created.
+ * This function will create a new DIB, or resize it if its already been created
  * during a previous call to this function.
  *
- * A DIB (Device Independent Bitmap) is what Windows calls things
- * that we can write into, which it can then display to the screen
- * using it's internal Graphics Device Interface (GDI).
+ * A DIB (Device Independent Bitmap) is what Windows calls things that we can 
+ * write into, which it can then display to the screen using it's internal 
+ * Graphics Device Interface (GDI).
  *
  * @param win32OffScreenBuffer  *buffer     A pointer to the Win32 off screen buffer
+ * @param int                   width       The width of the window's viewport
+ * @param int                   height      The height of the window's viewport
  * 
  */
 internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width, uint32_t height)
 {
+    OutputDebugString("Called win32InitBuffer\n");
+
     // buffer->foo is a dereferencing shorthand for (*buffer).foo
 
     // Does the bitmapMemory already exist from a previous WM_SIZE call?
@@ -321,7 +319,6 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
  */
 internal_func void writeBitsToBufferMemory(win32OffScreenBuffer buffer, int redOffset, int greenOffset)
 {
-
     // Create a pointer to bitmapMemory
     // In order for us to have maximum control over the pointer arithmatic, we cast it to
     // an 1 byte datatype. This enables us to step through the memory block 1 byte
@@ -431,8 +428,14 @@ internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow,
                                             uint32_t width,
                                             uint32_t height)
 {
+    // @TODO(JM) Do some maths to stop the buffer's height and width being
+    // skewed when the window's width and height doesn't match the aspect
+    // ratio that we want. (e.g. when someone manually resizes the window)
+    // ...
+
     // StretchDIBits function copies the data of a rectangle of pixels to 
-    // the specified destination.
+    // the specified destination. The first parameter is the handle for
+    // the destination's window that we want to write the data to.
     StretchDIBits(deviceHandleForWindow,
                     0,
                     0,
