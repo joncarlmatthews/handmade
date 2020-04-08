@@ -27,6 +27,7 @@ struct win32OffScreenBuffer
     uint32_t height;
 
     // 1 byte each for R, G & B and 1 byte for padding to match byte boundries (4)
+    // Therefore our pixels are always 32-bits wide and are in Little Endian memory order (backwards) 0xBBGGRRPP
     uint16_t bytesPerPixel;
 
     // The number of bytes per row. (width * bytesPerPixel)
@@ -74,7 +75,7 @@ int CALLBACK WinMain(HINSTANCE instance,
     WNDCLASS windowClass = {};
 
     // Define the window's attributes. @see https://msdn.microsoft.com/en-us/library/windows/desktop/ff729176(v=vs.85).aspx
-    windowClass.style = CS_HREDRAW|CS_VREDRAW;
+    windowClass.style = CS_HREDRAW|CS_VREDRAW|CS_OWNDC;
 
     // Callback to handle any messages sent to the window (resize, close etc).
     windowClass.lpfnWndProc = win32MainWindowCallback;
@@ -113,6 +114,11 @@ int CALLBACK WinMain(HINSTANCE instance,
         return FALSE;
     }
 
+    // Usually you would call GetDC, do your work and then call ReleaseDC within
+    // each loop, however because we specified CS_OWNDC, we can call it once
+    // and use it forever.
+    HDC deviceHandleForWindow = GetDC(window);
+
     running = true;
 
     int redOffset = 0;
@@ -145,16 +151,12 @@ int CALLBACK WinMain(HINSTANCE instance,
         // declared viewport height, width etc by this point.
         writeBitsToBufferMemory(backBuffer, redOffset, greenOffset);
 
-        HDC deviceHandleForWindow = GetDC(window);
-
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
         win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
 
-        ReleaseDC(window, deviceHandleForWindow);
-
-        redOffset = (redOffset++);
-        greenOffset = (greenOffset++);
+        redOffset       = (redOffset++);
+        greenOffset     = (greenOffset++);
 
     } // running
 
@@ -229,7 +231,12 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
             OutputDebugString("WM_PAINT\n");
 
             // Prepare the window for painting.
-            PAINTSTRUCT paint;
+
+            // The PAINTSTRUCT var contains the area that needs to be repainted, 
+            // however we dont need this as we simply repaint the entire window
+            // each time, not just the area that Windows tells us needs to be
+            // repainted.
+            PAINTSTRUCT paint; 
             HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
