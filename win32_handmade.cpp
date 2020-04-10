@@ -10,6 +10,9 @@
  */
 #include <stdint.h>
 
+// Xinput for receiving controller input. 
+#include <xinput.h>
+
 #define global_var          static; // Global variables
 #define local_persist_var   static; // Static variables within a local scope (e.g. case statement, function)
 #define internal_func       static; // Functions that are only available within the file they're declared in
@@ -18,6 +21,13 @@
 // things multiplied by what might seem like an arbitrary 8 all over the place.
 const int BITS_PER_BYTE = 8;
 
+// Display output debug strings?
+const bool DEBUG_OUTPUT = false;
+
+/**
+ * Struct for the Win32 screen buffer
+ *
+ */
 struct win32OffScreenBuffer 
 {
     // The width in pixels of the buffer.
@@ -40,6 +50,10 @@ struct win32OffScreenBuffer
     void *memory;
 };
 
+/**
+ * Helper struct for the Win32 screen dimensions. @see win32GetClientDimensions
+ *
+ */
 struct win32ClientDimensions 
 {
     uint32_t width;
@@ -55,6 +69,34 @@ global_var win32OffScreenBuffer backBuffer;
 // Function signatures
 #include "func_sig.h"
 
+// Function signature Macro for a function that adds two numbers together
+#define MISSING_FUNC_BODY_SIG(funcName) void funcName(int num1, int num2)
+
+// Typedef the missing function's signature to be a datatype
+// of missing_func
+// Expands to: typedef int my_func(int num1, int num2);
+// The typedef declaration makes the function available
+// as a datatype that can point to the address of a
+// function that has the same signature. E.g.
+// my_func *myFuncPtr = myFunc;
+// Which can then be called like so:
+// DWORD res = myFuncPtr(0, inputState);
+typedef MISSING_FUNC_BODY_SIG(missing_func);
+
+// Declare our version of the missing function's body, but use
+// the name missingFuncBodyStub.
+// Expands to: int myFuncStub(int num1, int num2);
+MISSING_FUNC_BODY_SIG(missingFuncBodyStub) {
+    int test = (num1 + num2);
+}
+
+// Define our version of the missing function
+// to be a pointer to a function of type missing_func
+global_var missing_func *missingFuncBody_ = missingFuncBodyStub;
+
+// Map the missing function name to our name
+#define missingFuncBody missingFuncBody_
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -68,8 +110,10 @@ int CALLBACK WinMain(HINSTANCE instance,
                         LPSTR commandLine, 
                         int showCode)
 {
+    missingFuncBody(10, 20);
+   
     // Firstly, create our back buffer.
-    win32InitBuffer(&backBuffer, 1024, 1023);
+    win32InitBuffer(&backBuffer, 1024, 768);
 
     // Create a new window struct and set all of it's values to 0.
     WNDCLASS windowClass = {};
@@ -145,10 +189,38 @@ int CALLBACK WinMain(HINSTANCE instance,
 
         }
 
-        // After processing our messages, we can now (in our while running = true
+        // After processing our messages, we can now (in our "while running = true"
         // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
         // application has been launched, so we'll have built the window and 
         // declared viewport height, width etc by this point.
+
+        /*
+         * Controller input stuff
+         */
+
+        // Iterate over each controller and get its state.
+        DWORD dwResult;
+        for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++){
+
+            /*
+            XINPUT_STATE controllerState;
+            SecureZeroMemory(&controllerState, sizeof(XINPUT_STATE));
+
+            // Simply get the state of the controller from XInput.
+
+            dwResult = XInputGetState(controllerIndex, &controllerState);
+
+            if (dwResult == ERROR_SUCCESS){
+                // Controller is connected
+                XINPUT_GAMEPAD *pad = &controllerState.Gamepad;
+
+            }else{
+                // Controller is not connected/available.
+            }
+            */
+        }
+
+
         writeBitsToBufferMemory(backBuffer, redOffset, greenOffset);
 
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
@@ -199,43 +271,55 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
         // This message is *only* sent when the application is first loaded OR
         // when the window is resized.
         case WM_SIZE: {
-            OutputDebugString("WM_SIZE\n");
+            if (DEBUG_OUTPUT) {
+                OutputDebugString("\nWM_SIZE\n");
+            }
         } break;
 
         case WM_DESTROY: {
             // @TODO(JM) Handle as an error. Recreate window?
-            OutputDebugString("WM_DESTROY\n");
+            if (DEBUG_OUTPUT) {
+                OutputDebugString("WM_DESTROY\n");
+            }
             running = false;
         } break;
 
         // Called when the user requests to close the window.
         case WM_CLOSE: {
             // @TODO(JM) Display "are you sure" message to user?
-            OutputDebugString("WM_CLOSE\n");
+            if (DEBUG_OUTPUT) {
+                OutputDebugString("WM_CLOSE\n");
+            }
             running = false;
         } break;
 
         case WM_QUIT: {
-            OutputDebugString("WM_QUIT\n");
+            if (DEBUG_OUTPUT) {
+                OutputDebugString("\nWM_QUIT\n\n");
+            }
             running = false;
         } break;
 
         // Called when the user makes the window active (e.g. by tabbing to it).
         case WM_ACTIVATEAPP: {
-            OutputDebugString("WM_ACTIVATEAPP\n");
+            if (DEBUG_OUTPUT) {
+                OutputDebugString("\nWM_ACTIVATEAPP\n\n");
+            }
         } break;
 
         // Request to paint a portion of an application's window.
         case WM_PAINT: {
 
-            OutputDebugString("WM_PAINT\n");
+            if (DEBUG_OUTPUT) {
+                OutputDebugString("\nWM_PAINT\n\n");
+            }
 
             // Prepare the window for painting.
 
             // The PAINTSTRUCT var contains the area that needs to be repainted, 
             // however we dont need this as we simply repaint the entire window
             // each time, not just the area that Windows tells us needs to be
-            // repainted.
+            // repainted. BeginPaint has to be called before StretchDIBits.
             PAINTSTRUCT paint; 
             HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
@@ -280,7 +364,10 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
  */
 internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width, uint32_t height)
 {
-    OutputDebugString("Called win32InitBuffer\n");
+    if (DEBUG_OUTPUT) {
+        OutputDebugString("\nInitialising Win32 Buffer ");
+        OutputDebugString("(Allocating a chunk of memory that's large enough to have 32-bits for each pixel based on height & width)\n\n");
+    }
 
     // buffer->foo is a dereferencing shorthand for (*buffer).foo
 
@@ -315,8 +402,6 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
 
     // Calculate the width in bytes per row.
     buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
-
-    
 }
 
 /*
@@ -328,6 +413,10 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
  */
 internal_func void writeBitsToBufferMemory(win32OffScreenBuffer buffer, int redOffset, int greenOffset)
 {
+    if (DEBUG_OUTPUT) {
+        OutputDebugString("\nWriting to Buffer's memory\n");
+    }
+
     // Create a pointer to bitmapMemory
     // In order for us to have maximum control over the pointer arithmatic, we cast it to
     // an 1 byte datatype. This enables us to step through the memory block 1 byte
@@ -437,6 +526,11 @@ internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow,
                                             uint32_t width,
                                             uint32_t height)
 {
+    if (DEBUG_OUTPUT) {
+        OutputDebugString("\nCopying buffer memory to screen\n");
+    }
+    
+
     // @TODO(JM) Do some maths to stop the buffer's height and width being
     // skewed when the window's width and height doesn't match the aspect
     // ratio that we want. (e.g. when someone manually resizes the window)
