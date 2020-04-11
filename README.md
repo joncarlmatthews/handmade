@@ -8,7 +8,7 @@ Install Visual Studio Community 2017. Once Visual Studio is installed navigate t
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
-All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration. E.g. `build\Win32\Debug` or `build\Win32\Release` or `build\Win32\Debug`
+All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined this format: `build\<arch>\<config>` E.g. `build\Win32\Debug`, `build\Win32\Release` or `build\x64\Debug`
 
 ## Running
 
