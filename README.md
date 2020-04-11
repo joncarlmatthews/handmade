@@ -4,11 +4,17 @@
 
 Install Visual Studio Community 2017. Once Visual Studio is installed navigate to **Tools** -> **Get Tools and Features** options and check that the latest version of the Windows 10 SDK is installed. The Windows SDK gives you access to `windows.h`. If it's not installed you'll receive the `cannot open source file "windows.h"` error message when attempting the build the source code.
 
-## Running
-
-Once the project is open in Visual Studio, hit **F5** to run the program with the debugger attached. To run the program without the debugger attached hit **Ctrl** + **F5**.
+## Building
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
+
+All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration. E.g. `build\Win32\Debug` or `build\Win32\Release` or `build\Win32\Debug`
+
+## Running
+
+To run the executable, open the .exe within the relevant `build\<architecture>\<build config>\` directory
+
+To run the program from directly within Visual Studio, hit **Ctrl** + **F5**. To run the program with the debugger attached, simply hit **F5**.
 
 ## Building outside of Visual Studio
 
