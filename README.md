@@ -57,4 +57,4 @@ or
 > build_x64.bat
 ```
 
-All build scripts are placed within the root of the relevant `build\<arch>\` folder.
+All build files and executables are placed within the root of the relevant `build\<arch>\` folder.
