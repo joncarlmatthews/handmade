@@ -8,36 +8,53 @@ Install Visual Studio Community 2017. Once Visual Studio is installed navigate t
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
-All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined this format: `build\<arch>\<config>` E.g. `build\Win32\Debug`, `build\Win32\Release` or `build\x64\Debug`
+All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\<arch>\<bldconfig>\` E.g. `build\Win32\Debug\`, `build\Win32\Release\` or `build\x64\Debug\`
 
 ## Running
 
-To run the executable, open the .exe within the relevant `build\<architecture>\<build config>\` directory
+To run the executable, open the .exe within the relevant `build\<arch>\<bldconfig>\` directory
 
-To run the program from directly within Visual Studio, hit **Ctrl** + **F5**. To run the program with the debugger attached, simply hit **F5**.
+To run the program from directly within Visual Studio, hit **Ctrl** + **F5**. To run the program in Visual Studio with the debugger attached, simply hit **F5**.
 
 ## Building outside of Visual Studio
 
-Open Command Prompt.
-
-You'll need to run the shell batch file first.
+Open Command Prompt. Navigate to the source directory:
 
 ```
-> shell.bat
+> cd C:\work\dev\handmade
+```
+
+Configure Visual Studio's vcvarsall.bat to build in either x86 or x64 mode by running the relevant shell batch file:
+
+```
+> shell_x86.bat
+```
+
+or 
+
+```
+> shell_x64.bat
 ```
 
 If you don't you'll receive the following error message:
 
 ```
-> build.bat
 'cl' is not recognized as an internal or external command,
 operable program or batch file.
 ```
 
-The `shell.bat` script sets the shell environment for building the source. This only needs to be run once per shell environment, not every time before you want to build the source.
+The shell scripts sets the shell environment for building the source. This only needs to be run once per shell environment, not every time before you want to build the source.
 
-Secondly, run the build script.
+Lastly, run the relevant build script.
 
 ```
-> build.bat
+> build_x86.bat
 ```
+
+or
+
+```
+> build_x64.bat
+```
+
+All build scripts are placed within the root of the relevant `build\<arch>\` folder.
