@@ -43,7 +43,7 @@ If you don't, you'll receive the following error message when trying to build:
 operable program or batch file.
 ```
 
-The shell scripts sets the shell environment for building the source. This only needs to be run once per shell environment, not every time before you want to build the source.
+The purpose of the shell scripts are to set the shell environment for building the source. This only needs to be run once per shell environment, not every time before you want to build the source.
 
 Lastly, run the relevant build script.
 
