@@ -36,7 +36,7 @@ or
 > shell_x64.bat
 ```
 
-If you don't you'll receive the following error message:
+If you don't, you'll receive the following error message when trying to build:
 
 ```
 'cl' is not recognized as an internal or external command,
