@@ -22,7 +22,7 @@
 const int BITS_PER_BYTE = 8;
 
 // Display output debug strings?
-const bool DEBUG_OUTPUT = false;
+const bool DEBUG_OUTPUT = FALSE;
 
 /**
  * Struct for the Win32 screen buffer
@@ -69,33 +69,33 @@ global_var win32OffScreenBuffer backBuffer;
 // Function signatures
 #include "func_sig.h"
 
-// Function signature Macro for a function that adds two numbers together
-#define MISSING_FUNC_BODY_SIG(funcName) void funcName(int num1, int num2)
+// XInput support
+typedef DWORD WINAPI XInputGetStateDT(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState);
+typedef DWORD WINAPI XInputSetStateDT(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration);
 
-// Typedef the missing function's signature to be a datatype
-// of missing_func
-// Expands to: typedef int my_func(int num1, int num2);
-// The typedef declaration makes the function available
-// as a datatype that can point to the address of a
-// function that has the same signature. E.g.
-// my_func *myFuncPtr = myFunc;
-// Which can then be called like so:
-// DWORD res = myFuncPtr(0, inputState);
-typedef MISSING_FUNC_BODY_SIG(missing_func);
+global_var XInputGetStateDT *XInputGetState_ = XInputGetStateStub;
+global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 
-// Declare our version of the missing function's body, but use
-// the name missingFuncBodyStub.
-// Expands to: int myFuncStub(int num1, int num2);
-MISSING_FUNC_BODY_SIG(missingFuncBodyStub) {
-    int test = (num1 + num2);
+#define XInputGetState XInputGetState_
+#define XInputSetState XInputSetState_
+
+void loadXInputDLLFunctions(void)
+{
+    HMODULE libHandle = LoadLibrary("XInput1_4.dll");
+
+    if (libHandle) {
+
+        XInputGetStateDT *XInputGetStateAddr = (XInputGetStateDT *)GetProcAddress(libHandle, "XInputGetState");
+        XInputSetStateDT *XInputSetStateAddr = (XInputSetStateDT *)GetProcAddress(libHandle, "XInputSetState");
+
+        if (XInputGetStateAddr) {
+            XInputGetState = XInputGetStateAddr;
+        }
+        if (XInputSetStateAddr) {
+            XInputSetState = XInputSetStateAddr;
+        }
+    }
 }
-
-// Define our version of the missing function
-// to be a pointer to a function of type missing_func
-global_var missing_func *missingFuncBody_ = missingFuncBodyStub;
-
-// Map the missing function name to our name
-#define missingFuncBody missingFuncBody_
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -110,9 +110,10 @@ int CALLBACK WinMain(HINSTANCE instance,
                         LPSTR commandLine, 
                         int showCode)
 {
-    missingFuncBody(10, 20);
-   
-    // Firstly, create our back buffer.
+    // Load XInput DLL functions.
+    loadXInputDLLFunctions();
+
+    // Create our back buffer.
     win32InitBuffer(&backBuffer, 1024, 768);
 
     // Create a new window struct and set all of it's values to 0.
@@ -200,26 +201,22 @@ int CALLBACK WinMain(HINSTANCE instance,
 
         // Iterate over each controller and get its state.
         DWORD dwResult;
-        for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++){
+        for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
 
-            /*
             XINPUT_STATE controllerState;
             SecureZeroMemory(&controllerState, sizeof(XINPUT_STATE));
 
             // Simply get the state of the controller from XInput.
-
             dwResult = XInputGetState(controllerIndex, &controllerState);
 
-            if (dwResult == ERROR_SUCCESS){
-                // Controller is connected
-                XINPUT_GAMEPAD *pad = &controllerState.Gamepad;
-
-            }else{
+            if (dwResult != ERROR_SUCCESS) {
                 // Controller is not connected/available.
+                continue;
             }
-            */
-        }
 
+            // Controller is connected
+            XINPUT_GAMEPAD *pad = &controllerState.Gamepad;
+        }
 
         writeBitsToBufferMemory(backBuffer, redOffset, greenOffset);
 
@@ -565,4 +562,12 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     dim.height  = clientRect.bottom;
 
     return dim;
+}
+
+DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState) {
+    return ERROR_DEVICE_NOT_CONNECTED;
+}
+
+DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration) {
+    return ERROR_DEVICE_NOT_CONNECTED;
 }
