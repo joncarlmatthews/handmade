@@ -1,6 +1,8 @@
 #ifndef HEADER_FILE
 #define HEADER_FILE
 
+void debug(char *format, ...);
+
 LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
 internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width, uint32_t height);

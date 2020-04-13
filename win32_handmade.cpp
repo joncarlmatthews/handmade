@@ -3,12 +3,14 @@
 
 // Typedefs that specify exact-width integer types for increased code portability.
 /*
- * char:        (1)     int8_t  / uint8_t
- * short:       (2)     int16_t / uint16_t
- * int & long:  (4)     int32_t / uint32_t
- * long long:   (8)     int64_t / uint64_t
+ * char:        (1)     int8_t  / uint8_t   (-128 127)          (0 255)
+ * short:       (2)     int16_t / uint16_t  (-32,768 32,767)    (0 65,536)
+ * int & long:  (4)     int32_t / uint32_t  (-2.1bn to 2.1bn)   (0 to 4.2bn)
+ * long long:   (8)     int64_t / uint64_t  (-9qn 9qn)          (0-18qn)
  */
 #include <stdint.h>
+#include <strsafe.h> // For STRSAFE_MAX_CCH
+#include <stdarg.h> // For variable number of arguments in function sigs
 
 // Xinput for receiving controller input. 
 #include <xinput.h>
@@ -215,7 +217,28 @@ int CALLBACK WinMain(HINSTANCE instance,
             }
 
             // Controller is connected
+
+            // Fetch the pad
             XINPUT_GAMEPAD *pad = &controllerState.Gamepad;
+
+            // Set booleans for the individual button states
+            bool btnUpDepressed             = (pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
+            bool btnDownDepressed           = (pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
+            bool btnLeftDepressed           = (pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+            bool btnRightDepressed          = (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+            bool btnStartDepressed          = (pad->wButtons & XINPUT_GAMEPAD_START);
+            bool btnBackDepressed           = (pad->wButtons & XINPUT_GAMEPAD_BACK);
+            bool btnShoulderLeftDepressed   = (pad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
+            bool btnShoulderRightDepressed  = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
+            bool btnADepressed              = (pad->wButtons & XINPUT_GAMEPAD_A);
+            bool btnBDepressed              = (pad->wButtons & XINPUT_GAMEPAD_B);
+            bool btnCDepressed              = (pad->wButtons & XINPUT_GAMEPAD_X);
+            bool btnDDepressed              = (pad->wButtons & XINPUT_GAMEPAD_Y);
+        }
+
+        if (false) {
+            redOffset = (redOffset++);
+            greenOffset = (greenOffset++);
         }
 
         writeBitsToBufferMemory(backBuffer, redOffset, greenOffset);
@@ -223,9 +246,6 @@ int CALLBACK WinMain(HINSTANCE instance,
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
         win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
-
-        redOffset       = (redOffset++);
-        greenOffset     = (greenOffset++);
 
     } // running
 
@@ -328,6 +348,41 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
             EndPaint(window, &paint);
         } break;
 
+        case WM_KEYDOWN:
+        case WM_KEYUP: {
+
+            /*
+             * lParam
+             *
+             *   First 16-bits          Second 16-bits
+             * |---------------|   |-------------------------|
+             * 15-0                31 30 29 28-25 24 23-16
+             * 0000000000000001    0  0  0  0000  1  01001011
+            */
+
+            uint16_t *repeatCount = (uint16_t *)&lParam;
+            //repeatCount = (repeatCount + 1);
+
+            const uint16_t bufSze = (STRSAFE_MAX_CCH * sizeof(TCHAR));
+
+            char msgBuf[bufSze];
+            char format[bufSze] = "repeatCount: %i\n";
+
+            HRESULT hr = StringCbPrintfA(msgBuf, bufSze, format, *repeatCount);
+
+            if (hr == S_OK) {
+                OutputDebugString(msgBuf);
+            }
+
+           
+
+            switch (wParam) {
+                case VK_LEFT:
+                    
+                break;
+            }
+        } break;
+
         // The standard request from GetMessage().
         default: {
 
@@ -383,7 +438,7 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
 
     buffer->info.bmiHeader.biSize = sizeof(buffer->info.bmiHeader);
     buffer->info.bmiHeader.biWidth = width;
-    buffer->info.bmiHeader.biHeight = -height; // If negative, it's drawn top down. If positive it's drawn bottom up.
+    buffer->info.bmiHeader.biHeight = -height; // If negative, it's drawn top down. If positive, it's drawn bottom up.
     buffer->info.bmiHeader.biPlanes = 1;
     buffer->info.bmiHeader.biBitCount = (buffer->bytesPerPixel * BITS_PER_BYTE);
     buffer->info.bmiHeader.biCompression = BI_RGB;
@@ -570,4 +625,34 @@ DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pSta
 
 DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration) {
     return ERROR_DEVICE_NOT_CONNECTED;
+}
+
+/*
+ * Utility function for outputting a debug string that takes parameters
+ * in the same form as the C's native printf.
+ *
+ * Required: windows.h, stdint.h, strsafe.h, stdarg.h
+ *
+ * @author Jon Matthews
+ *
+ * @param char * format
+ * @param mixed values
+ */
+void debug(char *format, ...)
+{
+    va_list argList;
+
+    const uint16_t bufSze = (STRSAFE_MAX_CCH * sizeof(TCHAR));
+
+    char msgBuf[bufSze];
+
+    va_start(argList, format);
+    HRESULT hr = StringCbVPrintfA(msgBuf, bufSze, format, argList);
+    va_end(argList);
+
+    if (hr == S_OK) {
+        OutputDebugString(msgBuf);
+    }else{
+        OutputDebugString("Error creating debug string\n");
+    }
 }
