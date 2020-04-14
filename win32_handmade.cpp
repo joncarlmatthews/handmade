@@ -216,7 +216,7 @@ int CALLBACK WinMain(HINSTANCE instance,
                 continue;
             }
 
-            // Controller is connected
+            // ...controller is connected
 
             // Fetch the pad
             XINPUT_GAMEPAD *pad = &controllerState.Gamepad;
@@ -234,14 +234,27 @@ int CALLBACK WinMain(HINSTANCE instance,
             bool btnBDepressed              = (pad->wButtons & XINPUT_GAMEPAD_B);
             bool btnCDepressed              = (pad->wButtons & XINPUT_GAMEPAD_X);
             bool btnDDepressed              = (pad->wButtons & XINPUT_GAMEPAD_Y);
+
+            int16_t leftThumbstickX = pad->sThumbLX;
+            int16_t leftThumbstickY = pad->sThumbLY;
+
+            if (btnUpDepressed) {
+
+                // Animate the screen
+                redOffset = (redOffset++);
+                greenOffset = (greenOffset++);
+
+                // Vibrate the controller
+                XINPUT_VIBRATION pVibration;
+
+                pVibration.wLeftMotorSpeed = 65535;
+                pVibration.wRightMotorSpeed = 65535;
+
+                XInputSetState(controllerIndex, &pVibration);
+            }
         }
 
-        if (false) {
-            redOffset = (redOffset++);
-            greenOffset = (greenOffset++);
-        }
-
-        writeBitsToBufferMemory(backBuffer, redOffset, greenOffset);
+        win32WriteBitsToBufferMemory(backBuffer, redOffset, greenOffset);
 
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
@@ -349,32 +362,41 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
         } break;
 
         case WM_KEYDOWN:
-        case WM_KEYUP: {
+        case WM_KEYUP:
+        case WM_SYSKEYDOWN: 
+        case WM_SYSKEYUP: {
 
             /*
-             * lParam
+             * lParam bitmask. Written from right to left
              *
-             *   First 16-bits          Second 16-bits
-             * |---------------|   |-------------------------|
-             * 15-0                31 30 29 28-25 24 23-16
-             * 0000000000000001    0  0  0  0000  1  01001011
+             *  First two bytes              Second two bytes
+             * |-------------------------|  |---------------|
+             * 31 30 29 28-25 24 23-16      15-0 
+             * 0  0  0  0000  1  01001011   0000000000000001
             */
+            
+            // lParam is 4-bytes wide.
+            uint32_t *lParamBitmask = (uint32_t *)&lParam;
 
+            // Fetch the second two bytes (bits 0-15)
             uint16_t *repeatCount = (uint16_t *)&lParam;
-            //repeatCount = (repeatCount + 1);
+            repeatCount = (repeatCount + 1);
 
-            const uint16_t bufSze = (STRSAFE_MAX_CCH * sizeof(TCHAR));
+            uint32_t previousKeyState = (*lParamBitmask & (1 << 30));
+            uint32_t transitionState = (*lParamBitmask & (1 << 31));
 
-            char msgBuf[bufSze];
-            char format[bufSze] = "repeatCount: %i\n";
-
-            HRESULT hr = StringCbPrintfA(msgBuf, bufSze, format, *repeatCount);
-
-            if (hr == S_OK) {
-                OutputDebugString(msgBuf);
+            if (WM_KEYDOWN == message) {
+                debug("Type: %s\n", "WM_KEYDOWN");
+            }else if(WM_KEYUP == message) {
+                debug("Type: %s\n", "WM_KEYUP");
+            }else if (WM_SYSKEYDOWN == message) {
+                debug("Type: %s\n", "WM_SYSKEYDOWN");
+            }else if (WM_SYSKEYUP == message) {
+                debug("Type: %s\n", "WM_SYSKEYUP");
             }
-
-           
+            
+            debug("previousKeyState: %i\n", previousKeyState);
+            debug("transitionState: %i\n\n", transitionState);
 
             switch (wParam) {
                 case VK_LEFT:
@@ -463,7 +485,7 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
  * Once all the memory has been written to the buffer is ready to be drawn on
  * screen
  */
-internal_func void writeBitsToBufferMemory(win32OffScreenBuffer buffer, int redOffset, int greenOffset)
+internal_func void win32WriteBitsToBufferMemory(win32OffScreenBuffer buffer, int redOffset, int greenOffset)
 {
     if (DEBUG_OUTPUT) {
         OutputDebugString("\nWriting to Buffer's memory\n");
