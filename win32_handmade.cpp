@@ -366,6 +366,8 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
         case WM_SYSKEYDOWN: 
         case WM_SYSKEYUP: {
 
+            uint32_t vkCode = wParam;
+
             /*
              * lParam bitmask. Written from right to left
              *
@@ -382,27 +384,17 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
             uint16_t *repeatCount = (uint16_t *)&lParam;
             repeatCount = (repeatCount + 1);
 
-            uint32_t previousKeyState = (*lParamBitmask & (1 << 30));
-            uint32_t transitionState = (*lParamBitmask & (1 << 31));
-
             if (WM_KEYDOWN == message) {
-                debug("Type: %s\n", "WM_KEYDOWN");
-            }else if(WM_KEYUP == message) {
-                debug("Type: %s\n", "WM_KEYUP");
-            }else if (WM_SYSKEYDOWN == message) {
-                debug("Type: %s\n", "WM_SYSKEYDOWN");
-            }else if (WM_SYSKEYUP == message) {
-                debug("Type: %s\n", "WM_SYSKEYUP");
-            }
-            
-            debug("previousKeyState: %i\n", previousKeyState);
-            debug("transitionState: %i\n\n", transitionState);
 
-            switch (wParam) {
-                case VK_LEFT:
-                    
-                break;
-            }
+                bool isDown = ((*lParamBitmask & (1 << 31)) == 0);
+                bool wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key is held down
+
+                if (vkCode == 'W') {
+                    debug("is down? %i\n", isDown);
+                    debug("was down? %i\n", wasDown);
+                }
+            }            
+
         } break;
 
         // The standard request from GetMessage().
