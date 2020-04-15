@@ -238,20 +238,23 @@ int CALLBACK WinMain(HINSTANCE instance,
             int16_t leftThumbstickX = pad->sThumbLX;
             int16_t leftThumbstickY = pad->sThumbLY;
 
-            if (btnUpDepressed) {
+            // Animate the screen
+            redOffset = (redOffset + (leftThumbstickY >> 12));
+            greenOffset = (greenOffset - (leftThumbstickX >> 12));
 
-                // Animate the screen
-                redOffset = (redOffset++);
-                greenOffset = (greenOffset++);
+            // Vibrate the controller
+            XINPUT_VIBRATION pVibration;
 
-                // Vibrate the controller
-                XINPUT_VIBRATION pVibration;
-
-                pVibration.wLeftMotorSpeed = 65535;
-                pVibration.wRightMotorSpeed = 65535;
-
-                XInputSetState(controllerIndex, &pVibration);
+            if ((leftThumbstickX || leftThumbstickY) > 0) {
+                pVibration.wLeftMotorSpeed = 10000;
+                pVibration.wRightMotorSpeed = 10000;
+               
+            }else {
+                pVibration.wLeftMotorSpeed = 0;
+                pVibration.wRightMotorSpeed = 0;
             }
+
+            XInputSetState(controllerIndex, &pVibration);
         }
 
         win32WriteBitsToBufferMemory(backBuffer, redOffset, greenOffset);
@@ -392,6 +395,7 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
                 if (vkCode == 'W') {
                     debug("is down? %i\n", isDown);
                     debug("was down? %i\n", wasDown);
+                    debug("repeat count: %i\n", *repeatCount);
                 }
             }            
 
