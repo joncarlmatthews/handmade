@@ -17,4 +17,6 @@ DWORD WINAPI XInputGetStateStub(_In_  DWORD dwUserIndex, _Out_ XINPUT_STATE* pSt
 
 DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration);
 
+void loadXInputDLLFunctions(void);
+
 #endif

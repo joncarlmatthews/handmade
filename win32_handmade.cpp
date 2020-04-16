@@ -5,7 +5,7 @@
 /*
  * char:        (1)     int8_t  / uint8_t   (-128 127)          (0 255)
  * short:       (2)     int16_t / uint16_t  (-32,768 32,767)    (0 65,536)
- * int & long:  (4)     int32_t / uint32_t  (-2.1bn to 2.1bn)   (0 to 4.2bn)
+ * int (long):  (4)     int32_t / uint32_t  (-2.1bn to 2.1bn)   (0 to 4.2bn)
  * long long:   (8)     int64_t / uint64_t  (-9qn 9qn)          (0-18qn)
  */
 #include <stdint.h>
@@ -18,6 +18,7 @@
 #define global_var          static; // Global variables
 #define local_persist_var   static; // Static variables within a local scope (e.g. case statement, function)
 #define internal_func       static; // Functions that are only available within the file they're declared in
+#define bool32              uint32_t; // For 0 or > 0 I don't care booleans
 
 // I know this wont change, but it's to help me read the code, instead of seeing
 // things multiplied by what might seem like an arbitrary 8 all over the place.
@@ -39,7 +40,8 @@ struct win32OffScreenBuffer
     uint32_t height;
 
     // 1 byte each for R, G & B and 1 byte for padding to match byte boundries (4)
-    // Therefore our pixels are always 32-bits wide and are in Little Endian memory order (backwards) 0xBBGGRRPP
+    // Therefore our pixels are always 32-bits wide and are in Little Endian 
+    // memory order (backwards) 0xBBGGRRPP
     uint16_t bytesPerPixel;
 
     // The number of bytes per row. (width * bytesPerPixel)
@@ -80,24 +82,6 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 
 #define XInputGetState XInputGetState_
 #define XInputSetState XInputSetState_
-
-void loadXInputDLLFunctions(void)
-{
-    HMODULE libHandle = LoadLibrary("XInput1_4.dll");
-
-    if (libHandle) {
-
-        XInputGetStateDT *XInputGetStateAddr = (XInputGetStateDT *)GetProcAddress(libHandle, "XInputGetState");
-        XInputSetStateDT *XInputSetStateAddr = (XInputSetStateDT *)GetProcAddress(libHandle, "XInputSetState");
-
-        if (XInputGetStateAddr) {
-            XInputGetState = XInputGetStateAddr;
-        }
-        if (XInputSetStateAddr) {
-            XInputSetState = XInputSetStateAddr;
-        }
-    }
-}
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -239,13 +223,13 @@ int CALLBACK WinMain(HINSTANCE instance,
             int16_t leftThumbstickY = pad->sThumbLY;
 
             // Animate the screen
-            redOffset = (redOffset + (leftThumbstickY >> 12));
+            redOffset = (redOffset + (leftThumbstickY >> 12));            
             greenOffset = (greenOffset - (leftThumbstickX >> 12));
 
             // Vibrate the controller
             XINPUT_VIBRATION pVibration;
 
-            if ((leftThumbstickX || leftThumbstickY) > 0) {
+            if ( (leftThumbstickX > 0) || (leftThumbstickY > 0)) {
                 pVibration.wLeftMotorSpeed = 10000;
                 pVibration.wRightMotorSpeed = 10000;
                
@@ -255,7 +239,8 @@ int CALLBACK WinMain(HINSTANCE instance,
             }
 
             XInputSetState(controllerIndex, &pVibration);
-        }
+
+        } // controller loop
 
         win32WriteBitsToBufferMemory(backBuffer, redOffset, greenOffset);
 
@@ -454,17 +439,17 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
     buffer->width           = width;
     buffer->height          = height;
 
-    buffer->info.bmiHeader.biSize = sizeof(buffer->info.bmiHeader);
-    buffer->info.bmiHeader.biWidth = width;
-    buffer->info.bmiHeader.biHeight = -height; // If negative, it's drawn top down. If positive, it's drawn bottom up.
-    buffer->info.bmiHeader.biPlanes = 1;
-    buffer->info.bmiHeader.biBitCount = (buffer->bytesPerPixel * BITS_PER_BYTE);
-    buffer->info.bmiHeader.biCompression = BI_RGB;
+    buffer->info.bmiHeader.biSize           = sizeof(buffer->info.bmiHeader);
+    buffer->info.bmiHeader.biWidth          = width;
+    buffer->info.bmiHeader.biHeight         = -height; // If negative, it's drawn top down. If positive, it's drawn bottom up.
+    buffer->info.bmiHeader.biPlanes         = 1;
+    buffer->info.bmiHeader.biBitCount       = (buffer->bytesPerPixel * BITS_PER_BYTE); // 32-bits per pixel
+    buffer->info.bmiHeader.biCompression    = BI_RGB;
 
     // How many bytes do we need for our bitmap?
     // viewport width * viewport height = viewport area
     // then viewport area * how many bytes we need per pixel.
-    int bitmapMemorySizeInBytes = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
+    uint32_t bitmapMemorySizeInBytes = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySizeInBytes
@@ -563,8 +548,8 @@ internal_func void win32WriteBitsToBufferMemory(win32OffScreenBuffer buffer, int
             *pixel = ((red << 16) | (green << 8) | blue);
             */
 
-            uint8_t red = (uint8_t)(x + redOffset);  // Grab the first 8 bits of the variable x and add offset 1
-            uint8_t green = (uint8_t)(y + greenOffset);  // Grab the first 8 bits of the variable i and add offset 2
+            uint8_t red = (uint8_t)(x + redOffset);  // Chop off anything after the first 8 bits of the variable x + offset
+            uint8_t green = (uint8_t)(y + greenOffset);  // Chop off anything after the first 8 bits of the variable y + offset
             uint8_t blue = 0;
             *pixel = ((red << 16) | (green << 8) | blue);
 
@@ -609,6 +594,8 @@ internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow,
     // StretchDIBits function copies the data of a rectangle of pixels to 
     // the specified destination. The first parameter is the handle for
     // the destination's window that we want to write the data to.
+    // Pixels are drawn to screen from the top left to the top right, then drops a row,
+    // draws from left to right and so on. Finally finishing on the bottom right pixel
     StretchDIBits(deviceHandleForWindow,
                     0,
                     0,
@@ -644,6 +631,30 @@ DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pSta
 DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration) {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
+
+void loadXInputDLLFunctions(void)
+{
+    HMODULE libHandle = LoadLibrary("XInput1_4.dll");
+
+    // No XInput 1.4? Try and load the older 1.3.
+    if (!libHandle) {
+        libHandle = LoadLibrary("XInput1_3.dll");
+    }
+
+    if (libHandle) {
+
+        XInputGetStateDT* XInputGetStateAddr = (XInputGetStateDT*)GetProcAddress(libHandle, "XInputGetState");
+        XInputSetStateDT* XInputSetStateAddr = (XInputSetStateDT*)GetProcAddress(libHandle, "XInputSetState");
+
+        if (XInputGetStateAddr) {
+            XInputGetState = XInputGetStateAddr;
+        }
+        if (XInputSetStateAddr) {
+            XInputSetState = XInputSetStateAddr;
+        }
+    }
+}
+
 
 /*
  * Utility function for outputting a debug string that takes parameters
