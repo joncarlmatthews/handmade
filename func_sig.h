@@ -19,8 +19,6 @@ internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPU
 
 internal_func void loadXInputDLLFunctions(void);
 
-internal_func HRESULT WINAPI DirectSoundCreateStub(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
-
 internal_func void win32InitDirectSound(HWND window);
 
 #endif

@@ -87,10 +87,6 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
 
-global_var DirectSoundCreateDT* DirectSoundCreate_ = DirectSoundCreateStub;
-
-#define DirectSoundCreate DirectSoundCreate_
-
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -674,12 +670,6 @@ internal_func void loadXInputDLLFunctions(void)
     }
 }
 
-internal_func HRESULT WINAPI DirectSoundCreateStub(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter)
-{
-    debug("Called DirectSoundCreateStub\n");
-    return DSERR_NODRIVER;
-}
-
 internal_func void win32InitDirectSound(HWND window)
 {
     // Load the library
@@ -690,7 +680,10 @@ internal_func void win32InitDirectSound(HWND window)
         DirectSoundCreateDT* DirectSoundCreateAddr = (DirectSoundCreateDT*)GetProcAddress(libHandle, "DirectSoundCreate");
 
         if (DirectSoundCreateAddr) {
-            DirectSoundCreate = DirectSoundCreateAddr;
+
+            DirectSoundCreateDT* DirectSoundCreate = DirectSoundCreateAddr;
+
+            //DirectSoundCreate = ;
 
             LPDIRECTSOUND directSound;
 
