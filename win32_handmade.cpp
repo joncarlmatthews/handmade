@@ -354,7 +354,16 @@ LRESULT CALLBACK win32MainWindowCallback(HWND window,
         case WM_SYSKEYDOWN: 
         case WM_SYSKEYUP: {
 
+            // Which key was pressed?
             uint32_t vkCode = wParam;
+
+            // Was the user holding down ALT when pressing a key?
+            if (message == WM_SYSKEYDOWN) {
+                if (0x73 == vkCode) {
+                    running = 0;
+                }
+            }
+            
 
             /*
              * lParam bitmask. Written from right to left
