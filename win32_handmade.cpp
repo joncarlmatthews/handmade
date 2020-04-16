@@ -229,7 +229,7 @@ int CALLBACK WinMain(HINSTANCE instance,
             // Vibrate the controller
             XINPUT_VIBRATION pVibration;
 
-            if ( (leftThumbstickX > 0) || (leftThumbstickY > 0)) {
+            if ( (leftThumbstickX != 0) || (leftThumbstickY != 0)) {
                 pVibration.wLeftMotorSpeed = 10000;
                 pVibration.wRightMotorSpeed = 10000;
                
