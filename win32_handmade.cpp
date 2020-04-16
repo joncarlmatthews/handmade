@@ -683,8 +683,6 @@ internal_func void win32InitDirectSound(HWND window)
 
             DirectSoundCreateDT* DirectSoundCreate = DirectSoundCreateAddr;
 
-            //DirectSoundCreate = ;
-
             LPDIRECTSOUND directSound;
 
             if (DS_OK == (DirectSoundCreate(NULL, &directSound, NULL))) {
