@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <strsafe.h> // For STRSAFE_MAX_CCH
 #include <stdarg.h> // For variable number of arguments in function sigs
+#include <dsound.h>
 
 // Xinput for receiving controller input. 
 #include <xinput.h>
@@ -83,6 +84,13 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 #define XInputGetState XInputGetState_
 #define XInputSetState XInputSetState_
 
+// Direct sound support
+typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
+
+global_var DirectSoundCreateDT* DirectSoundCreate_ = DirectSoundCreateStub;
+
+#define DirectSoundCreate DirectSoundCreate_
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -91,10 +99,10 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
  * @param LPSTR Command line arguments sent to the application.
  * @param int How the user has specified the window to be shown
  */
-int CALLBACK WinMain(HINSTANCE instance, 
-                        HINSTANCE prevInstance, 
-                        LPSTR commandLine, 
-                        int showCode)
+internal_func int CALLBACK WinMain(HINSTANCE instance,
+                                    HINSTANCE prevInstance, 
+                                    LPSTR commandLine, 
+                                    int showCode)
 {
     // Load XInput DLL functions.
     loadXInputDLLFunctions();
@@ -151,6 +159,8 @@ int CALLBACK WinMain(HINSTANCE instance,
     HDC deviceHandleForWindow = GetDC(window);
 
     running = true;
+
+    win32InitDirectSound(window);
 
     int redOffset = 0;
     int greenOffset = 0;
@@ -277,10 +287,10 @@ int CALLBACK WinMain(HINSTANCE instance,
  *
  * When the app is closed it sends WM_CLOSE
  */
-LRESULT CALLBACK win32MainWindowCallback(HWND window,
-                                            UINT message,
-                                            WPARAM wParam,
-                                            LPARAM lParam)
+internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
+                                                        UINT message,
+                                                        WPARAM wParam,
+                                                        LPARAM lParam)
 {
     LRESULT result = 0;
 
@@ -633,15 +643,15 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState) {
+internal_func DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState) {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration) {
+internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration) {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-void loadXInputDLLFunctions(void)
+internal_func void loadXInputDLLFunctions(void)
 {
     HMODULE libHandle = LoadLibrary("XInput1_4.dll");
 
@@ -664,6 +674,44 @@ void loadXInputDLLFunctions(void)
     }
 }
 
+internal_func HRESULT WINAPI DirectSoundCreateStub(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter)
+{
+    debug("Called DirectSoundCreateStub\n");
+    return DSERR_NODRIVER;
+}
+
+internal_func void win32InitDirectSound(HWND window)
+{
+    // Load the library
+    HMODULE libHandle = LoadLibrary("dsound.dll");
+
+    if (libHandle) {
+
+        DirectSoundCreateDT* DirectSoundCreateAddr = (DirectSoundCreateDT*)GetProcAddress(libHandle, "DirectSoundCreate");
+
+        if (DirectSoundCreateAddr) {
+            DirectSoundCreate = DirectSoundCreateAddr;
+
+            LPDIRECTSOUND directSound;
+
+            if (DS_OK == (DirectSoundCreate(NULL, &directSound, NULL))) {
+
+                if (DS_OK == (directSound->SetCooperativeLevel(window, DSSCL_PRIORITY))) {
+                    debug("yay");
+                }
+            }
+
+        }
+    }
+
+    // Create the direct sound object
+
+    // Create a primary buffer 
+
+    // Create a secondary buffer 
+
+    // Start playing sound 
+}
 
 /*
  * Utility function for outputting a debug string that takes parameters
@@ -676,7 +724,7 @@ void loadXInputDLLFunctions(void)
  * @param char * format
  * @param mixed values
  */
-void debug(char *format, ...)
+internal_func void debug(char *format, ...)
 {
     va_list argList;
 
