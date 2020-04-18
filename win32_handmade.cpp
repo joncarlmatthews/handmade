@@ -68,8 +68,11 @@ struct win32ClientDimensions
 // Whether or not the application is running
 global_var bool running;
 
-// Create the Win32 off screen buffer.
+// Win32 off screen pixel buffer.
 global_var win32OffScreenBuffer backBuffer;
+
+// Win32 secondary sound buffer.
+global_var LPDIRECTSOUNDBUFFER secondaryBuffer;
 
 // Function signatures
 #include "func_sig.h"
@@ -252,8 +255,9 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
         win32WriteBitsToBufferMemory(backBuffer, redOffset, greenOffset);
 
-        win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
+        // Write a dummy wave sound
 
+        win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
         win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
 
     } // running
@@ -767,8 +771,6 @@ internal_func void win32InitDirectSound(HWND window)
         secondaryBufferDesc.dwBufferBytes       = DSBSIZE_MIN;
         secondaryBufferDesc.lpwfxFormat         = &waveFormat;
         secondaryBufferDesc.guid3DAlgorithm     = GUID_NULL;
-
-        LPDIRECTSOUNDBUFFER secondaryBuffer;
 
         res = directSound->CreateSoundBuffer(&secondaryBufferDesc, &secondaryBuffer, NULL);
 
