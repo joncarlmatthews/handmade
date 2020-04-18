@@ -87,27 +87,6 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
 
-//int getAge(void* self);
-
-struct Person {
-    //char name[20];
-    //char getName(void);
-    int age;
-    int (*getAge)(void* self);
-};
-
-int getAge(void* self)
-{
-    Person* person = (Person*)self;
-    return (*person).age;
-}
-
-void initPerson(Person *person)
-{
-    (*person).getAge = &getAge;
-}
-
-
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -121,12 +100,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                                     LPSTR commandLine, 
                                     int showCode)
 {
-    Person *person = new Person;
-    initPerson(person);
-
-    person->age = 35;
-
-    debug("My age is: %i", person->getAge(person));
+    HRESULT res = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 
     // Load XInput DLL functions.
     loadXInputDLLFunctions();
@@ -283,6 +257,8 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
         win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
 
     } // running
+
+    CoUninitialize();
 
     // Close the application.
     return(0);
@@ -496,7 +472,7 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySizeInBytes
-    buffer->memory = VirtualAlloc(NULL, bitmapMemorySizeInBytes, MEM_COMMIT, PAGE_READWRITE);
+    buffer->memory = VirtualAlloc(NULL, bitmapMemorySizeInBytes, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
 
     // Calculate the width in bytes per row.
     buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
@@ -700,6 +676,9 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void win32InitDirectSound(HWND window)
 {
+    uint16_t samplesPerSecond = 48000; // 48kHz
+    uint32_t sizeOfBufferInBytes = ((samplesPerSecond * sizeof(int16_t)) * 2);
+
     // Load the library
     HMODULE libHandle = LoadLibrary("dsound.dll");
 
@@ -707,10 +686,13 @@ internal_func void win32InitDirectSound(HWND window)
 
     if (libHandle) {
 
+        log(LOG_LEVEL_INFO, "dsound.dll loaded");
+
         DirectSoundCreateDT* DirectSoundCreateAddr = (DirectSoundCreateDT*)GetProcAddress(libHandle, "DirectSoundCreate");
 
         if (!DirectSoundCreateAddr) {
             // Function not found within library.
+            log(LOG_LEVEL_WARN, "DirectSoundCreate not in dsound.dll. Malformed DLL?");
             return;
         }
 
@@ -721,32 +703,89 @@ internal_func void win32InitDirectSound(HWND window)
         res = (DirectSoundCreate(NULL, &directSound, NULL));
 
         if (res != DS_OK) {
-            // Could not create direct sound object.
+            log(LOG_LEVEL_ERROR, "Could not create direct sound object");
             return;
         }
 
         res = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
 
         if (res != DS_OK) {
-            // Could not create direct sound object.
+            log(LOG_LEVEL_ERROR, "Could not set cooperative level on direct sound object");
             return;
         }
 
-        debug("yay");
+        // Create a "primary buffer". We do this purely to set the format
+        // of the sound card (via DIRECTSOUNDBUFFER::SetFormat). We do this
+        // so that when we create the secondary buffer that we actually write 
+        // to, the sound card is already in the correct format. This is the only
+        // purpose of the primary buffer.
+        DSBUFFERDESC primaryBufferDesc = {};
+
+        primaryBufferDesc.dwSize            = sizeof(primaryBufferDesc);
+        primaryBufferDesc.dwFlags           = DSBCAPS_PRIMARYBUFFER;
+        primaryBufferDesc.dwBufferBytes     = 0;
+        primaryBufferDesc.lpwfxFormat       = NULL;
+        primaryBufferDesc.guid3DAlgorithm   = GUID_NULL;
+
+        LPDIRECTSOUNDBUFFER primaryBuffer;
+
+        res = directSound->CreateSoundBuffer(&primaryBufferDesc, &primaryBuffer, NULL);
+
+        if (res != DS_OK) {
+            log(LOG_LEVEL_ERROR, "Could not create primary buffer");
+            return;
+        }
+
+        // Set the format
+        WAVEFORMATEX  waveFormat = {};
+
+        uint8_t noOfChannels        = 2;
+        uint8_t bitsPerSample       = 16;
+        uint8_t sampleSizeInBytes   = ((noOfChannels * bitsPerSample) / BITS_PER_BYTE);
+
+        waveFormat.wFormatTag          = WAVE_FORMAT_PCM;
+        waveFormat.nChannels           = noOfChannels;
+        waveFormat.nSamplesPerSec      = samplesPerSecond;
+        waveFormat.nAvgBytesPerSec     = (samplesPerSecond * sampleSizeInBytes);
+        waveFormat.nBlockAlign         = sampleSizeInBytes;
+        waveFormat.wBitsPerSample      = bitsPerSample;
+        waveFormat.cbSize              = 0;
+
+        res = primaryBuffer->SetFormat(&waveFormat);
+
+        if (res != DS_OK) {
+            log(LOG_LEVEL_ERROR, "Could not set sound format on primary buffer");
+            return;
+        }
+
+        // Create the secondary buffer. This is the buffer we'll use to actually
+        // write bytes to.
+        DSBUFFERDESC secondaryBufferDesc = {};
+
+        secondaryBufferDesc.dwSize              = sizeof(secondaryBufferDesc);
+        secondaryBufferDesc.dwFlags             = 0;
+        secondaryBufferDesc.dwBufferBytes       = DSBSIZE_MIN;
+        secondaryBufferDesc.lpwfxFormat         = &waveFormat;
+        secondaryBufferDesc.guid3DAlgorithm     = GUID_NULL;
+
+        LPDIRECTSOUNDBUFFER secondaryBuffer;
+
+        res = directSound->CreateSoundBuffer(&secondaryBufferDesc, &secondaryBuffer, NULL);
+
+        if (res != DS_OK) {
+            log(LOG_LEVEL_ERROR, "Could not create secondary buffer");
+            return;
+        }
+
+        debug("\nPrimary & secondary buffer format set\n");
     }
-
-    // Create the direct sound object
-
-    // Create a primary buffer 
-
-    // Create a secondary buffer 
 
     // Start playing sound 
 }
 
 /*
  * Utility function for outputting a debug string that takes parameters
- * in the same form as the C's native printf.
+ * in the same form as the C's native printf. 1000 characters max
  *
  * Required: windows.h, stdint.h, strsafe.h, stdarg.h
  *
@@ -759,7 +798,8 @@ internal_func void debug(char *format, ...)
 {
     va_list argList;
 
-    const uint16_t bufSze = (STRSAFE_MAX_CCH * sizeof(TCHAR));
+    // @see STRSAFE_MAX_CCH
+    const uint16_t bufSze = (100 * sizeof(TCHAR));
 
     char msgBuf[bufSze];
 
@@ -771,5 +811,54 @@ internal_func void debug(char *format, ...)
         OutputDebugString(msgBuf);
     }else{
         OutputDebugString("Error creating debug string\n");
+    }
+}
+
+/*
+ * Utility function for logging a debug string that takes parameters
+ * in the same form as the C's native printf. 1000 characters max
+ *
+ * Required: windows.h, stdint.h, strsafe.h, stdarg.h
+ *
+ * @author Jon Matthews
+ *
+ * @param char *level
+ * @param char *format
+ * @param mixed values
+ */
+internal_func void log(uint8_t level, char *format, ...)
+{
+    va_list argList;
+
+    // @see STRSAFE_MAX_CCH
+    const uint16_t bufSze = (100 * sizeof(TCHAR));
+
+    char msgBuf[bufSze];
+
+    va_start(argList, format);
+    HRESULT hr = StringCbVPrintfA(msgBuf, bufSze, format, argList);
+    va_end(argList);
+
+    // @TOD(JM) Log msgBuf to file...
+    if (hr == S_OK) {
+
+        switch (level) {
+            default:
+            case LOG_LEVEL_INFO:
+                OutputDebugString("Info: ");
+                break;
+            case LOG_LEVEL_WARN:
+                OutputDebugString("Warning: ");
+                break;
+            case LOG_LEVEL_ERROR:
+                OutputDebugString("Error: ");
+                break;
+        }
+
+        OutputDebugString(msgBuf);
+        OutputDebugString("\n");
+    }
+    else {
+        OutputDebugString("LOG: Error creating debug string\n");
     }
 }
