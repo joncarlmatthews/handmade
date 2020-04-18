@@ -87,6 +87,27 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
 
+//int getAge(void* self);
+
+struct Person {
+    //char name[20];
+    //char getName(void);
+    int age;
+    int (*getAge)(void* self);
+};
+
+int getAge(void* self)
+{
+    Person* person = (Person*)self;
+    return (*person).age;
+}
+
+void initPerson(Person *person)
+{
+    (*person).getAge = &getAge;
+}
+
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -100,6 +121,13 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                                     LPSTR commandLine, 
                                     int showCode)
 {
+    Person *person = new Person;
+    initPerson(person);
+
+    person->age = 35;
+
+    debug("My age is: %i", person->getAge(person));
+
     // Load XInput DLL functions.
     loadXInputDLLFunctions();
 
@@ -675,24 +703,36 @@ internal_func void win32InitDirectSound(HWND window)
     // Load the library
     HMODULE libHandle = LoadLibrary("dsound.dll");
 
+    HRESULT res;
+
     if (libHandle) {
 
         DirectSoundCreateDT* DirectSoundCreateAddr = (DirectSoundCreateDT*)GetProcAddress(libHandle, "DirectSoundCreate");
 
-        if (DirectSoundCreateAddr) {
-
-            DirectSoundCreateDT* DirectSoundCreate = DirectSoundCreateAddr;
-
-            LPDIRECTSOUND directSound;
-
-            if (DS_OK == (DirectSoundCreate(NULL, &directSound, NULL))) {
-
-                if (DS_OK == (directSound->SetCooperativeLevel(window, DSSCL_PRIORITY))) {
-                    debug("yay");
-                }
-            }
-
+        if (!DirectSoundCreateAddr) {
+            // Function not found within library.
+            return;
         }
+
+        DirectSoundCreateDT* DirectSoundCreate = DirectSoundCreateAddr;
+
+        LPDIRECTSOUND directSound;
+
+        res = (DirectSoundCreate(NULL, &directSound, NULL));
+
+        if (res != DS_OK) {
+            // Could not create direct sound object.
+            return;
+        }
+
+        res = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
+
+        if (res != DS_OK) {
+            // Could not create direct sound object.
+            return;
+        }
+
+        debug("yay");
     }
 
     // Create the direct sound object
