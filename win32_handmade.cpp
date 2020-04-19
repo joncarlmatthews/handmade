@@ -1,3 +1,4 @@
+
 // Windows API.
 #include <windows.h>
 
@@ -256,6 +257,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
         win32WriteBitsToBufferMemory(backBuffer, redOffset, greenOffset);
 
         // Write a dummy wave sound
+
 
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
         win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
@@ -782,7 +784,48 @@ internal_func void win32InitDirectSound(HWND window)
         debug("\nPrimary & secondary buffer format set\n");
     }
 
-    // Start playing sound 
+    // Start playing sound...
+
+    DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
+    DWORD writeCursorOffsetInBytes = NULL; // Offset, in bytes, of the write cursor
+
+    res = secondaryBuffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
+
+    if (res != DS_OK) {
+        log(LOG_LEVEL_ERROR, "Could not get current position: ");
+        if (DSERR_INVALIDPARAM == res) {
+            log(LOG_LEVEL_ERROR, "DSERR_INVALIDPARAM");
+        }
+        if (DSERR_PRIOLEVELNEEDED == res) {
+            log(LOG_LEVEL_ERROR, "DSERR_PRIOLEVELNEEDED");
+        }
+        log(LOG_LEVEL_ERROR, "Error: %i", res);
+        return;
+    }
+
+    return;
+
+    // Readies all or part of the buffer for a data write and returns pointers to 
+    // which data can be written
+
+    // Offset, in bytes, from the start of the buffer to the point where the lock begins
+    WORD lockOffsetInBytes = playCursorOffsetInBytes;
+
+    // Size, in bytes, of the portion of the buffer to lock
+    WORD lockBytes;
+
+    LPVOID *lockPart1Ptr;
+    DWORD  lockPart1Bytes;
+
+    LPVOID *lockPart2Ptr;
+    DWORD  lockPart2Bytes;
+
+    res = secondaryBuffer->Lock(lockOffsetInBytes, lockBytes, lockPart1Ptr, &lockPart1Bytes, lockPart2Ptr, &lockPart2Bytes, NULL);
+
+    if (res != DS_OK) {
+        log(LOG_LEVEL_ERROR, "Could not lock secondary buffer");
+        return;
+    }
 }
 
 /*
