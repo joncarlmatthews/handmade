@@ -1,10 +1,6 @@
 #ifndef HEADER_FILE
 #define HEADER_FILE
 
-#define LOG_LEVEL_INFO      0x100
-#define LOG_LEVEL_WARN      0x200
-#define LOG_LEVEL_ERROR     0x300
-
 internal_func void debug(char *format, ...);
 
 internal_func void log(uint8_t level, char* format, ...);
