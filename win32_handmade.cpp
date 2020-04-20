@@ -78,6 +78,8 @@ global_var win32OffScreenBuffer backBuffer;
 // Win32 secondary sound buffer.
 global_var LPDIRECTSOUNDBUFFER secondarySoundBuffer;
 global_var bool secondarySoundBufferCreated;
+global_var uint32_t runningSampleIndex = 0;
+global_var uint8_t bytesPerSample;
 
 // Function signatures
 #include "func_sig.h"
@@ -287,38 +289,43 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
         // The IDirectSoundBuffer8::GetCurrentPosition method retrieves 
         // the position of the play and write cursors in the sound buffer.
 
-        DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
-        DWORD writeCursorOffsetInBytes = NULL; // Offset, in bytes, of the write cursor
+        if (secondarySoundBufferCreated) {
 
-        res = secondarySoundBuffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
+            DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
+            DWORD writeCursorOffsetInBytes = NULL; // Offset, in bytes, of the write cursor
 
-        if (DS_OK == res) {
-
-            // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
-            // write and returns pointers to which data can be written
-
-            // Offset, in bytes, from the start of the buffer to the point where the lock begins
-            WORD lockOffsetInBytes = playCursorOffsetInBytes;
-
-            // Size, in bytes, of the portion of the buffer to lock
-            WORD lockSizeInBytes;
-
-            LPVOID *chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
-            DWORD  chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
-
-            LPVOID *chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
-            DWORD  chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
-
-            res = secondarySoundBuffer->Lock(lockOffsetInBytes, lockSizeInBytes, chunkOnePtr, &chunkOneBytes, chunkTwoPtr, &chunkTwoBytes, NULL);
+            res = secondarySoundBuffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
 
             if (DS_OK == res) {
 
+                // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
+                // write and returns pointers to which data can be written
+
+                uint32_t bytesToLock = (runningSampleIndex * bytesPerSample);
+
+                // Offset, in bytes, from the start of the buffer to the point where the lock begins
+                WORD lockOffsetInBytes;
+
+                // Size, in bytes, of the portion of the buffer to lock
+                WORD lockSizeInBytes;
+
+                LPVOID* chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
+                DWORD  chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
+
+                LPVOID* chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
+                DWORD  chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
+
+                res = secondarySoundBuffer->Lock(lockOffsetInBytes, lockSizeInBytes, chunkOnePtr, &chunkOneBytes, chunkTwoPtr, &chunkTwoBytes, NULL);
+
+                if (DS_OK == res) {
+
+                }else {
+                    log(LOG_LEVEL_ERROR, "Could not lock secondary sound buffer");
+                }
+
             }else {
-                log(LOG_LEVEL_ERROR, "Could not lock secondary sound buffer");
+                log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
             }
-            
-        }else {
-            log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
         }
 
     } // running
@@ -756,11 +763,16 @@ internal_func void win32InitDirectSound(HWND window)
     // Block alignment, in bytes.
     uint8_t blockAlignment = ((noOfChannels * bitsPerSample) / BITS_PER_BYTE);
 
-    // Define the size of our audio buffer in bytes.
-    // Our buffer will store 2 seconds worth of audio data
-    uint32_t sizeOfBufferInBytes = ((samplesPerSecond * blockAlignment) * 2);
+    // How many bytes to store each sample?
+    bytesPerSample = blockAlignment;
     // ...or?
-    //uint32_t sizeOfBufferInBytes = ((samplesPerSecond * sizeof(uint16_t)) * 2);
+    // bytesPerSample = (bitsPerSample / BITS_PER_BYTE);
+
+    // How many seconds worth of the audio sample do we want to store as a loop?
+    uint8_t secondsWorthOfAudio = 2;
+
+    // Define the size of our audio buffer in bytes.
+    uint32_t sizeOfBufferInBytes = ((bytesPerSample * samplesPerSecond) * secondsWorthOfAudio);
 
     // Load the library
     HMODULE libHandle = LoadLibrary("dsound.dll");
@@ -856,8 +868,8 @@ internal_func void win32InitDirectSound(HWND window)
         return;
     }
 
-    debug("Primary & secondary successfully buffer created\n");
     secondarySoundBufferCreated = TRUE;
+    debug("Primary & secondary successfully buffer created\n");
 }
 
 /*
