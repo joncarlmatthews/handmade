@@ -3,7 +3,7 @@
 
 internal_func void debug(char *format, ...);
 
-internal_func void log(uint8_t level, char* format, ...);
+internal_func void log(int level, char* format, ...);
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 

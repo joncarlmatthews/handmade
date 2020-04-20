@@ -80,6 +80,7 @@ global_var LPDIRECTSOUNDBUFFER secondarySoundBuffer;
 global_var bool secondarySoundBufferCreated;
 global_var uint32_t runningSampleIndex = 0;
 global_var uint8_t bytesPerSample;
+global_var uint32_t sizeOfBufferInBytes;
 
 // Function signatures
 #include "func_sig.h"
@@ -177,7 +178,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
-    running = true;
+    running = TRUE;
 
     win32InitDirectSound(window);
 
@@ -301,13 +302,24 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
                 // write and returns pointers to which data can be written
 
-                uint32_t bytesToLock = (runningSampleIndex * bytesPerSample);
-
-                // Offset, in bytes, from the start of the buffer to the point where the lock begins
-                WORD lockOffsetInBytes;
+                // Offset, in bytes, from the start of the buffer to the point where the lock begins.
+                // We Mod the result by the total number of bytes so that the value wraps.
+                // Result will look like this: 0, 4, 8, 12, 16, 24
+                WORD lockOffsetInBytes = ((runningSampleIndex * bytesPerSample) % sizeOfBufferInBytes);
 
                 // Size, in bytes, of the portion of the buffer to lock
-                WORD lockSizeInBytes;
+                uint32_t lockSizeInBytes;
+
+                // Is the current lock offset ahead of the current play cursor?
+                if (lockOffsetInBytes > playCursorOffsetInBytes) {
+
+                    // Gap to the end of the buffer, plus the start of the buffer up to the current play cursor
+                    lockSizeInBytes = (sizeOfBufferInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
+
+                }else {
+                    // Gap from the current lock offset up to the current play cursor
+                    lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
+                }
 
                 LPVOID* chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
                 DWORD  chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
@@ -315,7 +327,13 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 LPVOID* chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
                 DWORD  chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
 
-                res = secondarySoundBuffer->Lock(lockOffsetInBytes, lockSizeInBytes, chunkOnePtr, &chunkOneBytes, chunkTwoPtr, &chunkTwoBytes, NULL);
+                res = secondarySoundBuffer->Lock(lockOffsetInBytes, 
+                                                    lockSizeInBytes, 
+                                                    chunkOnePtr, 
+                                                    &chunkOneBytes, 
+                                                    chunkTwoPtr, 
+                                                    &chunkTwoBytes, 
+                                                    NULL);
 
                 if (DS_OK == res) {
 
@@ -572,7 +590,7 @@ internal_func void win32WriteBitsToBufferMemory(win32OffScreenBuffer buffer, int
     // Create a loop that iterates for the same number of rows we have for the viewport. 
     // (We know the number of pixel rows from the viewport height)
     // We name the iterator x to denote the x axis (along the corridor)
-    for (int x = 0; x < buffer.height; x++) {
+    for (uint32_t x = 0; x < buffer.height; x++) {
 
         // We know that each pixel is 4 bytes wide (bytesPerPixel) so we make
         // our pointer the same width to grab the relevant block of memory for
@@ -582,7 +600,7 @@ internal_func void win32WriteBitsToBufferMemory(win32OffScreenBuffer buffer, int
         // Create a loop that iterates for the same number of columns we have for the viewport.
         // (We know the number of pixel columns from the viewport width)
         // We name the iterator y to denote the y axis (up the stairs)
-        for (int y = 0; y < buffer.width; y++) {
+        for (uint32_t y = 0; y < buffer.width; y++) {
 
             /*
              * Write to this pixel...
@@ -772,7 +790,7 @@ internal_func void win32InitDirectSound(HWND window)
     uint8_t secondsWorthOfAudio = 2;
 
     // Define the size of our audio buffer in bytes.
-    uint32_t sizeOfBufferInBytes = ((bytesPerSample * samplesPerSecond) * secondsWorthOfAudio);
+    sizeOfBufferInBytes = ((bytesPerSample * samplesPerSecond) * secondsWorthOfAudio);
 
     // Load the library
     HMODULE libHandle = LoadLibrary("dsound.dll");
@@ -915,7 +933,7 @@ internal_func void debug(char *format, ...)
  * @param char *format
  * @param mixed values
  */
-internal_func void log(uint8_t level, char *format, ...)
+internal_func void log(int level, char *format, ...)
 {
     va_list argList;
 
