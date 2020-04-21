@@ -345,21 +345,6 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
                 }else {
                     log(LOG_LEVEL_ERROR, "Could not lock secondary sound buffer: ");
-                    switch (res) {
-                        default:
-                        case DSERR_BUFFERLOST:
-                            log(LOG_LEVEL_INFO, "DSERR_BUFFERLOST");
-                            break;
-                        case DSERR_INVALIDCALL:
-                            log(LOG_LEVEL_INFO, "DSERR_INVALIDCALL");
-                            break;
-                        case DSERR_INVALIDPARAM:
-                            log(LOG_LEVEL_INFO, "DSERR_INVALIDPARAM");
-                            break;
-                        case DSERR_PRIOLEVELNEEDED:
-                            log(LOG_LEVEL_INFO, "DSERR_PRIOLEVELNEEDED");
-                            break;
-                    }
                 }
 
             }else {
@@ -811,8 +796,6 @@ internal_func void win32InitDirectSound(HWND window)
     uint8_t blockAlignment = ((noOfChannels * bitsPerSample) / BITS_PER_BYTE);
 
     // How many bytes to store each sample?
-    //bytesPerSample = blockAlignment;
-    // ...or?
     bytesPerSample = (bitsPerSample / BITS_PER_BYTE);
 
     // How many seconds worth of the audio sample do we want to store as a loop?
