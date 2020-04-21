@@ -178,12 +178,17 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
-    running = TRUE;
+    // Graphics stuff
+    uint32_t redOffset = 0;
+    uint32_t greenOffset = 0;
+
+    // Audio stuff...
+    uint32_t soundSquareWaveDuration = 261000;
+    uint32_t soundSquareWaveCounter = 0;
 
     win32InitDirectSound(window);
 
-    int redOffset = 0;
-    int greenOffset = 0;
+    running = TRUE;
 
     while (running) {
 
@@ -338,6 +343,59 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                                                     NULL);
 
                 if (DS_OK == res) {
+
+                    // Calculate the total number of 2-byte samples (16-bits) we have within the
+                    // first block of memory IDirectSoundBuffer8::Lock has told us we can write to.
+                    uint64_t chunkOneSamples = (chunkOneBytes / bytesPerSample);
+
+                    // Grab the first 16-bit audio sample from the first block of memory 
+                    uint16_t *audioSample = (uint16_t*)chunkOnePtr;
+                    
+                    // Iterate over each 2-bytes and write their data.
+                    for (size_t i = 0; i < (chunkOneSamples/2); i++) {
+
+                        if (0 == soundSquareWaveCounter) {
+                            soundSquareWaveCounter = soundSquareWaveDuration;
+                        }
+
+                        uint16_t audioSampleValue;
+                        if (soundSquareWaveCounter > (soundSquareWaveDuration / 2)) {
+                            audioSampleValue = -16000;
+                        } else {
+                            audioSampleValue = 16000;
+                        }
+
+                        // Left (16-bits)
+                        *audioSample = audioSampleValue;
+                        audioSample = (audioSample + 1);
+
+                        // Right (16-bits)
+                        *audioSample = audioSampleValue;
+                        audioSample = (audioSample + 1);
+
+                        soundSquareWaveCounter = (soundSquareWaveCounter - 1);
+                    }
+
+                    // Same for chunk 2...
+                    uint64_t chunkTwoSamples = (chunkTwoBytes / bytesPerSample);
+                    uint16_t *audioSample2 = (uint16_t*)chunkTwoPtr;
+                    for (size_t i = 0; i < (chunkTwoSamples / 2); i++) {
+
+                        uint16_t audioSampleValue;
+                        if ((i % 2) == 0) {
+                            audioSampleValue = -16000;
+                        } else {
+                            audioSampleValue = 16000;
+                        }
+
+                        // Left (16-bits)
+                        *audioSample2 = audioSampleValue;
+                        audioSample2 = (audioSample2 + 1);
+
+                        // Right (16-bits)
+                        *audioSample2 = audioSampleValue;
+                        audioSample2 = (audioSample2 + 1);
+                    }
 
                     runningAudioSampleIndex = (runningAudioSampleIndex + 1);
 
@@ -785,8 +843,8 @@ internal_func void win32InitDirectSound(HWND window)
     // How many audio channels are we targetting?
     uint8_t noOfChannels = 2;
 
-    // How many bits per sample? 8-bits for the left channel,
-    // and 8-bits for the right channel.
+    // How many bits per individual left or right sample? 
+    // (16-bits for the left channel 16-bits for the right channel.)
     uint8_t bitsPerSample = 16;
 
     // How many samples per second will we be storing?
@@ -795,14 +853,14 @@ internal_func void win32InitDirectSound(HWND window)
     // Block alignment, in bytes.
     uint8_t blockAlignment = ((noOfChannels * bitsPerSample) / BITS_PER_BYTE);
 
-    // How many bytes to store each sample?
+    // How many bytes to store per individual left or right sample? 
     bytesPerSample = (bitsPerSample / BITS_PER_BYTE);
 
     // How many seconds worth of the audio sample do we want to store as a loop?
     uint8_t secondsWorthOfAudio = 1;
 
     // Define the size of our audio buffer in bytes.
-    sizeOfBufferInBytes = ((bytesPerSample * samplesPerSecond) * secondsWorthOfAudio);
+    sizeOfBufferInBytes = ((blockAlignment * samplesPerSecond) * secondsWorthOfAudio);
 
     // Result variable for the various function call return checks.
     HRESULT res;
@@ -892,6 +950,15 @@ internal_func void win32InitDirectSound(HWND window)
 
     secondarySoundBufferCreated = TRUE;
     debug("Primary & secondary successfully buffer created\n");
+
+    // Temp for debugging.
+    if (secondarySoundBufferCreated) {
+        res = secondarySoundBuffer->Play(0, 0, DSBPLAY_LOOPING);
+        if (res != DS_OK) {
+            log(LOG_LEVEL_ERROR, "Could not play secondary sound buffer");
+            return;
+        }
+    }
 }
 
 /*
