@@ -34,7 +34,6 @@ const bool DEBUG_OUTPUT = FALSE;
 
 /**
  * Struct for the Win32 screen buffer
- *
  */
 struct win32FrameBuffer 
 {
@@ -61,7 +60,6 @@ struct win32FrameBuffer
 
 /**
  * Helper struct for the Win32 screen dimensions. @see win32GetClientDimensions
- *
  */
 struct win32ClientDimensions 
 {
@@ -69,7 +67,9 @@ struct win32ClientDimensions
     uint32_t height;
 };
 
-// Win32 secondary sound buffer.
+/**
+ * Struct for the Win32 secondary sound buffer.
+ */
 struct win32AudioBuffer
 {
     // How many audio channels are we targetting?
