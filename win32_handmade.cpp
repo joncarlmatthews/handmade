@@ -78,7 +78,6 @@ global_var win32OffScreenBuffer backBuffer;
 // Win32 secondary sound buffer.
 global_var LPDIRECTSOUNDBUFFER secondarySoundBuffer;
 global_var bool secondarySoundBufferCreated;
-global_var uint32_t runningAudioSampleIndex = 0;
 global_var uint8_t bytesPerSample;
 global_var uint32_t sizeOfBufferInBytes;
 
@@ -98,14 +97,6 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
 
-global_var int myOtherInt = 35;
-
-void setMyInt(int *anInteger)
-{
-    int *myPtr = &myOtherInt;
-    anInteger = myPtr;
-}
-
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -119,10 +110,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                                     LPSTR commandLine, 
                                     int showCode)
 {
-    HRESULT res = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-
-    int myInt;
-    setMyInt(&myInt);
+    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 
     // Load XInput DLL functions.
     loadXInputDLLFunctions();
@@ -183,10 +171,13 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
     uint32_t greenOffset = 0;
 
     // Audio stuff...
-    uint32_t soundSquareWaveDuration = 261000;
-    uint32_t soundSquareWaveCounter = 0;
-
     win32InitDirectSound(window);
+
+    uint16_t samplesPerSecond = 48000; // 48kHz
+    uint16_t targertHertz = 261;
+    uint32_t soundSquareWaveDuration = (samplesPerSecond / targertHertz);
+    uint32_t soundSquareWaveCounter = 0;
+    uint32_t runningAudioSampleIndex = 0;    
 
     running = TRUE;
 
@@ -295,6 +286,8 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
         // The IDirectSoundBuffer8::GetCurrentPosition method retrieves 
         // the position of the play and write cursors in the sound buffer.
 
+        HRESULT res;
+
         if (secondarySoundBufferCreated) {
 
             DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
@@ -344,15 +337,16 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
                 if (DS_OK == res) {
 
-                    // Calculate the total number of 2-byte samples (16-bits) we have within the
-                    // first block of memory IDirectSoundBuffer8::Lock has told us we can write to.
+                    // Calculate the total number of 4-byte samples (16 for the left, 16 for the right) 
+                    // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
+                    // told us we can write to.
                     uint64_t chunkOneSamples = (chunkOneBytes / bytesPerSample);
 
                     // Grab the first 16-bit audio sample from the first block of memory 
                     uint16_t *audioSample = (uint16_t*)chunkOnePtr;
                     
-                    // Iterate over each 2-bytes and write their data.
-                    for (size_t i = 0; i < (chunkOneSamples/2); i++) {
+                    // Iterate over each 2-bytes and write the same data for both.
+                    for (size_t i = 0; i < chunkOneSamples; i++) {
 
                         if (0 == soundSquareWaveCounter) {
                             soundSquareWaveCounter = soundSquareWaveDuration;
@@ -360,41 +354,26 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
                         uint16_t audioSampleValue;
                         if (soundSquareWaveCounter > (soundSquareWaveDuration / 2)) {
-                            audioSampleValue = -16000;
-                        } else {
                             audioSampleValue = 16000;
+                        } else {
+                            audioSampleValue = -16000;
                         }
 
                         // Left (16-bits)
                         *audioSample = audioSampleValue;
+
+                        // Move to the right sample (16-bits)
                         audioSample = (audioSample + 1);
 
-                        // Right (16-bits)
+                        // Write the right sample
                         *audioSample = audioSampleValue;
-                        audioSample = (audioSample + 1);
+
+                        // Move cursor to the start of the next sample grouping.
+                        if ((i - 1000) != chunkOneSamples) {
+                            audioSample = (audioSample + 1);
+                        }
 
                         soundSquareWaveCounter = (soundSquareWaveCounter - 1);
-                    }
-
-                    // Same for chunk 2...
-                    uint64_t chunkTwoSamples = (chunkTwoBytes / bytesPerSample);
-                    uint16_t *audioSample2 = (uint16_t*)chunkTwoPtr;
-                    for (size_t i = 0; i < (chunkTwoSamples / 2); i++) {
-
-                        uint16_t audioSampleValue;
-                        if ((i % 2) == 0) {
-                            audioSampleValue = -16000;
-                        } else {
-                            audioSampleValue = 16000;
-                        }
-
-                        // Left (16-bits)
-                        *audioSample2 = audioSampleValue;
-                        audioSample2 = (audioSample2 + 1);
-
-                        // Right (16-bits)
-                        *audioSample2 = audioSampleValue;
-                        audioSample2 = (audioSample2 + 1);
                     }
 
                     runningAudioSampleIndex = (runningAudioSampleIndex + 1);
@@ -850,11 +829,13 @@ internal_func void win32InitDirectSound(HWND window)
     // How many samples per second will we be storing?
     uint16_t samplesPerSecond = 48000; // 48kHz
 
-    // Block alignment, in bytes.
-    uint8_t blockAlignment = ((noOfChannels * bitsPerSample) / BITS_PER_BYTE);
+    // Block alignment, in bytes. Must process a multiple of blockAlignment 
+    // bytes of data at a time. Data written to and read from a device 
+    // must always start at the beginning of a block
+    uint8_t blockAlignment = ((bitsPerSample * noOfChannels) / BITS_PER_BYTE);
 
-    // How many bytes to store per individual left or right sample? 
-    bytesPerSample = (bitsPerSample / BITS_PER_BYTE);
+    // How many bytes to store per sample? (left + right channel)
+    bytesPerSample = blockAlignment;
 
     // How many seconds worth of the audio sample do we want to store as a loop?
     uint8_t secondsWorthOfAudio = 1;
