@@ -79,7 +79,7 @@ global_var win32OffScreenBuffer backBuffer;
 global_var LPDIRECTSOUNDBUFFER secondarySoundBuffer;
 global_var bool secondarySoundBufferCreated;
 global_var uint8_t bytesPerSample;
-global_var uint32_t sizeOfBufferInBytes;
+global_var uint32_t sizeOfSoundBufferInBytes;
 
 // Function signatures
 #include "func_sig.h"
@@ -303,7 +303,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 // Offset, in bytes, from the start of the buffer to the point where the lock begins.
                 // We Mod the result by the total number of bytes so that the value wraps.
                 // Result will look like this: 0, 4, 8, 12, 16, 24
-                uint32_t lockOffsetInBytes = ((runningAudioSampleIndex * bytesPerSample) % sizeOfBufferInBytes);
+                uint32_t lockOffsetInBytes = ((runningAudioSampleIndex * bytesPerSample) % sizeOfSoundBufferInBytes);
 
                 // Size, in bytes, of the portion of the buffer to lock.
                 uint32_t lockSizeInBytes;
@@ -314,7 +314,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 if (lockOffsetInBytes > playCursorOffsetInBytes) {
 
                     // Gap to the end of the buffer, plus the start of the buffer up to the current play cursor
-                    lockSizeInBytes = (sizeOfBufferInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
+                    lockSizeInBytes = (sizeOfSoundBufferInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
 
                 }else {
                     // Gap from the current lock offset up to the current play cursor
@@ -340,13 +340,13 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                     // Calculate the total number of 4-byte samples (16 for the left, 16 for the right) 
                     // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
                     // told us we can write to.
-                    uint64_t chunkOneSamples = (chunkOneBytes / bytesPerSample);
+                    uint64_t chunkOneTotalSamples = (chunkOneBytes / bytesPerSample);
 
                     // Grab the first 16-bit audio sample from the first block of memory 
                     uint16_t *audioSample = (uint16_t*)chunkOnePtr;
                     
                     // Iterate over each 2-bytes and write the same data for both.
-                    for (size_t i = 0; i < chunkOneSamples; i++) {
+                    for (size_t i = 0; i < chunkOneTotalSamples; i++) {
 
                         if (0 == soundSquareWaveCounter) {
                             soundSquareWaveCounter = soundSquareWaveDuration;
@@ -372,9 +372,8 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                         audioSample = (audioSample + 1);
 
                         soundSquareWaveCounter = (soundSquareWaveCounter - 1);
+                        runningAudioSampleIndex = (runningAudioSampleIndex + 1);
                     }
-
-                    runningAudioSampleIndex = (runningAudioSampleIndex + 1);
 
                     secondarySoundBuffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
@@ -839,7 +838,7 @@ internal_func void win32InitDirectSound(HWND window)
     uint8_t secondsWorthOfAudio = 1;
 
     // Define the size of our audio buffer in bytes.
-    sizeOfBufferInBytes = ((blockAlignment * samplesPerSecond) * secondsWorthOfAudio);
+    sizeOfSoundBufferInBytes = ((blockAlignment * samplesPerSecond) * secondsWorthOfAudio);
 
     // Result variable for the various function call return checks.
     HRESULT res;
@@ -916,7 +915,7 @@ internal_func void win32InitDirectSound(HWND window)
 
     secondarySoundBufferDesc.dwSize              = sizeof(secondarySoundBufferDesc);
     secondarySoundBufferDesc.dwFlags             = 0;
-    secondarySoundBufferDesc.dwBufferBytes       = sizeOfBufferInBytes;
+    secondarySoundBufferDesc.dwBufferBytes       = sizeOfSoundBufferInBytes;
     secondarySoundBufferDesc.lpwfxFormat         = &waveFormat;
     secondarySoundBufferDesc.guid3DAlgorithm     = GUID_NULL;
 
