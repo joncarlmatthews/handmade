@@ -328,7 +328,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 DWORD chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
 
                 res = secondarySoundBuffer->Lock(lockOffsetInBytes, 
-                                                    sizeOfBufferInBytes, 
+                                                    lockSizeInBytes,
                                                     &chunkOnePtr, 
                                                     &chunkOneBytes, 
                                                     &chunkTwoPtr, 
