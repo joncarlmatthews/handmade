@@ -36,7 +36,7 @@ const bool DEBUG_OUTPUT = FALSE;
  * Struct for the Win32 screen buffer
  *
  */
-struct win32OffScreenBuffer 
+struct win32FrameBuffer 
 {
     // The width in pixels of the buffer.
     uint32_t width;
@@ -69,24 +69,42 @@ struct win32ClientDimensions
     uint32_t height;
 };
 
-// Whether or not the application is running
-global_var bool running;
-
-// Win32 off screen pixel buffer.
-global_var win32OffScreenBuffer backBuffer;
-
 // Win32 secondary sound buffer.
 struct win32AudioBuffer
 {
+    // How many audio channels are we targetting?
     uint8_t noOfChannels;
+
+    // How many bits per individual left or right sample? 
+    // (16-bits for the left channel 16-bits for the right channel.)
     uint8_t bitsPerSample;
+
+    // How many bytes to store per sample? (left + right channel)
     uint8_t bytesPerSample;
+
+    // How many samples per second will we be storing?
     uint16_t samplesPerSecond;
+
+    // How many seconds worth of the audio should our buffer hold?
     uint8_t secondsWorthOfAudio;
+
+    // The block of memory to hold the samples.
     LPDIRECTSOUNDBUFFER buffer;
+
+    // Byte count of our buffer's memory
+    uint64_t bufferSizeInBytes;
+
+    // Flag for whether or not the buffer has been successfully initiated.
     bool bufferSuccessfulyCreated;
-    uint64_t bufferInBytes;
 };
+
+// Whether or not the application is running
+global_var bool running;
+
+// Win32 frame buffer.
+global_var win32FrameBuffer frameBuffer;
+
+// Win32 audio buffer
 global_var win32AudioBuffer audioBuffer;
 
 // Function signatures
@@ -124,7 +142,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
     loadXInputDLLFunctions();
 
     // Create our back buffer.
-    win32InitBuffer(&backBuffer, 1024, 768);
+    win32InitFrameBuffer(&frameBuffer, 1024, 768);
 
     // Create a new window struct and set all of it's values to 0.
     WNDCLASS windowClass = {};
@@ -276,10 +294,10 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
         } // controller loop
 
-        win32WriteBitsToBufferMemory(backBuffer, redOffset, greenOffset);
+        win32WriteBitsToBufferMemory(frameBuffer, redOffset, greenOffset);
 
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-        win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
+        win32CopyBufferToWindow(deviceHandleForWindow, frameBuffer, clientDimensions.width, clientDimensions.height);
 
         /*
          * Audio stuff
@@ -311,7 +329,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 // Offset, in bytes, from the start of the buffer to the point where the lock begins.
                 // We Mod the result by the total number of bytes so that the value wraps.
                 // Result will look like this: 0, 4, 8, 12, 16, 24
-                uint32_t lockOffsetInBytes = ((runningAudioSampleIndex * audioBuffer.bytesPerSample) % audioBuffer.bufferInBytes);
+                uint32_t lockOffsetInBytes = ((runningAudioSampleIndex * audioBuffer.bytesPerSample) % audioBuffer.bufferSizeInBytes);
 
                 // Size, in bytes, of the portion of the buffer to lock.
                 uint32_t lockSizeInBytes;
@@ -322,7 +340,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 if (lockOffsetInBytes > playCursorOffsetInBytes) {
 
                     // Gap to the end of the buffer, plus the start of the buffer up to the current play cursor
-                    lockSizeInBytes = (audioBuffer.bufferInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
+                    lockSizeInBytes = (audioBuffer.bufferSizeInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
 
                 }else {
                     // Gap from the current lock offset up to the current play cursor
@@ -332,7 +350,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 uint8_t doAudioWrite = 0;
 
                 if (runningAudioSampleIndex == 0 && playCursorOffsetInBytes == 0 && lockOffsetInBytes == 0 && lockSizeInBytes == 0) {
-                    lockSizeInBytes = audioBuffer.bufferInBytes;
+                    lockSizeInBytes = audioBuffer.bufferSizeInBytes;
                     doAudioWrite = 1;
                 }
 
@@ -523,7 +541,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
-            win32CopyBufferToWindow(deviceHandleForWindow, backBuffer, clientDimensions.width, clientDimensions.height);
+            win32CopyBufferToWindow(deviceHandleForWindow, frameBuffer, clientDimensions.width, clientDimensions.height);
 
             // End the paint request and releases the device context.
             EndPaint(window, &paint);
@@ -601,12 +619,12 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * write into, which it can then display to the screen using it's internal 
  * Graphics Device Interface (GDI).
  *
- * @param win32OffScreenBuffer  *buffer     A pointer to the Win32 off screen buffer
+ * @param win32FrameBuffer  *buffer     A pointer to the Win32 off screen buffer
  * @param int                   width       The width of the window's viewport
  * @param int                   height      The height of the window's viewport
  * 
  */
-internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width, uint32_t height)
+internal_func void win32InitFrameBuffer(win32FrameBuffer *buffer, uint32_t width, uint32_t height)
 {
     if (DEBUG_OUTPUT) {
         OutputDebugString("\nInitialising Win32 Buffer ");
@@ -620,7 +638,7 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
 
         // Yes, then free the memorty allocated.
         // We do this because we have to redraw it as this method
-        // (win32InitBuffer) is called on a window resize.
+        // (win32InitFrameBuffer) is called on a window resize.
         VirtualFree(buffer->memory, NULL, MEM_RELEASE);
     }
 
@@ -655,7 +673,7 @@ internal_func void win32InitBuffer(win32OffScreenBuffer *buffer, uint32_t width,
  * Once all the memory has been written to the buffer is ready to be drawn on
  * screen
  */
-internal_func void win32WriteBitsToBufferMemory(win32OffScreenBuffer buffer, int redOffset, int greenOffset)
+internal_func void win32WriteBitsToBufferMemory(win32FrameBuffer buffer, int redOffset, int greenOffset)
 {
     if (DEBUG_OUTPUT) {
         OutputDebugString("\nWriting to Buffer's memory\n");
@@ -756,17 +774,17 @@ internal_func void win32WriteBitsToBufferMemory(win32OffScreenBuffer buffer, int
 /*
  * Function for handling WM_PAINT message.
  *
- * Copies a win32OffScreenBuffer's memory to the actual window - which will then
+ * Copies a win32FrameBuffer's memory to the actual window - which will then
  * display its contents to the screen.
  *
  *
  * @param deviceHandleForWindow     The window handle
- * @param win32OffScreenBuffer      The buffer
+ * @param win32FrameBuffer      The buffer
  * @param width                        The window's viewport width
  * @param height                    The window's viewport height
  */
 internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow, 
-                                            win32OffScreenBuffer buffer,
+                                            win32FrameBuffer buffer,
                                             uint32_t width,
                                             uint32_t height)
 {
@@ -856,29 +874,18 @@ internal_func void win32InitDirectSound(HWND window)
         return;
     }
 
-    // How many audio channels are we targetting?
-    uint8_t noOfChannels = 2;
-
-    // How many bits per individual left or right sample? 
-    // (16-bits for the left channel 16-bits for the right channel.)
-    uint8_t bitsPerSample = 16;
-
-    // How many samples per second will we be storing?
-    uint16_t samplesPerSecond = 48000; // 48kHz
+    // Create the struct    
+    audioBuffer.noOfChannels = 2;
+    audioBuffer.bitsPerSample = 16;
+    audioBuffer.samplesPerSecond = 48000;
+    audioBuffer.bytesPerSample = ((audioBuffer.bitsPerSample * audioBuffer.noOfChannels) / BITS_PER_BYTE);
+    audioBuffer.secondsWorthOfAudio = 1;
+    audioBuffer.bufferSizeInBytes = ((audioBuffer.bytesPerSample * audioBuffer.samplesPerSecond) * audioBuffer.secondsWorthOfAudio);
 
     // Block alignment, in bytes. Must process a multiple of blockAlignment 
     // bytes of data at a time. Data written to and read from a device 
     // must always start at the beginning of a block
-    uint8_t blockAlignment = ((bitsPerSample * noOfChannels) / BITS_PER_BYTE);
-
-    // How many bytes to store per sample? (left + right channel)
-    audioBuffer.bytesPerSample = blockAlignment;
-
-    // How many seconds worth of the audio sample do we want to store as a loop?
-    uint8_t secondsWorthOfAudio = 1;
-
-    // Define the size of our audio buffer in bytes.
-    audioBuffer.bufferInBytes = ((blockAlignment * samplesPerSecond) * secondsWorthOfAudio);
+    uint8_t blockAlignment = audioBuffer.bytesPerSample;
 
     // Result variable for the various function call return checks.
     HRESULT res;
@@ -935,11 +942,11 @@ internal_func void win32InitDirectSound(HWND window)
     WAVEFORMATEX waveFormat = {};
 
     waveFormat.wFormatTag          = WAVE_FORMAT_PCM;
-    waveFormat.nChannels           = noOfChannels;
-    waveFormat.nSamplesPerSec      = samplesPerSecond;
-    waveFormat.nAvgBytesPerSec     = (samplesPerSecond * blockAlignment);
+    waveFormat.nChannels           = audioBuffer.noOfChannels;
+    waveFormat.nSamplesPerSec      = audioBuffer.samplesPerSecond;
+    waveFormat.nAvgBytesPerSec     = (audioBuffer.samplesPerSecond * blockAlignment);
     waveFormat.nBlockAlign         = blockAlignment;
-    waveFormat.wBitsPerSample      = bitsPerSample;
+    waveFormat.wBitsPerSample      = audioBuffer.bitsPerSample;
     waveFormat.cbSize              = 0;
 
     res = primarySoundBuffer->SetFormat(&waveFormat);
@@ -955,7 +962,7 @@ internal_func void win32InitDirectSound(HWND window)
 
     secondarySoundBufferDesc.dwSize              = sizeof(secondarySoundBufferDesc);
     secondarySoundBufferDesc.dwFlags             = 0;
-    secondarySoundBufferDesc.dwBufferBytes       = audioBuffer.bufferInBytes;
+    secondarySoundBufferDesc.dwBufferBytes       = audioBuffer.bufferSizeInBytes;
     secondarySoundBufferDesc.lpwfxFormat         = &waveFormat;
     secondarySoundBufferDesc.guid3DAlgorithm     = GUID_NULL;
 
