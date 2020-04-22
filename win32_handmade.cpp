@@ -369,9 +369,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                         *audioSample = audioSampleValue;
 
                         // Move cursor to the start of the next sample grouping.
-                        if ((i - 1000) != chunkOneSamples) {
-                            audioSample = (audioSample + 1);
-                        }
+                        audioSample = (audioSample + 1);
 
                         soundSquareWaveCounter = (soundSquareWaveCounter - 1);
                     }
