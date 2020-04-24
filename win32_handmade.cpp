@@ -126,6 +126,46 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
 
+void writeAudioBits(DWORD chunkBytes, void * chunkPointer, uint32_t soundSquareWaveDuration, uint32_t *soundSquareWaveCounter)
+{
+    // Calculate the total number of 4-byte samples (16 for the left, 16 for the right) 
+    // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
+    // told us we can write to.
+    uint64_t chunkSamples = (chunkBytes / audioBuffer.bytesPerSample);
+
+    // Grab the first 16-bit audio sample from the first block of memory 
+    uint16_t *audioSample = (uint16_t*)chunkPointer;
+
+    // Iterate over each 2-bytes and write the same data for both.
+    for (size_t i = 0; i < chunkSamples; i++) {
+
+        if (0 == *soundSquareWaveCounter) {
+            *soundSquareWaveCounter = soundSquareWaveDuration;
+        }
+
+        uint16_t audioSampleValue;
+        if (*soundSquareWaveCounter > (soundSquareWaveDuration / 2)) {
+            audioSampleValue = 16000;
+        } else {
+            audioSampleValue = -16000;
+        }
+
+        // Left (16-bits)
+        *audioSample = audioSampleValue;
+
+        // Move to the right sample (16-bits)
+        audioSample = (audioSample + 1);
+
+        // Write the right sample
+        *audioSample = audioSampleValue;
+
+        // Move cursor to the start of the next sample grouping.
+        audioSample = (audioSample + 1);
+
+        *soundSquareWaveCounter = (*soundSquareWaveCounter - 1);
+    }
+}
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -372,10 +412,10 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
                 if (doAudioWrite) {
 
-                    void* chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
+                    void *chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
                     DWORD chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
 
-                    void* chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
+                    void *chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
                     DWORD chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
 
                     res = audioBuffer.buffer->Lock(lockOffsetInBytes,
@@ -398,43 +438,8 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
                         log(LOG_LEVEL_INFO, "");
 
-
-                        // Calculate the total number of 4-byte samples (16 for the left, 16 for the right) 
-                        // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
-                        // told us we can write to.
-                        uint64_t chunkOneTotalSamples = (chunkOneBytes / audioBuffer.bytesPerSample);
-
-                        // Grab the first 16-bit audio sample from the first block of memory 
-                        uint16_t* audioSample = (uint16_t*)chunkOnePtr;
-
-                        // Iterate over each 2-bytes and write the same data for both.
-                        for (size_t i = 0; i < chunkOneTotalSamples; i++) {
-
-                            if (0 == soundSquareWaveCounter) {
-                                soundSquareWaveCounter = soundSquareWaveDuration;
-                            }
-
-                            uint16_t audioSampleValue;
-                            if (soundSquareWaveCounter > (soundSquareWaveDuration / 2)) {
-                                audioSampleValue = 16000;
-                            } else {
-                                audioSampleValue = -16000;
-                            }
-
-                            // Left (16-bits)
-                            *audioSample = audioSampleValue;
-
-                            // Move to the right sample (16-bits)
-                            audioSample = (audioSample + 1);
-
-                            // Write the right sample
-                            *audioSample = audioSampleValue;
-
-                            // Move cursor to the start of the next sample grouping.
-                            audioSample = (audioSample + 1);
-
-                            soundSquareWaveCounter = (soundSquareWaveCounter - 1);
-                        }
+                        //writeAudioBits(chunkOneBytes, chunkOnePtr, soundSquareWaveDuration, &soundSquareWaveCounter);
+                        writeAudioBits(chunkTwoBytes, chunkTwoPtr, soundSquareWaveDuration, &soundSquareWaveCounter);
 
                         audioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
