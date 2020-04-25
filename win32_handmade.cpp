@@ -438,8 +438,8 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
                         log(LOG_LEVEL_INFO, "");
 
-                        //writeAudioBits(chunkOneBytes, chunkOnePtr, soundSquareWaveDuration, &soundSquareWaveCounter);
-                        writeAudioBits(chunkTwoBytes, chunkTwoPtr, soundSquareWaveDuration, &soundSquareWaveCounter);
+                        writeAudioBits(chunkOneBytes, chunkOnePtr, soundSquareWaveDuration, &soundSquareWaveCounter);
+                        //writeAudioBits(chunkTwoBytes, chunkTwoPtr, soundSquareWaveDuration, &soundSquareWaveCounter);
 
                         audioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
