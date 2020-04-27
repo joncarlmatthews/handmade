@@ -96,6 +96,7 @@ struct win32AudioBuffer
 
     // 
     DWORD lastLockOffset;
+    DWORD runningSampleIndex;
 
     // Flag for whether or not the buffer has been successfully initiated.
     bool bufferSuccessfulyCreated;
@@ -126,44 +127,144 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
 
-void writeAudioBits(DWORD chunkBytes, void * chunkPointer, uint32_t soundSquareWaveDuration, uint32_t *soundSquareWaveCounter)
+bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 {
-    // Calculate the total number of 4-byte samples (16 for the left, 16 for the right) 
-    // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
-    // told us we can write to.
-    uint64_t chunkSamples = (chunkBytes / audioBuffer.bytesPerSample);
-
-    // Grab the first 16-bit audio sample from the first block of memory 
-    uint16_t *audioSample = (uint16_t*)chunkPointer;
-
-    // Iterate over each 2-bytes and write the same data for both.
-    for (size_t i = 0; i < chunkSamples; i++) {
-
-        if (0 == *soundSquareWaveCounter) {
-            *soundSquareWaveCounter = soundSquareWaveDuration;
-        }
-
-        uint16_t audioSampleValue;
-        if (*soundSquareWaveCounter > (soundSquareWaveDuration / 2)) {
-            audioSampleValue = 16000;
-        } else {
-            audioSampleValue = -16000;
-        }
-
-        // Left (16-bits)
-        *audioSample = audioSampleValue;
-
-        // Move to the right sample (16-bits)
-        audioSample = (audioSample + 1);
-
-        // Write the right sample
-        *audioSample = audioSampleValue;
-
-        // Move cursor to the start of the next sample grouping.
-        audioSample = (audioSample + 1);
-
-        *soundSquareWaveCounter = (*soundSquareWaveCounter - 1);
+    if (!audioBuffer.bufferSuccessfulyCreated) {
+        return false;
     }
+
+    HRESULT res;
+
+    bool doAudioWrite;
+
+    if (lockSizeInBytes <= 0) {
+        doAudioWrite = false;
+        log(LOG_LEVEL_INFO, "Skipping audio write, block size is 0");
+        //log(LOG_LEVEL_INFO, "Lock offset in bytes: %i Lock size in bytes: %i, play cursor position: %i", lockOffsetInBytes, lockSizeInBytes, playCursorOffsetInBytes);
+        log(LOG_LEVEL_INFO, "");
+
+    } else {
+        doAudioWrite = true;
+    }
+
+    if (doAudioWrite) {
+
+        void* chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
+        DWORD chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
+
+        void* chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
+        DWORD chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
+
+        res = audioBuffer.buffer->Lock(lockOffsetInBytes,
+                                        lockSizeInBytes,
+                                        &chunkOnePtr,
+                                        &chunkOneBytes,
+                                        &chunkTwoPtr,
+                                        &chunkTwoBytes,
+                                        0);
+
+        if (SUCCEEDED(res)) {
+
+            // Calculate the total number of 4-byte samples (16 for the left, 16 for the right) 
+            // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
+            // told us we can write to.
+            uint64_t chunkSamples = (chunkOneBytes / audioBuffer.bytesPerSample);
+
+            // Grab the first 16-bit audio sample from the first block of memory 
+            uint16_t *audioSample = (uint16_t*)chunkOnePtr;
+
+            // Iterate over each 2-bytes and write the same data for both.
+            int32_t audioSampleValue = -16000;
+
+            for (size_t i = 0; i < chunkSamples; i++) {
+
+                if (0 == (i % 375)) {
+                    if (16000 == audioSampleValue) {
+                        audioSampleValue = -16000;
+                    } else {
+                        audioSampleValue = 16000;
+                    }
+                }
+
+                // Left (16-bits)
+                *audioSample = audioSampleValue;
+
+                // Move to the right sample (16-bits)
+                audioSample = (audioSample + 1);
+
+                // Write the right sample
+                *audioSample = audioSampleValue;
+
+                // Move cursor to the start of the next sample grouping.
+                if (i <= (chunkSamples - 1)) {
+                    audioSample = (audioSample + 1);
+                }
+
+                audioBuffer.runningSampleIndex++;
+            }
+
+            uint64_t chunkTwoSamples = (chunkTwoBytes / audioBuffer.bytesPerSample);
+
+            // Grab the first 16-bit audio sample from the first block of memory 
+            uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
+
+            // Iterate over each 2-bytes and write the same data for both.
+            int32_t audioTwoSampleValue = -16000;
+
+            for (size_t i = 0; i < chunkTwoSamples; i++) {
+
+                if (0 == (i % 375)) {
+                    if (16000 == audioTwoSampleValue) {
+                        audioTwoSampleValue = -16000;
+                    } else {
+                        audioTwoSampleValue = 16000;
+                    }
+                }
+
+                // Left (16-bits)
+                *audioTwoSample = audioTwoSampleValue;
+
+                // Move to the right sample (16-bits)
+                audioTwoSample = (audioTwoSample + 1);
+
+                // Write the right sample
+                *audioTwoSample = audioTwoSampleValue;
+
+                // Move cursor to the start of the next sample grouping.
+                if (i <= (chunkTwoSamples - 1)) {
+                    audioTwoSample = (audioTwoSample + 1);
+                }
+
+                audioBuffer.runningSampleIndex++;
+            }
+
+            res = audioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
+
+            if (FAILED(res)) {
+                log(LOG_LEVEL_ERROR, "Could not unlock sound buffer");
+                switch (res) {
+                    default:
+                    case DSERR_INVALIDCALL:
+                        log(LOG_LEVEL_ERROR, "DSERR_INVALIDCALL");
+                        break;
+                    case DSERR_INVALIDPARAM:
+                        log(LOG_LEVEL_ERROR, "DSERR_INVALIDPARAM");
+                        break;
+                    case DSERR_PRIOLEVELNEEDED:
+                        log(LOG_LEVEL_ERROR, "DSERR_PRIOLEVELNEEDED");
+                        break;
+                }
+                log(LOG_LEVEL_ERROR, "");
+            }
+
+        } else {
+            log(LOG_LEVEL_ERROR, "Could not lock secondary sound buffer: ");
+            log(LOG_LEVEL_ERROR, "");
+        }
+
+    } // doWrite
+
+    return true;
 }
 
 /*
@@ -241,6 +342,8 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
     // Audio stuff...
     win32InitDirectSound(window);
+    win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes);
+    audioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
     running = TRUE;
 
@@ -331,10 +434,10 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
         } // controller loop
 
-        win32WriteBitsToBufferMemory(frameBuffer, redOffset, greenOffset);
+        win32WriteFrameBuffer(frameBuffer, redOffset, greenOffset);
 
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-        win32CopyBufferToWindow(deviceHandleForWindow, frameBuffer, clientDimensions.width, clientDimensions.height);
+        win32DisplayFrameBuffer(deviceHandleForWindow, frameBuffer, clientDimensions.width, clientDimensions.height);
 
         /*
          * Audio stuff
@@ -351,155 +454,43 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
         HRESULT res;
 
-        if (audioBuffer.bufferSuccessfulyCreated) {
+        DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
+        DWORD writeCursorOffsetInBytes = NULL; // Offset, in bytes, of the write cursor (not used)
 
-            DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
-            DWORD writeCursorOffsetInBytes = NULL; // Offset, in bytes, of the write cursor (not used)
+        res = audioBuffer.buffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
 
-            res = audioBuffer.buffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
+        if (SUCCEEDED(res)){
 
-            if (DS_OK == res) {
+            // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
+            // write and returns pointers to which data can be written
 
-                // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
-                // write and returns pointers to which data can be written
+            // Offset, in bytes, from the start of the buffer to the point where the lock begins.
+            // We Mod the result by the total number of bytes so that the value wraps.
+            // Result will look like this: 0, 4, 8, 12, 16, 24
+            DWORD lockOffsetInBytes = ((audioBuffer.runningSampleIndex * audioBuffer.bytesPerSample) % audioBuffer.bufferSizeInBytes);
 
-                // Offset, in bytes, from the start of the buffer to the point where the lock begins.
-                // We Mod the result by the total number of bytes so that the value wraps.
-                // Result will look like this: 0, 4, 8, 12, 16, 24
-                uint32_t lockOffsetInBytes = (audioBuffer.lastLockOffset % audioBuffer.bufferSizeInBytes);
+            // Size, in bytes, of the portion of the buffer to lock.
+            DWORD lockSizeInBytes;
 
-                // Size, in bytes, of the portion of the buffer to lock.
-                uint32_t lockSizeInBytes;
+            // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
+            // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
+            // one chuck of data.
+            if (lockOffsetInBytes > playCursorOffsetInBytes) {
 
-                // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
-                // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
-                // one chuck of data.
-                if (lockOffsetInBytes > playCursorOffsetInBytes) {
+                // Gap to the end of the buffer, plus the start of the buffer up to the current play cursor
+                lockSizeInBytes = (audioBuffer.bufferSizeInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
 
-                    // Gap to the end of the buffer, plus the start of the buffer up to the current play cursor
-                    lockSizeInBytes = (audioBuffer.bufferSizeInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
-
-                } else {
-                    // Gap from the current lock offset up to the current play cursor
-                    lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
-                }
-
-                audioBuffer.lastLockOffset = (audioBuffer.lastLockOffset + lockSizeInBytes);
-
-                bool doAudioWrite;
-
-                if (lockSizeInBytes <= 0) {
-                    doAudioWrite = false;
-                    log(LOG_LEVEL_INFO, "Skipping audio write, block size is 0");
-                    log(LOG_LEVEL_INFO, "Lock offset in bytes: %i Lock size in bytes: %i, play cursor position: %i", lockOffsetInBytes, lockSizeInBytes, playCursorOffsetInBytes);
-                    log(LOG_LEVEL_INFO, "");
-
-                } else {
-                    doAudioWrite = true;
-                }
-
-                if (doAudioWrite) {
-
-                    void *chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
-                    DWORD chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
-
-                    void *chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
-                    DWORD chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
-
-                    res = audioBuffer.buffer->Lock(lockOffsetInBytes,
-                                                    lockSizeInBytes,
-                                                    &chunkOnePtr,
-                                                    &chunkOneBytes,
-                                                    &chunkTwoPtr,
-                                                    &chunkTwoBytes,
-                                                    NULL);
-
-                    if (DS_OK == res) {
-
-                        // Calculate the total number of 4-byte samples (16 for the left, 16 for the right) 
-                        // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
-                        // told us we can write to.
-                        uint64_t chunkSamples = (chunkOneBytes / audioBuffer.bytesPerSample);
-
-                        // Grab the first 16-bit audio sample from the first block of memory 
-                        uint16_t *audioSample = (uint16_t*)chunkOnePtr;
-
-                        // Iterate over each 2-bytes and write the same data for both.
-                        int32_t audioSampleValue = -16000;
-
-                        for (size_t i = 0; i < chunkSamples; i++) {
-
-                            if (0 == (i % 375)) {
-                                if (16000 == audioSampleValue) {
-                                    audioSampleValue = -16000;
-                                } else {
-                                    audioSampleValue = 16000;
-                                }
-                            }
-
-                            // Left (16-bits)
-                            *audioSample = audioSampleValue;
-
-                            // Move to the right sample (16-bits)
-                            audioSample = (audioSample + 1);
-
-                            // Write the right sample
-                            *audioSample = audioSampleValue;
-
-                            // Move cursor to the start of the next sample grouping.
-                            if (i <= (chunkSamples - 1)) {
-                                audioSample = (audioSample + 1);
-                            }
-                        }
-
-                        uint64_t chunkTwoSamples = (chunkTwoBytes / audioBuffer.bytesPerSample);
-
-                        // Grab the first 16-bit audio sample from the first block of memory 
-                        uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
-
-                        // Iterate over each 2-bytes and write the same data for both.
-                        int32_t audioTwoSampleValue = -16000;
-
-                        for (size_t i = 0; i < chunkTwoSamples; i++) {
-
-                            if (0 == (i % 375)) {
-                                if (16000 == audioTwoSampleValue) {
-                                    audioTwoSampleValue = -16000;
-                                } else {
-                                    audioTwoSampleValue = 16000;
-                                }
-                            }
-
-                            // Left (16-bits)
-                            *audioTwoSample = audioTwoSampleValue;
-
-                            // Move to the right sample (16-bits)
-                            audioTwoSample = (audioTwoSample + 1);
-
-                            // Write the right sample
-                            *audioTwoSample = audioTwoSampleValue;
-
-                            // Move cursor to the start of the next sample grouping.
-                            if (i <= (chunkTwoSamples - 1)) {
-                                audioTwoSample = (audioTwoSample + 1);
-                            }
-                        }
-
-                        audioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
-
-                    } else {
-                        log(LOG_LEVEL_ERROR, "Could not lock secondary sound buffer: ");
-                        log(LOG_LEVEL_ERROR, "Play cursor position: %i, lock offset in bytes: %i Lock size in bytes: %i, ", playCursorOffsetInBytes, lockOffsetInBytes, lockSizeInBytes);
-                        log(LOG_LEVEL_ERROR, "");
-                    }
-
-                } // doWrite
-
-            }else {
-                log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
-                log(LOG_LEVEL_ERROR, "");
-
+            } else {
+                // Gap from the current lock offset up to the current play cursor
+                lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
             }
+                
+            //win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes);
+
+        }else {
+            log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
+            log(LOG_LEVEL_ERROR, "");
+
         }
 
     } // running
@@ -599,7 +590,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
-            win32CopyBufferToWindow(deviceHandleForWindow, frameBuffer, clientDimensions.width, clientDimensions.height);
+            win32DisplayFrameBuffer(deviceHandleForWindow, frameBuffer, clientDimensions.width, clientDimensions.height);
 
             // End the paint request and releases the device context.
             EndPaint(window, &paint);
@@ -619,8 +610,6 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
                     running = 0;
                 }
             }
-            
-
             /*
              * lParam bitmask. Written from right to left
              *
@@ -731,7 +720,7 @@ internal_func void win32InitFrameBuffer(win32FrameBuffer *buffer, uint32_t width
  * Once all the memory has been written to the buffer is ready to be drawn on
  * screen
  */
-internal_func void win32WriteBitsToBufferMemory(win32FrameBuffer buffer, int redOffset, int greenOffset)
+internal_func void win32WriteFrameBuffer(win32FrameBuffer buffer, int redOffset, int greenOffset)
 {
     if (DEBUG_OUTPUT) {
         OutputDebugString("\nWriting to Buffer's memory\n");
@@ -771,48 +760,6 @@ internal_func void win32WriteBitsToBufferMemory(win32FrameBuffer buffer, int red
              * 00   00  00  00
             */
 
-            // @JM(Note) Method one. Setting a pointer at the start of the pixel
-            // and then moving it into the coorect place in memory before the 
-            // write. (Three writes to memory)
-            /*
-            uint8_t *r = (uint8_t *)pixel;
-            r = (r + 2);
-            *r = 32;
-
-            uint8_t *g = (uint8_t *)pixel;
-            g = (g + 1);
-            *g = 70;
-
-            uint8_t *b = (uint8_t *)pixel;
-            *b = 166;
-
-            uint8_t *padding = (uint8_t *)pixel;
-            padding = (padding + 3);
-            *padding = 0;
-            */
-
-            // @JM(Note) Method two. Bit shifting the individual 1 byte variables
-            // into the pixel location, whilst bitwise oring them into the pixel
-            // to maintain pixel's previous values. (Three writes to memory)
-            /*
-            uint8_t red = 51;
-            uint8_t green = 193;
-            uint8_t blue = 67;
-            *pixel = (red << 16 | *pixel);
-            *pixel = (green << 8 | *pixel);
-            *pixel = (blue | *pixel);
-            */
-
-            // @JM(Note) Method three. Bit shifting and bitwise oring the 
-            // individual 1 byte variables into the themselves, then setting
-            // that to the pixel variable's value. (One write to memory)
-            /*
-            uint8_t red     = 0xcf;
-            uint8_t green   = 0x4a;
-            uint8_t blue    = 0xb8;
-            *pixel = ((red << 16) | (green << 8) | blue);
-            */
-
             uint8_t red = (uint8_t)(x + redOffset);  // Chop off anything after the first 8 bits of the variable x + offset
             uint8_t green = (uint8_t)(y + greenOffset);  // Chop off anything after the first 8 bits of the variable y + offset
             uint8_t blue = 0;
@@ -841,7 +788,7 @@ internal_func void win32WriteBitsToBufferMemory(win32FrameBuffer buffer, int red
  * @param width                        The window's viewport width
  * @param height                    The window's viewport height
  */
-internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow, 
+internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, 
                                             win32FrameBuffer buffer,
                                             uint32_t width,
                                             uint32_t height)
@@ -939,6 +886,7 @@ internal_func void win32InitDirectSound(HWND window)
     audioBuffer.bytesPerSample = ((audioBuffer.bitsPerSample * audioBuffer.noOfChannels) / BITS_PER_BYTE);
     audioBuffer.secondsWorthOfAudio = 1;
     audioBuffer.bufferSizeInBytes = ((audioBuffer.bytesPerSample * audioBuffer.samplesPerSecond) * audioBuffer.secondsWorthOfAudio);
+    audioBuffer.runningSampleIndex = 0;
 
     // Block alignment, in bytes. Must process a multiple of blockAlignment 
     // bytes of data at a time. Data written to and read from a device 
@@ -962,14 +910,14 @@ internal_func void win32InitDirectSound(HWND window)
 
     res = DirectSoundCreate(NULL, &directSound, NULL);
 
-    if (res != DS_OK) {
+    if (FAILED(res)){
         log(LOG_LEVEL_ERROR, "Could not create direct sound object");
         return;
     }
 
     res = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
 
-    if (res != DS_OK) {
+    if (FAILED(res)){
         log(LOG_LEVEL_ERROR, "Could not set cooperative level on direct sound object");
         return;
     }
@@ -979,7 +927,8 @@ internal_func void win32InitDirectSound(HWND window)
     // so that when we create the secondary buffer that we actually write 
     // to, the sound card is already in the correct format. This is the only
     // purpose of the primary buffer.
-    DSBUFFERDESC primarySoundBufferDesc = {};
+    DSBUFFERDESC primarySoundBufferDesc;
+    ZeroMemory(&primarySoundBufferDesc, sizeof(DSBUFFERDESC));
 
     primarySoundBufferDesc.dwSize            = sizeof(primarySoundBufferDesc);
     primarySoundBufferDesc.dwFlags           = DSBCAPS_PRIMARYBUFFER;
@@ -991,7 +940,7 @@ internal_func void win32InitDirectSound(HWND window)
 
     res = directSound->CreateSoundBuffer(&primarySoundBufferDesc, &primarySoundBuffer, NULL);
 
-    if (res != DS_OK) {
+    if (FAILED(res)){
         log(LOG_LEVEL_ERROR, "Could not create primary buffer");
         return;
     }
@@ -1009,14 +958,15 @@ internal_func void win32InitDirectSound(HWND window)
 
     res = primarySoundBuffer->SetFormat(&waveFormat);
 
-    if (res != DS_OK) {
+    if (FAILED(res)){
         log(LOG_LEVEL_ERROR, "Could not set sound format on primary buffer");
         return;
     }
 
     // Create the secondary buffer. This is the buffer we'll use to actually
     // write bytes to.
-    DSBUFFERDESC secondarySoundBufferDesc = {};
+    DSBUFFERDESC secondarySoundBufferDesc;
+    ZeroMemory(&secondarySoundBufferDesc, sizeof(DSBUFFERDESC));
 
     secondarySoundBufferDesc.dwSize              = sizeof(secondarySoundBufferDesc);
     secondarySoundBufferDesc.dwFlags             = 0;
@@ -1026,14 +976,8 @@ internal_func void win32InitDirectSound(HWND window)
 
     res = directSound->CreateSoundBuffer(&secondarySoundBufferDesc, &audioBuffer.buffer, NULL);
 
-    if (res != DS_OK) {
+    if (FAILED(res)){
         log(LOG_LEVEL_ERROR, "Could not create secondary buffer");
-        return;
-    }
-
-    res = audioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
-    if (res != DS_OK) {
-        log(LOG_LEVEL_ERROR, "Could not play secondary sound buffer");
         return;
     }
 

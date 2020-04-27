@@ -9,9 +9,9 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message
 
 internal_func void win32InitFrameBuffer(win32FrameBuffer *buffer, uint32_t width, uint32_t height);
 
-internal_func void win32CopyBufferToWindow(HDC deviceHandleForWindow, win32FrameBuffer buffer, uint32_t width, uint32_t height);
+internal_func void win32WriteFrameBuffer(win32FrameBuffer buffer, int redOffset, int greenOffset);
 
-internal_func void win32WriteBitsToBufferMemory(win32FrameBuffer buffer, int redOffset, int greenOffset);
+internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, win32FrameBuffer buffer, uint32_t width, uint32_t height);
 
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window);
 
