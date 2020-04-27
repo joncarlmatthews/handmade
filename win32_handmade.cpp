@@ -127,7 +127,7 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
 
-bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
+bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool actuallyBother)
 {
     if (!audioBuffer.bufferSuccessfulyCreated) {
         return false;
@@ -147,7 +147,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
         doAudioWrite = true;
     }
 
-    if (doAudioWrite) {
+    if (doAudioWrite && actuallyBother) {
 
         void* chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
         DWORD chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
@@ -178,7 +178,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 
             for (size_t i = 0; i < chunkSamples; i++) {
 
-                if (0 == (i % 375)) {
+                if (0 == (i % 256)) {
                     if (16000 == audioSampleValue) {
                         audioSampleValue = -16000;
                     } else {
@@ -213,7 +213,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 
             for (size_t i = 0; i < chunkTwoSamples; i++) {
 
-                if (0 == (i % 375)) {
+                if (0 == (i % 256)) {
                     if (16000 == audioTwoSampleValue) {
                         audioTwoSampleValue = -16000;
                     } else {
@@ -242,18 +242,6 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 
             if (FAILED(res)) {
                 log(LOG_LEVEL_ERROR, "Could not unlock sound buffer");
-                switch (res) {
-                    default:
-                    case DSERR_INVALIDCALL:
-                        log(LOG_LEVEL_ERROR, "DSERR_INVALIDCALL");
-                        break;
-                    case DSERR_INVALIDPARAM:
-                        log(LOG_LEVEL_ERROR, "DSERR_INVALIDPARAM");
-                        break;
-                    case DSERR_PRIOLEVELNEEDED:
-                        log(LOG_LEVEL_ERROR, "DSERR_PRIOLEVELNEEDED");
-                        break;
-                }
                 log(LOG_LEVEL_ERROR, "");
             }
 
@@ -342,7 +330,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
     // Audio stuff...
     win32InitDirectSound(window);
-    win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes);
+    win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes, true);
     audioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
     running = TRUE;
@@ -485,7 +473,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
             }
                 
-            //win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes);
+            win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, true);
 
         }else {
             log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
