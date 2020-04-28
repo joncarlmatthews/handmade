@@ -149,10 +149,10 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
 
     if (doAudioWrite && actuallyBother) {
 
-        void* chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
+        void *chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
         DWORD chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
 
-        void* chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
+        void *chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
         DWORD chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
 
         res = audioBuffer.buffer->Lock(lockOffsetInBytes,
@@ -174,15 +174,19 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
             uint16_t *audioSample = (uint16_t*)chunkOnePtr;
 
             // Iterate over each 2-bytes and write the same data for both.
-            int32_t audioSampleValue = -16000;
+            int16_t waveSize = 4000;
+            int16_t audioSampleValue = -waveSize;
+
+            uint64_t cycleIndex = 0;
+            uint8_t cyclesPerSecond = 375;
 
             for (size_t i = 0; i < chunkSamples; i++) {
 
-                if (0 == (i % 256)) {
-                    if (16000 == audioSampleValue) {
-                        audioSampleValue = -16000;
+                if (0 == (cycleIndex % cyclesPerSecond)) {
+                    if (waveSize == audioSampleValue) {
+                        audioSampleValue = -waveSize;
                     } else {
-                        audioSampleValue = 16000;
+                        audioSampleValue = waveSize;
                     }
                 }
 
@@ -190,17 +194,16 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
                 *audioSample = audioSampleValue;
 
                 // Move to the right sample (16-bits)
-                audioSample = (audioSample + 1);
+                audioSample++;
 
                 // Write the right sample
                 *audioSample = audioSampleValue;
 
                 // Move cursor to the start of the next sample grouping.
-                if (i <= (chunkSamples - 1)) {
-                    audioSample = (audioSample + 1);
-                }
+                audioSample++;
 
                 audioBuffer.runningSampleIndex++;
+                cycleIndex++;
             }
 
             uint64_t chunkTwoSamples = (chunkTwoBytes / audioBuffer.bytesPerSample);
@@ -209,33 +212,32 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
             uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
 
             // Iterate over each 2-bytes and write the same data for both.
-            int32_t audioTwoSampleValue = -16000;
+            //int32_t audioTwoSampleValue = -4000;
 
             for (size_t i = 0; i < chunkTwoSamples; i++) {
 
-                if (0 == (i % 256)) {
-                    if (16000 == audioTwoSampleValue) {
-                        audioTwoSampleValue = -16000;
+                if (0 == (cycleIndex % cyclesPerSecond)) {
+                    if (waveSize == audioSampleValue) {
+                        audioSampleValue = -waveSize;
                     } else {
-                        audioTwoSampleValue = 16000;
+                        audioSampleValue = waveSize;
                     }
                 }
 
                 // Left (16-bits)
-                *audioTwoSample = audioTwoSampleValue;
+                *audioTwoSample = audioSampleValue;
 
                 // Move to the right sample (16-bits)
-                audioTwoSample = (audioTwoSample + 1);
+                audioTwoSample++;
 
                 // Write the right sample
-                *audioTwoSample = audioTwoSampleValue;
+                *audioTwoSample = audioSampleValue;
 
                 // Move cursor to the start of the next sample grouping.
-                if (i <= (chunkTwoSamples - 1)) {
-                    audioTwoSample = (audioTwoSample + 1);
-                }
+                audioTwoSample++;
 
                 audioBuffer.runningSampleIndex++;
+                cycleIndex++;
             }
 
             res = audioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
@@ -473,7 +475,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
             }
                 
-            win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, true);
+            win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, false);
 
         }else {
             log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
