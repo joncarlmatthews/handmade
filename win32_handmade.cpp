@@ -14,6 +14,9 @@
 #include <stdarg.h> // For variable number of arguments in function sigs
 #include <dsound.h>
 
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+
 // Xinput for receiving controller input. 
 #include <xinput.h>
 
@@ -178,7 +181,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
             int16_t audioSampleValue = -waveSize;
 
             uint64_t cycleIndex = 0;
-            uint8_t cyclesPerSecond = 375;
+            uint16_t cyclesPerSecond = 375;
 
             for (size_t i = 0; i < chunkSamples; i++) {
 
@@ -270,6 +273,8 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                                     LPSTR commandLine, 
                                     int showCode)
 {
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 
     // Load XInput DLL functions.
@@ -475,7 +480,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
             }
                 
-            win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, false);
+            //win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, false);
 
         }else {
             log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
