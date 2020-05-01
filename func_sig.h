@@ -23,4 +23,6 @@ internal_func void loadXInputDLLFunctions(void);
 
 internal_func void win32InitDirectSound(HWND window);
 
+internal_func bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool actuallyBother);
+
 #endif
