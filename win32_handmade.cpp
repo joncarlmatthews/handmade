@@ -97,8 +97,6 @@ struct win32AudioBuffer
     // Byte count of our buffer's memory
     uint64_t bufferSizeInBytes;
 
-    // 
-    DWORD lastLockOffset;
     DWORD runningSampleIndex;
 
     // Flag for whether or not the buffer has been successfully initiated.
@@ -237,6 +235,8 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
 
                 cycleIndex = (cycleIndex + audioBuffer.bytesPerSample);
             }
+
+            audioBuffer.runningSampleIndex = cycleIndex;
 
             res = audioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
@@ -441,46 +441,51 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
         // The IDirectSoundBuffer8::GetCurrentPosition method retrieves 
         // the position of the play and write cursors in the sound buffer.
+        if (audioBuffer.bufferSuccessfulyCreated) {
+         
+            HRESULT res;
 
-        HRESULT res;
+            DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
+            DWORD writeCursorOffsetInBytes = NULL; // Offset, in bytes, of the write cursor (not used)
 
-        DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
-        DWORD writeCursorOffsetInBytes = NULL; // Offset, in bytes, of the write cursor (not used)
+            res = audioBuffer.buffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
 
-        res = audioBuffer.buffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
+            if (SUCCEEDED(res)) {
 
-        if (SUCCEEDED(res)){
+                // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
+                // write and returns pointers to which data can be written
 
-            // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
-            // write and returns pointers to which data can be written
+                // Offset, in bytes, from the start of the buffer to the point where the lock begins.
+                // We Mod the result by the total number of bytes so that the value wraps.
+                // Result will look like this: 0, 4, 8, 12, 16, 24
+                DWORD lockOffsetInBytes = (audioBuffer.runningSampleIndex % audioBuffer.bufferSizeInBytes);
 
-            // Offset, in bytes, from the start of the buffer to the point where the lock begins.
-            // We Mod the result by the total number of bytes so that the value wraps.
-            // Result will look like this: 0, 4, 8, 12, 16, 24
-            DWORD lockOffsetInBytes = ((audioBuffer.runningSampleIndex * audioBuffer.bytesPerSample) % audioBuffer.bufferSizeInBytes);
+                // Size, in bytes, of the portion of the buffer to lock.
+                DWORD lockSizeInBytes;
 
-            // Size, in bytes, of the portion of the buffer to lock.
-            DWORD lockSizeInBytes;
+                // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
+                // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
+                // one chuck of data.
+                if (lockOffsetInBytes > playCursorOffsetInBytes) {
 
-            // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
-            // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
-            // one chuck of data.
-            if (lockOffsetInBytes > playCursorOffsetInBytes) {
+                    // Gap to the end of the buffer, plus the start of the buffer up to the current play cursor
+                    lockSizeInBytes = (audioBuffer.bufferSizeInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
 
-                // Gap to the end of the buffer, plus the start of the buffer up to the current play cursor
-                lockSizeInBytes = (audioBuffer.bufferSizeInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
+                }
+                else {
+                    // Gap from the current lock offset up to the current play cursor
+                    lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
+                }
 
-            } else {
-                // Gap from the current lock offset up to the current play cursor
-                lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
+                // Test
+                win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, true);
+
             }
-               
-            // Test
-            win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, true);
+            else {
+                log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
+                log(LOG_LEVEL_ERROR, "");
 
-        }else {
-            log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
-            log(LOG_LEVEL_ERROR, "");
+            }
 
         }
 
