@@ -10,23 +10,26 @@
  * long long:   (8)     int64_t / uint64_t  (-9qn 9qn)          (0-18qn)
  */
 #include <stdint.h>
-#include <strsafe.h> // For STRSAFE_MAX_CCH
+#include <math.h> // For Sin
+#include <strsafe.h> // For StringCbVPrintfA & STRSAFE_MAX_CCH
 #include <stdarg.h> // For variable number of arguments in function sigs
-#include <dsound.h>
-
+#include <dsound.h> // Direct Sound for audio output.
+#include <xinput.h> // Xinput for receiving controller input. 
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 
-// Xinput for receiving controller input. 
-#include <xinput.h>
+#define global_var          static // Global variables
+#define local_persist_var   static // Static variables within a local scope (e.g. case statement, function)
+#define internal_func       static // Functions that are only available within the file they're declared in
+#define PI32                3.14159265359f
 
-#define global_var          static; // Global variables
-#define local_persist_var   static; // Static variables within a local scope (e.g. case statement, function)
-#define internal_func       static; // Functions that are only available within the file they're declared in
-#define bool32              uint32_t; // For 0 or > 0 I don't care booleans
 #define LOG_LEVEL_INFO      0x100
 #define LOG_LEVEL_WARN      0x200
 #define LOG_LEVEL_ERROR     0x300
+
+typedef uint32_t    bool32; // For 0 or "> 0 I don't care" booleans
+typedef float       float32;
+typedef double      float64;
 
 // I know this wont change, but it's to help me read the code, instead of seeing
 // things multiplied by what might seem like an arbitrary 8 all over the place.
@@ -351,7 +354,6 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                     lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
                 }
 
-                // Test
                 win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, true);
 
             }
@@ -855,7 +857,7 @@ internal_func void win32InitDirectSound(HWND window)
     debug("Primary & secondary successfully buffer created\n");
 }
 
-bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool actuallyBother)
+bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 {
     if (!audioBuffer.bufferSuccessfulyCreated) {
         return false;
@@ -876,7 +878,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
         doAudioWrite = true;
     }
 
-    if (doAudioWrite && actuallyBother) {
+    if (doAudioWrite) {
 
         void* chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
         DWORD chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
@@ -902,25 +904,23 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
             // Grab the first 16-bit audio sample from the first block of memory 
             uint16_t *audioSample = (uint16_t*)chunkOnePtr;
 
-            // Iterate over each 2-bytes and write the same data for both.
-            int16_t highWave = 4000;
-            int16_t lowWave = -4000;
-
+            // Iterate over each 2-bytes and write the same data for both...
             int16_t audioSampleValue = 0;
 
-            // The number of samples per note (high or low)
-            uint16_t noOfSamplesPerWave = 400;
+            // Size of the wave? Larger wave = louder
+            int16_t sizeOfWave = 4000;
 
             uint64_t cycleIndex = lockOffsetInBytes;
 
+            float64 radians = 0;
+            float64 sine = 0;
+
             for (size_t i = 0; i < chunkSamples; i++) {
 
-                if ((cycleIndex % (noOfSamplesPerWave * 2)) < noOfSamplesPerWave) {
-                    audioSampleValue = lowWave;
-                }
-                else {
-                    audioSampleValue = highWave;
-                }
+                radians = ((cycleIndex/2) * (PI32 / 180.0f));
+                sine = sinf(radians);
+
+                audioSampleValue = (int16_t)(sine * sizeOfWave);
 
                 // Left (16-bits)
                 *audioSample = audioSampleValue;
@@ -940,16 +940,14 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, bool 
             uint64_t chunkTwoSamples = (chunkTwoBytes / audioBuffer.bytesPerSample);
 
             // Grab the first 16-bit audio sample from the first block of memory 
-            uint16_t* audioTwoSample = (uint16_t*)chunkTwoPtr;
+            uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
 
             for (size_t i = 0; i < chunkTwoSamples; i++) {
 
-                if ((cycleIndex % (noOfSamplesPerWave * 2)) < noOfSamplesPerWave) {
-                    audioSampleValue = lowWave;
-                }
-                else {
-                    audioSampleValue = highWave;
-                }
+                radians = ((cycleIndex / 2) * (PI32 / 180.0f));
+                sine = sinf(radians);
+
+                audioSampleValue = (int16_t)(sine * sizeOfWave);
 
                 // Left (16-bits)
                 *audioTwoSample = audioSampleValue;
