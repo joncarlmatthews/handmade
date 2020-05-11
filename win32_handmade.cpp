@@ -21,7 +21,7 @@
 #define global_var          static // Global variables
 #define local_persist_var   static // Static variables within a local scope (e.g. case statement, function)
 #define internal_func       static // Functions that are only available within the file they're declared in
-#define PI32                3.14159265359f
+#define PIf                 3.14159265359f
 
 #define LOG_LEVEL_INFO      0x100
 #define LOG_LEVEL_WARN      0x200
@@ -104,7 +104,7 @@ struct win32AudioBuffer
     uint64_t bufferSizeInBytes;
 
     // Last position within the buffer that we wrote to.
-    DWORD runningCycleIndex;
+    DWORD runningByteIndex;
 };
 
 // Whether or not the application is running
@@ -209,7 +209,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
     // Audio stuff...
     win32InitDirectSound(window);
-    win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes, true);
+    win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes);
     audioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
     running = TRUE;
@@ -335,7 +335,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 // Offset, in bytes, from the start of the buffer to the point where the lock begins.
                 // We Mod the result by the total number of bytes so that the value wraps.
                 // Result will look like this: 0, 4, 8, 12, 16, 24
-                DWORD lockOffsetInBytes = (audioBuffer.runningCycleIndex % audioBuffer.bufferSizeInBytes);
+                DWORD lockOffsetInBytes = (audioBuffer.runningByteIndex % audioBuffer.bufferSizeInBytes);
 
                 // Size, in bytes, of the portion of the buffer to lock.
                 DWORD lockSizeInBytes;
@@ -354,7 +354,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                     lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
                 }
 
-                win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, true);
+                //win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes);
 
             }
             else {
@@ -758,7 +758,7 @@ internal_func void win32InitDirectSound(HWND window)
     audioBuffer.bytesPerSample = ((audioBuffer.bitsPerSample * audioBuffer.noOfChannels) / BITS_PER_BYTE);
     audioBuffer.secondsWorthOfAudio = 1;
     audioBuffer.bufferSizeInBytes = ((audioBuffer.bytesPerSample * audioBuffer.samplesPerSecond) * audioBuffer.secondsWorthOfAudio);
-    audioBuffer.runningCycleIndex = 0;
+    audioBuffer.runningByteIndex = 0;
 
     // Block alignment, in bytes. Must process a multiple of blockAlignment 
     // bytes of data at a time. Data written to and read from a device 
@@ -880,10 +880,10 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 
     if (doAudioWrite) {
 
-        void* chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
+        void *chunkOnePtr; // Receives a pointer to the first locked part of the buffer.
         DWORD chunkOneBytes; // Receives the number of bytes in the block at chunkOnePtr
 
-        void* chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
+        void *chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
         DWORD chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
 
         res = audioBuffer.buffer->Lock(lockOffsetInBytes,
@@ -896,28 +896,43 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 
         if (SUCCEEDED(res)) {
 
-            // Calculate the total number of 4-byte samples (16 for the left, 16 for the right) 
-            // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
-            // told us we can write to.
-            uint64_t chunkSamples = (chunkOneBytes / audioBuffer.bytesPerSample);
-
-            // Grab the first 16-bit audio sample from the first block of memory 
-            uint16_t *audioSample = (uint16_t*)chunkOnePtr;
-
-            // Iterate over each 2-bytes and write the same data for both...
-            int16_t audioSampleValue = 0;
+            uint8_t cyclesPerSecond = 100; // Arbitrary
 
             // Size of the wave? Larger wave = louder
             int16_t sizeOfWave = 4000;
 
-            uint64_t cycleIndex = lockOffsetInBytes;
+            // Calculate the total number of 4-byte audio sample groups (16 for the left, 16 for the right) 
+            // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
+            // told us we can write to.
+            uint64_t audioSampleGroupsChunkOne = (chunkOneBytes / audioBuffer.bytesPerSample);
 
-            float64 radians = 0;
-            float64 sine = 0;
+            // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
+            uint16_t audioSampleGroupsPerCycle = (audioSampleGroupsChunkOne / cyclesPerSecond);
 
-            for (size_t i = 0; i < chunkSamples; i++) {
+            // Calculate the total number of 4-byte audio sample groups per cycle quarter.
+            uint16_t audioSampleGroupsPerCycleQuarter = (audioSampleGroupsPerCycle / 4);
 
-                radians = ((cycleIndex/2) * (PI32 / 180.0f));
+            // At the start of which 4 byte group index we are starting our write from?
+            // @TODO(JM) assert that this is a 4 byte boundry
+            uint64_t byteGroupIndex = lockOffsetInBytes;
+
+            // Grab the first 16-bit audio sample from the first block of memory 
+            uint16_t *audioSample = (uint16_t*)chunkOnePtr;
+
+            // Audio sample value
+            int16_t audioSampleValue = 0;
+
+            float percentageOfAngle = 0.0f;
+            float angle = 0.0f;
+            float radians = 0.0f;
+            float sine = 0.0f;
+            
+            // Iterate over each 2 - bytes and write the same data for both...
+            for (size_t i = 0; i < audioSampleGroupsChunkOne; i++) {
+
+                percentageOfAngle = percentageOfAnotherf((float)byteGroupIndex, audioSampleGroupsPerCycle);
+                angle = (360.0f * (percentageOfAngle / 100.0f));
+                radians = (angle * (PIf / 180.0f));
                 sine = sinf(radians);
 
                 audioSampleValue = (int16_t)(sine * sizeOfWave);
@@ -934,7 +949,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
                 // Move cursor to the start of the next sample grouping.
                 audioSample++;
 
-                cycleIndex = (cycleIndex + audioBuffer.bytesPerSample);
+                byteGroupIndex = (byteGroupIndex + audioBuffer.bytesPerSample);
             }
 
             uint64_t chunkTwoSamples = (chunkTwoBytes / audioBuffer.bytesPerSample);
@@ -942,9 +957,10 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
             // Grab the first 16-bit audio sample from the first block of memory 
             uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
 
+            /*
             for (size_t i = 0; i < chunkTwoSamples; i++) {
 
-                radians = ((cycleIndex / 2) * (PI32 / 180.0f));
+                radians = (((float32)byteGroupIndex / 2) * (PI32 / 180.0f));
                 sine = sinf(radians);
 
                 audioSampleValue = (int16_t)(sine * sizeOfWave);
@@ -961,10 +977,11 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
                 // Move cursor to the start of the next sample grouping.
                 audioTwoSample++;
 
-                cycleIndex = (cycleIndex + audioBuffer.bytesPerSample);
+                byteGroupIndex = (byteGroupIndex + audioBuffer.bytesPerSample);
             }
+            */
 
-            audioBuffer.runningCycleIndex = cycleIndex;
+            audioBuffer.runningByteIndex = byteGroupIndex;
 
             res = audioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
@@ -1062,4 +1079,14 @@ internal_func void log(int level, char *format, ...)
     else {
         OutputDebugString("LOG: Error creating debug string\n");
     }
+}
+
+float32 percentageOfAnotherf(float32 a, float32 b)
+{
+    if (b == 0) {
+        return 0;
+    }
+
+    float32 fract = (a / b);
+    return (fract * 100.0f);
 }
