@@ -952,15 +952,16 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
                 byteGroupIndex = (byteGroupIndex + audioBuffer.bytesPerSample);
             }
 
-            uint64_t chunkTwoSamples = (chunkTwoBytes / audioBuffer.bytesPerSample);
+            uint64_t audioSampleGroupsChunkTwo = (chunkTwoBytes / audioBuffer.bytesPerSample);
 
             // Grab the first 16-bit audio sample from the first block of memory 
             uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
 
-            /*
-            for (size_t i = 0; i < chunkTwoSamples; i++) {
+            for (size_t i = 0; i < audioSampleGroupsChunkTwo; i++) {
 
-                radians = (((float32)byteGroupIndex / 2) * (PI32 / 180.0f));
+                percentageOfAngle = percentageOfAnotherf((float)byteGroupIndex, audioSampleGroupsPerCycle);
+                angle = (360.0f * (percentageOfAngle / 100.0f));
+                radians = (angle * (PIf / 180.0f));
                 sine = sinf(radians);
 
                 audioSampleValue = (int16_t)(sine * sizeOfWave);
@@ -979,7 +980,6 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 
                 byteGroupIndex = (byteGroupIndex + audioBuffer.bytesPerSample);
             }
-            */
 
             audioBuffer.runningByteIndex = byteGroupIndex;
 
