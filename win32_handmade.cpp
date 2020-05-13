@@ -720,7 +720,12 @@ internal_func void loadXInputDLLFunctions(void)
 {
     HMODULE libHandle = LoadLibrary("XInput1_4.dll");
 
-    // No XInput 1.4? Try and load the older 1.3.
+    // No XInput 1.4? Try and load the older 9.1.0.
+    if (!libHandle) {
+        libHandle = LoadLibrary("XInput9_1_0.dll");
+    }
+
+    // No XInput 9.1.0? Try and load the older 1.3.
     if (!libHandle) {
         libHandle = LoadLibrary("XInput1_3.dll");
     }
