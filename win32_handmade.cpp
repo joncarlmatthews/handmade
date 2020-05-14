@@ -209,7 +209,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
     // Audio stuff...
     win32InitDirectSound(window);
-    win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes);
+    win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes, 200);
     audioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
     running = TRUE;
@@ -354,7 +354,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                     lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
                 }
 
-                //win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes);
+                win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, 200);
 
             }
             else {
@@ -862,9 +862,14 @@ internal_func void win32InitDirectSound(HWND window)
     debug("Primary & secondary successfully buffer created\n");
 }
 
-bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
+bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint32_t cyclesPerSecond)
 {
     if (!audioBuffer.bufferSuccessfulyCreated) {
+        return false;
+    }
+
+    // Ensure the offset and lock size are both on the correct byte boundaries
+    if (((lockOffsetInBytes % audioBuffer.bytesPerSample) != 0) || ((lockSizeInBytes % audioBuffer.bytesPerSample) != 0)) {
         return false;
     }
 
@@ -901,7 +906,11 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
 
         if (SUCCEEDED(res)) {
 
-            uint8_t cyclesPerSecond = 100; // Arbitrary
+            if (cyclesPerSecond < 40) {
+                cyclesPerSecond = 40;
+            }else if(cyclesPerSecond > 1000) {
+                cyclesPerSecond = 1000;
+            }
 
             // Size of the wave? Larger wave = louder
             int16_t sizeOfWave = 4000;
@@ -912,7 +921,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
             uint64_t audioSampleGroupsChunkOne = (chunkOneBytes / audioBuffer.bytesPerSample);
 
             // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
-            uint16_t audioSampleGroupsPerCycle = (audioSampleGroupsChunkOne / cyclesPerSecond);
+            uint16_t audioSampleGroupsPerCycle = (audioBuffer.bufferSizeInBytes / cyclesPerSecond);
 
             // Calculate the total number of 4-byte audio sample groups per cycle quarter.
             uint16_t audioSampleGroupsPerCycleQuarter = (audioSampleGroupsPerCycle / 4);
