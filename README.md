@@ -1,4 +1,6 @@
-# Handmade Hero
+# Handmade
+
+Low level game programming concepts in C/C++
 
 ## Pre-req
 
