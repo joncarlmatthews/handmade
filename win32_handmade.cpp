@@ -18,6 +18,7 @@
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 
+#define bits_per_byte       8 // Purely for readability
 #define global_var          static // Global variables
 #define local_persist_var   static // Static variables within a local scope (e.g. case statement, function)
 #define internal_func       static // Functions that are only available within the file they're declared in
@@ -30,10 +31,6 @@
 typedef uint32_t    bool32; // For 0 or "> 0 I don't care" booleans
 typedef float       float32;
 typedef double      float64;
-
-// I know this wont change, but it's to help me read the code, instead of seeing
-// things multiplied by what might seem like an arbitrary 8 all over the place.
-const int BITS_PER_BYTE = 8;
 
 // Display output debug strings?
 const bool DEBUG_OUTPUT = FALSE;
@@ -569,7 +566,7 @@ internal_func void win32InitFrameBuffer(win32FrameBuffer *buffer, uint32_t width
     buffer->info.bmiHeader.biWidth          = width;
     buffer->info.bmiHeader.biHeight         = -height; // If negative, it's drawn top down. If positive, it's drawn bottom up.
     buffer->info.bmiHeader.biPlanes         = 1;
-    buffer->info.bmiHeader.biBitCount       = (buffer->bytesPerPixel * BITS_PER_BYTE); // 32-bits per pixel
+    buffer->info.bmiHeader.biBitCount       = (buffer->bytesPerPixel * bits_per_byte); // 32-bits per pixel
     buffer->info.bmiHeader.biCompression    = BI_RGB;
 
     // How many bytes do we need for our bitmap?
@@ -760,7 +757,7 @@ internal_func void win32InitDirectSound(HWND window)
     audioBuffer.noOfChannels = 2;
     audioBuffer.bitsPerSample = 16;
     audioBuffer.samplesPerSecond = 48000;
-    audioBuffer.bytesPerSample = ((audioBuffer.bitsPerSample * audioBuffer.noOfChannels) / BITS_PER_BYTE);
+    audioBuffer.bytesPerSample = ((audioBuffer.bitsPerSample * audioBuffer.noOfChannels) / bits_per_byte);
     audioBuffer.secondsWorthOfAudio = 1;
     audioBuffer.bufferSizeInBytes = ((audioBuffer.bytesPerSample * audioBuffer.samplesPerSecond) * audioBuffer.secondsWorthOfAudio);
     audioBuffer.runningByteIndex = 0;
