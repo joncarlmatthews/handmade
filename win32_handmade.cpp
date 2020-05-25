@@ -1,4 +1,3 @@
-
 // Windows API.
 #include <windows.h>
 
