@@ -5,9 +5,6 @@ internal_func void debug(char *format, ...);
 
 internal_func void log(int level, char* format, ...);
 
-/*
- * What is (a) as a percentage of (b)?
- */
 float32 percentageOfAnotherf(float32 a, float32 b);
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
