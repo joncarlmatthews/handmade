@@ -2,7 +2,7 @@
 REM Turn off comments being outputted to the command line.^
 
 echo.
-echo CUSTOM HANDMADE HERO BUILD SCRIPT (64-bit)
+echo CUSTOM BUILD SCRIPT (64-bit)
 echo.
 echo *Notice: Check that vcvarsall.bat has been set to 64-bit mode (shell_x64.bat)*
 echo.
