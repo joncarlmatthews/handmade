@@ -101,6 +101,10 @@ struct win32AudioBuffer
 
     // Last position within the buffer that we wrote to.
     DWORD runningByteIndex;
+
+    // Last sine wave value within the buffer that we wrote out.
+    float32 runningSineValue;
+
 };
 
 // Whether or not the application is running
@@ -202,10 +206,11 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
     // Graphics stuff
     uint32_t redOffset = 0;
     uint32_t greenOffset = 0;
+    uint32_t arbitraryOffset = 0;
 
     // Audio stuff...
     win32InitDirectSound(window);
-    win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes, 200);
+    //win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes, 200);
     audioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
     running = TRUE;
@@ -278,15 +283,17 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
             int16_t leftThumbstickY = pad->sThumbLY;
 
             // Animate the screen
-            redOffset = (redOffset + (leftThumbstickY >> 12));            
+            redOffset = (redOffset + (leftThumbstickY >> 12));
             greenOffset = (greenOffset - (leftThumbstickX >> 12));
+
+            arbitraryOffset = (arbitraryOffset + (leftThumbstickY >> 6));
 
             // Vibrate the controller
             XINPUT_VIBRATION pVibration;
 
             if ( (leftThumbstickX != 0) || (leftThumbstickY != 0)) {
-                pVibration.wLeftMotorSpeed = 10000;
-                pVibration.wRightMotorSpeed = 10000;
+                pVibration.wLeftMotorSpeed = 1000;
+                pVibration.wRightMotorSpeed = 1000;
                
             }else {
                 pVibration.wLeftMotorSpeed = 0;
@@ -328,9 +335,13 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
                 // write and returns pointers to which data can be written
 
+                // Start the running byte index at the position of the write cursor.
+                audioBuffer.runningByteIndex = writeCursorOffsetInBytes;
+
                 // Offset, in bytes, from the start of the buffer to the point where the lock begins.
                 // We Mod the result by the total number of bytes so that the value wraps.
-                // Result will look like this: 0, 4, 8, 12, 16, 24
+                // Result will look like this: 0, 4, 8, 12, 16, 24 etc...
+                // audioBuffer.runningByteIndex and lockOffsetInBytes will be the same in theory.
                 DWORD lockOffsetInBytes = (audioBuffer.runningByteIndex % audioBuffer.bufferSizeInBytes);
 
                 // Size, in bytes, of the portion of the buffer to lock.
@@ -339,18 +350,13 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
                 // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
                 // one chuck of data.
-                if (lockOffsetInBytes > playCursorOffsetInBytes) {
-
-                    // Gap to the end of the buffer, plus the start of the buffer up to the current play cursor
-                    lockSizeInBytes = (audioBuffer.bufferSizeInBytes - lockOffsetInBytes) + (0 + playCursorOffsetInBytes);
-
-                }
-                else {
-                    // Gap from the current lock offset up to the current play cursor
-                    lockSizeInBytes = (playCursorOffsetInBytes - lockOffsetInBytes);
+                if (writeCursorOffsetInBytes > playCursorOffsetInBytes) {
+                    lockSizeInBytes = (audioBuffer.bufferSizeInBytes - writeCursorOffsetInBytes);
+                } else if(writeCursorOffsetInBytes < playCursorOffsetInBytes) {
+                    lockSizeInBytes = ( (audioBuffer.bufferSizeInBytes - (audioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
                 }
 
-                win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, 200);
+                win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, (200 + redOffset));
 
             }
             else {
@@ -691,55 +697,6 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                     SRCCOPY);
 }
 
-internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
-{
-    RECT clientRect;
-    GetClientRect(window, &clientRect);
-
-    win32ClientDimensions dim;
-
-    dim.width = clientRect.right;
-    dim.height  = clientRect.bottom;
-
-    return dim;
-}
-
-internal_func DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState) {
-    return ERROR_DEVICE_NOT_CONNECTED;
-}
-
-internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration) {
-    return ERROR_DEVICE_NOT_CONNECTED;
-}
-
-internal_func void loadXInputDLLFunctions(void)
-{
-    HMODULE libHandle = LoadLibrary("XInput1_4.dll");
-
-    // No XInput 1.4? Try and load the older 9.1.0.
-    if (!libHandle) {
-        libHandle = LoadLibrary("XInput9_1_0.dll");
-    }
-
-    // No XInput 9.1.0? Try and load the older 1.3.
-    if (!libHandle) {
-        libHandle = LoadLibrary("XInput1_3.dll");
-    }
-
-    if (libHandle) {
-
-        XInputGetStateDT* XInputGetStateAddr = (XInputGetStateDT*)GetProcAddress(libHandle, "XInputGetState");
-        XInputSetStateDT* XInputSetStateAddr = (XInputSetStateDT*)GetProcAddress(libHandle, "XInputSetState");
-
-        if (XInputGetStateAddr) {
-            XInputGetState = XInputGetStateAddr;
-        }
-        if (XInputSetStateAddr) {
-            XInputSetState = XInputSetStateAddr;
-        }
-    }
-}
-
 internal_func void win32InitDirectSound(HWND window)
 {
     audioBuffer.bufferSuccessfulyCreated = FALSE;
@@ -760,6 +717,7 @@ internal_func void win32InitDirectSound(HWND window)
     audioBuffer.secondsWorthOfAudio = 1;
     audioBuffer.bufferSizeInBytes = ((audioBuffer.bytesPerSample * audioBuffer.samplesPerSecond) * audioBuffer.secondsWorthOfAudio);
     audioBuffer.runningByteIndex = 0;
+    audioBuffer.runningSineValue = 0.0f;
 
     // Block alignment, in bytes. Must process a multiple of blockAlignment 
     // bytes of data at a time. Data written to and read from a device 
@@ -911,9 +869,8 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint3
             // Size of the wave? Larger wave = louder
             int16_t sizeOfWave = 4000;
 
-            // Calculate the total number of 4-byte audio sample groups (16 for the left, 16 for the right) 
-            // that we have within the first block of memory IDirectSoundBuffer8::Lock has 
-            // told us we can write to.
+            // Calculate the total number of 4-byte audio sample groups (16 bits for the left channel, 16 bits for the right channel) 
+            // that we have within the first block of memory IDirectSoundBuffer8::Lock has told us we can write to.
             uint64_t audioSampleGroupsChunkOne = (chunkOneBytes / audioBuffer.bytesPerSample);
 
             // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
@@ -926,45 +883,46 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint3
             // @TODO(JM) assert that this is a 4 byte boundry
             uint64_t byteGroupIndex = lockOffsetInBytes;
 
-            // Grab the first 16-bit audio sample from the first block of memory 
+            // Grab the first 16-bits of the first audio sample from the first block of memory 
             uint16_t *audioSample = (uint16_t*)chunkOnePtr;
 
             // Audio sample value
             int16_t audioSampleValue = 0;
 
-            float percentageOfAngle = 0.0f;
-            float angle = 0.0f;
-            float radians = 0.0f;
-            float sine = 0.0f;
+            float32 percentageOfAngle = 0.0f;
+            float32 angle = 0.0f;
+            float32 radians = 0.0f;
+            float32 sine = audioBuffer.runningSineValue;
             
             // Iterate over each 2 - bytes and write the same data for both...
             for (size_t i = 0; i < audioSampleGroupsChunkOne; i++) {
 
-                percentageOfAngle = percentageOfAnotherf((float)byteGroupIndex, audioSampleGroupsPerCycle);
+                percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, audioSampleGroupsPerCycle);
                 angle = (360.0f * (percentageOfAngle / 100.0f));
                 radians = (angle * (PIf / 180.0f));
                 sine = sinf(radians);
 
                 audioSampleValue = (int16_t)(sine * sizeOfWave);
 
-                // Left (16-bits)
+                // Left channel (16-bits)
                 *audioSample = audioSampleValue;
 
                 // Move to the right sample (16-bits)
                 audioSample++;
 
-                // Write the right sample
+                // Right channel (16-bits)
                 *audioSample = audioSampleValue;
 
                 // Move cursor to the start of the next sample grouping.
                 audioSample++;
 
+                // Write another 4 to the running byte group index.
                 byteGroupIndex = (byteGroupIndex + audioBuffer.bytesPerSample);
             }
 
             uint64_t audioSampleGroupsChunkTwo = (chunkTwoBytes / audioBuffer.bytesPerSample);
 
-            // Grab the first 16-bit audio sample from the first block of memory 
+            // Grab the first 16-bit of the first audio sample from the second block of memory 
             uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
 
             for (size_t i = 0; i < audioSampleGroupsChunkTwo; i++) {
@@ -976,22 +934,24 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint3
 
                 audioSampleValue = (int16_t)(sine * sizeOfWave);
 
-                // Left (16-bits)
+                // Left channel (16-bits)
                 *audioTwoSample = audioSampleValue;
 
                 // Move to the right sample (16-bits)
                 audioTwoSample++;
 
-                // Write the right sample
+                // Right channel (16-bits)
                 *audioTwoSample = audioSampleValue;
 
                 // Move cursor to the start of the next sample grouping.
                 audioTwoSample++;
 
+                // Write another 4 to the running byte group index.
                 byteGroupIndex = (byteGroupIndex + audioBuffer.bytesPerSample);
             }
 
             audioBuffer.runningByteIndex = byteGroupIndex;
+            audioBuffer.runningSineValue = sine;
 
             res = audioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
@@ -1009,6 +969,55 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint3
     } // doWrite
 
     return true;
+}
+
+internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
+{
+    RECT clientRect;
+    GetClientRect(window, &clientRect);
+
+    win32ClientDimensions dim;
+
+    dim.width = clientRect.right;
+    dim.height = clientRect.bottom;
+
+    return dim;
+}
+
+internal_func DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState) {
+    return ERROR_DEVICE_NOT_CONNECTED;
+}
+
+internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration) {
+    return ERROR_DEVICE_NOT_CONNECTED;
+}
+
+internal_func void loadXInputDLLFunctions(void)
+{
+    HMODULE libHandle = LoadLibrary("XInput1_4.dll");
+
+    // No XInput 1.4? Try and load the older 9.1.0.
+    if (!libHandle) {
+        libHandle = LoadLibrary("XInput9_1_0.dll");
+    }
+
+    // No XInput 9.1.0? Try and load the older 1.3.
+    if (!libHandle) {
+        libHandle = LoadLibrary("XInput1_3.dll");
+    }
+
+    if (libHandle) {
+
+        XInputGetStateDT* XInputGetStateAddr = (XInputGetStateDT*)GetProcAddress(libHandle, "XInputGetState");
+        XInputSetStateDT* XInputSetStateAddr = (XInputSetStateDT*)GetProcAddress(libHandle, "XInputSetState");
+
+        if (XInputGetStateAddr) {
+            XInputGetState = XInputGetStateAddr;
+        }
+        if (XInputSetStateAddr) {
+            XInputSetState = XInputSetStateAddr;
+        }
+    }
 }
 
 /*
