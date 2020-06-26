@@ -145,9 +145,16 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                                     LPSTR commandLine, 
                                     int showCode)
 {
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // Application initialisation stuff...
 
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+
+    // Get the current performance-counter frequency, in counts per second.
+    // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
+    LARGE_INTEGER perfFrequencyCounterRes;
+    QueryPerformanceFrequency(&perfFrequencyCounterRes);
+    int64_t countersPerSecond = perfFrequencyCounterRes.QuadPart;
 
     // Load XInput DLL functions.
     loadXInputDLLFunctions();
@@ -206,14 +213,16 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
     // Graphics stuff
     uint32_t redOffset = 0;
     uint32_t greenOffset = 0;
-    uint32_t arbitraryOffset = 0;
+    uint8_t cyclesPerSecondIndex = 3;
 
     // Audio stuff...
     win32InitDirectSound(window);
-    //win32WriteAudioBuffer(0, audioBuffer.bufferSizeInBytes, 200);
     audioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
     running = TRUE;
+
+    LARGE_INTEGER runningPerformanceCounter;
+    QueryPerformanceCounter(&runningPerformanceCounter);
 
     while (running) {
 
@@ -286,7 +295,15 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
             redOffset = (redOffset + (leftThumbstickY >> 12));
             greenOffset = (greenOffset - (leftThumbstickX >> 12));
 
-            arbitraryOffset = (arbitraryOffset + (leftThumbstickY >> 6));
+            if (btnUpDepressed) {
+                if (cyclesPerSecondIndex < 5) {
+                    cyclesPerSecondIndex = (cyclesPerSecondIndex + 1);
+                }
+            }else if(btnDownDepressed) {
+                if (cyclesPerSecondIndex > 1) {
+                    cyclesPerSecondIndex = (cyclesPerSecondIndex - 1);
+                }
+            }
 
             // Vibrate the controller
             XINPUT_VIBRATION pVibration;
@@ -351,12 +368,12 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                 // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
                 // one chuck of data.
                 if (writeCursorOffsetInBytes > playCursorOffsetInBytes) {
-                    lockSizeInBytes = (audioBuffer.bufferSizeInBytes - writeCursorOffsetInBytes);
+                    lockSizeInBytes = (audioBuffer.bufferSizeInBytes - (writeCursorOffsetInBytes - playCursorOffsetInBytes));
                 } else if(writeCursorOffsetInBytes < playCursorOffsetInBytes) {
                     lockSizeInBytes = ( (audioBuffer.bufferSizeInBytes - (audioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
                 }
 
-                win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, (200 + redOffset));
+                win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, cyclesPerSecondIndex);
 
             }
             else {
@@ -367,7 +384,17 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
         }
 
-    } // running
+        // How long did this loop take?
+        LARGE_INTEGER gameLoopPerformanceCounter;
+        QueryPerformanceCounter(&gameLoopPerformanceCounter);
+        int64_t countersElapsed = (gameLoopPerformanceCounter.QuadPart - runningPerformanceCounter.QuadPart);
+        int64_t millisecondsElapsed = ((countersElapsed*1000) / countersPerSecond);
+        debug("Milliseconds elapsed: %d\n", millisecondsElapsed);
+
+        // Reset the running counter.
+        runningPerformanceCounter.QuadPart = gameLoopPerformanceCounter.QuadPart;
+
+    } // game loop
 
     CoUninitialize();
 
@@ -816,7 +843,7 @@ internal_func void win32InitDirectSound(HWND window)
     debug("Primary & secondary successfully buffer created\n");
 }
 
-bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint32_t cyclesPerSecond)
+bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8_t cyclesPerSecondIndex)
 {
     if (!audioBuffer.bufferSuccessfulyCreated) {
         return false;
@@ -850,6 +877,8 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint3
         void *chunkTwoPtr; // Receives a pointer to the second locked part of the buffer.
         DWORD chunkTwoBytes; // Receives the number of bytes in the block at chunkTwoPtr
 
+        uint16_t cyclesPerSecond = (cyclesPerSecondIndex * 100);
+
         res = audioBuffer.buffer->Lock(lockOffsetInBytes,
             lockSizeInBytes,
             &chunkOnePtr,
@@ -859,12 +888,6 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint3
             0);
 
         if (SUCCEEDED(res)) {
-
-            if (cyclesPerSecond < 40) {
-                cyclesPerSecond = 40;
-            }else if(cyclesPerSecond > 1000) {
-                cyclesPerSecond = 1000;
-            }
 
             // Size of the wave? Larger wave = louder
             int16_t sizeOfWave = 4000;
@@ -1028,7 +1051,7 @@ internal_func void loadXInputDLLFunctions(void)
  *
  * @author Jon Matthews
  *
- * @param char * format
+ * @param char *format
  * @param mixed values
  */
 internal_func void debug(char *format, ...)
