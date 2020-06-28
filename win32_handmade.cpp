@@ -221,8 +221,12 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
     running = TRUE;
 
+    // Running query perforamce counter for profiling the game loop
     LARGE_INTEGER runningPerformanceCounter;
     QueryPerformanceCounter(&runningPerformanceCounter);
+    
+    // Get the number of processor clock cycles
+    uint64_t processorClockCycles = __rdtsc();
 
     while (running) {
 
@@ -384,14 +388,28 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
         }
 
-        // How long did this loop take?
+        // How long did this game loop (frame) take?
+
+        // Processor clock cycles.
+        uint64_t processorClockCyclesAfterFrame = __rdtsc();
+        int64_t processorClockCyclesElapsed = (processorClockCyclesAfterFrame - processorClockCycles);
+        float32 clockCycles_mega = ((float32)processorClockCyclesElapsed / 1000000.0f); // processorClockCyclesElapsed is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
+
+        // Performance-counter frequency for MS/frame & FPS
         LARGE_INTEGER gameLoopPerformanceCounter;
         QueryPerformanceCounter(&gameLoopPerformanceCounter);
-        int64_t countersElapsed = (gameLoopPerformanceCounter.QuadPart - runningPerformanceCounter.QuadPart);
-        int64_t millisecondsElapsed = ((countersElapsed*1000) / countersPerSecond);
-        debug("Milliseconds elapsed: %d\n", millisecondsElapsed);
+        float32 countersElapsedPerFrame = (gameLoopPerformanceCounter.QuadPart - runningPerformanceCounter.QuadPart);
+        float32 millisecondsElapsedPerFrame = (((float32)countersElapsedPerFrame * 1000.0f) / (float32)countersPerSecond);
+        float32 secondsPerFrame = (1000.0f / (float32)millisecondsElapsedPerFrame);
+        
+        // Processor running speed in GHz
+        float32 speed = ((uint64_t)(secondsPerFrame * clockCycles_mega) / 100.0f);
 
-        // Reset the running counter.
+        // Console log the speed:
+        debug("ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
+
+        // Reset the running clock cycles & counters.
+        processorClockCycles = processorClockCyclesAfterFrame;
         runningPerformanceCounter.QuadPart = gameLoopPerformanceCounter.QuadPart;
 
     } // game loop
