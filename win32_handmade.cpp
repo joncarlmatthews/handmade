@@ -1,3 +1,12 @@
+// Typedefs that specify exact-width integer types for increased code portability.
+/*
+ * char:        (1)     int8_t  / uint8_t   (-128 127)          (0 255)
+ * short:       (2)     int16_t / uint16_t  (-32,768 32,767)    (0 65,536)
+ * int (long):  (4)     int32_t / uint32_t  (-2.1bn to 2.1bn)   (0 to 4.2bn)
+ * long long:   (8)     int64_t / uint64_t  (-9qn 9qn)          (0-18qn)
+ */
+#include <stdint.h>
+
 /**
  * Definitions
  */
@@ -8,15 +17,6 @@
 #define LOG_LEVEL_INFO      0x100
 #define LOG_LEVEL_WARN      0x200
 #define LOG_LEVEL_ERROR     0x300
-
- // Typedefs that specify exact-width integer types for increased code portability.
- /*
-  * char:        (1)     int8_t  / uint8_t   (-128 127)          (0 255)
-  * short:       (2)     int16_t / uint16_t  (-32,768 32,767)    (0 65,536)
-  * int (long):  (4)     int32_t / uint32_t  (-2.1bn to 2.1bn)   (0 to 4.2bn)
-  * long long:   (8)     int64_t / uint64_t  (-9qn 9qn)          (0-18qn)
-  */
-#include <stdint.h>
 
 /**
  * Typedefs
