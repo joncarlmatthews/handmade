@@ -13,15 +13,32 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Build scripts">
+      <UniqueIdentifier>{7c452596-8807-4a57-b7d4-6d6c3baf1c33}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="win32_handmade.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="handmade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="func_sig.h">
+    <ClInclude Include="handmade.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="win32_handmade.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="build_x64.bat">
+      <Filter>Build scripts</Filter>
+    </None>
+    <None Include="build_x86.bat">
+      <Filter>Build scripts</Filter>
+    </None>
   </ItemGroup>
 </Project>

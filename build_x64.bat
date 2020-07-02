@@ -1,5 +1,5 @@
 @echo off
-REM Turn off comments being outputted to the command line.^
+REM MSVC compiler @see https://docs.microsoft.com/en-us/cpp/build/reference/compiler-options?view=vs-2019
 
 echo.
 echo CUSTOM BUILD SCRIPT (64-bit)
@@ -10,6 +10,6 @@ echo.
 pushd build
 if not exist "x64" md "x64"
 pushd "x64"
-cl -FC -Zi ..\..\win32_handmade.cpp /link User32.lib Gdi32.lib
+cl -FC -Zi ..\..\win32_handmade.cpp /link User32.lib Gdi32.lib Ole32.Lib
 popd
 popd
