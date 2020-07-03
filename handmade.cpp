@@ -1,5 +1,3 @@
-#include "handmade.h"
-
 internal_func void updateAndRender(FrameBuffer *buffer, int redOffset, int greenOffset)
 {
     writeFrameBuffer(buffer, redOffset, greenOffset);

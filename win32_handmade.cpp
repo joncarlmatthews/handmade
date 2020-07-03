@@ -1,3 +1,21 @@
+// Windows API. Visual Studio freaks out if it's not the first include.
+#include <windows.h>
+
+// CRT library for  debugging memory leaks
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
+#include <strsafe.h> // For StringCbVPrintfA & STRSAFE_MAX_CCH
+#include <stdarg.h> // For variable number of arguments in function sigs
+#include <dsound.h> // Direct Sound for audio output.
+#include <xinput.h> // Xinput for receiving controller input. 
+
+
+//=======================================
+// Game layer
+//=======================================
+
 // Typedefs that specify exact-width integer types for increased code portability.
 /*
  * char:        (1)     int8_t  / uint8_t   (-128 127)          (0 255)
@@ -6,10 +24,9 @@
  * long long:   (8)     int64_t / uint64_t  (-9qn 9qn)          (0-18qn)
  */
 #include <stdint.h>
+#include <math.h> // For Sin
 
-/**
- * Definitions
- */
+// Macro definitions
 #define global_var          static // Global variables
 #define local_persist_var   static // Static variables within a local scope (e.g. case statement, function)
 #define internal_func       static // Functions that are only available within the file they're declared in
@@ -18,27 +35,20 @@
 #define LOG_LEVEL_WARN      0x200
 #define LOG_LEVEL_ERROR     0x300
 
-/**
- * Typedefs
- */
+// Typedefs
 typedef uint32_t    bool32; // For 0 or "> 0 I don't care" booleans
 typedef float       float32;
 typedef double      float64;
+typedef double      float64_two;
 
-// Include game code
+#include "handmade.h"
 #include "handmade.cpp"
 
-// Windows API.
-#include <windows.h>
-#include <math.h> // For Sin
-#include <strsafe.h> // For StringCbVPrintfA & STRSAFE_MAX_CCH
-#include <stdarg.h> // For variable number of arguments in function sigs
-#include <dsound.h> // Direct Sound for audio output.
-#include <xinput.h> // Xinput for receiving controller input. 
-#define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
+//=======================================
+// End of game layer includes/definitions
+//=======================================
 
-// Function signatures
+// Platform layer function signatures
 #include "win32_handmade.h"
 
 // Display output debug strings?
