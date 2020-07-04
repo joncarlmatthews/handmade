@@ -1,9 +1,15 @@
-internal_func void updateAndRender(FrameBuffer *buffer, int redOffset, int greenOffset)
+#include "handmade.h"
+
+internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, 
+                                        int redOffset, 
+                                        int greenOffset, 
+                                        AudioBuffer *audioBuffer)
 {
-    writeFrameBuffer(buffer, redOffset, greenOffset);
+    gameWriteAudioBuffer(audioBuffer);
+    gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
 }
 
-internal_func void writeFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset)
+internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset)
 {
     // Create a pointer to bitmapMemory
     // In order for us to have maximum control over the pointer arithmatic, we cast it to
@@ -52,5 +58,23 @@ internal_func void writeFrameBuffer(FrameBuffer *buffer, int redOffset, int gree
         // the next iteration of the row we're then starting at the first byte
         // of that particular row
         row = (row + buffer->byteWidthPerRow);
+    }
+}
+
+internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer* audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint64_t bufferSizeInBytes)
+{
+    audioBuffer->bitsPerChannel = bitsPerChannel;
+    audioBuffer->bufferSizeInBytes = bufferSizeInBytes;
+    audioBuffer->bytesPerSample = bytesPerSample;
+    audioBuffer->memory = VirtualAlloc(NULL, bufferSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    return audioBuffer;
+}
+
+
+internal_func void gameWriteAudioBuffer(AudioBuffer *buffer)
+{
+    uint16_t audioSample = (uint16_t)buffer->memory;
+    for (size_t i = 0; i < (buffer->bufferSizeInBytes / buffer->bytesPerSample); i++){
+
     }
 }

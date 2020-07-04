@@ -45,13 +45,16 @@ typedef struct Win32AudioBuffer
     bool bufferSuccessfulyCreated;
 
     // How many audio channels are we targetting?
+    // 2 a left channel and a right channel
     uint8_t noOfChannels;
 
-    // How many bits per individual left or right sample? 
-    // (16-bits for the left channel 16-bits for the right channel.)
-    uint8_t bitsPerSample;
+    // How many bits per individual left or right channel? 
+    // (16-bits for the left channel's sample, 16-bits for the right channel's sample.)
+    uint8_t bitsPerChannel;
 
-    // How many bytes to store per sample? (sum of left + right channel)
+    // How many bytes to store per "sample"? A single sample is the grouping of one left + right channel.
+    // The sum of left + right channel is 32-bits, therefore each sample needs 4 bytes
+    // Data written to and read from a the buffer must always start at the beginning of a 16-bit, 4-byte sample "block"
     uint8_t bytesPerSample;
 
     // How many samples per second will we be storing?
@@ -94,8 +97,8 @@ internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPU
 
 internal_func void loadXInputDLLFunctions(void);
 
-internal_func void win32InitDirectSound(HWND window);
+internal_func void win32InitDirectSound(HWND window, Win32AudioBuffer *win32AudioBuffer);
 
-internal_func bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8_t cyclesPerSecondIndex);
+internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8_t cyclesPerSecondIndex);
 
 #endif

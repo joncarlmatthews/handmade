@@ -11,41 +11,19 @@
 #include <dsound.h> // Direct Sound for audio output.
 #include <xinput.h> // Xinput for receiving controller input. 
 
-
-//=======================================
-// Game layer
-//=======================================
-
-// Typedefs that specify exact-width integer types for increased code portability.
-/*
- * char:        (1)     int8_t  / uint8_t   (-128 127)          (0 255)
- * short:       (2)     int16_t / uint16_t  (-32,768 32,767)    (0 65,536)
- * int (long):  (4)     int32_t / uint32_t  (-2.1bn to 2.1bn)   (0 to 4.2bn)
- * long long:   (8)     int64_t / uint64_t  (-9qn 9qn)          (0-18qn)
- */
-#include <stdint.h>
-#include <math.h> // For Sin
-
-// Macro definitions
-#define global_var          static // Global variables
-#define local_persist_var   static // Static variables within a local scope (e.g. case statement, function)
-#define internal_func       static // Functions that are only available within the file they're declared in
 #define PIf                 3.14159265359f
 #define LOG_LEVEL_INFO      0x100
 #define LOG_LEVEL_WARN      0x200
 #define LOG_LEVEL_ERROR     0x300
 
-// Typedefs
-typedef uint32_t    bool32; // For 0 or "> 0 I don't care" booleans
-typedef float       float32;
-typedef double      float64;
-typedef double      float64_two;
+//=======================================
+// Game layer
+//=======================================
 
-#include "handmade.h"
 #include "handmade.cpp"
 
 //=======================================
-// End of game layer includes/definitions
+// End of game layer
 //=======================================
 
 // Platform layer function signatures
@@ -59,9 +37,6 @@ global_var bool running;
 
 // Win32 frame buffer.
 global_var Win32FrameBuffer win32FrameBuffer;
-
-// Win32 audio buffer
-global_var Win32AudioBuffer win32AudioBuffer;
 
 // XInput support
 typedef DWORD WINAPI XInputGetStateDT(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState);
@@ -160,8 +135,13 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
     uint8_t cyclesPerSecondIndex = 3;
 
     // Audio stuff...
-    win32InitDirectSound(window);
+    Win32AudioBuffer win32AudioBuffer = {};
+    win32InitDirectSound(window, &win32AudioBuffer);
     win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
+
+    // Init the game audio buffer
+    AudioBuffer audioBuffer = {};
+    gameInitAudioBuffer(&audioBuffer, win32AudioBuffer.bitsPerChannel, win32AudioBuffer.bytesPerSample, win32AudioBuffer.bufferSizeInBytes);
 
     running = TRUE;
 
@@ -269,13 +249,18 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
         } // controller loop
 
+        // Game frame buffer
         FrameBuffer frameBuffer = {};
         frameBuffer.height = win32FrameBuffer.height;
         frameBuffer.width = win32FrameBuffer.width;
         frameBuffer.bytesPerPixel = win32FrameBuffer.bytesPerPixel;
         frameBuffer.byteWidthPerRow = win32FrameBuffer.byteWidthPerRow;
         frameBuffer.memory = win32FrameBuffer.memory;
-        updateAndRender(&frameBuffer, redOffset, greenOffset);
+
+        // Game audio buffer
+        
+        // Main game code.
+        gameUpdateAndRender(&frameBuffer, redOffset, greenOffset, &audioBuffer);
 
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
         win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
@@ -327,7 +312,7 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
                     lockSizeInBytes = ( (win32AudioBuffer.bufferSizeInBytes - (win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
                 }
 
-                win32WriteAudioBuffer(lockOffsetInBytes, lockSizeInBytes, cyclesPerSecondIndex);
+                win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, cyclesPerSecondIndex);
 
             }
             else {
@@ -336,7 +321,8 @@ internal_func int CALLBACK WinMain(HINSTANCE instance,
 
             }
 
-        }
+        } // Audio buffer created.
+
 
         // How long did this game loop (frame) take?
 
@@ -629,9 +615,9 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                     SRCCOPY);
 }
 
-internal_func void win32InitDirectSound(HWND window)
+internal_func void win32InitDirectSound(HWND window, Win32AudioBuffer* win32AudioBuffer)
 {
-    win32AudioBuffer.bufferSuccessfulyCreated = FALSE;
+    win32AudioBuffer->bufferSuccessfulyCreated = FALSE;
 
     // Load the library
     HMODULE libHandle = LoadLibrary("dsound.dll");
@@ -641,25 +627,10 @@ internal_func void win32InitDirectSound(HWND window)
         return;
     }
 
-    // Create the struct    
-    win32AudioBuffer.noOfChannels = 2;
-    win32AudioBuffer.bitsPerSample = 16;
-    win32AudioBuffer.samplesPerSecond = 48000;
-    win32AudioBuffer.bytesPerSample = ((win32AudioBuffer.bitsPerSample * win32AudioBuffer.noOfChannels) / 8);
-    win32AudioBuffer.secondsWorthOfAudio = 1;
-    win32AudioBuffer.bufferSizeInBytes = ((win32AudioBuffer.bytesPerSample * win32AudioBuffer.samplesPerSecond) * win32AudioBuffer.secondsWorthOfAudio);
-    win32AudioBuffer.runningByteIndex = 0;
-    win32AudioBuffer.runningSineValue = 0.0f;
-
-    // Block alignment, in bytes. Must process a multiple of blockAlignment 
-    // bytes of data at a time. Data written to and read from a device 
-    // must always start at the beginning of a block
-    uint8_t blockAlignment = win32AudioBuffer.bytesPerSample;
-
     // Result variable for the various function call return checks.
     HRESULT res;
 
-    DirectSoundCreateDT* DirectSoundCreateAddr = (DirectSoundCreateDT*)GetProcAddress(libHandle, "DirectSoundCreate");
+    DirectSoundCreateDT *DirectSoundCreateAddr = (DirectSoundCreateDT*)GetProcAddress(libHandle, "DirectSoundCreate");
 
     if (!DirectSoundCreateAddr) {
         // Function not found within library.
@@ -708,15 +679,27 @@ internal_func void win32InitDirectSound(HWND window)
         return;
     }
 
+    // Init our Win32 audio buffer.
+
+    // Create the struct    
+    win32AudioBuffer->noOfChannels = 2;
+    win32AudioBuffer->bitsPerChannel = 16;
+    win32AudioBuffer->samplesPerSecond = 48000;
+    win32AudioBuffer->bytesPerSample = ((win32AudioBuffer->bitsPerChannel * win32AudioBuffer->noOfChannels) / 8);
+    win32AudioBuffer->secondsWorthOfAudio = 1;
+    win32AudioBuffer->bufferSizeInBytes = ((win32AudioBuffer->bytesPerSample * win32AudioBuffer->samplesPerSecond) * win32AudioBuffer->secondsWorthOfAudio);
+    win32AudioBuffer->runningByteIndex = 0;
+    win32AudioBuffer->runningSineValue = 0.0f;
+
     // Set the format
     WAVEFORMATEX waveFormat = {};
 
     waveFormat.wFormatTag          = WAVE_FORMAT_PCM;
-    waveFormat.nChannels           = win32AudioBuffer.noOfChannels;
-    waveFormat.nSamplesPerSec      = win32AudioBuffer.samplesPerSecond;
-    waveFormat.nAvgBytesPerSec     = (win32AudioBuffer.samplesPerSecond * blockAlignment);
-    waveFormat.nBlockAlign         = blockAlignment;
-    waveFormat.wBitsPerSample      = win32AudioBuffer.bitsPerSample;
+    waveFormat.nChannels           = win32AudioBuffer->noOfChannels;
+    waveFormat.nSamplesPerSec      = win32AudioBuffer->samplesPerSecond;
+    waveFormat.nAvgBytesPerSec     = (win32AudioBuffer->samplesPerSecond * win32AudioBuffer->bytesPerSample);
+    waveFormat.nBlockAlign         = win32AudioBuffer->bytesPerSample;
+    waveFormat.wBitsPerSample      = win32AudioBuffer->bitsPerChannel;
     waveFormat.cbSize              = 0;
 
     res = primarySoundBuffer->SetFormat(&waveFormat);
@@ -733,30 +716,30 @@ internal_func void win32InitDirectSound(HWND window)
 
     secondarySoundBufferDesc.dwSize              = sizeof(secondarySoundBufferDesc);
     secondarySoundBufferDesc.dwFlags             = 0;
-    secondarySoundBufferDesc.dwBufferBytes       = win32AudioBuffer.bufferSizeInBytes;
+    secondarySoundBufferDesc.dwBufferBytes       = win32AudioBuffer->bufferSizeInBytes;
     secondarySoundBufferDesc.lpwfxFormat         = &waveFormat;
     secondarySoundBufferDesc.guid3DAlgorithm     = GUID_NULL;
 
-    res = directSound->CreateSoundBuffer(&secondarySoundBufferDesc, &win32AudioBuffer.buffer, NULL);
+    res = directSound->CreateSoundBuffer(&secondarySoundBufferDesc, &win32AudioBuffer->buffer, NULL);
 
     if (FAILED(res)){
         log(LOG_LEVEL_ERROR, "Could not create secondary buffer");
         return;
     }
 
-    win32AudioBuffer.bufferSuccessfulyCreated = TRUE;
+    win32AudioBuffer->bufferSuccessfulyCreated = TRUE;
     debug("Primary & secondary successfully buffer created\n");
 }
 
-bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8_t cyclesPerSecondIndex)
+internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8_t cyclesPerSecondIndex)
 {
-    if (!win32AudioBuffer.bufferSuccessfulyCreated) {
-        return false;
+    if (!win32AudioBuffer->bufferSuccessfulyCreated) {
+        return;
     }
 
     // Ensure the offset and lock size are both on the correct byte boundaries
-    if (((lockOffsetInBytes % win32AudioBuffer.bytesPerSample) != 0) || ((lockSizeInBytes % win32AudioBuffer.bytesPerSample) != 0)) {
-        return false;
+    if (((lockOffsetInBytes % win32AudioBuffer->bytesPerSample) != 0) || ((lockSizeInBytes % win32AudioBuffer->bytesPerSample) != 0)) {
+        return;
     }
 
     HRESULT res;
@@ -784,7 +767,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8
 
         uint16_t cyclesPerSecond = (cyclesPerSecondIndex * 100);
 
-        res = win32AudioBuffer.buffer->Lock(lockOffsetInBytes,
+        res = win32AudioBuffer->buffer->Lock(lockOffsetInBytes,
             lockSizeInBytes,
             &chunkOnePtr,
             &chunkOneBytes,
@@ -799,10 +782,10 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8
 
             // Calculate the total number of 4-byte audio sample groups (16 bits for the left channel, 16 bits for the right channel) 
             // that we have within the first block of memory IDirectSoundBuffer8::Lock has told us we can write to.
-            uint64_t audioSampleGroupsChunkOne = (chunkOneBytes / win32AudioBuffer.bytesPerSample);
+            uint64_t audioSampleGroupsChunkOne = (chunkOneBytes / win32AudioBuffer->bytesPerSample);
 
             // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
-            uint16_t audioSampleGroupsPerCycle = (win32AudioBuffer.bufferSizeInBytes / cyclesPerSecond);
+            uint16_t audioSampleGroupsPerCycle = (win32AudioBuffer->bufferSizeInBytes / cyclesPerSecond);
 
             // Calculate the total number of 4-byte audio sample groups per cycle quarter.
             uint16_t audioSampleGroupsPerCycleQuarter = (audioSampleGroupsPerCycle / 4);
@@ -820,7 +803,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8
             float32 percentageOfAngle = 0.0f;
             float32 angle = 0.0f;
             float32 radians = 0.0f;
-            float32 sine = win32AudioBuffer.runningSineValue;
+            float32 sine = win32AudioBuffer->runningSineValue;
             
             // Iterate over each 2 - bytes and write the same data for both...
             for (size_t i = 0; i < audioSampleGroupsChunkOne; i++) {
@@ -845,10 +828,10 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8
                 audioSample++;
 
                 // Write another 4 to the running byte group index.
-                byteGroupIndex = (byteGroupIndex + win32AudioBuffer.bytesPerSample);
+                byteGroupIndex = (byteGroupIndex + win32AudioBuffer->bytesPerSample);
             }
 
-            uint64_t audioSampleGroupsChunkTwo = (chunkTwoBytes / win32AudioBuffer.bytesPerSample);
+            uint64_t audioSampleGroupsChunkTwo = (chunkTwoBytes / win32AudioBuffer->bytesPerSample);
 
             // Grab the first 16-bit of the first audio sample from the second block of memory 
             uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
@@ -875,13 +858,13 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8
                 audioTwoSample++;
 
                 // Write another 4 to the running byte group index.
-                byteGroupIndex = (byteGroupIndex + win32AudioBuffer.bytesPerSample);
+                byteGroupIndex = (byteGroupIndex + win32AudioBuffer->bytesPerSample);
             }
 
-            win32AudioBuffer.runningByteIndex = byteGroupIndex;
-            win32AudioBuffer.runningSineValue = sine;
+            win32AudioBuffer->runningByteIndex = byteGroupIndex;
+            win32AudioBuffer->runningSineValue = sine;
 
-            res = win32AudioBuffer.buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
+            res = win32AudioBuffer->buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
             if (FAILED(res)) {
                 //log(LOG_LEVEL_ERROR, "Could not unlock sound buffer");
@@ -896,7 +879,7 @@ bool win32WriteAudioBuffer(DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8
 
     } // doWrite
 
-    return true;
+    return;
 }
 
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
