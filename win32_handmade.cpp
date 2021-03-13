@@ -4,7 +4,6 @@
 // CRT library for  debugging memory leaks
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
-#include <crtdbg.h>
 
 #include <strsafe.h> // For StringCbVPrintfA & STRSAFE_MAX_CCH
 #include <stdarg.h> // For variable number of arguments in function sigs
@@ -59,15 +58,12 @@ typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, L
  * @param LPSTR Command line arguments sent to the application.
  * @param int How the user has specified the window to be shown
  */
-int CALLBACK WinMain(HINSTANCE instance,
-                        HINSTANCE prevInstance, 
-                        LPSTR commandLine, 
-                        int showCode)
+int APIENTRY wWinMain(_In_ HINSTANCE instance,
+                        _In_opt_ HINSTANCE prevInstance,
+                        _In_ LPWSTR    commandLine,
+                        _In_ int       showCode)
 {
     // Application initialisation stuff...
-
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency

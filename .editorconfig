@@ -1,7 +1,26 @@
+# @link https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/code-style-rule-options?view=vs-2019
+# @link https://docs.microsoft.com/en-us/visualstudio/ide/cpp-editorconfig-properties?view=vs-2019
+root = true
+
 # All files
 [*]
+charset = utf-8
+
+# Indentation and spacing
+indent_size = 4
+indent_style = space
+trim_trailing_whitespace = true
+
+# New line preferences
+insert_final_newline = false
+end_of_line = crlf
 
 # This directive sets the print margin width. You'll need Paul Harrington's 
 # Editor Guidelines extension. Install with Tools -> Extensions and Updates.
 # @link https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelines
-guidelines = 80
+#guidelines = 80
+
+[*.{c++,cc,cpp,cxx,h,h++,hh,hpp,hxx,inl,ipp,tlh,tli}]
+cpp_space_pointer_reference_alignment = right
+cpp_new_line_before_open_brace_function = true
+cpp_new_line_before_open_brace_block = false

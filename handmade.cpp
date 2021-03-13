@@ -9,8 +9,7 @@ internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer,
     gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
 }
 
-internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset)
-{
+internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset){
     // Create a pointer to bitmapMemory
     // In order for us to have maximum control over the pointer arithmatic, we cast it to
     // an 1 byte datatype. This enables us to step through the memory block 1 byte
@@ -25,7 +24,8 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
         // We know that each pixel is 4 bytes wide (bytesPerPixel) so we make
         // our pointer the same width to grab the relevant block of memory for
         // each pixel. (32 bits = 4 bytes)
-        uint32_t* pixel = (uint32_t*)row;
+
+        uint32_t *pixel = (uint32_t*)row;
 
         // Create a loop that iterates for the same number of columns we have for the viewport.
         // (We know the number of pixel columns from the viewport width)

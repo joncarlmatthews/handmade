@@ -134,6 +134,7 @@
     <ClInclude Include="handmade.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".editorconfig" />
     <None Include="build_x64.bat" />
     <None Include="build_x86.bat" />
   </ItemGroup>

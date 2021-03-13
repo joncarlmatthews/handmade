@@ -40,5 +40,6 @@
     <None Include="build_x86.bat">
       <Filter>Build scripts</Filter>
     </None>
+    <None Include=".editorconfig" />
   </ItemGroup>
 </Project>
