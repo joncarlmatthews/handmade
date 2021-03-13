@@ -85,7 +85,7 @@ float32 percentageOfAnotherf(float32 a, float32 b);
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
-internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32_t width, uint32_t height);
+internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32_t width, int32_t height);
 
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32FrameBuffer buffer, uint32_t width, uint32_t height);
 

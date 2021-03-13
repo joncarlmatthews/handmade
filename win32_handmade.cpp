@@ -59,10 +59,10 @@ typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, L
  * @param LPSTR Command line arguments sent to the application.
  * @param int How the user has specified the window to be shown
  */
-internal_func int CALLBACK WinMain(HINSTANCE instance,
-                                    HINSTANCE prevInstance, 
-                                    LPSTR commandLine, 
-                                    int showCode)
+int CALLBACK WinMain(HINSTANCE instance,
+                        HINSTANCE prevInstance, 
+                        LPSTR commandLine, 
+                        int showCode)
 {
     // Application initialisation stuff...
 
@@ -526,7 +526,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param int                   height      The height of the window's viewport
  * 
  */
-internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32_t width, uint32_t height)
+internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32_t width, int32_t height)
 {
     if (DEBUG_OUTPUT) {
         OutputDebugString("\nInitialising Win32 Buffer ");
