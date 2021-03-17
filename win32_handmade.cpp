@@ -38,8 +38,8 @@ global_var bool running;
 global_var Win32FrameBuffer win32FrameBuffer;
 
 // XInput support
-typedef DWORD WINAPI XInputGetStateDT(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState);
-typedef DWORD WINAPI XInputSetStateDT(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration);
+typedef DWORD WINAPI XInputGetStateDT(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState);
+typedef DWORD WINAPI XInputSetStateDT(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION *pVibration);
 
 global_var XInputGetStateDT *XInputGetState_ = XInputGetStateStub;
 global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
@@ -48,7 +48,7 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 #define XInputSetState XInputSetState_
 
 // Direct sound support
-typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN  pUnkOuter);
+typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, LPUNKNOWN  pUnkOuter);
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -611,7 +611,7 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                     SRCCOPY);
 }
 
-internal_func void win32InitDirectSound(HWND window, Win32AudioBuffer* win32AudioBuffer)
+internal_func void win32InitDirectSound(HWND window, Win32AudioBuffer *win32AudioBuffer)
 {
     win32AudioBuffer->bufferSuccessfulyCreated = FALSE;
 
@@ -634,7 +634,7 @@ internal_func void win32InitDirectSound(HWND window, Win32AudioBuffer* win32Audi
         return;
     }
 
-    DirectSoundCreateDT* DirectSoundCreate = DirectSoundCreateAddr;
+    DirectSoundCreateDT *DirectSoundCreate = DirectSoundCreateAddr;
 
     LPDIRECTSOUND directSound;
 
@@ -891,11 +891,11 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState) {
+internal_func DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState) {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration) {
+internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION *pVibration) {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -915,8 +915,8 @@ internal_func void loadXInputDLLFunctions(void)
 
     if (libHandle) {
 
-        XInputGetStateDT* XInputGetStateAddr = (XInputGetStateDT*)GetProcAddress(libHandle, "XInputGetState");
-        XInputSetStateDT* XInputSetStateAddr = (XInputSetStateDT*)GetProcAddress(libHandle, "XInputSetState");
+        XInputGetStateDT *XInputGetStateAddr = (XInputGetStateDT*)GetProcAddress(libHandle, "XInputGetState");
+        XInputSetStateDT *XInputSetStateAddr = (XInputSetStateDT*)GetProcAddress(libHandle, "XInputSetState");
 
         if (XInputGetStateAddr) {
             XInputGetState = XInputGetStateAddr;

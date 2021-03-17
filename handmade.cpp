@@ -9,12 +9,13 @@ internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer,
     gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
 }
 
-internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset){
+internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset)
+{
     // Create a pointer to bitmapMemory
     // In order for us to have maximum control over the pointer arithmatic, we cast it to
     // an 1 byte datatype. This enables us to step through the memory block 1 byte
     // at a time.
-    uint8_t* row = (uint8_t*)buffer->memory;
+    uint8_t *row = (uint8_t*)buffer->memory;
 
     // Create a loop that iterates for the same number of rows we have for the viewport. 
     // (We know the number of pixel rows from the viewport height)
@@ -45,9 +46,10 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
              * 00   00  00  00
             */
 
-            uint8_t red = (uint8_t)(x + redOffset);  // Chop off anything after the first 8 bits of the variable x + offset
-            uint8_t green = (uint8_t)(y + greenOffset);  // Chop off anything after the first 8 bits of the variable y + offset
-            uint8_t blue = 0;
+            uint8_t red     = (uint8_t)(x + redOffset);     // Chop off anything after the first 8 bits of the variable x + offset
+            uint8_t green   = (uint8_t)(y + greenOffset);   // Chop off anything after the first 8 bits of the variable y + offset
+            uint8_t blue    = 0;
+
             *pixel = ((red << 16) | (green << 8) | blue);
 
             // Move the pointer forward to the start of the next 4 byte block
@@ -61,7 +63,7 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
     }
 }
 
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer* audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint64_t bufferSizeInBytes)
+internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint64_t bufferSizeInBytes)
 {
     audioBuffer->bitsPerChannel = bitsPerChannel;
     audioBuffer->bufferSizeInBytes = bufferSizeInBytes;

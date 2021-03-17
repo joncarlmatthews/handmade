@@ -21,6 +21,6 @@ end_of_line = crlf
 #guidelines = 80
 
 [*.{c++,cc,cpp,cxx,h,h++,hh,hpp,hxx,inl,ipp,tlh,tli}]
-cpp_space_pointer_reference_alignment = right
-cpp_new_line_before_open_brace_function = true
-cpp_new_line_before_open_brace_block = false
+cpp_space_pointer_reference_alignment = right : error
+cpp_new_line_before_open_brace_function = true : error
+cpp_new_line_before_open_brace_block = false : error

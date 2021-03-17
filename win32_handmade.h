@@ -24,7 +24,7 @@ typedef struct Win32FrameBuffer
     BITMAPINFO info;
 
     // Pointer to an allocated block of heap memory to hold the data of the buffer.
-    void* memory;
+    void *memory;
 } Win32FrameBuffer;
 
 /**
@@ -79,7 +79,7 @@ typedef struct Win32AudioBuffer
 
 internal_func void debug(char *format, ...);
 
-internal_func void log(int level, char* format, ...);
+internal_func void log(int level, char *format, ...);
 
 float32 percentageOfAnotherf(float32 a, float32 b);
 
@@ -91,9 +91,9 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32Frame
 
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window);
 
-internal_func DWORD WINAPI XInputGetStateStub(_In_  DWORD dwUserIndex, _Out_ XINPUT_STATE* pState);
+internal_func DWORD WINAPI XInputGetStateStub(_In_  DWORD dwUserIndex, _Out_ XINPUT_STATE *pState);
 
-internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration);
+internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION *pVibration);
 
 internal_func void loadXInputDLLFunctions(void);
 
