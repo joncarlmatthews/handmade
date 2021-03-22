@@ -1,10 +1,8 @@
 // Windows API. Visual Studio freaks out if it's not the first include.
 #include <windows.h>
 
-// CRT library for  debugging memory leaks
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
 
+#include <stdlib.h>
 #include <strsafe.h> // For StringCbVPrintfA & STRSAFE_MAX_CCH
 #include <stdarg.h> // For variable number of arguments in function sigs
 #include <dsound.h> // Direct Sound for audio output.
@@ -20,6 +18,11 @@
 //=======================================
 
 #include "handmade.cpp"
+
+internal_func void platformSayHello()
+{
+    OutputDebugString("Hello from Win32\n");
+}
 
 //=======================================
 // End of game layer
@@ -60,11 +63,11 @@ typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, L
  */
 int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_opt_ HINSTANCE prevInstance,
-                        _In_ LPWSTR    commandLine,
-                        _In_ int       showCode)
+                        _In_ LPWSTR commandLine,
+                        _In_ int showCode)
 {
     // Application initialisation stuff...
-
+    
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     LARGE_INTEGER perfFrequencyCounterRes;
@@ -73,9 +76,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // Load XInput DLL functions.
     loadXInputDLLFunctions();
-
-    // Create our back buffer.
-    win32InitFrameBuffer(&win32FrameBuffer, 1024, 768);
 
     // Create a new window struct and set all of it's values to 0.
     WNDCLASS windowClass = {};
@@ -125,15 +125,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
-    // Graphics stuff
+    // Create our Windows frame buffer (back buffer.)
+    win32InitFrameBuffer(&win32FrameBuffer, 1024, 768);
+
+    // Temp graphics stuff...
     uint32_t redOffset = 0;
     uint32_t greenOffset = 0;
-    uint8_t cyclesPerSecondIndex = 3;
 
     // Audio stuff...
-    Win32AudioBuffer win32AudioBuffer = {};
+    Win32AudioBuffer win32AudioBuffer = {0};
     win32InitDirectSound(window, &win32AudioBuffer);
     win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
+
+    // Temp audio stuff...
+    uint8_t cyclesPerSecondIndex = 17;
 
     // Init the game audio buffer
     AudioBuffer audioBuffer = {};
@@ -148,6 +153,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Get the number of processor clock cycles
     uint64_t processorClockCycles = __rdtsc();
 
+    /**
+     * MAIN GAME LOOP
+     */
     while (running) {
 
         MSG message;
@@ -156,6 +164,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // that are sent to the window. E.g. clicks and key inputs.
         while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
 
+            // If the message received was a quit message, then toggle our
+            // running flag to false to break out of this loop on the next
+            // iteration.
             if (message.message == WM_QUIT) {
                 running = false;
             }
@@ -167,7 +178,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // @link win32MainWindowCallback
             DispatchMessage(&message);
 
-        }
+        } // PeekMessage loop
 
         // After processing our messages, we can now (in our "while running = true"
         // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
@@ -182,7 +193,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         DWORD dwResult;
         for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
 
-            XINPUT_STATE controllerState;
+            XINPUT_STATE controllerState = {0};
             SecureZeroMemory(&controllerState, sizeof(XINPUT_STATE));
 
             // Simply get the state of the controller from XInput.
@@ -230,7 +241,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             }
 
             // Vibrate the controller
-            XINPUT_VIBRATION pVibration;
+            XINPUT_VIBRATION pVibration = {0};
 
             if ( (leftThumbstickX != 0) || (leftThumbstickY != 0)) {
                 pVibration.wLeftMotorSpeed = 1000;
@@ -245,7 +256,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         } // controller loop
 
-        // Game frame buffer
+        // Create the game frame buffer
         FrameBuffer frameBuffer = {};
         frameBuffer.height = win32FrameBuffer.height;
         frameBuffer.width = win32FrameBuffer.width;
@@ -253,7 +264,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         frameBuffer.byteWidthPerRow = win32FrameBuffer.byteWidthPerRow;
         frameBuffer.memory = win32FrameBuffer.memory;
 
-        // Game audio buffer
+        // Create the game audio buffer
+        //...
         
         // Main game code.
         gameUpdateAndRender(&frameBuffer, redOffset, greenOffset, &audioBuffer);
@@ -297,7 +309,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 DWORD lockOffsetInBytes = (win32AudioBuffer.runningByteIndex % win32AudioBuffer.bufferSizeInBytes);
 
                 // Size, in bytes, of the portion of the buffer to lock.
-                DWORD lockSizeInBytes;
+                DWORD lockSizeInBytes = 0;
 
                 // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
                 // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
@@ -330,7 +342,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Performance-counter frequency for MS/frame & FPS
         LARGE_INTEGER gameLoopPerformanceCounter;
         QueryPerformanceCounter(&gameLoopPerformanceCounter);
-        float32 countersElapsedPerFrame = (gameLoopPerformanceCounter.QuadPart - runningPerformanceCounter.QuadPart);
+        float32 countersElapsedPerFrame = (float32)(gameLoopPerformanceCounter.QuadPart - runningPerformanceCounter.QuadPart);
         float32 millisecondsElapsedPerFrame = (((float32)countersElapsedPerFrame * 1000.0f) / (float32)countersPerSecond);
         float32 secondsPerFrame = (1000.0f / (float32)millisecondsElapsedPerFrame);
         
@@ -630,7 +642,7 @@ internal_func void win32InitDirectSound(HWND window, Win32AudioBuffer *win32Audi
 
     if (!DirectSoundCreateAddr) {
         // Function not found within library.
-        log(LOG_LEVEL_WARN, "DirectSoundCreate not in dsound.dll. Malformed DLL?");
+        log(LOG_LEVEL_WARN, "DirectSoundCreate not in dsound.dll. Invalid/malformed DLL.");
         return;
     }
 
@@ -683,7 +695,7 @@ internal_func void win32InitDirectSound(HWND window, Win32AudioBuffer *win32Audi
     win32AudioBuffer->samplesPerSecond = 48000;
     win32AudioBuffer->bytesPerSample = ((win32AudioBuffer->bitsPerChannel * win32AudioBuffer->noOfChannels) / 8);
     win32AudioBuffer->secondsWorthOfAudio = 1;
-    win32AudioBuffer->bufferSizeInBytes = ((win32AudioBuffer->bytesPerSample * win32AudioBuffer->samplesPerSecond) * win32AudioBuffer->secondsWorthOfAudio);
+    win32AudioBuffer->bufferSizeInBytes = (uint64_t)((win32AudioBuffer->bytesPerSample * win32AudioBuffer->samplesPerSecond) * win32AudioBuffer->secondsWorthOfAudio);
     win32AudioBuffer->runningByteIndex = 0;
     win32AudioBuffer->runningSineValue = 0.0f;
 
@@ -748,8 +760,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWO
         //log(LOG_LEVEL_INFO, "Lock offset in bytes: %i Lock size in bytes: %i, play cursor position: %i", lockOffsetInBytes, lockSizeInBytes, playCursorOffsetInBytes);
         //log(LOG_LEVEL_INFO, "");
 
-    }
-    else {
+    } else {
         doAudioWrite = true;
     }
 
@@ -764,12 +775,12 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWO
         uint16_t cyclesPerSecond = (cyclesPerSecondIndex * 100);
 
         res = win32AudioBuffer->buffer->Lock(lockOffsetInBytes,
-            lockSizeInBytes,
-            &chunkOnePtr,
-            &chunkOneBytes,
-            &chunkTwoPtr,
-            &chunkTwoBytes,
-            0);
+                                                lockSizeInBytes,
+                                                &chunkOnePtr,
+                                                &chunkOneBytes,
+                                                &chunkTwoPtr,
+                                                &chunkTwoBytes,
+                                                0);
 
         if (SUCCEEDED(res)) {
 
@@ -788,7 +799,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWO
 
             // At the start of which 4 byte group index we are starting our write from?
             // @TODO(JM) assert that this is a 4 byte boundry
-            uint64_t byteGroupIndex = lockOffsetInBytes;
+            uint32_t byteGroupIndex = lockOffsetInBytes;
 
             // Grab the first 16-bits of the first audio sample from the first block of memory 
             uint16_t *audioSample = (uint16_t*)chunkOnePtr;
@@ -883,7 +894,7 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     RECT clientRect;
     GetClientRect(window, &clientRect);
 
-    win32ClientDimensions dim;
+    win32ClientDimensions dim = {0};
 
     dim.width = clientRect.right;
     dim.height = clientRect.bottom;
@@ -891,11 +902,11 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func DWORD WINAPI XInputGetStateStub(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState) {
+internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState) {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION *pVibration) {
+internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration) {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 

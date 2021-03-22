@@ -67,10 +67,10 @@ typedef struct Win32AudioBuffer
     LPDIRECTSOUNDBUFFER buffer;
 
     // Byte count of our buffer's memory
-    uint64_t bufferSizeInBytes;
+    uint32_t bufferSizeInBytes;
 
     // Last position within the buffer that we wrote to.
-    DWORD runningByteIndex;
+    uint32_t runningByteIndex;
 
     // Last sine wave value within the buffer that we wrote out.
     float32 runningSineValue;
@@ -91,9 +91,9 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32Frame
 
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window);
 
-internal_func DWORD WINAPI XInputGetStateStub(_In_  DWORD dwUserIndex, _Out_ XINPUT_STATE *pState);
+internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState);
 
-internal_func DWORD WINAPI XInputSetStateStub(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION *pVibration);
+internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration);
 
 internal_func void loadXInputDLLFunctions(void);
 

@@ -5,6 +5,7 @@ internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer,
                                         int greenOffset, 
                                         AudioBuffer *audioBuffer)
 {
+    platformSayHello();
     gameWriteAudioBuffer(audioBuffer);
     gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
 }
@@ -63,7 +64,7 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
     }
 }
 
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint64_t bufferSizeInBytes)
+internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint32_t bufferSizeInBytes)
 {
     audioBuffer->bitsPerChannel = bitsPerChannel;
     audioBuffer->bufferSizeInBytes = bufferSizeInBytes;

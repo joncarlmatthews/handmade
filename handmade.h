@@ -68,8 +68,13 @@ typedef struct GameAudioBuffer
 } AudioBuffer;
 
 internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, int redOffset, int greenOffset, AudioBuffer *audioBuffer);
+
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset);
+
 internal_func void gameWriteAudioBuffer(AudioBuffer *buffer);
+
 internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint64_t bufferSizeInBytes);
+
+internal_func void platformSayHello();
 
 #endif
