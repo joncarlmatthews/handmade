@@ -18,7 +18,7 @@
 
 #include "handmade.cpp"
 
-internal_func void platformSayHello(int *counter)
+internal_func void platformSayHello()
 {
     //OutputDebugString("Hello from Win32\n");
 }
@@ -762,9 +762,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
         sineWave->sizeOfWave = 5000;
 
         // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
-        uint64_t audioSampleGroupsPerCycleReal = ((win32AudioBuffer->bufferSizeInBytes / win32AudioBuffer->bytesPerSample) / sineWave->hertz);
-
-        int64_t audioSampleGroupsPerCycle = ceiling(audioSampleGroupsPerCycleReal, win32AudioBuffer->bytesPerSample);
+        uint64_t audioSampleGroupsPerCycle = ((win32AudioBuffer->bufferSizeInBytes / win32AudioBuffer->bytesPerSample) / sineWave->hertz);
 
         // Calculate the total number of 4-byte audio sample groups (2-bytes/16 bits for the left channel, 2-bytes/16 bits for the right channel) 
         // that we have within the first block of memory IDirectSoundBuffer8::Lock has told us we can write to.

@@ -93,8 +93,6 @@ internal_func void gameWriteAudioBuffer(AudioBuffer *buffer);
 
 internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint64_t bufferSizeInBytes);
 
-internal_func int64_t ceiling(int64_t number, int64_t factor);
-
-internal_func void platformSayHello(int *counter);
+internal_func void platformSayHello();
 
 #endif

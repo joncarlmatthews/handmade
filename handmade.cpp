@@ -1,20 +1,11 @@
 #include "handmade.h"
 
-internal_func int64_t ceiling(int64_t number, int64_t factor)
-{
-    int isPositive = (int)(number >= 0);
-    return ((number + isPositive * (factor - 1)) / factor) * factor;
-}
-
-static int counter = 0;
-
 internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, 
                                         int redOffset, 
                                         int greenOffset, 
                                         AudioBuffer *audioBuffer)
 {
-    counter++;
-    platformSayHello(&counter);
+    platformSayHello();
     gameWriteAudioBuffer(audioBuffer);
     gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
 }
