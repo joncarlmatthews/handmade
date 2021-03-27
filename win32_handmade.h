@@ -72,9 +72,6 @@ typedef struct Win32AudioBuffer
     // Last position within the buffer that we wrote to.
     uint32_t runningByteIndex;
 
-    // Last sine wave value within the buffer that we wrote out.
-    float32 runningSineValue;
-
 } Win32AudioBuffer;
 
 internal_func void debug(char *format, ...);
@@ -97,8 +94,8 @@ internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATIO
 
 internal_func void loadXInputDLLFunctions(void);
 
-internal_func void win32InitDirectSound(HWND window, Win32AudioBuffer *win32AudioBuffer);
+internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
 
-internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, uint8_t cyclesPerSecondIndex);
+internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, SineWave *sineWave, DWORD lockOffsetInBytes, DWORD lockSizeInBytes);
 
 #endif

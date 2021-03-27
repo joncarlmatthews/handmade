@@ -67,6 +67,24 @@ typedef struct GameAudioBuffer
 
 } AudioBuffer;
 
+typedef struct SineWave
+{
+    // Hertz is the same as "cycles per second".
+    // The number of cycles that occur in one second is equal to the
+    // frequency of the signal in hertz (abbreviated Hz).
+    // Hertz set the tone. E.g. 256 = middle C.
+    // @link https://bit.ly/2PCUzdH
+    // @link https://en.wikipedia.org/wiki/Scientific_pitch
+    uint16_t hertz;
+
+    // Last sine wave value within the buffer that we wrote out.
+    float32 runningSineValue;
+
+    // The taller the wave, the louder the sound.
+    uint16_t sizeOfWave;
+
+} SineWave;
+
 internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, int redOffset, int greenOffset, AudioBuffer *audioBuffer);
 
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset);
@@ -75,6 +93,8 @@ internal_func void gameWriteAudioBuffer(AudioBuffer *buffer);
 
 internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint64_t bufferSizeInBytes);
 
-internal_func void platformSayHello();
+internal_func int64_t ceiling(int64_t number, int64_t factor);
+
+internal_func void platformSayHello(int *counter);
 
 #endif

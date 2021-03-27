@@ -137,6 +137,8 @@
     <None Include=".editorconfig" />
     <None Include="build_x64.bat" />
     <None Include="build_x86.bat" />
+    <None Include="shell_x64.bat" />
+    <None Include="shell_x86.bat" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
