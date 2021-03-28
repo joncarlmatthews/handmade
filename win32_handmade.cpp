@@ -73,7 +73,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     LARGE_INTEGER perfFrequencyCounterRes;
     QueryPerformanceFrequency(&perfFrequencyCounterRes);
-    int64_t countersPerSecond = perfFrequencyCounterRes.QuadPart;
+    int64 countersPerSecond = perfFrequencyCounterRes.QuadPart;
 
     // Load XInput DLL functions.
     loadXInputDLLFunctions();
@@ -132,8 +132,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     win32InitFrameBuffer(&win32FrameBuffer, 1024, 768);
 
     // temp
-    uint32_t redOffset = 0;
-    uint32_t greenOffset = 0;
+    uint32 redOffset = 0;
+    uint32 greenOffset = 0;
 
     // Audio initialisation...
 
@@ -152,7 +152,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     QueryPerformanceCounter(&runningPerformanceCounter);
     
     // Get the number of processor clock cycles
-    uint64_t processorClockCycles = __rdtsc();
+    uint64 processorClockCycles = __rdtsc();
 
     /**
      * MAIN GAME LOOP
@@ -224,8 +224,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             bool btnCDepressed              = (pad->wButtons & XINPUT_GAMEPAD_X);
             bool btnDDepressed              = (pad->wButtons & XINPUT_GAMEPAD_Y);
 
-            int16_t leftThumbstickX = pad->sThumbLX;
-            int16_t leftThumbstickY = pad->sThumbLY;
+            int16 leftThumbstickX = pad->sThumbLX;
+            int16 leftThumbstickY = pad->sThumbLY;
 
             // Animate the screen
             redOffset = (redOffset + (leftThumbstickY >> 12));
@@ -326,8 +326,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // How long did this game loop (frame) take?
 
         // Processor clock cycles.
-        uint64_t processorClockCyclesAfterFrame = __rdtsc();
-        int64_t processorClockCyclesElapsed = (processorClockCyclesAfterFrame - processorClockCycles);
+        uint64 processorClockCyclesAfterFrame = __rdtsc();
+        int64 processorClockCyclesElapsed = (processorClockCyclesAfterFrame - processorClockCycles);
         float32 clockCycles_mega = ((float32)processorClockCyclesElapsed / 1000000.0f); // processorClockCyclesElapsed is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
 
         // Performance-counter frequency for MS/frame & FPS
@@ -338,7 +338,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         float32 secondsPerFrame = (1000.0f / (float32)millisecondsElapsedPerFrame);
         
         // Processor running speed in GHz
-        float32 speed = ((uint64_t)(secondsPerFrame * clockCycles_mega) / 100.0f);
+        float32 speed = ((uint64)(secondsPerFrame * clockCycles_mega) / 100.0f);
 
         // Console log the speed:
         debug("ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
@@ -454,7 +454,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         case WM_SYSKEYUP: {
 
             // Which key was pressed?
-            uint32_t vkCode = wParam;
+            uint32 vkCode = wParam;
 
             // Was the user holding down ALT when pressing a key?
             if (message == WM_SYSKEYDOWN) {
@@ -472,10 +472,10 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
             */
             
             // lParam is 4-bytes wide.
-            uint32_t *lParamBitmask = (uint32_t *)&lParam;
+            uint32 *lParamBitmask = (uint32 *)&lParam;
 
             // Fetch the second two bytes (bits 0-15)
-            uint16_t *repeatCount = (uint16_t *)&lParam;
+            uint16 *repeatCount = (uint16 *)&lParam;
             repeatCount = (repeatCount + 1);
 
             if (WM_KEYDOWN == message) {
@@ -523,7 +523,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param int                   height      The height of the window's viewport
  * 
  */
-internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32_t width, int32_t height)
+internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height)
 {
     if (DEBUG_OUTPUT) {
         OutputDebugString("\nInitialising Win32 Buffer ");
@@ -555,7 +555,7 @@ internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32_t width
     // How many bytes do we need for our bitmap?
     // viewport width * viewport height = viewport area
     // then viewport area * how many bytes we need per pixel.
-    uint32_t bitmapMemorySizeInBytes = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
+    uint32 bitmapMemorySizeInBytes = ((buffer->width * buffer->height) * buffer->bytesPerPixel);
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySizeInBytes
@@ -579,8 +579,8 @@ internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32_t width
  */
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, 
                                             Win32FrameBuffer buffer,
-                                            uint32_t width,
-                                            uint32_t height)
+                                            uint32 width,
+                                            uint32 height)
 {
     if (DEBUG_OUTPUT) {
         OutputDebugString("\nCopying buffer memory to screen\n");
@@ -682,7 +682,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     win32AudioBuffer->samplesPerSecond = 48000;
     win32AudioBuffer->bytesPerSample = ((win32AudioBuffer->bitsPerChannel * win32AudioBuffer->noOfChannels) / 8);
     win32AudioBuffer->secondsWorthOfAudio = 1;
-    win32AudioBuffer->bufferSizeInBytes = (uint64_t)((win32AudioBuffer->bytesPerSample * win32AudioBuffer->samplesPerSecond) * win32AudioBuffer->secondsWorthOfAudio);
+    win32AudioBuffer->bufferSizeInBytes = (uint64)((win32AudioBuffer->bytesPerSample * win32AudioBuffer->samplesPerSecond) * win32AudioBuffer->secondsWorthOfAudio);
     win32AudioBuffer->runningByteIndex = 0;
 
     // Set the format
@@ -762,21 +762,21 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
         sineWave->sizeOfWave = 5000;
 
         // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
-        uint64_t audioSampleGroupsPerCycle = ((win32AudioBuffer->bufferSizeInBytes / win32AudioBuffer->bytesPerSample) / sineWave->hertz);
+        uint64 audioSampleGroupsPerCycle = ((win32AudioBuffer->bufferSizeInBytes / win32AudioBuffer->bytesPerSample) / sineWave->hertz);
 
         // Calculate the total number of 4-byte audio sample groups (2-bytes/16 bits for the left channel, 2-bytes/16 bits for the right channel) 
         // that we have within the first block of memory IDirectSoundBuffer8::Lock has told us we can write to.
-        uint64_t audioSampleGroupsChunkOne = (chunkOneBytes / win32AudioBuffer->bytesPerSample);
+        uint64 audioSampleGroupsChunkOne = (chunkOneBytes / win32AudioBuffer->bytesPerSample);
 
         // At the start of which 4 byte group index we are starting our write from?
         // @TODO(JM) assert that this is a 4 byte boundry
-        uint32_t byteGroupIndex = lockOffsetInBytes;
+        uint32 byteGroupIndex = lockOffsetInBytes;
 
         // Grab the first 16-bits of the first audio sample from the first block of memory 
-        uint16_t *audioSample = (uint16_t*)chunkOnePtr;
+        uint16 *audioSample = (uint16*)chunkOnePtr;
 
         // Audio sample value
-        int16_t audioSampleValue = 0;
+        int16 audioSampleValue = 0;
 
         float32 percentageOfAngle = 0.0f;
         float32 angle = 0.0f;
@@ -791,7 +791,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
             radians = (angle * (PIf / 180.0f));
             sine = sinf(radians);
 
-            audioSampleValue = (int16_t)(sine * sineWave->sizeOfWave);
+            audioSampleValue = (int16)(sine * sineWave->sizeOfWave);
 
             // Left channel (16-bits)
             *audioSample = audioSampleValue;
@@ -809,10 +809,10 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
             byteGroupIndex = (byteGroupIndex + win32AudioBuffer->bytesPerSample);
         }
 
-        uint64_t audioSampleGroupsChunkTwo = (chunkTwoBytes / win32AudioBuffer->bytesPerSample);
+        uint64 audioSampleGroupsChunkTwo = (chunkTwoBytes / win32AudioBuffer->bytesPerSample);
 
         // Grab the first 16-bit of the first audio sample from the second block of memory 
-        uint16_t *audioTwoSample = (uint16_t*)chunkTwoPtr;
+        uint16 *audioTwoSample = (uint16*)chunkTwoPtr;
 
         for (size_t i = 0; i < audioSampleGroupsChunkTwo; i++) {
 
@@ -821,7 +821,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
             radians = (angle * (PIf / 180.0f));
             sine = sinf(radians);
 
-            audioSampleValue = (int16_t)(sine * sineWave->sizeOfWave);
+            audioSampleValue = (int16)(sine * sineWave->sizeOfWave);
 
             // Left channel (16-bits)
             *audioTwoSample = audioSampleValue;
@@ -923,7 +923,7 @@ internal_func void debug(char *format, ...)
     va_list argList;
 
     // @see STRSAFE_MAX_CCH
-    const uint16_t bufSze = (100 * sizeof(TCHAR));
+    const uint16 bufSze = (100 * sizeof(TCHAR));
 
     char msgBuf[bufSze];
 
@@ -955,7 +955,7 @@ internal_func void log(int level, char *format, ...)
     va_list argList;
 
     // @see STRSAFE_MAX_CCH
-    const uint16_t bufSze = (100 * sizeof(TCHAR));
+    const uint16 bufSze = (100 * sizeof(TCHAR));
 
     char msgBuf[bufSze];
 

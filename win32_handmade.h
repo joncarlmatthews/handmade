@@ -7,18 +7,18 @@
 typedef struct Win32FrameBuffer
 {
     // The width in pixels of the buffer.
-    uint32_t width;
+    uint32 width;
 
     // The height in pixels of the buffer.
-    uint32_t height;
+    uint32 height;
 
     // 1 byte each for R, G & B and 1 byte for padding to match byte boundries (4)
     // Therefore our pixels are always 32-bits wide and are in Little Endian 
     // memory order (backwards) 0xBBGGRRPP
-    uint16_t bytesPerPixel;
+    uint16 bytesPerPixel;
 
     // The number of bytes per row. (width * bytesPerPixel)
-    uint32_t byteWidthPerRow;
+    uint32 byteWidthPerRow;
 
     // Bitmap parameters
     BITMAPINFO info;
@@ -32,8 +32,8 @@ typedef struct Win32FrameBuffer
  */
 typedef struct win32ClientDimensions
 {
-    uint32_t width;
-    uint32_t height;
+    uint32 width;
+    uint32 height;
 } win32ClientDimensions;
 
 /**
@@ -46,31 +46,31 @@ typedef struct Win32AudioBuffer
 
     // How many audio channels are we targetting?
     // 2 a left channel and a right channel
-    uint8_t noOfChannels;
+    uint8 noOfChannels;
 
     // How many bits per individual left or right channel? 
     // (16-bits for the left channel's sample, 16-bits for the right channel's sample.)
-    uint8_t bitsPerChannel;
+    uint8 bitsPerChannel;
 
     // How many bytes to store per "sample"? A single sample is the grouping of one left + right channel.
     // The sum of left + right channel is 32-bits, therefore each sample needs 4 bytes
     // Data written to and read from a the buffer must always start at the beginning of a 16-bit, 4-byte sample "block"
-    uint8_t bytesPerSample;
+    uint8 bytesPerSample;
 
     // How many samples per second will we be storing?
-    uint16_t samplesPerSecond;
+    uint16 samplesPerSecond;
 
     // How many seconds worth of the audio should our buffer hold?
-    uint8_t secondsWorthOfAudio;
+    uint8 secondsWorthOfAudio;
 
     // The block of memory to hold the samples.
     LPDIRECTSOUNDBUFFER buffer;
 
     // Byte count of our buffer's memory
-    uint32_t bufferSizeInBytes;
+    uint32 bufferSizeInBytes;
 
     // Last position within the buffer that we wrote to.
-    uint32_t runningByteIndex;
+    uint32 runningByteIndex;
 
 } Win32AudioBuffer;
 
@@ -82,9 +82,9 @@ float32 percentageOfAnotherf(float32 a, float32 b);
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
-internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32_t width, int32_t height);
+internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height);
 
-internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32FrameBuffer buffer, uint32_t width, uint32_t height);
+internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32FrameBuffer buffer, uint32 width, uint32 height);
 
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window);
 

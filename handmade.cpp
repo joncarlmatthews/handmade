@@ -16,23 +16,23 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
     // In order for us to have maximum control over the pointer arithmatic, we cast it to
     // an 1 byte datatype. This enables us to step through the memory block 1 byte
     // at a time.
-    uint8_t *row = (uint8_t*)buffer->memory;
+    uint8 *row = (uint8*)buffer->memory;
 
     // Create a loop that iterates for the same number of rows we have for the viewport. 
     // (We know the number of pixel rows from the viewport height)
     // We name the iterator x to denote the x axis (along the corridor)
-    for (uint32_t x = 0; x < buffer->height; x++) {
+    for (uint32 x = 0; x < buffer->height; x++) {
 
         // We know that each pixel is 4 bytes wide (bytesPerPixel) so we make
         // our pointer the same width to grab the relevant block of memory for
         // each pixel. (32 bits = 4 bytes)
 
-        uint32_t *pixel = (uint32_t*)row;
+        uint32 *pixel = (uint32*)row;
 
         // Create a loop that iterates for the same number of columns we have for the viewport.
         // (We know the number of pixel columns from the viewport width)
         // We name the iterator y to denote the y axis (up the stairs)
-        for (uint32_t y = 0; y < buffer->width; y++) {
+        for (uint32 y = 0; y < buffer->width; y++) {
 
             /*
              * Write to this pixel...
@@ -47,9 +47,9 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
              * 00   00  00  00
             */
 
-            uint8_t red     = (uint8_t)(x + redOffset);     // Chop off anything after the first 8 bits of the variable x + offset
-            uint8_t green   = (uint8_t)(y + greenOffset);   // Chop off anything after the first 8 bits of the variable y + offset
-            uint8_t blue    = 0;
+            uint8 red     = (uint8)(x + redOffset);     // Chop off anything after the first 8 bits of the variable x + offset
+            uint8 green   = (uint8)(y + greenOffset);   // Chop off anything after the first 8 bits of the variable y + offset
+            uint8 blue    = 0;
 
             *pixel = ((red << 16) | (green << 8) | blue);
 
@@ -64,7 +64,7 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
     }
 }
 
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8_t bitsPerChannel, uint8_t bytesPerSample, uint32_t bufferSizeInBytes)
+internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8 bitsPerChannel, uint8 bytesPerSample, uint32 bufferSizeInBytes)
 {
     audioBuffer->bitsPerChannel = bitsPerChannel;
     audioBuffer->bufferSizeInBytes = bufferSizeInBytes;
@@ -76,7 +76,7 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8_t
 
 internal_func void gameWriteAudioBuffer(AudioBuffer *buffer)
 {
-    uint16_t audioSample = (uint16_t)buffer->memory;
+    uint16 audioSample = (uint16)buffer->memory;
     for (size_t i = 0; i < (buffer->bufferSizeInBytes / buffer->bytesPerSample); i++){
 
     }

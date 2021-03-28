@@ -130,6 +130,7 @@
     <ClCompile Include="win32_handmade.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="types.h" />
     <ClInclude Include="win32_handmade.h" />
     <ClInclude Include="handmade.h" />
   </ItemGroup>
@@ -137,6 +138,7 @@
     <None Include=".editorconfig" />
     <None Include="build_x64.bat" />
     <None Include="build_x86.bat" />
+    <None Include="README.md" />
     <None Include="shell_x64.bat" />
     <None Include="shell_x86.bat" />
   </ItemGroup>

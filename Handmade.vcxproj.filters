@@ -10,6 +10,9 @@
     <Filter Include="Game Code">
       <UniqueIdentifier>{10b24934-44f4-402a-a9be-e1e0c353efbd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Documentation">
+      <UniqueIdentifier>{ac274282-3678-47f5-8a0e-eb80a41e2274}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="win32_handmade.cpp">
@@ -26,6 +29,9 @@
     <ClInclude Include="handmade.h">
       <Filter>Game Code</Filter>
     </ClInclude>
+    <ClInclude Include="types.h">
+      <Filter>Game Code</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="build_x64.bat">
@@ -40,6 +46,9 @@
     </None>
     <None Include="shell_x86.bat">
       <Filter>Build scripts</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Documentation</Filter>
     </None>
   </ItemGroup>
 </Project>
