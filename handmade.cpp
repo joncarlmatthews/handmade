@@ -1,12 +1,38 @@
 #include "handmade.h"
 
-internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, 
-                                        int redOffset, 
-                                        int greenOffset, 
-                                        AudioBuffer *audioBuffer)
+static int redOffset = 0;
+static int greenOffset = 0;
+
+internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers)
 {
-    platformSayHello();
     gameWriteAudioBuffer(audioBuffer);
+
+    for (uint8 i = 0; i < maxControllers; i++){
+
+        if (controllers[i].controllerReady) {
+
+            // Animate the screen.
+            redOffset       = (redOffset + (controllers[i].leftThumbstickY >> 12));
+            greenOffset     = (greenOffset - (controllers[i].leftThumbstickX >> 12));
+
+            // Controller feedback.
+            uint16 motor1Speed = 0;
+            uint16 motor2Speed = 0;
+            if ((controllers[i].leftThumbstickY != 0) || (controllers[i].leftThumbstickX != 0)) {
+                motor2Speed = 65000;
+            }
+
+            platformControllerVibrate(0, motor1Speed, motor2Speed);
+
+            // Support for first controller only at this point.
+            break;
+        }
+    }
+    
+
+    // @TODO(JM) change the sine wave cycles per second based on controller input
+    // ...
+
     gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
 }
 

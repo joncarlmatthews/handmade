@@ -18,11 +18,6 @@
 
 #include "handmade.cpp"
 
-internal_func void platformSayHello()
-{
-    //OutputDebugString("Hello from Win32\n");
-}
-
 //=======================================
 // End of game layer
 //=======================================
@@ -131,9 +126,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Create our Windows frame buffer (back buffer.)
     win32InitFrameBuffer(&win32FrameBuffer, 1024, 768);
 
-    // temp
-    uint32 redOffset = 0;
-    uint32 greenOffset = 0;
+    // Create the game frame buffer
+    FrameBuffer frameBuffer = {};
+    frameBuffer.height = win32FrameBuffer.height;
+    frameBuffer.width = win32FrameBuffer.width;
+    frameBuffer.bytesPerPixel = win32FrameBuffer.bytesPerPixel;
+    frameBuffer.byteWidthPerRow = win32FrameBuffer.byteWidthPerRow;
+    frameBuffer.memory = win32FrameBuffer.memory;
 
     // Audio initialisation...
 
@@ -191,14 +190,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Iterate over each controller and get its state.
-        DWORD dwResult;
-        for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
+        GameController controllers[4] = { 0 };
 
-            XINPUT_STATE controllerState = {0};
-            SecureZeroMemory(&controllerState, sizeof(XINPUT_STATE));
+        DWORD dwResult;
+        uint8 maxControllers = MAX_CONTROLLERS;
+        if (XUSER_MAX_COUNT < maxControllers) {
+            maxControllers = XUSER_MAX_COUNT;
+        }
+        for (DWORD controllerIndex = 0; controllerIndex < maxControllers; controllerIndex++) {
+
+            XINPUT_STATE controllerInstance = {0};
+            SecureZeroMemory(&controllerInstance, sizeof(XINPUT_STATE));
 
             // Simply get the state of the controller from XInput.
-            dwResult = XInputGetState(controllerIndex, &controllerState);
+            dwResult = XInputGetState(controllerIndex, &controllerInstance);
 
             if (dwResult != ERROR_SUCCESS) {
                 // Controller is not connected/available.
@@ -207,62 +212,41 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // ...controller is connected
 
-            // Fetch the pad
-            XINPUT_GAMEPAD *pad = &controllerState.Gamepad;
+            // Fetch the gamepad
+            XINPUT_GAMEPAD *gamepad = &controllerInstance.Gamepad;
 
-            // Set booleans for the individual button states
-            bool btnUpDepressed             = (pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
-            bool btnDownDepressed           = (pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
-            bool btnLeftDepressed           = (pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
-            bool btnRightDepressed          = (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
-            bool btnStartDepressed          = (pad->wButtons & XINPUT_GAMEPAD_START);
-            bool btnBackDepressed           = (pad->wButtons & XINPUT_GAMEPAD_BACK);
-            bool btnShoulderLeftDepressed   = (pad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
-            bool btnShoulderRightDepressed  = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
-            bool btnADepressed              = (pad->wButtons & XINPUT_GAMEPAD_A);
-            bool btnBDepressed              = (pad->wButtons & XINPUT_GAMEPAD_B);
-            bool btnCDepressed              = (pad->wButtons & XINPUT_GAMEPAD_X);
-            bool btnDDepressed              = (pad->wButtons & XINPUT_GAMEPAD_Y);
+            GameController gameController = {0};
 
-            int16 leftThumbstickX = pad->sThumbLX;
-            int16 leftThumbstickY = pad->sThumbLY;
+            gameController.controllerReady              = true;
+            gameController.btnUpDepressed               = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
+            gameController.btnDownDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
+            gameController.btnLeftDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+            gameController.btnRightDepressed            = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+            gameController.btnStartDepressed            = (gamepad->wButtons & XINPUT_GAMEPAD_START);
+            gameController.btnBackDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_BACK);
+            gameController.btnShoulderLeftDepressed     = (gamepad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
+            gameController.btnShoulderRightDepressed    = (gamepad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
+            gameController.btnADepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_A);
+            gameController.btnBDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_B);
+            gameController.btnCDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_X);
+            gameController.btnDDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_Y);
 
-            // Animate the screen
-            redOffset = (redOffset + (leftThumbstickY >> 12));
-            greenOffset = (greenOffset - (leftThumbstickX >> 12));
+            gameController.leftThumbstickX = gamepad->sThumbLX;
+            gameController.leftThumbstickY = gamepad->sThumbLY;
 
-            // @TODO(JM) change the sine wave cycles per second based on controller input
-            // ...
+            gameController.rightThumbstickX = gamepad->sThumbRX;
+            gameController.rightThumbstickY = gamepad->sThumbRY;
 
-            // Vibrate the controller
-            XINPUT_VIBRATION pVibration = {0};
-
-            if ( (leftThumbstickX != 0) || (leftThumbstickY != 0)) {
-                pVibration.wLeftMotorSpeed = 1000;
-                pVibration.wRightMotorSpeed = 1000;
-               
-            }else {
-                pVibration.wLeftMotorSpeed = 0;
-                pVibration.wRightMotorSpeed = 0;
-            }
-
-            XInputSetState(controllerIndex, &pVibration);
+            controllers[controllerIndex] = gameController;           
 
         } // controller loop
 
-        // Create the game frame buffer
-        FrameBuffer frameBuffer = {};
-        frameBuffer.height = win32FrameBuffer.height;
-        frameBuffer.width = win32FrameBuffer.width;
-        frameBuffer.bytesPerPixel = win32FrameBuffer.bytesPerPixel;
-        frameBuffer.byteWidthPerRow = win32FrameBuffer.byteWidthPerRow;
-        frameBuffer.memory = win32FrameBuffer.memory;
 
         // Create the game audio buffer
         //...
         
         // Main game code.
-        gameUpdateAndRender(&frameBuffer, redOffset, greenOffset, &audioBuffer);
+        gameUpdateAndRender(&frameBuffer, &audioBuffer, controllers, maxControllers);
 
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
         win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
@@ -454,7 +438,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         case WM_SYSKEYUP: {
 
             // Which key was pressed?
-            uint32 vkCode = wParam;
+            WPARAM vkCode = wParam;
 
             // Was the user holding down ALT when pressing a key?
             if (message == WM_SYSKEYDOWN) {
@@ -905,6 +889,22 @@ internal_func void loadXInputDLLFunctions(void)
             XInputSetState = XInputSetStateAddr;
         }
     }
+}
+
+/**
+ * Vibrate the controller. 0 = 0% motor usage, 65,535 = 100% motor usage.
+ * The left motor is the low-frequency rumble motor. The right motor is the
+ * high-frequency rumble motor.
+ *
+ */
+internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed)
+{
+    XINPUT_VIBRATION pVibration = {0};
+
+    pVibration.wLeftMotorSpeed = motor1Speed;
+    pVibration.wLeftMotorSpeed = motor2Speed;
+
+    XInputSetState(controllerIndex, &pVibration);
 }
 
 /*

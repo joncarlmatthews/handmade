@@ -20,6 +20,9 @@ typedef unsigned long long  uint64;
 typedef float               float32;
 typedef double              float64;
 
-typedef uint32              bool32; // For 0 or "> 0 I don't care" booleans
+typedef int8                bool8;
+typedef int16               bool16;
+typedef int32               bool32;
+typedef int64               bool64;
 
 #endif

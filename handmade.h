@@ -9,6 +9,9 @@
 #define local_persist_var   static // Static variables within a local scope (e.g. case statement, function)
 #define internal_func       static // Functions that are only available within the file they're declared in
 
+// Maximum number of supported controllers
+#define MAX_CONTROLLERS 4
+
 /**
  * Struct for the screen buffer
  */
@@ -55,6 +58,30 @@ typedef struct GameAudioBuffer
 
 } AudioBuffer;
 
+typedef struct GameController
+{
+    bool16 controllerReady;
+    bool16 btnUpDepressed;
+    bool16 btnDownDepressed;
+    bool16 btnLeftDepressed;
+    bool16 btnRightDepressed;
+    bool16 btnStartDepressed;
+    bool16 btnBackDepressed;
+    bool16 btnShoulderLeftDepressed;
+    bool16 btnShoulderRightDepressed;
+    bool16 btnADepressed;
+    bool16 btnBDepressed;
+    bool16 btnCDepressed;
+    bool16 btnDDepressed;
+
+    int16 leftThumbstickX;
+    int16 leftThumbstickY;
+
+    int16 rightThumbstickX;
+    int16 rightThumbstickY;
+
+} GameController;
+
 typedef struct SineWave
 {
     // Hertz is the same as "cycles per second".
@@ -73,7 +100,7 @@ typedef struct SineWave
 
 } SineWave;
 
-internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, int redOffset, int greenOffset, AudioBuffer *audioBuffer);
+internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers);
 
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset);
 
@@ -81,6 +108,6 @@ internal_func void gameWriteAudioBuffer(AudioBuffer *buffer);
 
 internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8 bitsPerChannel, uint8 bytesPerSample, uint64 bufferSizeInBytes);
 
-internal_func void platformSayHello();
+internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed);
 
 #endif
