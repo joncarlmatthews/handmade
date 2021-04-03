@@ -103,9 +103,6 @@ typedef struct SineWave
     // @link https://en.wikipedia.org/wiki/Scientific_pitch
     uint16 hertz;
 
-    // Last sine wave value within the buffer that we wrote out.
-    float32 runningSineValue;
-
     // The taller the wave, the louder the sound.
     uint16 sizeOfWave;
 
