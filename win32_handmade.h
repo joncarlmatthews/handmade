@@ -96,6 +96,6 @@ internal_func void loadXInputDLLFunctions(void);
 
 internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
 
-internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, SineWave *sineWave, DWORD lockOffsetInBytes, DWORD lockSizeInBytes);
+internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, SineWave *sineWave, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, GameAudioBuffer *audioBuffer);
 
 #endif

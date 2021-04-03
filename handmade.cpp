@@ -1,25 +1,35 @@
 #include "handmade.h"
 
-static int redOffset = 0;
-static int greenOffset = 0;
-
-internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers)
+internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers)
 {
-    gameWriteAudioBuffer(audioBuffer);
+    /**
+     * Audio stuff
+     */
+
+     // @TODO(JM) change the sine wave cycles per second based on controller input
+     // ...
+
+    gameWriteAudioBuffer(audioBuffer, 100);
+
+    /**
+     * Graphics stuff
+     */
+    local_persist_var int32 redOffset = 0;
+    local_persist_var int32 greenOffset = 0;
 
     for (uint8 i = 0; i < maxControllers; i++){
 
         if (controllers[i].controllerReady) {
 
             // Animate the screen.
-            redOffset       = (redOffset + (controllers[i].leftThumbstickY >> 12));
-            greenOffset     = (greenOffset - (controllers[i].leftThumbstickX >> 12));
+            redOffset       = (redOffset    + (controllers[i].leftThumbstickY >> 10));
+            greenOffset     = (greenOffset  - (controllers[i].leftThumbstickX >> 10));
 
             // Controller feedback.
             uint16 motor1Speed = 0;
             uint16 motor2Speed = 0;
             if ((controllers[i].leftThumbstickY != 0) || (controllers[i].leftThumbstickX != 0)) {
-                motor2Speed = 65000;
+                motor2Speed = 35000;
             }
 
             platformControllerVibrate(0, motor1Speed, motor2Speed);
@@ -28,10 +38,6 @@ internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, AudioBuffer *au
             break;
         }
     }
-    
-
-    // @TODO(JM) change the sine wave cycles per second based on controller input
-    // ...
 
     gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
 }
@@ -90,20 +96,69 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
     }
 }
 
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8 bitsPerChannel, uint8 bytesPerSample, uint32 bufferSizeInBytes)
+internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer, uint32 height, uint32 width, uint16 bytesPerPixel, uint32 byteWidthPerRow, void *memory)
 {
+    frameBuffer->height = height;
+    frameBuffer->width = width;
+    frameBuffer->bytesPerPixel = bytesPerPixel;
+    frameBuffer->byteWidthPerRow = byteWidthPerRow;
+    frameBuffer->memory = memory;
+
+    return frameBuffer;
+}
+
+internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint16 samplesPerSecond, uint8 bytesPerSample, uint8 secondsWorthOfAudio, uint32 samplesToWrite)
+{
+    /*
     audioBuffer->bitsPerChannel = bitsPerChannel;
     audioBuffer->bufferSizeInBytes = bufferSizeInBytes;
     audioBuffer->bytesPerSample = bytesPerSample;
     audioBuffer->memory = VirtualAlloc(NULL, bufferSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    */
+
+    audioBuffer->samplesPerSecond       = samplesPerSecond;
+    audioBuffer->bytesPerSample         = bytesPerSample;
+    audioBuffer->secondsWorthOfAudio    = secondsWorthOfAudio;
+    audioBuffer->samplesToWrite         = samplesToWrite;
+    //audioBuffer->bufferSizeInBytes = (((uint64)audioBuffer->samplesPerSecond * (uint64)audioBuffer->bytesPerSample) * (uint64)audioBuffer->secondsWorthOfAudio);
+    audioBuffer->fps = 30;
+    //audioBuffer->samplesToWrite = ((audioBuffer->samplesPerSecond * audioBuffer->secondsWorthOfAudio) / audioBuffer->fps);
+
+    // Allocate enough memory on the stack for one frame's worth of audio.
+    // 1 byte for each: (samplesPerSecond * bytesPerSample) / frames per second;
+    uint8 memory[(((48000 * 4) * 1))] = {0};
+    audioBuffer->memory = memory;
+
     return audioBuffer;
 }
 
 
-internal_func void gameWriteAudioBuffer(AudioBuffer *buffer)
+internal_func void gameWriteAudioBuffer(AudioBuffer *buffer, int16 audioSampleValue)
 {
-    uint16 audioSample = (uint16)buffer->memory;
-    for (size_t i = 0; i < (buffer->bufferSizeInBytes / buffer->bytesPerSample); i++){
+    uint16 *audioSample = (uint16 *)buffer->memory;
 
+    for (uint32 i = 0; i < buffer->samplesToWrite; i++){
+
+        // Left channel (16-bits)
+        *audioSample = audioSampleValue;
+
+        // Move to the right sample (16-bits)
+        audioSample++;
+
+        // Right channel (16-bits)
+        *audioSample = audioSampleValue;
+
+        // Move cursor to the start of the next sample grouping.
+        audioSample++;
     }
+}
+
+float32 percentageOfAnotherf(float32 a, float32 b)
+{
+    if (b == 0) {
+        return 0;
+    }
+
+    float32 fract = (a / b);
+    return (fract * 100.0f);
 }

@@ -41,17 +41,25 @@ typedef struct GameFrameBuffer
  */
 typedef struct GameAudioBuffer
 {
-    // How many bits per individual left or right channel? 
-    // (16-bits for the left channel's sample, 16-bits for the right channel's sample.)
-    uint8 bitsPerChannel;
+    // Number of audio "samples" that our buffer contains.
+    // 1 sample = the grouping of a single left + right channel output.
+    // 48,000 samples per second, 4 bytes per sample = 192,000 bytes per buffer (assuming 1 second buffer).
+    uint32 samplesPerSecond;
 
-    // How many bytes to store per "sample"? A single sample is the grouping of one left + right channel.
-    // The sum of left + right channel is 32-bits, therefore each sample needs 4 bytes
-    // Data written to and read from a the buffer must always start at the beginning of a 16-bit, 4-byte sample "block"
+    // How many bytes to store per sample?
     uint8 bytesPerSample;
 
+    // How many seconds worth of the audio should our buffer hold?
+    uint8 secondsWorthOfAudio;
+
     // Byte count of our buffer's memory
-    uint64 bufferSizeInBytes;
+    //uint64 bufferSizeInBytes;
+
+    // Target frames per second for our frame buffer.
+    uint8 fps;
+
+    // How many samples should we be writing to next?
+    uint32 samplesToWrite;
 
     // Pointer to an allocated block of heap memory to hold the data of the buffer.
     void *memory;
@@ -100,14 +108,27 @@ typedef struct SineWave
 
 } SineWave;
 
-internal_func void gameUpdateAndRender(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers);
+internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers);
+
+internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer, uint32 height, uint32 width, uint16 bytesPerPixel, uint32 byteWidthPerRow, void *memory);
+
+internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint16 samplesPerSecond, uint8 bytesPerSample, uint8 secondsWorthOfAudio, uint32 samplesToWrite);
 
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset);
 
-internal_func void gameWriteAudioBuffer(AudioBuffer *buffer);
-
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint8 bitsPerChannel, uint8 bytesPerSample, uint64 bufferSizeInBytes);
+internal_func void gameWriteAudioBuffer(AudioBuffer *buffer, int16 audioSampleValue);
 
 internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed);
+
+/**
+ * Simple function to calculate one number as a percentage of another.
+ *
+ * @author Jon Matthews
+ *
+ * @param float32 a What is (a) as a percentage of...
+ * @param float32 b ?
+ * @return float32
+ */
+float32 percentageOfAnotherf(float32 a, float32 b);
 
 #endif

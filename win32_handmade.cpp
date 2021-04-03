@@ -121,28 +121,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
-    // Graphics initialisation...
+    /**
+     * Graphics initialisation
+     * 
+     */
 
-    // Create our Windows frame buffer (back buffer.)
-    win32InitFrameBuffer(&win32FrameBuffer, 1024, 768);
+    // Create the Windows frame buffer (back buffer)
+    win32InitFrameBuffer(&win32FrameBuffer, 1920, 1080);
 
-    // Create the game frame buffer
-    FrameBuffer frameBuffer = {};
-    frameBuffer.height = win32FrameBuffer.height;
-    frameBuffer.width = win32FrameBuffer.width;
-    frameBuffer.bytesPerPixel = win32FrameBuffer.bytesPerPixel;
-    frameBuffer.byteWidthPerRow = win32FrameBuffer.byteWidthPerRow;
-    frameBuffer.memory = win32FrameBuffer.memory;
+    /**
+     * Audio initialisation
+     * 
+     */
 
-    // Audio initialisation...
-
-    // Create the audio buffer
+    // Create the Windows audio buffer
     win32InitAudioBuffer(window, &win32AudioBuffer);
-    win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
-    // Init the game audio buffer
-    AudioBuffer audioBuffer = {};
-    gameInitAudioBuffer(&audioBuffer, win32AudioBuffer.bitsPerChannel, win32AudioBuffer.bytesPerSample, win32AudioBuffer.bufferSizeInBytes);
+    // Kick off playing the Win32 audio buffer
+    win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
     running = TRUE;
 
@@ -189,9 +185,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          * Controller input stuff
          */
 
-        // Iterate over each controller and get its state.
+        // Array to hold the supported controllers
         GameController controllers[4] = { 0 };
 
+        // Iterate over each controller and get its state.
         DWORD dwResult;
         uint8 maxControllers = MAX_CONTROLLERS;
         if (XUSER_MAX_COUNT < maxControllers) {
@@ -241,19 +238,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         } // controller loop
 
-
-        // Create the game audio buffer
-        //...
         
-        // Main game code.
-        gameUpdateAndRender(&frameBuffer, &audioBuffer, controllers, maxControllers);
 
-        win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-        win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
+        // Size, in bytes, of the portion of the buffer to write.
+        DWORD lockSizeInBytes = 0;
 
-        /*
-         * Audio stuff
-         */
+        // Offset, in bytes, from the start of the buffer to the point where the lock begins.
+        // We Mod the result by the total number of bytes so that the value wraps.
+        // Result will look like this: 0, 4, 8, 12, 16, 24 etc...
+        // win32AudioBuffer.runningByteIndex and lockOffsetInBytes will be the same in theory.
+        DWORD lockOffsetInBytes = 0;
 
         // Start playing sound. (Write a dummy wave sound)
         // Each single "sample" is a 16-bit value. 8 bits for the left channel, and 8 bits for the right channel.
@@ -277,14 +271,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
                 // write and returns pointers to which data can be written
 
-                // Offset, in bytes, from the start of the buffer to the point where the lock begins.
-                // We Mod the result by the total number of bytes so that the value wraps.
-                // Result will look like this: 0, 4, 8, 12, 16, 24 etc...
-                // win32AudioBuffer.runningByteIndex and lockOffsetInBytes will be the same in theory.
-                DWORD lockOffsetInBytes = (writeCursorOffsetInBytes % win32AudioBuffer.bufferSizeInBytes);
-
-                // Size, in bytes, of the portion of the buffer to lock.
-                DWORD lockSizeInBytes = 0;
+                lockOffsetInBytes = (writeCursorOffsetInBytes % win32AudioBuffer.bufferSizeInBytes);
 
                 // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
                 // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
@@ -295,10 +282,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     lockSizeInBytes = ( (win32AudioBuffer.bufferSizeInBytes - (win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
                 }
 
-                win32WriteAudioBuffer(&win32AudioBuffer, &sineWave, lockOffsetInBytes, lockSizeInBytes);
-
-            }
-            else {
+            } else {
                 log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
                 log(LOG_LEVEL_ERROR, "");
 
@@ -306,6 +290,33 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         } // Audio buffer created.
 
+
+        // Create the game's audio buffer
+        AudioBuffer audioBuffer = {};
+        gameInitAudioBuffer(&audioBuffer,
+                            win32AudioBuffer.samplesPerSecond,
+                            win32AudioBuffer.bytesPerSample,
+                            win32AudioBuffer.secondsWorthOfAudio,
+                            (lockSizeInBytes / win32AudioBuffer.bytesPerSample));
+
+        // Create the game's frame buffer
+        FrameBuffer frameBuffer = {};
+        gameInitFrameBuffer(&frameBuffer,
+                            win32FrameBuffer.height,
+                            win32FrameBuffer.width,
+                            win32FrameBuffer.bytesPerPixel,
+                            win32FrameBuffer.byteWidthPerRow,
+                            win32FrameBuffer.memory);
+
+        // Main game code.
+        gameUpdate(&frameBuffer, &audioBuffer, controllers, maxControllers);
+
+        // Output the audio buffer in Windows.
+        win32WriteAudioBuffer(&win32AudioBuffer, &sineWave, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);
+
+        // Display the frame buffer in Windows.
+        win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
+        win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
 
         // How long did this game loop (frame) take?
 
@@ -710,7 +721,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     debug("Primary & secondary successfully buffer created\n");
 }
 
-internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, SineWave *sineWave, DWORD lockOffsetInBytes, DWORD lockSizeInBytes)
+internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, SineWave *sineWave, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, GameAudioBuffer *audioBuffer)
 {
     if (!win32AudioBuffer->bufferSuccessfulyCreated) {
         return;
@@ -985,23 +996,4 @@ internal_func void log(int level, char *format, ...)
     else {
         OutputDebugString("LOG: Error creating debug string\n");
     }
-}
-
-/**
- * Simple function to calculate one number as a percentage of another.
- *
- * @author Jon Matthews
- *
- * @param float32 a What is (a) as a percentage of...
- * @param float32 b ?
- * @return float32
- */
-float32 percentageOfAnotherf(float32 a, float32 b)
-{
-    if (b == 0) {
-        return 0;
-    }
-
-    float32 fract = (a / b);
-    return (fract * 100.0f);
 }
