@@ -78,6 +78,11 @@ internal_func void debug(char *format, ...);
 
 internal_func void log(int level, char *format, ...);
 
+/**
+ * What is "a" as a percentage of "b"?
+ *
+ * @return float
+ */
 float32 percentageOfAnotherf(float32 a, float32 b);
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
@@ -96,6 +101,6 @@ internal_func void loadXInputDLLFunctions(void);
 
 internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
 
-internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, SineWave *sineWave, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, GameAudioBuffer *audioBuffer);
+internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, GameAudioBuffer *audioBuffer);
 
 #endif

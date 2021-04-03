@@ -2,14 +2,64 @@
 
 internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers)
 {
+    local_persist_var uint64 hits = 0;
+
+    hits = (hits + 1);
+
     /**
      * Audio stuff
      */
+    local_persist_var SineWave sineWave = {0};
 
-     // @TODO(JM) change the sine wave cycles per second based on controller input
-     // ...
+    // @TODO(JM) change the sine wave cycles per second based on controller input
+    sineWave.hertz = 250;
+    sineWave.runningSineValue = 0.0f;
+    sineWave.sizeOfWave = 5000; // Volume
 
-    gameWriteAudioBuffer(audioBuffer, 100);
+    // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
+    uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / sineWave.hertz);
+
+    // At the start of which 4 byte group index we are starting our write from?
+    // @TODO(JM) assert that this is a 4 byte boundry
+    uint32 byteGroupIndex = 0;
+
+    float32 percentageOfAngle = 0.0f;
+    float32 angle = 0.0f;
+    float32 radians = 0.0f;
+    float32 sine = 0.0f;
+
+    uint16 *audioSample = (uint16 *)audioBuffer->memory;
+
+    // Iterate over each 2 - bytes and write the same data for both...
+    for (uint32 i = 0; i < audioBuffer->samplesToWrite; i++) {
+
+        percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
+        angle = (360.0f * (percentageOfAngle / 100.0f));
+        radians = (angle * (PIf / 180.0f));
+        sine = sinf(radians);
+
+        int16 audioSampleValue = (int16)(sine * sineWave.sizeOfWave);
+
+        // Left channel (16-bits)
+        *audioSample = audioSampleValue;
+
+        // Move to the right sample (16-bits)
+        audioSample++;
+
+        // Right channel (16-bits)
+        *audioSample = audioSampleValue;
+
+        // Move cursor to the start of the next sample grouping.
+        audioSample++;
+
+        // Write another 4 to the running byte group index.
+        byteGroupIndex = (byteGroupIndex + audioBuffer->bytesPerSample);
+    }
+
+    audioBuffer->platformRunningByteIndex = (byteGroupIndex % audioSampleGroupsPerCycle);
+    sineWave.runningSineValue = sine;
+
+    //gameWriteAudioBuffer(audioBuffer, 100);
 
     /**
      * Graphics stuff
@@ -107,7 +157,13 @@ internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer, uint32 
     return frameBuffer;
 }
 
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint16 samplesPerSecond, uint8 bytesPerSample, uint8 secondsWorthOfAudio, uint32 samplesToWrite)
+internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
+                                                uint16 samplesPerSecond,
+                                                uint8 bytesPerSample,
+                                                uint8 secondsWorthOfAudio,
+                                                uint32 samplesToWrite,
+                                                uint64 platformBufferSizeInBytes,
+                                                uint32 platformLockOffsetInBytes)
 {
     /*
     audioBuffer->bitsPerChannel = bitsPerChannel;
@@ -116,13 +172,16 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint16 
     audioBuffer->memory = VirtualAlloc(NULL, bufferSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     */
 
-    audioBuffer->samplesPerSecond       = samplesPerSecond;
-    audioBuffer->bytesPerSample         = bytesPerSample;
-    audioBuffer->secondsWorthOfAudio    = secondsWorthOfAudio;
-    audioBuffer->samplesToWrite         = samplesToWrite;
+    audioBuffer->samplesPerSecond           = samplesPerSecond;
+    audioBuffer->bytesPerSample             = bytesPerSample;
+    audioBuffer->secondsWorthOfAudio        = secondsWorthOfAudio;
+    audioBuffer->samplesToWrite             = samplesToWrite;
     //audioBuffer->bufferSizeInBytes = (((uint64)audioBuffer->samplesPerSecond * (uint64)audioBuffer->bytesPerSample) * (uint64)audioBuffer->secondsWorthOfAudio);
     audioBuffer->fps = 30;
     //audioBuffer->samplesToWrite = ((audioBuffer->samplesPerSecond * audioBuffer->secondsWorthOfAudio) / audioBuffer->fps);
+
+    audioBuffer->platformBufferSizeInBytes  = platformBufferSizeInBytes;
+    audioBuffer->platformRunningByteIndex   = platformLockOffsetInBytes;
 
     // Allocate enough memory on the stack for one frame's worth of audio.
     // 1 byte for each: (samplesPerSecond * bytesPerSample) / frames per second;

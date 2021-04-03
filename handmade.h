@@ -52,9 +52,6 @@ typedef struct GameAudioBuffer
     // How many seconds worth of the audio should our buffer hold?
     uint8 secondsWorthOfAudio;
 
-    // Byte count of our buffer's memory
-    //uint64 bufferSizeInBytes;
-
     // Target frames per second for our frame buffer.
     uint8 fps;
 
@@ -63,6 +60,12 @@ typedef struct GameAudioBuffer
 
     // Pointer to an allocated block of heap memory to hold the data of the buffer.
     void *memory;
+
+    // Byte count of the platform's buffer memory
+    uint64 platformBufferSizeInBytes;
+
+    // Last position within the buffer that we wrote to.
+    uint32 platformRunningByteIndex;
 
 } AudioBuffer;
 
@@ -112,7 +115,17 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer
 
 internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer, uint32 height, uint32 width, uint16 bytesPerPixel, uint32 byteWidthPerRow, void *memory);
 
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer, uint16 samplesPerSecond, uint8 bytesPerSample, uint8 secondsWorthOfAudio, uint32 samplesToWrite);
+/**
+ * Initialises the game audio buffer ready for writing.
+ *
+ */
+internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
+                                                uint16 samplesPerSecond,
+                                                uint8 bytesPerSample,
+                                                uint8 secondsWorthOfAudio,
+                                                uint32 samplesToWrite,
+                                                uint64 platformBufferSizeInBytes,
+                                                uint32 platformLockOffsetInBytes);
 
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset);
 

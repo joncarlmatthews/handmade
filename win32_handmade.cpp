@@ -36,7 +36,6 @@ global_var Win32FrameBuffer win32FrameBuffer = {0};
 
 // Win32 audio buffer.
 global_var Win32AudioBuffer win32AudioBuffer = {0};
-global_var SineWave sineWave = {0};
 
 // XInput support
 typedef DWORD WINAPI XInputGetStateDT(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState);
@@ -121,26 +120,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
-    /**
-     * Graphics initialisation
-     * 
-     */
-
     // Create the Windows frame buffer (back buffer)
     win32InitFrameBuffer(&win32FrameBuffer, 1920, 1080);
-
-    /**
-     * Audio initialisation
-     * 
-     */
 
     // Create the Windows audio buffer
     win32InitAudioBuffer(window, &win32AudioBuffer);
 
-    // Kick off playing the Win32 audio buffer
+    // Kick off playing the Windows audio buffer
     win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
-
-    running = TRUE;
 
     // Running query perforamce counter for profiling the game loop
     LARGE_INTEGER runningPerformanceCounter;
@@ -148,6 +135,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     
     // Get the number of processor clock cycles
     uint64 processorClockCycles = __rdtsc();
+
+    running = true;
 
     /**
      * MAIN GAME LOOP
@@ -297,7 +286,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                             win32AudioBuffer.samplesPerSecond,
                             win32AudioBuffer.bytesPerSample,
                             win32AudioBuffer.secondsWorthOfAudio,
-                            (lockSizeInBytes / win32AudioBuffer.bytesPerSample));
+                            win32AudioBuffer.bufferSizeInBytes,
+                            win32AudioBuffer.bufferSizeInBytes,
+                            0);
 
         // Create the game's frame buffer
         FrameBuffer frameBuffer = {};
@@ -312,7 +303,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         gameUpdate(&frameBuffer, &audioBuffer, controllers, maxControllers);
 
         // Output the audio buffer in Windows.
-        win32WriteAudioBuffer(&win32AudioBuffer, &sineWave, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);
+        win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);
 
         // Display the frame buffer in Windows.
         win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
@@ -721,7 +712,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     debug("Primary & secondary successfully buffer created\n");
 }
 
-internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, SineWave *sineWave, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, GameAudioBuffer *audioBuffer)
+internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, GameAudioBuffer *audioBuffer)
 {
     if (!win32AudioBuffer->bufferSuccessfulyCreated) {
         return;
@@ -751,42 +742,17 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
 
     if (SUCCEEDED(res)) {
 
-        // Temp stuff for the sine wave audio test
-        sineWave->hertz = 250;
-        sineWave->runningSineValue = 0.0f;
-        sineWave->sizeOfWave = 5000;
-
-        // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
-        uint64 audioSampleGroupsPerCycle = ((win32AudioBuffer->bufferSizeInBytes / win32AudioBuffer->bytesPerSample) / sineWave->hertz);
-
         // Calculate the total number of 4-byte audio sample groups (2-bytes/16 bits for the left channel, 2-bytes/16 bits for the right channel) 
         // that we have within the first block of memory IDirectSoundBuffer8::Lock has told us we can write to.
         uint64 audioSampleGroupsChunkOne = (chunkOneBytes / win32AudioBuffer->bytesPerSample);
 
-        // At the start of which 4 byte group index we are starting our write from?
-        // @TODO(JM) assert that this is a 4 byte boundry
-        uint32 byteGroupIndex = lockOffsetInBytes;
-
         // Grab the first 16-bits of the first audio sample from the first block of memory 
         uint16 *audioSample = (uint16*)chunkOnePtr;
 
-        // Audio sample value
-        int16 audioSampleValue = 0;
-
-        float32 percentageOfAngle = 0.0f;
-        float32 angle = 0.0f;
-        float32 radians = 0.0f;
-        float32 sine = sineWave->runningSineValue;
-            
         // Iterate over each 2 - bytes and write the same data for both...
         for (size_t i = 0; i < audioSampleGroupsChunkOne; i++) {
 
-            percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
-            angle = (360.0f * (percentageOfAngle / 100.0f));
-            radians = (angle * (PIf / 180.0f));
-            sine = sinf(radians);
-
-            audioSampleValue = (int16)(sine * sineWave->sizeOfWave);
+            int16 audioSampleValue = 0;
 
             // Left channel (16-bits)
             *audioSample = audioSampleValue;
@@ -799,9 +765,6 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
 
             // Move cursor to the start of the next sample grouping.
             audioSample++;
-
-            // Write another 4 to the running byte group index.
-            byteGroupIndex = (byteGroupIndex + win32AudioBuffer->bytesPerSample);
         }
 
         uint64 audioSampleGroupsChunkTwo = (chunkTwoBytes / win32AudioBuffer->bytesPerSample);
@@ -811,12 +774,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
 
         for (size_t i = 0; i < audioSampleGroupsChunkTwo; i++) {
 
-            percentageOfAngle = percentageOfAnotherf((float)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
-            angle = (360.0f * (percentageOfAngle / 100.0f));
-            radians = (angle * (PIf / 180.0f));
-            sine = sinf(radians);
-
-            audioSampleValue = (int16)(sine * sineWave->sizeOfWave);
+            int16 audioSampleValue = 0;
 
             // Left channel (16-bits)
             *audioTwoSample = audioSampleValue;
@@ -829,13 +787,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, Sin
 
             // Move cursor to the start of the next sample grouping.
             audioTwoSample++;
-
-            // Write another 4 to the running byte group index.
-            byteGroupIndex = (byteGroupIndex + win32AudioBuffer->bytesPerSample);
         }
-
-        win32AudioBuffer->runningByteIndex = byteGroupIndex;
-        sineWave->runningSineValue = sine;
 
         res = win32AudioBuffer->buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
