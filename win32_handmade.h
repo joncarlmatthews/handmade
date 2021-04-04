@@ -74,17 +74,6 @@ typedef struct Win32AudioBuffer
 
 } Win32AudioBuffer;
 
-internal_func void debug(char *format, ...);
-
-internal_func void log(int level, char *format, ...);
-
-/**
- * What is "a" as a percentage of "b"?
- *
- * @return float
- */
-float32 percentageOfAnotherf(float32 a, float32 b);
-
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
 internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height);

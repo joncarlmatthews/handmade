@@ -3,9 +3,8 @@
 
 #include <stdlib.h>
 #include <strsafe.h> // For StringCbVPrintfA & STRSAFE_MAX_CCH
-#include <stdarg.h> // For variable number of arguments in function sigs
-#include <dsound.h> // Direct Sound for audio output.
-#include <xinput.h> // Xinput for receiving controller input. 
+#include <dsound.h>  // Direct Sound for audio output.
+#include <xinput.h>  // Xinput for receiving controller input. 
 
 #define PIf                 3.14159265359f
 #define LOG_LEVEL_INFO      0x100
@@ -277,9 +276,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 }
 
             } else {
-                log(LOG_LEVEL_ERROR, "Could not get the position of the play and write cursors in the secondary sound buffer");
-                log(LOG_LEVEL_ERROR, "");
-
+                OutputDebugString("Could not get the position of the play and write cursors in the secondary sound buffer");
             }
 
         } // Audio buffer created.
@@ -331,7 +328,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         float32 speed = ((uint64)(secondsPerFrame * clockCycles_mega) / 100.0f);
 
         // Console log the speed:
-        debug("ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
+        char output[100];
+        sprintf_s(output, 100, "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
+        OutputDebugString(output);
 
         // Reset the running clock cycles & counters.
         processorClockCycles = processorClockCyclesAfterFrame;
@@ -474,9 +473,18 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
                 bool wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key is held down
 
                 if (vkCode == 'W') {
-                    debug("is down? %i\n", isDown);
-                    debug("was down? %i\n", wasDown);
-                    debug("repeat count: %i\n", *repeatCount);
+
+                    char output[100];
+                    sprintf_s(output, 100, "is down? %i\n", isDown);
+                    OutputDebugString(output);
+
+                    *output = {0};
+                    sprintf_s(output, 100, "was down? %i\n", wasDown);
+                    OutputDebugString(output);
+
+                    *output = { 0 };
+                    sprintf_s(output, 100, "repeat count %i\n", *repeatCount);
+                    OutputDebugString(output);
                 }
             }            
 
@@ -610,7 +618,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     HMODULE libHandle = LoadLibrary("dsound.dll");
 
     if (!libHandle) {
-        log(LOG_LEVEL_WARN, "Could not load DirectSound DLL (dsound.dll)");
+        OutputDebugString("Could not load DirectSound DLL (dsound.dll)");
         return;
     }
 
@@ -621,7 +629,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
 
     if (!DirectSoundCreateAddr) {
         // Function not found within library.
-        log(LOG_LEVEL_WARN, "DirectSoundCreate not in dsound.dll. Invalid/malformed DLL.");
+        OutputDebugString("DirectSoundCreate not in dsound.dll. Invalid/malformed DLL.");
         return;
     }
 
@@ -632,14 +640,14 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     res = DirectSoundCreate(NULL, &directSound, NULL);
 
     if (FAILED(res)){
-        log(LOG_LEVEL_ERROR, "Could not create direct sound object");
+        OutputDebugString("Could not create direct sound object");
         return;
     }
 
     res = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
 
     if (FAILED(res)){
-        log(LOG_LEVEL_ERROR, "Could not set cooperative level on direct sound object");
+        OutputDebugString("Could not set cooperative level on direct sound object");
         return;
     }
 
@@ -662,7 +670,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     res = directSound->CreateSoundBuffer(&primarySoundBufferDesc, &primarySoundBuffer, NULL);
 
     if (FAILED(res)){
-        log(LOG_LEVEL_ERROR, "Could not create primary buffer");
+        OutputDebugString("Could not create primary buffer");
         return;
     }
 
@@ -689,7 +697,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     res = primarySoundBuffer->SetFormat(&waveFormat);
 
     if (FAILED(res)){
-        log(LOG_LEVEL_ERROR, "Could not set sound format on primary buffer");
+        OutputDebugString("Could not set sound format on primary buffer");
         return;
     }
 
@@ -707,13 +715,13 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     res = directSound->CreateSoundBuffer(&secondarySoundBufferDesc, &win32AudioBuffer->buffer, NULL);
 
     if (FAILED(res)){
-        log(LOG_LEVEL_ERROR, "Could not create secondary buffer");
+        OutputDebugString("Could not create secondary buffer");
         return;
     }
 
     win32AudioBuffer->bufferSuccessfulyCreated = TRUE;
 
-    debug("Primary & secondary successfully buffer created\n");
+    OutputDebugString("Primary & secondary successfully buffer created\n");
 }
 
 internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
@@ -814,14 +822,12 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
         res = win32AudioBuffer->buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
         if (FAILED(res)) {
-            //log(LOG_LEVEL_ERROR, "Could not unlock sound buffer");
-            //log(LOG_LEVEL_ERROR, "");
+            OutputDebugString("Could not unlock sound buffer");
         }
 
     }
     else {
-        //log(LOG_LEVEL_ERROR, "Could not lock secondary sound buffer: ");
-        //log(LOG_LEVEL_ERROR, "");
+        OutputDebugString("Could not lock secondary sound buffer");
     }
 
     return;
@@ -890,84 +896,4 @@ internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor
     pVibration.wLeftMotorSpeed = motor2Speed;
 
     XInputSetState(controllerIndex, &pVibration);
-}
-
-/*
- * Utility function for outputting a debug string that takes parameters
- * in the same form as the C's native printf. 1000 characters max
- *
- * Required: windows.h, stdint.h, strsafe.h, stdarg.h
- *
- * @author Jon Matthews
- *
- * @param char *format
- * @param mixed values
- */
-internal_func void debug(char *format, ...)
-{
-    va_list argList;
-
-    // @see STRSAFE_MAX_CCH
-    const uint16 bufSze = (100 * sizeof(TCHAR));
-
-    char msgBuf[bufSze];
-
-    va_start(argList, format);
-    HRESULT hr = StringCbVPrintfA(msgBuf, bufSze, format, argList);
-    va_end(argList);
-
-    if (hr == S_OK) {
-        OutputDebugString(msgBuf);
-    }else{
-        OutputDebugString("Error creating debug string\n");
-    }
-}
-
-/*
- * Utility function for logging a debug string that takes parameters
- * in the same form as the C's native printf. 1000 characters max
- *
- * Required: windows.h, stdint.h, strsafe.h, stdarg.h
- *
- * @author Jon Matthews
- *
- * @param char *level
- * @param char *format
- * @param mixed values
- */
-internal_func void log(int level, char *format, ...)
-{
-    va_list argList;
-
-    // @see STRSAFE_MAX_CCH
-    const uint16 bufSze = (100 * sizeof(TCHAR));
-
-    char msgBuf[bufSze];
-
-    va_start(argList, format);
-    HRESULT hr = StringCbVPrintfA(msgBuf, bufSze, format, argList);
-    va_end(argList);
-
-    // @TOD(JM) Log msgBuf to file...
-    if (hr == S_OK) {
-
-        switch (level) {
-            default:
-            case LOG_LEVEL_INFO:
-                OutputDebugString("Info: ");
-                break;
-            case LOG_LEVEL_WARN:
-                OutputDebugString("Warning: ");
-                break;
-            case LOG_LEVEL_ERROR:
-                OutputDebugString("Error: ");
-                break;
-        }
-
-        OutputDebugString(msgBuf);
-        OutputDebugString("\n");
-    }
-    else {
-        OutputDebugString("LOG: Error creating debug string\n");
-    }
 }

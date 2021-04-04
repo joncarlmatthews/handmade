@@ -108,6 +108,14 @@ typedef struct SineWave
 
 } SineWave;
 
+/*
+ * printf style platform specific output debugger
+ *
+ * @param char format Format specifier. E.g. "Var is %i\n"
+ * @param optional command separated list of variables
+ */
+internal_func void platformDebug(char *format, ...);
+
 internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers);
 
 internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer, uint32 height, uint32 width, uint16 bytesPerPixel, uint32 byteWidthPerRow, void *memory);
