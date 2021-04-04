@@ -478,11 +478,11 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
                     sprintf_s(output, 100, "is down? %i\n", isDown);
                     OutputDebugString(output);
 
-                    *output = {0};
+                    memset(output, 0, sizeof(output));
                     sprintf_s(output, 100, "was down? %i\n", wasDown);
                     OutputDebugString(output);
 
-                    *output = { 0 };
+                    memset(output, 0, sizeof(output));
                     sprintf_s(output, 100, "repeat count %i\n", *repeatCount);
                     OutputDebugString(output);
                 }
