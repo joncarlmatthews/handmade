@@ -92,4 +92,6 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
 
 internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer, DWORD lockOffsetInBytes, DWORD lockSizeInBytes, GameAudioBuffer *audioBuffer);
 
+internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *oldState, GameControllerBtnState *newState, XINPUT_GAMEPAD *gamepad, uint16 gamepadButtonBit);
+
 #endif

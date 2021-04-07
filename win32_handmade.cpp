@@ -1,8 +1,7 @@
 // Windows API. Visual Studio freaks out if it's not the first include.
 #include <windows.h>
 
-#include <stdlib.h>
-#include <strsafe.h> // For StringCbVPrintfA & STRSAFE_MAX_CCH
+#include <strsafe.h> // sprintf_s support
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input. 
 
@@ -119,19 +118,42 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
+    /*
+    * Audio
+    */
+
     // Create the Windows audio buffer
     win32InitAudioBuffer(window, &win32AudioBuffer);
 
-    // Create the game buffer. Outside of the game loop as we need
+    // Kick off playing the Windows audio buffer
+    win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
+
+    // Create the game audio buffer. We do this outside of the game loop as we need
     // to allocate memory
     AudioBuffer audioBuffer = {0};
     audioBuffer.memory = VirtualAlloc(NULL, win32AudioBuffer.bufferSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
+    /*
+    * Graphics
+    */
+
     // Create the Windows frame buffer
     win32InitFrameBuffer(&win32FrameBuffer, 1920, 1080);
 
-    // Kick off playing the Windows audio buffer
-    win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
+    /*
+    * Controller input
+    */
+
+    // An array to hold pointers to the old and new instances of the inputs.
+    GameInput inputInstances[2] = {};
+    GameInput *inputNewInstance = &inputInstances[0];
+    GameInput *inputOldInstance = &inputInstances[1];
+
+    // How many controllers does the platform layer support?
+    uint8 maxControllers = MAX_CONTROLLERS;
+    if (XUSER_MAX_COUNT < maxControllers) {
+        maxControllers = XUSER_MAX_COUNT;
+    }
 
     // Running query perforamce counter for profiling the game loop
     LARGE_INTEGER runningPerformanceCounter;
@@ -178,15 +200,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          * Controller input stuff
          */
 
-        // Array to hold the supported controllers
-        GameController controllers[4] = { 0 };
-
         // Iterate over each controller and get its state.
         DWORD dwResult;
-        uint8 maxControllers = MAX_CONTROLLERS;
-        if (XUSER_MAX_COUNT < maxControllers) {
-            maxControllers = XUSER_MAX_COUNT;
-        }
+
         for (DWORD controllerIndex = 0; controllerIndex < maxControllers; controllerIndex++) {
 
             XINPUT_STATE controllerInstance = {0};
@@ -205,9 +221,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Fetch the gamepad
             XINPUT_GAMEPAD *gamepad = &controllerInstance.Gamepad;
 
-            GameController gameController = {0};
+            GameControllerInput *newController = &inputNewInstance->controllers[controllerIndex];
+            GameControllerInput *oldController = &inputOldInstance->controllers[controllerIndex];
 
-            gameController.controllerReady              = true;
             gameController.btnUpDepressed               = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
             gameController.btnDownDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
             gameController.btnLeftDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
@@ -227,7 +243,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             gameController.rightThumbstickX = gamepad->sThumbRX;
             gameController.rightThumbstickY = gamepad->sThumbRY;
 
-            controllers[controllerIndex] = gameController;           
+            controllers[controllerIndex] = gameController;
+
+            controllerOldInstance = &gameController;
+
+            // Swap the controller intances
+            /*
+            GameControllerInput *temp;
+            temp = controllerOldInstance;
+            controllerOldInstance = controllerNewInstance;
+            controllerNewInstance = temp;
+            */
 
         } // controller loop
 
@@ -328,7 +354,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         float32 speed = ((uint64)(secondsPerFrame * clockCycles_mega) / 100.0f);
 
         // Console log the speed:
-        char output[100];
+        char output[100] = {};
         sprintf_s(output, 100, "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
         OutputDebugString(output);
 
@@ -474,7 +500,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
                 if (vkCode == 'W') {
 
-                    char output[100];
+                    char output[100] = {};
                     sprintf_s(output, 100, "is down? %i\n", isDown);
                     OutputDebugString(output);
 
@@ -880,6 +906,17 @@ internal_func void loadXInputDLLFunctions(void)
             XInputSetState = XInputSetStateAddr;
         }
     }
+}
+
+internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *oldState,
+                                                        GameControllerBtnState *newState,
+                                                        XINPUT_GAMEPAD *gamepad,
+                                                        uint16 gamepadButtonBit)
+{
+    if ((*oldState).endedDown != (*newState).endedDown) {
+        (*newState).halfTransitionCount = ((*newState).halfTransitionCount + 1);
+    }
+    (*newState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
 }
 
 /**

@@ -1,13 +1,21 @@
 #ifndef HEADER_HANDMADE
 #define HEADER_HANDMADE
 
-#include "types.h"
-#include <math.h> // For Sin
+/**
+ * Macro definitions
+ */
 
- // Macro definitions
-#define global_var          static // Global variables
-#define local_persist_var   static // Static variables within a local scope (e.g. case statement, function)
-#define internal_func       static // Functions that are only available within the file they're declared in
+// Global variables
+#define global_var static
+
+// Static variables within a local scope (e.g. case statement, function)
+#define local_persist_var static
+
+// Functions that are only available within the file they're declared in
+#define internal_func static 
+
+// Return the number of elements in a static array
+#define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 // Maximum number of supported controllers
 #define MAX_CONTROLLERS 4
@@ -69,9 +77,35 @@ typedef struct GameAudioBuffer
 
 } AudioBuffer;
 
-typedef struct GameController
+typedef struct GameControllerBtnState
 {
-    bool16 controllerReady;
+    uint16 halfTransitionCount;
+    bool16 endedDown;
+} GameControllerBtnState;
+
+typedef struct GameControllerInput
+{
+    bool32 isAnalog;
+
+    int32 leftThumbstickX;
+    int32 leftThumbstickY;
+
+    int32 rightThumbstickX;
+    int32 rightThumbstickY;
+
+    GameControllerBtnState dPadUp;
+    GameControllerBtnState dPadDown;
+    GameControllerBtnState dPadLeft;
+    GameControllerBtnState dPadRight;
+
+    GameControllerBtnState up;
+    GameControllerBtnState down;
+    GameControllerBtnState left;
+    GameControllerBtnState right;
+    GameControllerBtnState shoulderL1;
+    GameControllerBtnState shoulderR1;
+
+    // Legacy
     bool16 btnUpDepressed;
     bool16 btnDownDepressed;
     bool16 btnLeftDepressed;
@@ -85,13 +119,12 @@ typedef struct GameController
     bool16 btnCDepressed;
     bool16 btnDDepressed;
 
-    int16 leftThumbstickX;
-    int16 leftThumbstickY;
+} GameControllerInput;
 
-    int16 rightThumbstickX;
-    int16 rightThumbstickY;
-
-} GameController;
+typedef struct GameInput
+{
+    GameControllerInput controllers[MAX_CONTROLLERS];
+};
 
 typedef struct SineWave
 {
@@ -109,16 +142,31 @@ typedef struct SineWave
 } SineWave;
 
 /*
- * printf style platform specific output debugger
+ * Platform specific printf style output debugger
  *
  * @param char format Format specifier. E.g. "Var is %i\n"
  * @param optional command separated list of variables
  */
-internal_func void platformDebug(char *format, ...);
+internal_func void platformLog(char *format, ...);
 
-internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers);
+/**
+ * Platform specific function for vibrating a controller
+ */
+internal_func void platformControllerVibrate(uint8 controllerIndex,
+                                                uint16 motor1Speed,
+                                                uint16 motor2Speed);
 
-internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer, uint32 height, uint32 width, uint16 bytesPerPixel, uint32 byteWidthPerRow, void *memory);
+internal_func void gameUpdate(FrameBuffer *frameBuffer,
+                                AudioBuffer *audioBuffer,
+                                GameController controllers[],
+                                uint8 maxControllers);
+
+internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
+                                                uint32 height,
+                                                uint32 width,
+                                                uint16 bytesPerPixel,
+                                                uint32 byteWidthPerRow,
+                                                void *memory);
 
 /**
  * Initialises the game audio buffer ready for writing.
@@ -132,16 +180,14 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
                                                 uint64 platformBufferSizeInBytes,
                                                 uint32 platformLockOffsetInBytes);
 
-internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset);
+internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
+                                            int redOffset,
+                                            int greenOffset);
 
 internal_func void gameWriteAudioBuffer(AudioBuffer *buffer, int16 audioSampleValue);
 
-internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed);
-
 /**
  * Simple function to calculate one number as a percentage of another.
- *
- * @author Jon Matthews
  *
  * @param float32 a What is (a) as a percentage of...
  * @param float32 b ?

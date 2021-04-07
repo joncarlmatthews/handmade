@@ -1,4 +1,7 @@
+#include "types.h"
+#include <math.h> // For Sin
 #include "handmade.h"
+
 
 internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers)
 {
@@ -61,24 +64,21 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer
 
     for (uint8 i = 0; i < maxControllers; i++){
 
-        if (controllers[i].controllerReady) {
+        // Animate the screen.
+        redOffset       = (redOffset    + (controllers[i].leftThumbstickY >> 10));
+        greenOffset     = (greenOffset  - (controllers[i].leftThumbstickX >> 10));
 
-            // Animate the screen.
-            redOffset       = (redOffset    + (controllers[i].leftThumbstickY >> 10));
-            greenOffset     = (greenOffset  - (controllers[i].leftThumbstickX >> 10));
-
-            // Controller feedback.
-            uint16 motor1Speed = 0;
-            uint16 motor2Speed = 0;
-            if ((controllers[i].leftThumbstickY != 0) || (controllers[i].leftThumbstickX != 0)) {
-                motor2Speed = 35000;
-            }
-
-            platformControllerVibrate(0, motor1Speed, motor2Speed);
-
-            // Support for first controller only at this point.
-            break;
+        // Controller feedback.
+        uint16 motor1Speed = 0;
+        uint16 motor2Speed = 0;
+        if ((controllers[i].leftThumbstickY != 0) || (controllers[i].leftThumbstickX != 0)) {
+            motor2Speed = 35000;
         }
+
+        platformControllerVibrate(0, motor1Speed, motor2Speed);
+
+        // Support for first controller only at this point.
+        break;
     }
 
     gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
