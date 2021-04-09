@@ -146,6 +146,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // An array to hold pointers to the old and new instances of the inputs.
     GameInput inputInstances[2] = {};
+
+    // We save a copy of what we've written to the inputs (in the old instance variable)
+    // so we can compare last frame's values to this frames values.
     GameInput *inputNewInstance = &inputInstances[0];
     GameInput *inputOldInstance = &inputInstances[1];
 
@@ -224,6 +227,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             GameControllerInput *newController = &inputNewInstance->controllers[controllerIndex];
             GameControllerInput *oldController = &inputOldInstance->controllers[controllerIndex];
 
+            win32ProcessXInputControllerButton(&newController->up,
+                                                &oldController->up,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_Y);
+
+            win32ProcessXInputControllerButton(&newController->down,
+                                                &oldController->down,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_A);
+
+            win32ProcessXInputControllerButton(&newController->right,
+                                                &oldController->right,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_B);
+
+            win32ProcessXInputControllerButton(&newController->left,
+                                                &oldController->left,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_X);
+            /*
             gameController.btnUpDepressed               = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
             gameController.btnDownDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
             gameController.btnLeftDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
@@ -236,28 +259,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             gameController.btnBDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_B);
             gameController.btnCDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_X);
             gameController.btnDDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_Y);
-
-            gameController.leftThumbstickX = gamepad->sThumbLX;
-            gameController.leftThumbstickY = gamepad->sThumbLY;
-
-            gameController.rightThumbstickX = gamepad->sThumbRX;
-            gameController.rightThumbstickY = gamepad->sThumbRY;
-
-            controllers[controllerIndex] = gameController;
-
-            controllerOldInstance = &gameController;
-
-            // Swap the controller intances
-            /*
-            GameControllerInput *temp;
-            temp = controllerOldInstance;
-            controllerOldInstance = controllerNewInstance;
-            controllerNewInstance = temp;
             */
 
-        } // controller loop
+            newController->leftThumbstickX = gamepad->sThumbLX;
+            newController->leftThumbstickY = gamepad->sThumbLY;
 
-        
+            newController->rightThumbstickX = gamepad->sThumbRX;
+            newController->rightThumbstickY = gamepad->sThumbRY;
+
+            // Swap the controller intances
+            GameControllerInput *temp = newController;
+            newController = oldController;
+            oldController = temp;
+
+        } // controller loop
 
         // Size, in bytes, of the portion of the buffer to write.
         DWORD lockSizeInBytes = 0;
@@ -327,7 +342,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                             win32FrameBuffer.memory);
 
         // Main game code.
-        gameUpdate(&frameBuffer, &audioBuffer, controllers, maxControllers);
+        gameUpdate(&frameBuffer, &audioBuffer, inputInstances, maxControllers);
 
         // Output the audio buffer in Windows.
         win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);
@@ -908,12 +923,12 @@ internal_func void loadXInputDLLFunctions(void)
     }
 }
 
-internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *oldState,
-                                                        GameControllerBtnState *newState,
+internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *newState,
+                                                        GameControllerBtnState *oldState,
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit)
 {
-    if ((*oldState).endedDown != (*newState).endedDown) {
+    if ((*newState).endedDown != (*oldState).endedDown) {
         (*newState).halfTransitionCount = ((*newState).halfTransitionCount + 1);
     }
     (*newState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);

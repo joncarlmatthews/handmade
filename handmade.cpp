@@ -3,7 +3,10 @@
 #include "handmade.h"
 
 
-internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer, GameController controllers[], uint8 maxControllers)
+internal_func void gameUpdate(FrameBuffer *frameBuffer,
+                                AudioBuffer *audioBuffer,
+                                GameInput inputInstances[],
+                                uint8 maxControllers)
 {
     /**
      * Audio stuff
@@ -65,13 +68,13 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer, AudioBuffer *audioBuffer
     for (uint8 i = 0; i < maxControllers; i++){
 
         // Animate the screen.
-        redOffset       = (redOffset    + (controllers[i].leftThumbstickY >> 10));
-        greenOffset     = (greenOffset  - (controllers[i].leftThumbstickX >> 10));
+        redOffset       = (redOffset    + (inputInstances->controllers[i].leftThumbstickY >> 10));
+        greenOffset     = (greenOffset  - (inputInstances->controllers[i].leftThumbstickX >> 10));
 
         // Controller feedback.
         uint16 motor1Speed = 0;
         uint16 motor2Speed = 0;
-        if ((controllers[i].leftThumbstickY != 0) || (controllers[i].leftThumbstickX != 0)) {
+        if ((inputInstances->controllers[i].leftThumbstickY != 0) || (inputInstances->controllers[i].leftThumbstickX != 0)) {
             motor2Speed = 35000;
         }
 

@@ -124,7 +124,7 @@ typedef struct GameControllerInput
 typedef struct GameInput
 {
     GameControllerInput controllers[MAX_CONTROLLERS];
-};
+} GameInput;
 
 typedef struct SineWave
 {
@@ -158,7 +158,7 @@ internal_func void platformControllerVibrate(uint8 controllerIndex,
 
 internal_func void gameUpdate(FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
-                                GameController controllers[],
+                                GameInput inputInstances[],
                                 uint8 maxControllers);
 
 internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
