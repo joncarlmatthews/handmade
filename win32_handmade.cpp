@@ -48,12 +48,6 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, LPUNKNOWN  pUnkOuter);
 
-struct Person {
-    char name[50];
-    int age;
-    float32 height;
-};
-
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -67,14 +61,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
-    Person jon = {};
-
-    jon.name[0] = 'J';
-    jon.age = 36;
-    jon.height = 5.12f;
-
-
-
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     LARGE_INTEGER perfFrequencyCounterRes;

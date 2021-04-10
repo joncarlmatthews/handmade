@@ -99,17 +99,27 @@ typedef struct GameControllerInput
 {
     bool32 isAnalog;
 
-    GameControllerBtnState dPadUp;
-    GameControllerBtnState dPadDown;
-    GameControllerBtnState dPadLeft;
-    GameControllerBtnState dPadRight;
+    union {
+        GameControllerBtnState dPadButtons[4];
+        struct {
+            GameControllerBtnState dPadUp;
+            GameControllerBtnState dPadDown;
+            GameControllerBtnState dPadLeft;
+            GameControllerBtnState dPadRight;
+        };
+    };
 
-    GameControllerBtnState up;
-    GameControllerBtnState down;
-    GameControllerBtnState left;
-    GameControllerBtnState right;
-    GameControllerBtnState shoulderL1;
-    GameControllerBtnState shoulderR1;
+    union {
+        GameControllerBtnState buttons[6];
+        struct {
+            GameControllerBtnState up;
+            GameControllerBtnState down;
+            GameControllerBtnState left;
+            GameControllerBtnState right;
+            GameControllerBtnState shoulderL1;
+            GameControllerBtnState shoulderR1;
+        };
+    };
 
     GameControllerThumbstickState leftThumbstick;
     GameControllerThumbstickState rightThumbstick;

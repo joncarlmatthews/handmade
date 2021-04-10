@@ -62,34 +62,34 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer,
     local_persist_var int32 redOffset = 0;
     local_persist_var int32 greenOffset = 0;
 
-    uint16 buttonSpeed = 30;
+    uint16 movementSpeed = 30;
 
     for (uint8 i = 0; i < maxControllers; i++){
 
         // Animate the screen.
         if (inputInstances->controllers[i].up.endedDown) {
-            redOffset = (redOffset + buttonSpeed);
+            redOffset = (redOffset + movementSpeed);
         }
 
         if (inputInstances->controllers[i].down.endedDown) {
-            redOffset = (redOffset - buttonSpeed);
+            redOffset = (redOffset - movementSpeed);
         }
 
         if (inputInstances->controllers[i].right.endedDown) {
-            greenOffset = (greenOffset - buttonSpeed);
+            greenOffset = (greenOffset - movementSpeed);
         }
 
         if (inputInstances->controllers[i].left.endedDown) {
-            greenOffset = (greenOffset + buttonSpeed);
+            greenOffset = (greenOffset + movementSpeed);
         }
 
         if (inputInstances->controllers[i].isAnalog) {
             if (inputInstances->controllers[i].leftThumbstick.position.x) {
-                greenOffset = (greenOffset - (inputInstances->controllers[i].leftThumbstick.position.x));
+                greenOffset = (greenOffset - (int16)(inputInstances->controllers[i].leftThumbstick.position.x * movementSpeed));
             }
 
             if (inputInstances->controllers[i].leftThumbstick.position.y) {
-                redOffset = (redOffset + (inputInstances->controllers[i].leftThumbstick.position.y));
+                redOffset = (redOffset + (int16)(inputInstances->controllers[i].leftThumbstick.position.y * movementSpeed));
             }
 
             // Controller feedback.
@@ -97,7 +97,7 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer,
             uint16 motor2Speed = 0;
             if ((inputInstances->controllers[i].leftThumbstick.position.x != 0)
                 || (inputInstances->controllers[i].leftThumbstick.position.y != 0)) {
-                //motor2Speed = 35000;
+                motor2Speed = 35000;
             }
 
             platformControllerVibrate(0, motor1Speed, motor2Speed);
