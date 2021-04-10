@@ -208,7 +208,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         for (DWORD controllerIndex = 0; controllerIndex < maxControllers; controllerIndex++) {
 
-            XINPUT_STATE controllerInstance = {0};
+            XINPUT_STATE controllerInstance = { 0 };
             SecureZeroMemory(&controllerInstance, sizeof(XINPUT_STATE));
 
             // Simply get the state of the controller from XInput.
@@ -230,6 +230,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             win32ProcessXInputControllerButton(&newController->up,
                                                 &oldController->up,
                                                 gamepad,
+                                                XINPUT_GAMEPAD_DPAD_UP);
+
+            win32ProcessXInputControllerButton(&newController->up,
+                                                &oldController->up,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_DPAD_DOWN);
+
+            win32ProcessXInputControllerButton(&newController->up,
+                                                &oldController->up,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_DPAD_LEFT);
+
+            win32ProcessXInputControllerButton(&newController->up,
+                                                &oldController->up,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_DPAD_RIGHT);
+
+            win32ProcessXInputControllerButton(&newController->up,
+                                                &oldController->up,
+                                                gamepad,
                                                 XINPUT_GAMEPAD_Y);
 
             win32ProcessXInputControllerButton(&newController->down,
@@ -246,20 +266,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                                 &oldController->left,
                                                 gamepad,
                                                 XINPUT_GAMEPAD_X);
-            /*
-            gameController.btnUpDepressed               = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
-            gameController.btnDownDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
-            gameController.btnLeftDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
-            gameController.btnRightDepressed            = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
-            gameController.btnStartDepressed            = (gamepad->wButtons & XINPUT_GAMEPAD_START);
-            gameController.btnBackDepressed             = (gamepad->wButtons & XINPUT_GAMEPAD_BACK);
-            gameController.btnShoulderLeftDepressed     = (gamepad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
-            gameController.btnShoulderRightDepressed    = (gamepad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
-            gameController.btnADepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_A);
-            gameController.btnBDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_B);
-            gameController.btnCDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_X);
-            gameController.btnDDepressed                = (gamepad->wButtons & XINPUT_GAMEPAD_Y);
-            */
+
 
             newController->leftThumbstickX = gamepad->sThumbLX;
             newController->leftThumbstickY = gamepad->sThumbLY;

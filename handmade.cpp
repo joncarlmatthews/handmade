@@ -2,7 +2,6 @@
 #include <math.h> // For Sin
 #include "handmade.h"
 
-
 internal_func void gameUpdate(FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
@@ -65,11 +64,35 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer,
     local_persist_var int32 redOffset = 0;
     local_persist_var int32 greenOffset = 0;
 
+    uint16 speed = 30;
+
     for (uint8 i = 0; i < maxControllers; i++){
 
         // Animate the screen.
-        redOffset       = (redOffset    + (inputInstances->controllers[i].leftThumbstickY >> 10));
-        greenOffset     = (greenOffset  - (inputInstances->controllers[i].leftThumbstickX >> 10));
+        if (inputInstances->controllers[i].up.endedDown) {
+            redOffset = (redOffset + speed);
+        }
+
+        if (inputInstances->controllers[i].down.endedDown) {
+            redOffset = (redOffset - speed);
+        }
+
+        if (inputInstances->controllers[i].right.endedDown) {
+            greenOffset = (greenOffset - speed);
+        }
+
+        if (inputInstances->controllers[i].left.endedDown) {
+            greenOffset = (greenOffset + speed);
+        }
+
+        if (inputInstances->controllers[i].leftThumbstickX) {
+            greenOffset = (greenOffset - (inputInstances->controllers[i].leftThumbstickX >> 10));
+        }
+
+        if (inputInstances->controllers[i].leftThumbstickY) {
+            redOffset = (redOffset + (inputInstances->controllers[i].leftThumbstickY >> 10));
+        }
+
 
         // Controller feedback.
         uint16 motor1Speed = 0;

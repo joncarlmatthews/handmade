@@ -79,8 +79,8 @@ typedef struct GameAudioBuffer
 
 typedef struct GameControllerBtnState
 {
-    uint16 halfTransitionCount;
-    bool16 endedDown;
+    bool32 halfTransitionCount;
+    bool32 endedDown;
 } GameControllerBtnState;
 
 typedef struct GameControllerInput
@@ -106,18 +106,18 @@ typedef struct GameControllerInput
     GameControllerBtnState shoulderR1;
 
     // Legacy
-    bool16 btnUpDepressed;
-    bool16 btnDownDepressed;
-    bool16 btnLeftDepressed;
-    bool16 btnRightDepressed;
-    bool16 btnStartDepressed;
-    bool16 btnBackDepressed;
-    bool16 btnShoulderLeftDepressed;
-    bool16 btnShoulderRightDepressed;
-    bool16 btnADepressed;
-    bool16 btnBDepressed;
-    bool16 btnCDepressed;
-    bool16 btnDDepressed;
+    bool32 btnUpDepressed;
+    bool32 btnDownDepressed;
+    bool32 btnLeftDepressed;
+    bool32 btnRightDepressed;
+    bool32 btnStartDepressed;
+    bool32 btnBackDepressed;
+    bool32 btnShoulderLeftDepressed;
+    bool32 btnShoulderRightDepressed;
+    bool32 btnADepressed;
+    bool32 btnBDepressed;
+    bool32 btnCDepressed;
+    bool32 btnDDepressed;
 
 } GameControllerInput;
 
