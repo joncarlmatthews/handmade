@@ -48,6 +48,12 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, LPUNKNOWN  pUnkOuter);
 
+struct Person {
+    char name[50];
+    int age;
+    float32 height;
+};
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -61,6 +67,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
+    Person jon = {};
+
+    jon.name[0] = 'J';
+    jon.age = 36;
+    jon.height = 5.12f;
+
+
+
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     LARGE_INTEGER perfFrequencyCounterRes;
@@ -219,7 +233,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 continue;
             }
 
-            // ...controller is connected
+            // ...controller connected/available
 
             // Fetch the gamepad
             XINPUT_GAMEPAD *gamepad = &controllerInstance.Gamepad;
@@ -267,12 +281,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                                 gamepad,
                                                 XINPUT_GAMEPAD_X);
 
+            // Left controller thumbstick support
+            newController->isAnalog = true;
+            float32 leftThumbstickX = 0.0f;
+            if (gamepad->sThumbLX > 0) {
+                leftThumbstickX = ((float32)gamepad->sThumbLX / 32767.0f);
+            }else if(gamepad->sThumbLX < 0) {
+                leftThumbstickX = ((float32)gamepad->sThumbLX / 32768.0f);
+            }
 
-            newController->leftThumbstickX = gamepad->sThumbLX;
-            newController->leftThumbstickY = gamepad->sThumbLY;
+            float32 leftThumbstickY = 0.0f;
+            if (gamepad->sThumbLY > 0) {
+                leftThumbstickY = ((float32)gamepad->sThumbLY / 32767.0f);
+            }
+            else if (gamepad->sThumbLY < 0) {
+                leftThumbstickY = ((float32)gamepad->sThumbLY / 32768.0f);
+            }
 
-            newController->rightThumbstickX = gamepad->sThumbRX;
-            newController->rightThumbstickY = gamepad->sThumbRY;
+            newController->leftThumbstick.position.x = leftThumbstickX;
+            newController->leftThumbstick.position.y = leftThumbstickY;
+
 
             // Swap the controller intances
             GameControllerInput *temp = newController;

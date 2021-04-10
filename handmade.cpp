@@ -56,52 +56,54 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer,
         byteGroupIndex = ((byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
     }
 
-    //gameWriteAudioBuffer(audioBuffer, 100);
-
     /**
      * Graphics stuff
      */
     local_persist_var int32 redOffset = 0;
     local_persist_var int32 greenOffset = 0;
 
-    uint16 speed = 30;
+    uint16 buttonSpeed = 30;
 
     for (uint8 i = 0; i < maxControllers; i++){
 
         // Animate the screen.
         if (inputInstances->controllers[i].up.endedDown) {
-            redOffset = (redOffset + speed);
+            redOffset = (redOffset + buttonSpeed);
         }
 
         if (inputInstances->controllers[i].down.endedDown) {
-            redOffset = (redOffset - speed);
+            redOffset = (redOffset - buttonSpeed);
         }
 
         if (inputInstances->controllers[i].right.endedDown) {
-            greenOffset = (greenOffset - speed);
+            greenOffset = (greenOffset - buttonSpeed);
         }
 
         if (inputInstances->controllers[i].left.endedDown) {
-            greenOffset = (greenOffset + speed);
+            greenOffset = (greenOffset + buttonSpeed);
         }
 
-        if (inputInstances->controllers[i].leftThumbstickX) {
-            greenOffset = (greenOffset - (inputInstances->controllers[i].leftThumbstickX >> 10));
+        if (inputInstances->controllers[i].isAnalog) {
+            if (inputInstances->controllers[i].leftThumbstick.position.x) {
+                greenOffset = (greenOffset - (inputInstances->controllers[i].leftThumbstick.position.x));
+            }
+
+            if (inputInstances->controllers[i].leftThumbstick.position.y) {
+                redOffset = (redOffset + (inputInstances->controllers[i].leftThumbstick.position.y));
+            }
+
+            // Controller feedback.
+            uint16 motor1Speed = 0;
+            uint16 motor2Speed = 0;
+            if ((inputInstances->controllers[i].leftThumbstick.position.x != 0)
+                || (inputInstances->controllers[i].leftThumbstick.position.y != 0)) {
+                //motor2Speed = 35000;
+            }
+
+            platformControllerVibrate(0, motor1Speed, motor2Speed);
         }
 
-        if (inputInstances->controllers[i].leftThumbstickY) {
-            redOffset = (redOffset + (inputInstances->controllers[i].leftThumbstickY >> 10));
-        }
-
-
-        // Controller feedback.
-        uint16 motor1Speed = 0;
-        uint16 motor2Speed = 0;
-        if ((inputInstances->controllers[i].leftThumbstickY != 0) || (inputInstances->controllers[i].leftThumbstickX != 0)) {
-            motor2Speed = 35000;
-        }
-
-        platformControllerVibrate(0, motor1Speed, motor2Speed);
+        
 
         // Support for first controller only at this point.
         break;
@@ -164,7 +166,12 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
     }
 }
 
-internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer, uint32 height, uint32 width, uint16 bytesPerPixel, uint32 byteWidthPerRow, void *memory)
+internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
+                                                uint32 height,
+                                                uint32 width,
+                                                uint16 bytesPerPixel,
+                                                uint32 byteWidthPerRow,
+                                                void *memory)
 {
     frameBuffer->height = height;
     frameBuffer->width = width;
@@ -190,27 +197,6 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
     audioBuffer->platformBufferSizeInBytes  = platformBufferSizeInBytes;
 
     return audioBuffer;
-}
-
-
-internal_func void gameWriteAudioBuffer(AudioBuffer *buffer, int16 audioSampleValue)
-{
-    uint16 *audioSample = (uint16 *)buffer->memory;
-
-    for (uint32 i = 0; i < buffer->samplesToWrite; i++){
-
-        // Left channel (16-bits)
-        *audioSample = audioSampleValue;
-
-        // Move to the right sample (16-bits)
-        audioSample++;
-
-        // Right channel (16-bits)
-        *audioSample = audioSampleValue;
-
-        // Move cursor to the start of the next sample grouping.
-        audioSample++;
-    }
 }
 
 float32 percentageOfAnotherf(float32 a, float32 b)

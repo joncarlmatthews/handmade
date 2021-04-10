@@ -83,15 +83,21 @@ typedef struct GameControllerBtnState
     bool32 endedDown;
 } GameControllerBtnState;
 
+typedef struct GameControllerThumbstickState
+{
+    /*
+     * Thumstick X and Y values.
+     * Maximum ranges are between 1.0 and -1.0
+     */
+    struct position {
+        float32 x;
+        float32 y;
+    } position;
+} GameControllerThumbstickState;
+
 typedef struct GameControllerInput
 {
     bool32 isAnalog;
-
-    int32 leftThumbstickX;
-    int32 leftThumbstickY;
-
-    int32 rightThumbstickX;
-    int32 rightThumbstickY;
 
     GameControllerBtnState dPadUp;
     GameControllerBtnState dPadDown;
@@ -105,19 +111,8 @@ typedef struct GameControllerInput
     GameControllerBtnState shoulderL1;
     GameControllerBtnState shoulderR1;
 
-    // Legacy
-    bool32 btnUpDepressed;
-    bool32 btnDownDepressed;
-    bool32 btnLeftDepressed;
-    bool32 btnRightDepressed;
-    bool32 btnStartDepressed;
-    bool32 btnBackDepressed;
-    bool32 btnShoulderLeftDepressed;
-    bool32 btnShoulderRightDepressed;
-    bool32 btnADepressed;
-    bool32 btnBDepressed;
-    bool32 btnCDepressed;
-    bool32 btnDDepressed;
+    GameControllerThumbstickState leftThumbstick;
+    GameControllerThumbstickState rightThumbstick;
 
 } GameControllerInput;
 
@@ -183,8 +178,6 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
                                             int redOffset,
                                             int greenOffset);
-
-internal_func void gameWriteAudioBuffer(AudioBuffer *buffer, int16 audioSampleValue);
 
 /**
  * Simple function to calculate one number as a percentage of another.
