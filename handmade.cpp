@@ -103,8 +103,6 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer,
             platformControllerVibrate(0, motor1Speed, motor2Speed);
         }
 
-        
-
         // Support for first controller only at this point.
         break;
     }
