@@ -146,6 +146,23 @@ typedef struct SineWave
 
 } SineWave;
 
+typedef struct GameState {
+    SineWave sineWave;
+    int32 redOffset;
+    int32 greenOffset;
+} GameState;
+
+typedef struct GameMemory {
+    bool32 initialised;
+
+    void *permanentStorage;
+    uint64 permanentStorageSizeInBytes;
+
+    void *transientStorage;
+    uint64 transientStorageSizeInBytes;
+} GameMemory;
+
+
 /*
  * Platform specific printf style output debugger
  *
@@ -161,7 +178,8 @@ internal_func void platformControllerVibrate(uint8 controllerIndex,
                                                 uint16 motor1Speed,
                                                 uint16 motor2Speed);
 
-internal_func void gameUpdate(FrameBuffer *frameBuffer,
+internal_func void gameUpdate(GameMemory *memory,
+                                FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
                                 uint8 maxControllers);
@@ -197,5 +215,13 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
  * @return float32
  */
 float32 percentageOfAnotherf(float32 a, float32 b);
+
+/*
+ * Helper functions to translate kilobytes, megabytes and gigabytes
+ * to bytes
+ */
+uint64 kilobytesToBytes(uint8 kilobytes);
+uint64 megabytesToBytes(uint8 megabytes);
+uint64 gigabytesToBytes(uint8 gigabytes);
 
 #endif

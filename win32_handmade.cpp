@@ -119,6 +119,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     HDC deviceHandleForWindow = GetDC(window);
 
     /*
+     * Game memory
+     */
+
+    GameMemory memory = {};
+    memory.permanentStorageSizeInBytes = megabytesToBytes(64);
+    memory.permanentStorage = VirtualAlloc(NULL, memory.permanentStorageSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
+    memory.transientStorageSizeInBytes = gigabytesToBytes(4);
+    memory.transientStorage = VirtualAlloc(NULL, memory.transientStorageSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
+    /*
     * Audio
     */
 
@@ -363,7 +374,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                             win32FrameBuffer.memory);
 
         // Main game code.
-        gameUpdate(&frameBuffer, &audioBuffer, inputInstances, maxControllers);
+        gameUpdate(&memory, &frameBuffer, &audioBuffer, inputInstances, maxControllers);
 
         // Output the audio buffer in Windows.
         win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);

@@ -2,22 +2,31 @@
 #include <math.h> // For Sin
 #include "handmade.h"
 
-internal_func void gameUpdate(FrameBuffer *frameBuffer,
+internal_func void gameUpdate(GameMemory *memory,
+                                FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
                                 uint8 maxControllers)
 {
+    GameState *gameState = (GameState *)memory->permanentStorage;
+
+    if (!memory->initialised) {
+        gameState->sineWave = {0};
+        gameState->greenOffset = 1;
+        gameState->redOffset = 2;
+        memory->initialised = true;
+    }
+
     /**
      * Audio stuff
      */
-    local_persist_var SineWave sineWave = {0};
 
     // @TODO(JM) change the sine wave cycles per second based on controller input
-    sineWave.hertz = 250;
-    sineWave.sizeOfWave = 5000; // Volume
+    gameState->sineWave.hertz = 250;
+    gameState->sineWave.sizeOfWave = 5000; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
-    uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / sineWave.hertz);
+    uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
 
     // At the start of which 4 byte group index we are starting our write from?
     // @TODO(JM) assert that this is a 4 byte boundry
@@ -38,7 +47,7 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer,
         radians = (angle * (PIf / 180.0f));
         sine = sinf(radians);
 
-        int16 audioSampleValue = (int16)(sine * sineWave.sizeOfWave);
+        int16 audioSampleValue = (int16)(sine * gameState->sineWave.sizeOfWave);
 
         // Left channel (16-bits)
         *audioSample = audioSampleValue;
@@ -59,37 +68,34 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer,
     /**
      * Graphics stuff
      */
-    local_persist_var int32 redOffset = 0;
-    local_persist_var int32 greenOffset = 0;
-
     uint16 movementSpeed = 30;
 
     for (uint8 i = 0; i < maxControllers; i++){
 
         // Animate the screen.
         if (inputInstances->controllers[i].up.endedDown) {
-            redOffset = (redOffset + movementSpeed);
+            gameState->redOffset = (gameState->redOffset + movementSpeed);
         }
 
         if (inputInstances->controllers[i].down.endedDown) {
-            redOffset = (redOffset - movementSpeed);
+            gameState->redOffset = (gameState->redOffset - movementSpeed);
         }
 
         if (inputInstances->controllers[i].right.endedDown) {
-            greenOffset = (greenOffset - movementSpeed);
+            gameState->greenOffset = (gameState->greenOffset - movementSpeed);
         }
 
         if (inputInstances->controllers[i].left.endedDown) {
-            greenOffset = (greenOffset + movementSpeed);
+            gameState->greenOffset = (gameState->greenOffset + movementSpeed);
         }
 
         if (inputInstances->controllers[i].isAnalog) {
             if (inputInstances->controllers[i].leftThumbstick.position.x) {
-                greenOffset = (greenOffset - (int16)(inputInstances->controllers[i].leftThumbstick.position.x * movementSpeed));
+                gameState->greenOffset = (gameState->greenOffset - (int16)(inputInstances->controllers[i].leftThumbstick.position.x * movementSpeed));
             }
 
             if (inputInstances->controllers[i].leftThumbstick.position.y) {
-                redOffset = (redOffset + (int16)(inputInstances->controllers[i].leftThumbstick.position.y * movementSpeed));
+                gameState->redOffset = (gameState->redOffset + (int16)(inputInstances->controllers[i].leftThumbstick.position.y * movementSpeed));
             }
 
             // Controller feedback.
@@ -107,7 +113,7 @@ internal_func void gameUpdate(FrameBuffer *frameBuffer,
         break;
     }
 
-    gameWriteFrameBuffer(frameBuffer, redOffset, greenOffset);
+    gameWriteFrameBuffer(frameBuffer, gameState->redOffset, gameState->greenOffset);
 }
 
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset)
@@ -205,4 +211,19 @@ float32 percentageOfAnotherf(float32 a, float32 b)
 
     float32 fract = (a / b);
     return (fract * 100.0f);
+}
+
+uint64 kilobytesToBytes(uint8 kilobytes)
+{
+    return (uint64)((uint64)kilobytes * (uint64)1000);
+}
+
+uint64 megabytesToBytes(uint8 megabytes)
+{
+    return (uint64)((uint64)1000 * kilobytesToBytes(1));
+}
+
+uint64 gigabytesToBytes(uint8 gigabytes)
+{
+    return (uint64)((uint64)1000 * megabytesToBytes(1));
 }
