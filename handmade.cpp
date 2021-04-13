@@ -8,6 +8,8 @@ internal_func void gameUpdate(GameMemory *memory,
                                 GameInput inputInstances[],
                                 uint8 maxControllers)
 {
+    assert(sizeof(GameState) <= memory->permanentStorageSizeInBytes);
+
     GameState *gameState = (GameState *)memory->permanentStorage;
 
     if (!memory->initialised) {

@@ -5,6 +5,13 @@
  * Macro definitions
  */
 
+// If assertion isn't true, write to the null pointer and crash the program.
+#if HANDMADE_LOCAL_BUILD
+#define assert(expression) if (!(expression)){ *(int *)0 = 0; }
+#else
+#define assert(expression)
+#endif
+
 // Global variables
 #define global_var static
 

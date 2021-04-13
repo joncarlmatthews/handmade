@@ -126,7 +126,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.permanentStorageSizeInBytes = mebibytesToBytes(64);
     memory.permanentStorage = VirtualAlloc(NULL, memory.permanentStorageSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
-    memory.transientStorageSizeInBytes = gibibytesToBytes(2);
+    memory.transientStorageSizeInBytes = gibibytesToBytes(1);
     memory.transientStorage = VirtualAlloc(NULL, memory.transientStorageSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
     if (memory.permanentStorage && memory.transientStorage) {
@@ -407,11 +407,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Processor running speed in GHz
             float32 speed = ((uint64)(secondsPerFrame * clockCycles_mega) / 100.0f);
 
+#if HANDMADE_LOCAL_BUILD
             // Console log the speed:
             char output[100] = {};
             sprintf_s(output, 100,
                         "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
             OutputDebugString(output);
+#endif
 
             // Reset the running clock cycles & counters.
             processorClockCycles = processorClockCyclesAfterFrame;
