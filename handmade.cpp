@@ -213,17 +213,17 @@ float32 percentageOfAnotherf(float32 a, float32 b)
     return (fract * 100.0f);
 }
 
-uint64 kilobytesToBytes(uint8 kilobytes)
+uint64 kibibytesToBytes(uint8 kibibytes)
 {
-    return (uint64)(((uint64)kilobytes * (uint64)1000) * kilobytes);
+    return (uint64)((uint64)1024 * (uint64)kibibytes);
 }
 
-uint64 megabytesToBytes(uint8 megabytes)
+uint64 mebibytesToBytes(uint8 mebibytes)
 {
-    return (uint64) (((uint64)1000 * kilobytesToBytes(1)) * megabytes);
+    return (uint64)(((uint64)1024 * kibibytesToBytes(1)) * mebibytes);
 }
 
-uint64 gigabytesToBytes(uint8 gigabytes)
+uint64 gibibytesToBytes(uint8 gibibytes)
 {
-    return (uint64)(((uint64)1000 * megabytesToBytes(1)) * gigabytes);
+    return (uint64)(((uint64)1024 * mebibytesToBytes(1)) * gibibytes);
 }

@@ -217,11 +217,14 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
 float32 percentageOfAnotherf(float32 a, float32 b);
 
 /*
- * Helper functions to translate kilobytes, megabytes and gigabytes
- * to bytes
+ * Helper functions to translate kibibytes, mebibytes and gibibytes
+ * to bytes (IEC binary standard)
+ *
+ * @see https://en.wikipedia.org/wiki/Byte#Multiple-byte_units
+ * @see https://www.quora.com/Is-1-GB-equal-to-1024-MB-or-1000-MB
  */
-uint64 kilobytesToBytes(uint8 kilobytes);
-uint64 megabytesToBytes(uint8 megabytes);
-uint64 gigabytesToBytes(uint8 gigabytes);
+uint64 kibibytesToBytes(uint8 kibibytes);
+uint64 mebibytesToBytes(uint8 mebibytes);
+uint64 gibibytesToBytes(uint8 gibibytes);
 
 #endif

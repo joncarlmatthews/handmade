@@ -123,10 +123,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
      */
 
     GameMemory memory = {};
-    memory.permanentStorageSizeInBytes = megabytesToBytes(64);
+    memory.permanentStorageSizeInBytes = mebibytesToBytes(64);
     memory.permanentStorage = VirtualAlloc(NULL, memory.permanentStorageSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
-    memory.transientStorageSizeInBytes = gigabytesToBytes(4);
+    memory.transientStorageSizeInBytes = gibibytesToBytes(2);
     memory.transientStorage = VirtualAlloc(NULL, memory.transientStorageSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
     if (memory.permanentStorage && memory.transientStorage) {
@@ -283,6 +283,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 // Left controller thumbstick support
                 newController->isAnalog = true;
+
+                // Normalise the axis values so they're between -1.0 and 1.0
                 float32 leftThumbstickX = 0.0f;
                 if (gamepad->sThumbLX > 0) {
                     leftThumbstickX = ((float32)gamepad->sThumbLX / 32767.0f);
@@ -360,24 +362,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             } // Audio buffer created.
 
-
             // Create the game's audio buffer
             gameInitAudioBuffer(&audioBuffer,
-                win32AudioBuffer.samplesPerSecond,
-                win32AudioBuffer.bytesPerSample,
-                win32AudioBuffer.secondsWorthOfAudio,
-                (win32AudioBuffer.bufferSizeInBytes / win32AudioBuffer.bytesPerSample),
-                win32AudioBuffer.bufferSizeInBytes,
-                0);
+                                win32AudioBuffer.samplesPerSecond,
+                                win32AudioBuffer.bytesPerSample,
+                                win32AudioBuffer.secondsWorthOfAudio,
+                                (win32AudioBuffer.bufferSizeInBytes / win32AudioBuffer.bytesPerSample),
+                                win32AudioBuffer.bufferSizeInBytes,
+                                0);
 
             // Create the game's frame buffer
             FrameBuffer frameBuffer = {};
             gameInitFrameBuffer(&frameBuffer,
-                win32FrameBuffer.height,
-                win32FrameBuffer.width,
-                win32FrameBuffer.bytesPerPixel,
-                win32FrameBuffer.byteWidthPerRow,
-                win32FrameBuffer.memory);
+                                win32FrameBuffer.height,
+                                win32FrameBuffer.width,
+                                win32FrameBuffer.bytesPerPixel,
+                                win32FrameBuffer.byteWidthPerRow,
+                                win32FrameBuffer.memory);
 
             // Main game code.
             gameUpdate(&memory, &frameBuffer, &audioBuffer, inputInstances, maxControllers);
@@ -408,7 +409,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Console log the speed:
             char output[100] = {};
-            sprintf_s(output, 100, "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
+            sprintf_s(output, 100,
+                        "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
             OutputDebugString(output);
 
             // Reset the running clock cycles & counters.
