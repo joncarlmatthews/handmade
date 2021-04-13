@@ -215,15 +215,15 @@ float32 percentageOfAnotherf(float32 a, float32 b)
 
 uint64 kilobytesToBytes(uint8 kilobytes)
 {
-    return (uint64)((uint64)kilobytes * (uint64)1000);
+    return (uint64)(((uint64)kilobytes * (uint64)1000) * kilobytes);
 }
 
 uint64 megabytesToBytes(uint8 megabytes)
 {
-    return (uint64)((uint64)1000 * kilobytesToBytes(1));
+    return (uint64) (((uint64)1000 * kilobytesToBytes(1)) * megabytes);
 }
 
 uint64 gigabytesToBytes(uint8 gigabytes)
 {
-    return (uint64)((uint64)1000 * megabytesToBytes(1));
+    return (uint64)(((uint64)1000 * megabytesToBytes(1)) * gigabytes);
 }
