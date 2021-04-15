@@ -233,5 +233,6 @@ float32 percentageOfAnotherf(float32 a, float32 b);
 uint64 kibibytesToBytes(uint8 kibibytes);
 uint64 mebibytesToBytes(uint8 mebibytes);
 uint64 gibibytesToBytes(uint8 gibibytes);
+uint64 tebibyteToBytes(uint8 tebibytes);
 
 #endif

@@ -122,12 +122,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
      * Game memory
      */
 
+#if HANDMADE_LOCAL_BUILD
+    LPVOID memoryStartAddress = (LPVOID)tebibyteToBytes(4);
+#else
+    LPVOID memoryStartAddress = NULL;
+#endif
+
+
     GameMemory memory = {};
     memory.permanentStorageSizeInBytes = mebibytesToBytes(64);
-    memory.permanentStorage = VirtualAlloc(NULL, memory.permanentStorageSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-
     memory.transientStorageSizeInBytes = gibibytesToBytes(1);
-    memory.transientStorage = VirtualAlloc(NULL, memory.transientStorageSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
+    uint64 memoryTotalSize = (memory.permanentStorageSizeInBytes + memory.transientStorageSizeInBytes);
+
+    memory.permanentStorage = VirtualAlloc(memoryStartAddress, memoryTotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    memory.transientStorage = (((uint8 *)memory.permanentStorage) + memory.permanentStorageSizeInBytes);
 
     if (memory.permanentStorage && memory.transientStorage) {
 

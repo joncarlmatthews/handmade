@@ -229,3 +229,8 @@ uint64 gibibytesToBytes(uint8 gibibytes)
 {
     return (uint64)(((uint64)1024 * mebibytesToBytes(1)) * gibibytes);
 }
+
+uint64 tebibyteToBytes(uint8 tebibytes)
+{
+    return (uint64)(((uint64)1024 * gibibytesToBytes(1)) * tebibytes);
+}
