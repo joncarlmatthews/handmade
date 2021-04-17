@@ -153,22 +153,41 @@ typedef struct SineWave
 
 } SineWave;
 
-typedef struct GameState {
+typedef struct GameState
+{
     SineWave sineWave;
     int32 redOffset;
     int32 greenOffset;
 } GameState;
 
-typedef struct GameMemory {
-    bool32 initialised;
-
+typedef struct GameMemory
+{
+    /*
+     * Memory address of data we want to store permanently throughout the game.
+     */
     void *permanentStorage;
+
+    /*
+     * Size, in bytes of the permanent memory storage.
+     */
     uint64 permanentStorageSizeInBytes;
 
+    /*
+     * Memory address of data we want to store temporarily throughout the game.
+     */
     void *transientStorage;
-    uint64 transientStorageSizeInBytes;
-} GameMemory;
 
+    /*
+     * Size, in bytes of the temporary memory storage.
+     */
+    uint64 transientStorageSizeInBytes;
+
+    /*
+     * Flag to set whether or not our game memory has had its initial fill of data.
+     */
+    bool32 initialised;
+
+} GameMemory;
 
 /*
  * Platform specific printf style output debugger

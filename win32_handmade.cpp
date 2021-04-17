@@ -128,7 +128,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     LPVOID memoryStartAddress = NULL;
 #endif
 
-
     GameMemory memory = {};
     memory.permanentStorageSizeInBytes = mebibytesToBytes(64);
     memory.transientStorageSizeInBytes = gibibytesToBytes(1);
