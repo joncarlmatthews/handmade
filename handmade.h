@@ -18,7 +18,8 @@
 // Static variables within a local scope (e.g. case statement, function)
 #define local_persist_var static
 
-// Functions that are only available within the file they're declared in
+// Functions that are only available within the translation unit they're declared in.
+// This helps the compiler out, knowing that there is no external linking to be done.
 #define internal_func static 
 
 // Return the number of elements in a static array
@@ -189,21 +190,6 @@ typedef struct GameMemory
 
 } GameMemory;
 
-/*
- * Platform specific printf style output debugger
- *
- * @param char format Format specifier. E.g. "Var is %i\n"
- * @param optional command separated list of variables
- */
-internal_func void platformLog(char *format, ...);
-
-/**
- * Platform specific function for vibrating a controller
- */
-internal_func void platformControllerVibrate(uint8 controllerIndex,
-                                                uint16 motor1Speed,
-                                                uint16 motor2Speed);
-
 internal_func void gameUpdate(GameMemory *memory,
                                 FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
@@ -233,14 +219,11 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
                                             int redOffset,
                                             int greenOffset);
 
-/**
- * Simple function to calculate one number as a percentage of another.
- *
- * @param float32 a What is (a) as a percentage of...
- * @param float32 b ?
- * @return float32
+/*
+ * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
+ * the code will assert if the value passed in is larger than 4 bytes
  */
-float32 percentageOfAnotherf(float32 a, float32 b);
+internal_func uint32 truncateToUint32Safe(uint64 value);
 
 /*
  * Helper functions to translate kibibytes, mebibytes and gibibytes
@@ -253,5 +236,41 @@ uint64 kibibytesToBytes(uint8 kibibytes);
 uint64 mebibytesToBytes(uint8 mebibytes);
 uint64 gibibytesToBytes(uint8 gibibytes);
 uint64 tebibyteToBytes(uint8 tebibytes);
+
+/**
+ * Simple function to calculate one number as a percentage of another.
+ *
+ * @param float32 a What is (a) as a percentage of...
+ * @param float32 b ?
+ * @return float32
+ */
+float32 percentageOfAnotherf(float32 a, float32 b);
+
+/*
+ * *********************************************
+ * Services that the platform layer must provide
+ * *********************************************
+ */
+
+/*
+ * printf style output debugger
+ *
+ * @param char format Format specifier. E.g. "Var is %i\n"
+ * @param optional command separated list of variables
+ */
+internal_func void platformLog(char *format, ...);
+
+/**
+ * Function for vibrating the controller
+ */
+internal_func void platformControllerVibrate(uint8 controllerIndex,
+                                                uint16 motor1Speed,
+                                                uint16 motor2Speed);
+
+#if HANDMADE_LOCAL_BUILD
+internal_func void* DEBUG_platformReadEntireFile(char *filename);
+internal_func void DEBUG_platformFreeFileMemory(void *memory);
+internal_func bool32 DEBUG_platformWriteENtireFile(char *filename, uint32 memorySizeInBytes, void *memory);
+#endif
 
 #endif

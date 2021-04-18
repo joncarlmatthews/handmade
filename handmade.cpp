@@ -205,16 +205,6 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
     return audioBuffer;
 }
 
-float32 percentageOfAnotherf(float32 a, float32 b)
-{
-    if (b == 0) {
-        return 0;
-    }
-
-    float32 fract = (a / b);
-    return (fract * 100.0f);
-}
-
 uint64 kibibytesToBytes(uint8 kibibytes)
 {
     return (uint64)((uint64)1024 * (uint64)kibibytes);
@@ -233,4 +223,20 @@ uint64 gibibytesToBytes(uint8 gibibytes)
 uint64 tebibyteToBytes(uint8 tebibytes)
 {
     return (uint64)(((uint64)1024 * gibibytesToBytes(1)) * tebibytes);
+}
+
+internal_func uint32 truncateToUint32Safe(uint64 value)
+{
+    assert((value <= 0xffffffff));
+    return (uint32)value;
+}
+
+float32 percentageOfAnotherf(float32 a, float32 b)
+{
+    if (b == 0) {
+        return 0;
+    }
+
+    float32 fract = (a / b);
+    return (fract * 100.0f);
 }

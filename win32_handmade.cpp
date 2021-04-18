@@ -61,6 +61,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
+    DEBUG_platformReadEntireFile("C:\\Users\\jonca\\OneDrive\\Documents\\Work\\Resources\\Design\\hand-pointer-cursor.png");
+
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     LARGE_INTEGER perfFrequencyCounterRes;
@@ -1002,4 +1004,67 @@ internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor
     pVibration.wLeftMotorSpeed = motor2Speed;
 
     XInputSetState(controllerIndex, &pVibration);
+}
+
+internal_func void* DEBUG_platformReadEntireFile(char *filename)
+{
+    void *memory = NULL;
+    bool32 res;
+
+    // Open the file for reading.
+    HANDLE handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (INVALID_HANDLE_VALUE == handle) {
+        OutputDebugString("Cannot read file");
+        return memory;
+    }
+
+    // Get the size of the file in bytes.
+    LARGE_INTEGER sizeStruct;
+    res = GetFileSizeEx(handle, &sizeStruct);
+
+    if (!res) {
+        OutputDebugString("Cannot get file size");
+        return memory;
+    }
+
+    uint64 sizeInBytes = sizeStruct.QuadPart;
+
+    // As GetFileSizeEx can read files larger than 4-bytes, but ReadFile can only
+    // take a maximum of 4-bytes, lets make sure we're not reading files larger
+    // than 4GB.
+    uint32 sizeInBytes32 = truncateToUint32Safe(sizeInBytes);
+
+    // Allocate enough memory for the file.
+    memory = VirtualAlloc(NULL, sizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
+    if (NULL == memory) {
+        OutputDebugString("Cannot allocate memory for file");
+        return memory;
+    }
+
+    // Read the file into the memory.
+    DWORD bytesRead;
+    res = ReadFile(handle, memory, sizeInBytes32, &bytesRead, NULL);
+
+    if ((!res) || (bytesRead != sizeInBytes32)) {
+        OutputDebugString("Cannot read file into memory");
+        memory = 0;
+        DEBUG_platformFreeFileMemory(memory);
+        return memory;
+    }
+
+    CloseHandle(handle);
+
+    return memory;
+}
+
+internal_func void DEBUG_platformFreeFileMemory(void *memory)
+{
+    VirtualFree(memory, 0, MEM_RELEASE);
+}
+
+internal_func bool32 DEBUG_platformWriteENtireFile(char *filename, uint32 memorySizeInBytes, void *memory)
+{
+
 }
