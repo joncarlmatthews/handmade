@@ -1,10 +1,6 @@
 #ifndef HEADER_HANDMADE
 #define HEADER_HANDMADE
 
-/**
- * Macro definitions
- */
-
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
 #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
@@ -267,10 +263,35 @@ internal_func void platformControllerVibrate(uint8 controllerIndex,
                                                 uint16 motor1Speed,
                                                 uint16 motor2Speed);
 
+/*
+ * Definitions for local builds only. E.g. helper functions/structures
+ * to aid debugging. None of these calls should remain in code that
+ * ships, hence no stubs for if HANDMADE_LOCAL_BUILD isn't defined.
+ */
 #if HANDMADE_LOCAL_BUILD
-internal_func void* DEBUG_platformReadEntireFile(char *filename);
-internal_func void DEBUG_platformFreeFileMemory(void *memory);
-internal_func bool32 DEBUG_platformWriteENtireFile(char *filename, uint32 memorySizeInBytes, void *memory);
+
+typedef struct DEBUG_file
+{
+    void *memory;
+    uint32 sizeinBytes;
+
+} DEBUG_file;
+
+/*
+ * Read an entire file into memory 
+ */
+internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename);
+
+/*
+ * Free file memory read from DEBUG_platformReadEntireFile
+ */
+internal_func void DEBUG_platformFreeFileMemory(DEBUG_file *file);
+
+/*
+ * Write bytes into a new file
+ */
+internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, uint32 memorySizeInBytes, void *memory);
+
 #endif
 
 #endif

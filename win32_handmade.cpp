@@ -61,7 +61,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
-    DEBUG_platformReadEntireFile("C:\\Users\\jonca\\OneDrive\\Documents\\Work\\Resources\\Design\\hand-pointer-cursor.png");
+    DEBUG_file png = DEBUG_platformReadEntireFile("C:\\Users\\jonca\\OneDrive\\Documents\\Work\\Resources\\Design\\hand-pointer-cursor.png");
+
+    if (png.memory) {
+        DEBUG_platformFreeFileMemory(&png);
+    }
 
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
@@ -1006,9 +1010,9 @@ internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor
     XInputSetState(controllerIndex, &pVibration);
 }
 
-internal_func void* DEBUG_platformReadEntireFile(char *filename)
+internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
 {
-    void *memory = NULL;
+    DEBUG_file file = {};
     bool32 res;
 
     // Open the file for reading.
@@ -1016,7 +1020,7 @@ internal_func void* DEBUG_platformReadEntireFile(char *filename)
 
     if (INVALID_HANDLE_VALUE == handle) {
         OutputDebugString("Cannot read file");
-        return memory;
+        return file;
     }
 
     // Get the size of the file in bytes.
@@ -1025,7 +1029,7 @@ internal_func void* DEBUG_platformReadEntireFile(char *filename)
 
     if (!res) {
         OutputDebugString("Cannot get file size");
-        return memory;
+        return file;
     }
 
     uint64 sizeInBytes = sizeStruct.QuadPart;
@@ -1036,35 +1040,38 @@ internal_func void* DEBUG_platformReadEntireFile(char *filename)
     uint32 sizeInBytes32 = truncateToUint32Safe(sizeInBytes);
 
     // Allocate enough memory for the file.
-    memory = VirtualAlloc(NULL, sizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    file.memory = VirtualAlloc(NULL, sizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
-    if (NULL == memory) {
+    if (NULL == file.memory) {
         OutputDebugString("Cannot allocate memory for file");
-        return memory;
+        return file;
     }
 
     // Read the file into the memory.
     DWORD bytesRead;
-    res = ReadFile(handle, memory, sizeInBytes32, &bytesRead, NULL);
+    res = ReadFile(handle, file.memory, sizeInBytes32, &bytesRead, NULL);
 
     if ((!res) || (bytesRead != sizeInBytes32)) {
         OutputDebugString("Cannot read file into memory");
-        memory = 0;
-        DEBUG_platformFreeFileMemory(memory);
-        return memory;
+        file.memory = 0;
+        DEBUG_platformFreeFileMemory(&file);
+        return file;
     }
+
+    file.sizeinBytes = bytesRead;
 
     CloseHandle(handle);
 
-    return memory;
+    return file;
 }
 
-internal_func void DEBUG_platformFreeFileMemory(void *memory)
+internal_func void DEBUG_platformFreeFileMemory(DEBUG_file *file)
 {
-    VirtualFree(memory, 0, MEM_RELEASE);
+    VirtualFree(file->memory, 0, MEM_RELEASE);
+    file->sizeinBytes = 0;
 }
 
-internal_func bool32 DEBUG_platformWriteENtireFile(char *filename, uint32 memorySizeInBytes, void *memory)
+internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, uint32 memorySizeInBytes, void *memory)
 {
 
 }
