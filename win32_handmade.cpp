@@ -64,6 +64,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     DEBUG_file png = DEBUG_platformReadEntireFile("C:\\Users\\jonca\\OneDrive\\Documents\\Work\\Resources\\Design\\hand-pointer-cursor.png");
 
     if (png.memory) {
+
+        // Create a copy with DEBUG_platformWriteEntireFile
+        DEBUG_platformWriteEntireFile("C:\\Users\\jonca\\OneDrive\\Documents\\Work\\Resources\\Design\\hand-pointer-cursor_copy.png", png.memory, png.sizeinBytes);
+
+        // Release the memory read from DEBUG_platformReadEntireFile
         DEBUG_platformFreeFileMemory(&png);
     }
 
@@ -1029,6 +1034,7 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
 
     if (!res) {
         OutputDebugString("Cannot get file size");
+        CloseHandle(handle);
         return file;
     }
 
@@ -1044,6 +1050,7 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
 
     if (NULL == file.memory) {
         OutputDebugString("Cannot allocate memory for file");
+        CloseHandle(handle);
         return file;
     }
 
@@ -1053,8 +1060,8 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
 
     if ((!res) || (bytesRead != sizeInBytes32)) {
         OutputDebugString("Cannot read file into memory");
-        file.memory = 0;
         DEBUG_platformFreeFileMemory(&file);
+        CloseHandle(handle);
         return file;
     }
 
@@ -1068,10 +1075,33 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
 internal_func void DEBUG_platformFreeFileMemory(DEBUG_file *file)
 {
     VirtualFree(file->memory, 0, MEM_RELEASE);
+    file->memory = 0;
     file->sizeinBytes = 0;
 }
 
-internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, uint32 memorySizeInBytes, void *memory)
+internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, void *memory, uint32 memorySizeInBytes)
 {
+    bool32 res;
 
+    // Open the file for writing.
+    HANDLE handle = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (INVALID_HANDLE_VALUE == handle) {
+        OutputDebugString("Cannot read file");
+        return false;
+    }
+
+    // Read the file into the memory.
+    DWORD bytesWritten;
+    res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
+
+    if ((!res) || (bytesWritten != memorySizeInBytes)) {
+        OutputDebugString("Could not write file to location");
+        CloseHandle(handle);
+        return false;
+    }
+
+    CloseHandle(handle);
+
+    return true;
 }

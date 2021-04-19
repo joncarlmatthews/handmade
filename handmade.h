@@ -278,7 +278,9 @@ typedef struct DEBUG_file
 } DEBUG_file;
 
 /*
- * Read an entire file into memory 
+ * Read an entire file into memory
+ *
+ * @note call DEBUG_platformFreeFileMemory in a subsequent call.
  */
 internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename);
 
@@ -290,7 +292,7 @@ internal_func void DEBUG_platformFreeFileMemory(DEBUG_file *file);
 /*
  * Write bytes into a new file
  */
-internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, uint32 memorySizeInBytes, void *memory);
+internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, void *memory, uint32 memorySizeInBytes);
 
 #endif
 
