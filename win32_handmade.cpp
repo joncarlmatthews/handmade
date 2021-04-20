@@ -30,6 +30,7 @@ const bool DEBUG_OUTPUT = FALSE;
 global_var bool running;
 
 // Create the Windows frame buffer
+// @TOOD(JM) move this out of the global scope
 global_var Win32FrameBuffer win32FrameBuffer = { 0 };
 
 // XInput support
