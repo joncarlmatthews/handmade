@@ -29,11 +29,8 @@ const bool DEBUG_OUTPUT = FALSE;
 // Whether or not the application is running
 global_var bool running;
 
-// Win32 frame buffer.
-global_var Win32FrameBuffer win32FrameBuffer = {0};
-
-// Win32 audio buffer.
-global_var Win32AudioBuffer win32AudioBuffer = {0};
+// Create the Windows frame buffer
+global_var Win32FrameBuffer win32FrameBuffer = { 0 };
 
 // XInput support
 typedef DWORD WINAPI XInputGetStateDT(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState);
@@ -155,6 +152,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         */
 
         // Create the Windows audio buffer
+        Win32AudioBuffer win32AudioBuffer = { 0 };
         win32InitAudioBuffer(window, &win32AudioBuffer);
 
         // Kick off playing the Windows audio buffer
@@ -862,9 +860,6 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
 
 
     if (SUCCEEDED(res)) {
-
-        DWORD chunkOneStart = lockOffsetInBytes;
-        DWORD chunkTwoStart = 0;
 
         // Calculate the total number of 4-byte audio sample groups (2-bytes/16 bits for the left channel, 2-bytes/16 bits for the right channel) 
         // that we have within the first block of memory IDirectSoundBuffer8::Lock has told us we can write to.

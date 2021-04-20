@@ -65,6 +65,7 @@ internal_func void gameUpdate(GameMemory *memory,
 
         // Write another 4 to the running byte group index.
         byteGroupIndex = ((uint64)(byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
+
     }
 
     /**
