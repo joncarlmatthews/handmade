@@ -130,7 +130,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     /*
      * Game memory
      */
-
 #if HANDMADE_LOCAL_BUILD
     LPVOID memoryStartAddress = (LPVOID)tebibyteToBytes(4);
 #else
@@ -205,24 +204,124 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         while (running) {
 
             MSG message;
+            
+            // Win32 message loop for handling keyboard input
+            GameControllerInput *keyboard = &inputNewInstance->controllers[0];
+            *keyboard = {};
 
             // Message loop. Retrieves all messages (from the calling thread's message queue)
             // that are sent to the window. E.g. clicks and key inputs.
             while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
 
-                // If the message received was a quit message, then toggle our
-                // running flag to false to break out of this loop on the next
-                // iteration.
-                if (message.message == WM_QUIT) {
-                    running = false;
-                }
+                switch (message.message) {
 
-                // Get the message ready for despatch.
-                TranslateMessage(&message);
+                    // All keyboard input messages
+                    case WM_KEYDOWN:
+                    case WM_KEYUP:
+                    case WM_SYSKEYDOWN:
+                    case WM_SYSKEYUP: {
 
-                // Dispatch the message to the application's window procedure.
-                // @link win32MainWindowCallback
-                DispatchMessage(&message);
+                        // Which key was pressed?
+                        WPARAM vkCode = message.wParam;
+
+                        /*
+                         * lParam bitmask. Written from right to left
+                         *
+                         *  First two bytes              Second two bytes
+                         * |-------------------------|  |---------------|
+                         * 31 30 29 28-25 24 23-16      15-0
+                         * 0  0  0  0000  1  01001011   0000000000000001
+                        */
+
+                        // lParam is 4-bytes wide.
+                        uint32 *lParamBitmask = (uint32 *)&message.lParam;
+
+                        // Fetch the second two bytes (bits 0-15)
+                        // @BUG(JM) this count is wrong
+                        uint16 *repeatCount = (uint16 *)&message.lParam;
+                        repeatCount = (repeatCount + 1);
+
+                        bool32 isDown = ((*lParamBitmask & (1 << 31)) == 0); // 1 if the key is down
+                        bool32 wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key was down
+
+                        if (WM_KEYDOWN == message.message) {
+
+                            switch (vkCode)
+                            {
+                                case 'W': {
+                                    GameControllerBtnState state = {};
+                                    state.halfTransitionCount++;
+                                    state.endedDown = isDown;
+                                    keyboard->dPadUp = state;
+                                }
+                                case 'A': {
+                                    GameControllerBtnState state = {};
+                                    state.halfTransitionCount++;
+                                    state.endedDown = isDown;
+                                    keyboard->dPadLeft = state;
+                                }
+                                case 'S': {
+                                    GameControllerBtnState state = {};
+                                    state.halfTransitionCount++;
+                                    state.endedDown = isDown;
+                                    keyboard->dPadDown = state;
+                                }
+                                case 'D': {
+                                    GameControllerBtnState state = {};
+                                    state.halfTransitionCount++;
+                                    state.endedDown = isDown;
+                                    keyboard->dPadRight = state;
+                                }
+                                case 'Q': {
+                                    GameControllerBtnState state = {};
+                                    state.halfTransitionCount++;
+                                    state.endedDown = isDown;
+                                    keyboard->shoulderL1 = state;
+                                }
+                                case 'E': {
+                                    GameControllerBtnState state = {};
+                                    state.halfTransitionCount++;
+                                    state.endedDown = isDown;
+                                    keyboard->shoulderR1 = state;
+                                }
+                                break;
+                            }
+
+                            if (vkCode == 'W') {
+
+                                char output[100] = {};
+                                sprintf_s(output, 100, "is down? %i\n", isDown);
+                                OutputDebugString(output);
+
+                                memset(output, 0, sizeof(output));
+                                sprintf_s(output, 100, "was down? %i\n", wasDown);
+                                OutputDebugString(output);
+
+                                memset(output, 0, sizeof(output));
+                                sprintf_s(output, 100, "repeat count %i\n", *repeatCount);
+                                OutputDebugString(output);
+                            }
+                        }
+
+                    } break;
+
+                    // The standard request from GetMessage().
+                    default: {
+
+                        // If the message received was a quit message, then toggle our
+                        // running flag to false to break out of this loop on the next
+                        // iteration.
+                        if (message.message == WM_QUIT) {
+                            running = false;
+                        }
+
+                        // Dispatch the message to the application's window procedure win32MainWindowCallback()
+                        TranslateMessage(&message); // Get the message ready for despatch.
+                        DispatchMessage(&message); // Actually do the despatch
+
+                    } break;
+
+                } // switch
 
             } // PeekMessage loop
 
@@ -235,7 +334,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
              * Controller input stuff
              */
 
-             // Iterate over each controller and get its state.
+            // Iterate over each controller and get its state.
             DWORD dwResult;
 
             for (DWORD controllerIndex = 0; controllerIndex < maxControllers; controllerIndex++) {
@@ -425,11 +524,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Processor running speed in GHz
             float32 speed = ((uint64)(secondsPerFrame * clockCycles_mega) / 100.0f);
 
-#if HANDMADE_LOCAL_BUILD
+#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
             // Console log the speed:
             char output[100] = {};
             sprintf_s(output, 100,
-                        "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n", millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
+                        "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n",
+                        millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
             OutputDebugString(output);
 #endif
 
@@ -542,57 +642,11 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
             EndPaint(window, &paint);
         } break;
 
+        // Keyboard messages. Now handled within our Win32 game loop.
         case WM_KEYDOWN:
         case WM_KEYUP:
         case WM_SYSKEYDOWN: 
         case WM_SYSKEYUP: {
-
-            // Which key was pressed?
-            WPARAM vkCode = wParam;
-
-            // Was the user holding down ALT when pressing a key?
-            if (message == WM_SYSKEYDOWN) {
-                if (0x73 == vkCode) {
-                    running = 0;
-                }
-            }
-            /*
-             * lParam bitmask. Written from right to left
-             *
-             *  First two bytes              Second two bytes
-             * |-------------------------|  |---------------|
-             * 31 30 29 28-25 24 23-16      15-0 
-             * 0  0  0  0000  1  01001011   0000000000000001
-            */
-            
-            // lParam is 4-bytes wide.
-            uint32 *lParamBitmask = (uint32 *)&lParam;
-
-            // Fetch the second two bytes (bits 0-15)
-            uint16 *repeatCount = (uint16 *)&lParam;
-            repeatCount = (repeatCount + 1);
-
-            if (WM_KEYDOWN == message) {
-
-                bool isDown = ((*lParamBitmask & (1 << 31)) == 0);
-                bool wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key is held down
-
-                if (vkCode == 'W') {
-
-                    char output[100] = {};
-                    sprintf_s(output, 100, "is down? %i\n", isDown);
-                    OutputDebugString(output);
-
-                    memset(output, 0, sizeof(output));
-                    sprintf_s(output, 100, "was down? %i\n", wasDown);
-                    OutputDebugString(output);
-
-                    memset(output, 0, sizeof(output));
-                    sprintf_s(output, 100, "repeat count %i\n", *repeatCount);
-                    OutputDebugString(output);
-                }
-            }            
-
         } break;
 
         // The standard request from GetMessage().

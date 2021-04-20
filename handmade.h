@@ -1,6 +1,11 @@
 #ifndef HEADER_HANDMADE
 #define HEADER_HANDMADE
 
+/*
+ * HANDMADE_LOCAL_BUILD - 1 if the build is on a local development machine, 0 for non dev builds
+ * HANDMADE_DEBUG_FPS - 1 to debug FPS counts to the console.
+ */
+
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
 #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
