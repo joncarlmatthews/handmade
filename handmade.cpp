@@ -75,19 +75,19 @@ internal_func void gameUpdate(GameMemory *memory,
     for (uint8 i = 0; i < maxControllers; i++){
 
         // Animate the screen.
-        if ((inputInstances->controllers[i].dPadUp.endedDown) || (inputInstances->controllers[i].up.endedDown)) {
+        if (inputInstances->controllers[i].dPadUp.endedDown) {
             gameState->redOffset = (gameState->redOffset + movementSpeed);
         }
 
-        if (inputInstances->controllers[i].down.endedDown) {
+        if (inputInstances->controllers[i].dPadDown.endedDown) {
             gameState->redOffset = (gameState->redOffset - movementSpeed);
         }
 
-        if (inputInstances->controllers[i].right.endedDown) {
+        if (inputInstances->controllers[i].dPadRight.endedDown) {
             gameState->greenOffset = (gameState->greenOffset - movementSpeed);
         }
 
-        if (inputInstances->controllers[i].left.endedDown) {
+        if (inputInstances->controllers[i].dPadLeft.endedDown) {
             gameState->greenOffset = (gameState->greenOffset + movementSpeed);
         }
 

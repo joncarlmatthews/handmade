@@ -100,4 +100,6 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *ne
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit);
 
+internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard);
+
 #endif

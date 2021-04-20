@@ -192,127 +192,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
         while (running) {
 
-            MSG message;
+            MSG message = {};
             
-            // Win32 message loop for handling keyboard input
             GameControllerInput *keyboard = &inputNewInstance->controllers[0];
+
+            // Clear keyboard to zero.
             *keyboard = {};
 
-            // Message loop. Retrieves all messages (from the calling thread's message queue)
-            // that are sent to the window. E.g. clicks and key inputs.
-            while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
-
-                switch (message.message) {
-
-                    // All keyboard input messages
-                    case WM_KEYDOWN:
-                    case WM_KEYUP:
-                    case WM_SYSKEYDOWN:
-                    case WM_SYSKEYUP: {
-
-                        // Which key was pressed?
-                        WPARAM vkCode = message.wParam;
-
-                        /*
-                         * lParam bitmask. Written from right to left
-                         *
-                         *  First two bytes              Second two bytes
-                         * |-------------------------|  |---------------|
-                         * 31 30 29 28-25 24 23-16      15-0
-                         * 0  0  0  0000  1  01001011   0000000000000001
-                        */
-
-                        // lParam is 4-bytes wide.
-                        uint32 *lParamBitmask = (uint32 *)&message.lParam;
-
-                        // Fetch the second two bytes (bits 0-15)
-                        // @BUG(JM) this count is wrong
-                        uint16 *repeatCount = (uint16 *)&message.lParam;
-                        repeatCount = (repeatCount + 1);
-
-                        bool32 isDown = ((*lParamBitmask & (1 << 31)) == 0); // 1 if the key is down
-                        bool32 wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key was down
-
-                        if (WM_KEYDOWN == message.message) {
-
-                            switch (vkCode)
-                            {
-                                case 'W': {
-                                    GameControllerBtnState state = {};
-                                    state.halfTransitionCount++;
-                                    state.endedDown = isDown;
-                                    keyboard->dPadUp = state;
-                                }
-                                case 'A': {
-                                    GameControllerBtnState state = {};
-                                    state.halfTransitionCount++;
-                                    state.endedDown = isDown;
-                                    keyboard->dPadLeft = state;
-                                }
-                                case 'S': {
-                                    GameControllerBtnState state = {};
-                                    state.halfTransitionCount++;
-                                    state.endedDown = isDown;
-                                    keyboard->dPadDown = state;
-                                }
-                                case 'D': {
-                                    GameControllerBtnState state = {};
-                                    state.halfTransitionCount++;
-                                    state.endedDown = isDown;
-                                    keyboard->dPadRight = state;
-                                }
-                                case 'Q': {
-                                    GameControllerBtnState state = {};
-                                    state.halfTransitionCount++;
-                                    state.endedDown = isDown;
-                                    keyboard->shoulderL1 = state;
-                                }
-                                case 'E': {
-                                    GameControllerBtnState state = {};
-                                    state.halfTransitionCount++;
-                                    state.endedDown = isDown;
-                                    keyboard->shoulderR1 = state;
-                                }
-                                break;
-                            }
-
-                            if (vkCode == 'W') {
-
-                                char output[100] = {};
-                                sprintf_s(output, 100, "is down? %i\n", isDown);
-                                OutputDebugString(output);
-
-                                memset(output, 0, sizeof(output));
-                                sprintf_s(output, 100, "was down? %i\n", wasDown);
-                                OutputDebugString(output);
-
-                                memset(output, 0, sizeof(output));
-                                sprintf_s(output, 100, "repeat count %i\n", *repeatCount);
-                                OutputDebugString(output);
-                            }
-                        }
-
-                    } break;
-
-                    // The standard request from GetMessage().
-                    default: {
-
-                        // If the message received was a quit message, then toggle our
-                        // running flag to false to break out of this loop on the next
-                        // iteration.
-                        if (message.message == WM_QUIT) {
-                            running = false;
-                        }
-
-                        // Dispatch the message to the application's window procedure win32MainWindowCallback()
-                        TranslateMessage(&message); // Get the message ready for despatch.
-                        DispatchMessage(&message); // Actually do the despatch
-
-                    } break;
-
-                } // switch
-
-            } // PeekMessage loop
+            // Handle the Win32 message loop
+            win32ProcessMessages(window, message, keyboard);
 
             // After processing our messages, we can now (in our "while running = true"
             // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
@@ -1025,6 +913,128 @@ internal_func void loadXInputDLLFunctions(void)
             XInputSetState = XInputSetStateAddr;
         }
     }
+}
+
+internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard)
+{
+    // Win32 Message loop. Retrieves all messages (from the calling thread's message queue)
+    // that are sent to the window. E.g. clicks and key inputs.
+    while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
+
+        switch (message.message) {
+
+            // If the message received was a quit message, then toggle our
+            // running flag to false to break out of this loop on the next
+            // iteration.
+            case WM_QUIT: {
+                running = false;
+            } break;
+
+            // All keyboard input messages
+            case WM_KEYDOWN:
+            case WM_KEYUP:
+            case WM_SYSKEYDOWN:
+            case WM_SYSKEYUP: {
+
+                // Which key was pressed?
+                WPARAM vkCode = message.wParam;
+
+                /*
+                 * lParam bitmask. Written from right to left
+                 *
+                 *  First two bytes              Second two bytes
+                 * |-------------------------|  |---------------|
+                 * 31 30 29 28-25 24 23-16      15-0
+                 * 0  0  0  0000  1  01001011   0000000000000001
+                */
+
+                // lParam is 4-bytes wide.
+                uint32 *lParamBitmask = (uint32 *)&message.lParam;
+
+                // Fetch the second two bytes (bits 0-15)
+                // @BUG(JM) this count is wrong
+                uint16 *repeatCount = (uint16 *)&message.lParam;
+                repeatCount = (repeatCount + 1);
+
+                bool32 isDown = ((*lParamBitmask & (1 << 31)) == 0); // 1 if the key is down
+                bool32 wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key was down
+
+                if (WM_KEYDOWN == message.message) {
+
+                    switch (vkCode) {
+                        case 'W': {
+                            GameControllerBtnState state = {};
+                            state.halfTransitionCount++;
+                            state.endedDown = isDown;
+                            keyboard->dPadUp = state;
+                        } break;
+
+                        case 'A': {
+                            GameControllerBtnState state = {};
+                            state.halfTransitionCount++;
+                            state.endedDown = isDown;
+                            keyboard->dPadLeft = state;
+                        } break;
+
+                        case 'S': {
+                            GameControllerBtnState state = {};
+                            state.halfTransitionCount++;
+                            state.endedDown = isDown;
+                            keyboard->dPadDown = state;
+                        } break;
+
+                        case 'D': {
+                            GameControllerBtnState state = {};
+                            state.halfTransitionCount++;
+                            state.endedDown = isDown;
+                            keyboard->dPadRight = state;
+                        } break;
+
+                        case 'Q': {
+                            GameControllerBtnState state = {};
+                            state.halfTransitionCount++;
+                            state.endedDown = isDown;
+                            keyboard->shoulderL1 = state;
+                        } break;
+
+                        case 'E': {
+                            GameControllerBtnState state = {};
+                            state.halfTransitionCount++;
+                            state.endedDown = isDown;
+                            keyboard->shoulderR1 = state;
+                        } break;
+                    }
+
+                    if (vkCode == 'W') {
+
+                        char output[100] = {};
+                        sprintf_s(output, 100, "is down? %i\n", isDown);
+                        OutputDebugString(output);
+
+                        memset(output, 0, sizeof(output));
+                        sprintf_s(output, 100, "was down? %i\n", wasDown);
+                        OutputDebugString(output);
+
+                        memset(output, 0, sizeof(output));
+                        sprintf_s(output, 100, "repeat count %i\n", *repeatCount);
+                        OutputDebugString(output);
+                    }
+                }
+
+            } break;
+
+            // The standard request from GetMessage().
+            default: {
+
+                // Dispatch the message to the application's window procedure win32MainWindowCallback()
+                TranslateMessage(&message); // Get the message ready for despatch.
+                DispatchMessage(&message); // Actually do the despatch
+
+            } break;
+
+        } // message switch
+
+    } // PeekMessage loop
 }
 
 internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *newState,
