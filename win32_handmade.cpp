@@ -59,17 +59,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
-    DEBUG_file png = DEBUG_platformReadEntireFile("C:\\Users\\jonca\\OneDrive\\Documents\\Work\\Resources\\Design\\hand-pointer-cursor.png");
-
-    if (png.memory) {
-
-        // Create a copy with DEBUG_platformWriteEntireFile
-        DEBUG_platformWriteEntireFile("C:\\Users\\jonca\\OneDrive\\Documents\\Work\\Resources\\Design\\hand-pointer-cursor_copy.png", png.memory, png.sizeinBytes);
-
-        // Release the memory read from DEBUG_platformReadEntireFile
-        DEBUG_platformFreeFileMemory(&png);
-    }
-
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     LARGE_INTEGER perfFrequencyCounterRes;
