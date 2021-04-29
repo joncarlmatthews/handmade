@@ -6,8 +6,11 @@ internal_func void gameUpdate(GameMemory *memory,
                                 FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
-                                uint8 maxControllers)
+                                ControllerCounts *controllerCounts)
 {
+    /**
+     * Game state initialisation
+     */
     assert(sizeof(GameState) <= memory->permanentStorageSizeInBytes);
 
     GameState *gameState = (GameState *)memory->permanentStorage;
@@ -25,7 +28,7 @@ internal_func void gameUpdate(GameMemory *memory,
 
     // @TODO(JM) change the sine wave cycles per second based on controller input
     gameState->sineWave.hertz = 250;
-    gameState->sineWave.sizeOfWave = 5000; // Volume
+    gameState->sineWave.sizeOfWave = 100; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
@@ -72,7 +75,11 @@ internal_func void gameUpdate(GameMemory *memory,
      */
     uint16 movementSpeed = 30;
 
-    for (uint8 i = 0; i < maxControllers; i++){
+    for (uint8 i = 0; i < controllerCounts->connectedControllers; i++){
+
+        if (!inputInstances->controllers[i].isConnected) {
+            continue;
+        }
 
         // Animate the screen.
         if (inputInstances->controllers[i].dPadUp.endedDown) {
@@ -110,9 +117,6 @@ internal_func void gameUpdate(GameMemory *memory,
 
             platformControllerVibrate(0, motor1Speed, motor2Speed);
         }
-
-        // Support for first controller only at this point.
-        break;
     }
 
     gameWriteFrameBuffer(frameBuffer, gameState->redOffset, gameState->greenOffset);

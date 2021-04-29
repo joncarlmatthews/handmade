@@ -2,9 +2,20 @@
 #define HEADER_HANDMADE
 
 /*
- * HANDMADE_LOCAL_BUILD - 1 if the build is on a local development machine, 0 for non dev builds
- * HANDMADE_DEBUG_FPS - 1 to debug FPS counts to the console.
+ * HANDMADE_LOCAL_BUILD
+ *  - 0 for non-dev builds
+ *  - 1 if the build is on a local development machine
+ *
+ * HANDMADE_DEBUG
+ *  - 0 no arbitrary debug
+ *  - 1 arbitrary debug
+ * 
+ * HANDMADE_DEBUG_FPS
+ *  - 0 no FPS console debug
+ *  - 1 to debug FPS counts to the console.
  */
+
+#define HANDMADE_DEBUG_FPS
 
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
@@ -25,9 +36,6 @@
 
 // Return the number of elements in a static array
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
-
-// Maximum number of supported controllers
-#define MAX_CONTROLLERS 4
 
 /**
  * Struct for the screen buffer
@@ -86,6 +94,17 @@ typedef struct GameAudioBuffer
 
 } AudioBuffer;
 
+// Maximum number of supported controllers
+// 1 keyboard, 4 gamepad controllers.
+#define MAX_CONTROLLERS 5
+
+typedef struct ControllerCounts
+{
+    uint8 gameMaxControllers;
+    uint8 platformMaxControllers;
+    uint8 connectedControllers;
+} ControllerCounts;
+
 typedef struct GameControllerBtnState
 {
     bool32 halfTransitionCount;
@@ -106,6 +125,7 @@ typedef struct GameControllerThumbstickState
 
 typedef struct GameControllerInput
 {
+    bool32 isConnected;
     bool32 isAnalog;
 
     union {
@@ -137,6 +157,7 @@ typedef struct GameControllerInput
 
 typedef struct GameInput
 {
+   
     GameControllerInput controllers[MAX_CONTROLLERS];
 } GameInput;
 

@@ -164,6 +164,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         * Controllers
         */
 
+        // How many controllers does the platform layer support?
+        ControllerCounts controllerCounts = {};
+        controllerCounts.gameMaxControllers = MAX_CONTROLLERS;
+        controllerCounts.platformMaxControllers = XUSER_MAX_COUNT;
+
         // An array to hold pointers to the old and new instances of the inputs.
         GameInput inputInstances[2] = {};
 
@@ -171,12 +176,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // so we can compare last frame's values to this frames values.
         GameInput *inputNewInstance = &inputInstances[0];
         GameInput *inputOldInstance = &inputInstances[1];
-
-        // How many controllers does the platform layer support?
-        uint8 maxControllers = MAX_CONTROLLERS;
-        if (XUSER_MAX_COUNT < maxControllers) {
-            maxControllers = XUSER_MAX_COUNT;
-        }
 
         // Running query perforamce counter for profiling the game loop
         LARGE_INTEGER runningPerformanceCounter;
@@ -193,11 +192,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         while (running) {
 
             MSG message = {};
-            
+
+            // Define keyboard controller support.
+            // @TODO(JM) check that keyboard is connected.
             GameControllerInput *keyboard = &inputNewInstance->controllers[0];
 
             // Clear keyboard to zero.
             *keyboard = {};
+            keyboard->isConnected = true;
+
+            controllerCounts.connectedControllers = 1;
 
             // Handle the Win32 message loop
             win32ProcessMessages(window, message, keyboard);
@@ -214,7 +218,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Iterate over each controller and get its state.
             DWORD dwResult;
 
-            for (DWORD controllerIndex = 0; controllerIndex < maxControllers; controllerIndex++) {
+            uint8 gamePadsAdded = 0;
+
+            for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
 
                 XINPUT_STATE controllerInstance = { 0 };
                 SecureZeroMemory(&controllerInstance, sizeof(XINPUT_STATE));
@@ -228,12 +234,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 }
 
                 // ...controller connected/available
+                gamePadsAdded++;
+
+                // Make sure we dont add more than our supported controller count.
+                if (gamePadsAdded >= (controllerCounts.gameMaxControllers - 1)) {
+                    continue;
+                }
+
+                controllerCounts.connectedControllers = (controllerCounts.connectedControllers + 1);
 
                 // Fetch the gamepad
                 XINPUT_GAMEPAD *gamepad = &controllerInstance.Gamepad;
 
-                GameControllerInput *newController = &inputNewInstance->controllers[controllerIndex];
-                GameControllerInput *oldController = &inputOldInstance->controllers[controllerIndex];
+                uint8 ourControllerIndex = ((uint8)controllerIndex + 1);
+
+                GameControllerInput *newController = &inputNewInstance->controllers[ourControllerIndex];
+                GameControllerInput *oldController = &inputOldInstance->controllers[ourControllerIndex];
+
+                newController->isConnected = true;
 
                 win32ProcessXInputControllerButton(&newController->up,
                     &oldController->up,
@@ -279,19 +297,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 newController->isAnalog = true;
 
                 // Normalise the axis values so they're between -1.0 and 1.0
+                // @see maximum signed short values
                 float32 leftThumbstickX = 0.0f;
-                if (gamepad->sThumbLX > 0) {
+                if (gamepad->sThumbLX > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
                     leftThumbstickX = ((float32)gamepad->sThumbLX / 32767.0f);
                 }
-                else if (gamepad->sThumbLX < 0) {
+                else if (gamepad->sThumbLX < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
                     leftThumbstickX = ((float32)gamepad->sThumbLX / 32768.0f);
                 }
 
                 float32 leftThumbstickY = 0.0f;
-                if (gamepad->sThumbLY > 0) {
+                if (gamepad->sThumbLY > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
                     leftThumbstickY = ((float32)gamepad->sThumbLY / 32767.0f);
                 }
-                else if (gamepad->sThumbLY < 0) {
+                else if (gamepad->sThumbLY < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
                     leftThumbstickY = ((float32)gamepad->sThumbLY / 32768.0f);
                 }
 
@@ -375,7 +394,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 win32FrameBuffer.memory);
 
             // Main game code.
-            gameUpdate(&memory, &frameBuffer, &audioBuffer, inputInstances, maxControllers);
+            gameUpdate(&memory, &frameBuffer, &audioBuffer, inputInstances, &controllerCounts);
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);
@@ -524,6 +543,8 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         case WM_KEYUP:
         case WM_SYSKEYDOWN: 
         case WM_SYSKEYUP: {
+            // This shouldnt happen. assert during development to make sure.
+            assert(!"Windows has called this directtly and not throug PeekMessage");
         } break;
 
         // The standard request from GetMessage().
@@ -959,66 +980,64 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
                 bool32 isDown = ((*lParamBitmask & (1 << 31)) == 0); // 1 if the key is down
                 bool32 wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key was down
 
-                if (WM_KEYDOWN == message.message) {
+#ifdef HANDMADE_DEBUG
+                if (vkCode == 'W') {
+                    char buff[100] = {};
+                    sprintf_s(buff, 100, "is down? %i\n", isDown);
+                    OutputDebugString(buff);
 
-                    switch (vkCode) {
-                        case 'W': {
-                            GameControllerBtnState state = {};
-                            state.halfTransitionCount++;
-                            state.endedDown = isDown;
-                            keyboard->dPadUp = state;
-                        } break;
+                    memset(buff, 0, sizeof(buff));
+                    sprintf_s(buff, 100, "was down? %i\n", wasDown);
+                    OutputDebugString(buff);
 
-                        case 'A': {
-                            GameControllerBtnState state = {};
-                            state.halfTransitionCount++;
-                            state.endedDown = isDown;
-                            keyboard->dPadLeft = state;
-                        } break;
+                    memset(buff, 0, sizeof(buff));
+                    sprintf_s(buff, 100, "repeat count %i\n", *repeatCount);
+                    OutputDebugString(buff);
+                }
+#endif // HANDMADE_DEBUG
 
-                        case 'S': {
-                            GameControllerBtnState state = {};
-                            state.halfTransitionCount++;
-                            state.endedDown = isDown;
-                            keyboard->dPadDown = state;
-                        } break;
+                switch (vkCode) {
+                    case 'W': {
+                        GameControllerBtnState state = {};
+                        state.halfTransitionCount++;
+                        state.endedDown = isDown;
+                        keyboard->dPadUp = state;
+                    } break;
 
-                        case 'D': {
-                            GameControllerBtnState state = {};
-                            state.halfTransitionCount++;
-                            state.endedDown = isDown;
-                            keyboard->dPadRight = state;
-                        } break;
+                    case 'A': {
+                        GameControllerBtnState state = {};
+                        state.halfTransitionCount++;
+                        state.endedDown = isDown;
+                        keyboard->dPadLeft = state;
+                    } break;
 
-                        case 'Q': {
-                            GameControllerBtnState state = {};
-                            state.halfTransitionCount++;
-                            state.endedDown = isDown;
-                            keyboard->shoulderL1 = state;
-                        } break;
+                    case 'S': {
+                        GameControllerBtnState state = {};
+                        state.halfTransitionCount++;
+                        state.endedDown = isDown;
+                        keyboard->dPadDown = state;
+                    } break;
 
-                        case 'E': {
-                            GameControllerBtnState state = {};
-                            state.halfTransitionCount++;
-                            state.endedDown = isDown;
-                            keyboard->shoulderR1 = state;
-                        } break;
-                    }
+                    case 'D': {
+                        GameControllerBtnState state = {};
+                        state.halfTransitionCount++;
+                        state.endedDown = isDown;
+                        keyboard->dPadRight = state;
+                    } break;
 
-                    if (vkCode == 'W') {
+                    case 'Q': {
+                        GameControllerBtnState state = {};
+                        state.halfTransitionCount++;
+                        state.endedDown = isDown;
+                        keyboard->shoulderL1 = state;
+                    } break;
 
-                        char output[100] = {};
-                        sprintf_s(output, 100, "is down? %i\n", isDown);
-                        OutputDebugString(output);
-
-                        memset(output, 0, sizeof(output));
-                        sprintf_s(output, 100, "was down? %i\n", wasDown);
-                        OutputDebugString(output);
-
-                        memset(output, 0, sizeof(output));
-                        sprintf_s(output, 100, "repeat count %i\n", *repeatCount);
-                        OutputDebugString(output);
-                    }
+                    case 'E': {
+                        GameControllerBtnState state = {};
+                        state.halfTransitionCount++;
+                        state.endedDown = isDown;
+                        keyboard->shoulderR1 = state;
+                    } break;
                 }
 
             } break;
