@@ -296,11 +296,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 // Left controller thumbstick support
                 newController->isAnalog = true;
 
-                // Normalise the axis values so they're between -1.0 and 1.0
+                // Normalise the axis values so the values are between -1.0 and 1.0
                 // @see maximum signed short values
                 float32 leftThumbstickX = 0.0f;
                 if (gamepad->sThumbLX > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
-                    leftThumbstickX = ((float32)gamepad->sThumbLX / 32767.0f);
+                    leftThumbstickX = ((float32)gamepad->sThumbLX / 32512.0f);
                 }
                 else if (gamepad->sThumbLX < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
                     leftThumbstickX = ((float32)gamepad->sThumbLX / 32768.0f);
@@ -308,10 +308,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 float32 leftThumbstickY = 0.0f;
                 if (gamepad->sThumbLY > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
-                    leftThumbstickY = ((float32)gamepad->sThumbLY / 32767.0f);
+                    leftThumbstickY = ((float32)(gamepad->sThumbLY - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) / (32512.0f - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE));
                 }
                 else if (gamepad->sThumbLY < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
-                    leftThumbstickY = ((float32)gamepad->sThumbLY / 32768.0f);
+                    leftThumbstickY = ((float32)(gamepad->sThumbLY + XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) / (32768.0f - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE));
                 }
 
                 newController->leftThumbstick.position.x = leftThumbstickX;

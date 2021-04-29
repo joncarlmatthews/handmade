@@ -115,7 +115,7 @@ internal_func void gameUpdate(GameMemory *memory,
                 motor2Speed = 35000;
             }
 
-            platformControllerVibrate(0, motor1Speed, motor2Speed);
+            //platformControllerVibrate(0, motor1Speed, motor2Speed);
         }
     }
 
