@@ -439,12 +439,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             LARGE_INTEGER gameLoopPerformanceCounter = win32GetTime();
 
             // Calculate milliseconds and seconds taken per frame
-            float32 countersElapsedPerFrame         = (float32)(gameLoopPerformanceCounter.QuadPart - runningPerformanceCounter.QuadPart);
             float32 millisecondsElapsedPerFrame     = win32GetElapsedTimeMS(runningPerformanceCounter, gameLoopPerformanceCounter, globalQPCFrequency);
-
-            
             float32 secondsPerFrame                 = (1000.0f / (float32)millisecondsElapsedPerFrame);
-            //float32 secondsElapsedForWork = ((float32)countersElapsedPerFrame / (real32));
 
             // Processor running speed in GHz
             float32 speed = ((uint64)(secondsPerFrame * clockCycles_mega) / 100.0f);
@@ -458,22 +454,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             OutputDebugString(output);
 #endif
 
-            uint8 targetFPS = 30;
-            float32 targetMSPF = (1000.0f / (float32)targetFPS);
-            char buff[100];
-            //sprintf_s(buff, 100, "target FPS: %f\n", targetFPS);
-            //OutputDebugString(buff);
-
-            /*
-            if (millisecondsElapsedPerFrame < targetMSPF) {
-                float32 msToSleep = (targetMSPF - millisecondsElapsedPerFrame);
-                char output[100] = {};
-                sprintf_s(output, 100,
-                    "sleeping for %f.2ms\n", msToSleep);
-                OutputDebugString(output);
-                Sleep(msToSleep);
-            }
-            */
 
             // Reset the running clock cycles & counters.
             processorClockCycles = processorClockCyclesAfterFrame;
