@@ -46,6 +46,10 @@ global_var XInputSetStateDT *XInputSetState_ = XInputSetStateStub;
 // Direct sound support
 typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, LPUNKNOWN  pUnkOuter);
 
+// Query performance counter "frequency" value. Global so we can access it
+// in all places in the plarform layer.
+global_var int64 globalQPCFrequency;
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -61,9 +65,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 {
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
+    // @see https://www.codeproject.com/Questions/480201/whatplusQueryPerformanceFrequencyplusfor-3f
     LARGE_INTEGER perfFrequencyCounterRes;
     QueryPerformanceFrequency(&perfFrequencyCounterRes);
-    int64 countersPerSecond = perfFrequencyCounterRes.QuadPart;
+    globalQPCFrequency = perfFrequencyCounterRes.QuadPart;
+
+    /*
+     * Set the target frames per second.
+     */
+
+    // Get the refresh rate of the monitor.
+    uint8 monitorRefreshRate;
+    uint8 gameTargetFPS;
+
+    DEVMODEA devMode;
+    bool32 getDisplaySettings = EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &devMode);
+
+    if (getDisplaySettings) {
+        monitorRefreshRate = devMode.dmDisplayFrequency;
+    } else {
+        monitorRefreshRate = 60;
+    }
+
+    gameTargetFPS = (monitorRefreshRate / 2);
+
+    float32 targetMSPerFrame = (1000.0f / (float32)gameTargetFPS);
 
     // Load XInput DLL functions.
     loadXInputDLLFunctions();
@@ -178,8 +204,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         GameInput *inputOldInstance = &inputInstances[1];
 
         // Running query perforamce counter for profiling the game loop
-        LARGE_INTEGER runningPerformanceCounter;
-        QueryPerformanceCounter(&runningPerformanceCounter);
+        LARGE_INTEGER runningPerformanceCounter = win32GetTime();
 
         // Get the number of processor clock cycles
         uint64 processorClockCycles = __rdtsc();
@@ -317,7 +342,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 newController->leftThumbstick.position.x = leftThumbstickX;
                 newController->leftThumbstick.position.y = leftThumbstickY;
 
-
                 // Swap the controller intances
                 GameControllerInput *temp = newController;
                 newController = oldController;
@@ -405,17 +429,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // How long did this game loop (frame) take?
 
-            // Processor clock cycles.
+            // Processor clock cycles. __rdtsc is only for dev and not for relying on
+            // for shipped code that will run on end user's machine.
             uint64 processorClockCyclesAfterFrame = __rdtsc();
             int64 processorClockCyclesElapsed = (processorClockCyclesAfterFrame - processorClockCycles);
             float32 clockCycles_mega = ((float32)processorClockCyclesElapsed / 1000000.0f); // processorClockCyclesElapsed is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
 
             // Performance-counter frequency for MS/frame & FPS
-            LARGE_INTEGER gameLoopPerformanceCounter;
-            QueryPerformanceCounter(&gameLoopPerformanceCounter);
-            float32 countersElapsedPerFrame = (float32)(gameLoopPerformanceCounter.QuadPart - runningPerformanceCounter.QuadPart);
-            float32 millisecondsElapsedPerFrame = (((float32)countersElapsedPerFrame * 1000.0f) / (float32)countersPerSecond);
-            float32 secondsPerFrame = (1000.0f / (float32)millisecondsElapsedPerFrame);
+            LARGE_INTEGER gameLoopPerformanceCounter = win32GetTime();
+
+            // Calculate milliseconds and seconds taken per frame
+            float32 countersElapsedPerFrame         = (float32)(gameLoopPerformanceCounter.QuadPart - runningPerformanceCounter.QuadPart);
+            float32 millisecondsElapsedPerFrame     = win32GetElapsedTimeMS(runningPerformanceCounter, gameLoopPerformanceCounter, globalQPCFrequency);
+
+            
+            float32 secondsPerFrame                 = (1000.0f / (float32)millisecondsElapsedPerFrame);
+            //float32 secondsElapsedForWork = ((float32)countersElapsedPerFrame / (real32));
 
             // Processor running speed in GHz
             float32 speed = ((uint64)(secondsPerFrame * clockCycles_mega) / 100.0f);
@@ -424,10 +453,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Console log the speed:
             char output[100] = {};
             sprintf_s(output, 100,
-                        "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz)\n",
+                        "ms/frame: %.1f FSP: %.1f. Cycles: %.1fm (%.2f GHz).\n",
                         millisecondsElapsedPerFrame, secondsPerFrame, clockCycles_mega, speed);
             OutputDebugString(output);
 #endif
+
+            uint8 targetFPS = 30;
+            float32 targetMSPF = (1000.0f / (float32)targetFPS);
+            char buff[100];
+            //sprintf_s(buff, 100, "target FPS: %f\n", targetFPS);
+            //OutputDebugString(buff);
+
+            /*
+            if (millisecondsElapsedPerFrame < targetMSPF) {
+                float32 msToSleep = (targetMSPF - millisecondsElapsedPerFrame);
+                char output[100] = {};
+                sprintf_s(output, 100,
+                    "sleeping for %f.2ms\n", msToSleep);
+                OutputDebugString(output);
+                Sleep(msToSleep);
+            }
+            */
 
             // Reset the running clock cycles & counters.
             processorClockCycles = processorClockCyclesAfterFrame;
@@ -1054,6 +1100,18 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
         } // message switch
 
     } // PeekMessage loop
+}
+
+internal_func LARGE_INTEGER win32GetTime()
+{
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+    return counter;
+}
+
+internal_func float32 win32GetElapsedTimeMS(LARGE_INTEGER &startCounter, LARGE_INTEGER &endCounter, int64 countersPerSecond)
+{
+    return ( ((float32)(endCounter.QuadPart - startCounter.QuadPart) * 1000.0f) / (float32)countersPerSecond);
 }
 
 internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *newState,

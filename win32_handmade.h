@@ -76,6 +76,10 @@ typedef struct Win32AudioBuffer
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
+internal_func LARGE_INTEGER win32GetTime();
+
+internal_func float32 win32GetElapsedTimeMS(LARGE_INTEGER &startCounter, LARGE_INTEGER &endCounter, int64 countersPerSecond);
+
 internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height);
 
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32FrameBuffer buffer, uint32 width, uint32 height);
