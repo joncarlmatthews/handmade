@@ -442,7 +442,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             if (millisecondsElapsedForFrame < targetMSPerFrame) {
                 if (TIMERR_NOERROR == timeOutIntervalSet) {
                     DWORD sleepMS = (targetMSPerFrame - millisecondsElapsedForFrame);
-                    Sleep(sleepMS);
+                    if (sleepMS > 0) {
+                        Sleep(sleepMS);
+                    }
                     millisecondsElapsedForFrame = win32GetElapsedTimeMS(runningGameTime, win32GetTime(), globalQPCFrequency);
                 }else{
                     while (millisecondsElapsedForFrame < targetMSPerFrame) {
