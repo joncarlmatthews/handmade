@@ -137,7 +137,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     if (memory.permanentStorage && memory.transientStorage) {
 
         /*
-        * Set the target frames per second.
+        * Target frames per second.
         */
 
         // Get the refresh rate of the monitor.
@@ -154,6 +154,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         }
 
         float32 targetMSPerFrame = (1000.0f / (float32)gameTargetFPS);
+
+        // Set the system's minimum timer resolution to 1 millisecond
+        // so that calls to the Windows Sleep() function are more
+        // granular. E.g. the wake from the Sleep() will be checked
+        // every 1ms, rather than the system default.
+        UINT timeOutIntervalMS = 1;
+        MMRESULT timeOutIntervalSet = timeBeginPeriod(timeOutIntervalMS);
 
         /*
         * Audio
@@ -433,8 +440,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Cap framerate to target FPS if we're running ahead.
             if (millisecondsElapsedForFrame < targetMSPerFrame) {
-                while (millisecondsElapsedForFrame < targetMSPerFrame) {
+                if (TIMERR_NOERROR == timeOutIntervalSet) {
+                    DWORD sleepMS = (targetMSPerFrame - millisecondsElapsedForFrame);
+                    Sleep(sleepMS);
                     millisecondsElapsedForFrame = win32GetElapsedTimeMS(runningGameTime, win32GetTime(), globalQPCFrequency);
+                }else{
+                    while (millisecondsElapsedForFrame < targetMSPerFrame) {
+                        millisecondsElapsedForFrame = win32GetElapsedTimeMS(runningGameTime, win32GetTime(), globalQPCFrequency);
+                    }
                 }
             } else {
                 // @TODO(JM) Missed target framerate. Log.
@@ -453,7 +466,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
             // Console log the speed:
             char output[100] = {};
-            sprintf_s(output, 100,
+            sprintf_s(output, sizeof(output),
                         "ms/frame: %.1f s/frame %.5f, FSP: %.1f. Cycles: %.1fm (%.2f GHz).\n",
                         millisecondsElapsedForFrame, secondsElapsedForFrame, fps, clockCycles_mega, processorSpeed);
             OutputDebugString(output);
@@ -465,6 +478,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             runningGameTime.QuadPart = gameLoopTime.QuadPart;
 
         } // game loop
+
+        if (TIMERR_NOERROR == timeOutIntervalSet) {
+            timeEndPeriod(timeOutIntervalMS);
+        }
+
 
     }else{
         OutputDebugString("Error allocating game memory. Unable to run game\n");
@@ -1014,15 +1032,15 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
 #ifdef HANDMADE_DEBUG
                 if (vkCode == 'W') {
                     char buff[100] = {};
-                    sprintf_s(buff, 100, "is down? %i\n", isDown);
+                    sprintf_s(buff, sizeof(buff), "is down? %i\n", isDown);
                     OutputDebugString(buff);
 
                     memset(buff, 0, sizeof(buff));
-                    sprintf_s(buff, 100, "was down? %i\n", wasDown);
+                    sprintf_s(buff, sizeof(buff), "was down? %i\n", wasDown);
                     OutputDebugString(buff);
 
                     memset(buff, 0, sizeof(buff));
-                    sprintf_s(buff, 100, "repeat count %i\n", *repeatCount);
+                    sprintf_s(buff, sizeof(buff), "repeat count %i\n", *repeatCount);
                     OutputDebugString(buff);
                 }
 #endif // HANDMADE_DEBUG
