@@ -24,6 +24,9 @@
 #define assert(expression)
 #endif
 
+// Generic stuff
+#define PIf 3.14159265359f
+
 // Global variables
 #define global_var static
 

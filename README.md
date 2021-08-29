@@ -63,6 +63,23 @@ All build files and executables are placed within the root of the relevant `buil
 
 ## Episode Notes
 
+### Day 018 - Enforcing a Video Frame Rate
+
+Hertz is another term for "cycles per second".
+
+If our target is 60 frames per second, how many milliseconds do we have to compute a single frame?
+
+(1000 milliseconds in 1 second)
+
+60 frames per second  = (1000ms / 60fps) = 16.6ms per frame
+
+30 frames per second  = (1000ms / 60fps) = 33.3ms per frame
+
+`__rdtsc` is not used to determine time elapsed as it varies from machine to machine, rather it's used for profiling the performance of code.
+
+`QueryPerformanceCounter` is used to determine how long it takes for a certain amount of code to execute.
+
+
 ### Day 016 - VisualStudio Compiler Switches
 
 I'm not using the bash files and instead am using Visual Studio 2019 to run the build.
