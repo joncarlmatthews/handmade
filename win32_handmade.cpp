@@ -142,7 +142,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Get the refresh rate of the monitor.
         uint8 monitorRefreshRate;
-        uint8 gameTargetFPS = 30;
+        uint8 gameTargetFPS = 60;
 
         DEVMODEA devMode = {};
         bool32 getDisplaySettings = EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &devMode);
@@ -416,10 +416,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);
 
-            // Display the frame buffer in Windows.
-            win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-            win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
-
             // How long did this game loop (frame) take?
 
             // Calculate how many processor clock cycles elapsed for this frame.
@@ -449,6 +445,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Calculate the processor running speed in GHz
             float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
+
+            // Display the frame buffer in Windows.
+            win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
+            win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
             // Console log the speed:
