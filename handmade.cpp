@@ -28,7 +28,7 @@ internal_func void gameUpdate(GameMemory *memory,
 
     // @TODO(JM) change the sine wave cycles per second based on controller input
     gameState->sineWave.hertz = 250;
-    gameState->sineWave.sizeOfWave = 100; // Volume
+    gameState->sineWave.sizeOfWave = 150; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
