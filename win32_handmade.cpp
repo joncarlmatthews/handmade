@@ -148,7 +148,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         bool32 getDisplaySettings = EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &devMode);
 
         if (getDisplaySettings) {
-            monitorRefreshRate = devMode.dmDisplayFrequency;
+            monitorRefreshRate = (uint8)devMode.dmDisplayFrequency;
         } else {
             monitorRefreshRate = 60;
         }
@@ -441,7 +441,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Cap framerate to target FPS if we're running ahead.
             if (millisecondsElapsedForFrame < targetMSPerFrame) {
                 if (TIMERR_NOERROR == timeOutIntervalSet) {
-                    DWORD sleepMS = (targetMSPerFrame - millisecondsElapsedForFrame);
+                    DWORD sleepMS = ((DWORD)targetMSPerFrame - (DWORD)millisecondsElapsedForFrame);
                     if (sleepMS > 0) {
                         Sleep(sleepMS);
                     }
@@ -461,7 +461,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Calculate the processor running speed in GHz
             float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
 
-            // Display the frame buffer in Windows.
+            // Display the frame buffer in Windows. AKA "flip the frame" or "page flip".
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
             win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
 
@@ -1114,12 +1114,12 @@ internal_func LARGE_INTEGER win32GetTime()
     return counter;
 }
 
-internal_func float32 win32GetElapsedTimeMS(LARGE_INTEGER &startCounter, LARGE_INTEGER &endCounter, int64 countersPerSecond)
+internal_func float32 win32GetElapsedTimeMS(const LARGE_INTEGER &startCounter, const LARGE_INTEGER &endCounter, int64 countersPerSecond)
 {
     return ( ((float32)(endCounter.QuadPart - startCounter.QuadPart) * 1000.0f) / (float32)countersPerSecond);
 }
 
-internal_func float32 win32GetElapsedTimeS(LARGE_INTEGER &startCounter, LARGE_INTEGER &endCounter, int64 countersPerSecond)
+internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER &startCounter, const LARGE_INTEGER &endCounter, int64 countersPerSecond)
 {
     return ((float32)(endCounter.QuadPart - startCounter.QuadPart) / (float32)countersPerSecond);
 }
