@@ -137,23 +137,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     if (memory.permanentStorage && memory.transientStorage) {
 
         /*
-        * Target frames per second.
-        */
+         * Target frames per second.
+         */
 
         // Get the refresh rate of the monitor.
-        uint8 monitorRefreshRate;
-        uint8 gameTargetFPS = 60;
+        uint8 monitorRefreshRate    = 60;
+        uint8 gameTargetFPS         = 60;
+        float32 targetMSPerFrame    = (1000.0f / (float32)gameTargetFPS);
 
         DEVMODEA devMode = {};
         bool32 getDisplaySettings = EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &devMode);
 
         if (getDisplaySettings) {
             monitorRefreshRate = (uint8)devMode.dmDisplayFrequency;
-        } else {
-            monitorRefreshRate = 60;
         }
-
-        float32 targetMSPerFrame = (1000.0f / (float32)gameTargetFPS);
 
         // Set the system's minimum timer resolution to 1 millisecond
         // so that calls to the Windows Sleep() function are more
@@ -163,8 +160,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         MMRESULT timeOutIntervalSet = timeBeginPeriod(timeOutIntervalMS);
 
         /*
-        * Audio
-        */
+         * Audio
+         */
 
         // Create the Windows audio buffer
         Win32AudioBuffer win32AudioBuffer = { 0 };
@@ -180,15 +177,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         audioBuffer.memory = VirtualAlloc(NULL, win32AudioBuffer.bufferSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
         /*
-        * Graphics
-        */
+         * Graphics
+         */
 
         // Create the Windows frame buffer
         win32InitFrameBuffer(&win32FrameBuffer, 1920, 1080);
 
         /*
-        * Controllers
-        */
+         * Controllers
+         */
 
         // How many controllers does the platform layer support?
         ControllerCounts controllerCounts = {};
@@ -1114,12 +1111,12 @@ internal_func LARGE_INTEGER win32GetTime()
     return counter;
 }
 
-internal_func float32 win32GetElapsedTimeMS(const LARGE_INTEGER &startCounter, const LARGE_INTEGER &endCounter, int64 countersPerSecond)
+internal_func float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond)
 {
     return ( ((float32)(endCounter.QuadPart - startCounter.QuadPart) * 1000.0f) / (float32)countersPerSecond);
 }
 
-internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER &startCounter, const LARGE_INTEGER &endCounter, int64 countersPerSecond)
+internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond)
 {
     return ((float32)(endCounter.QuadPart - startCounter.QuadPart) / (float32)countersPerSecond);
 }
