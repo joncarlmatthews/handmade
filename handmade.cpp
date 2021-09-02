@@ -123,84 +123,12 @@ internal_func void gameUpdate(GameMemory *memory,
     gameWriteFrameBuffer(frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
 }
 
-internal_func void writeRectangle(FrameBuffer *buffer, uint64 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
-{
-    uint32 *row = (uint32 *)buffer->memory;
-
-    // Move down to starting row
-    row = (row + (buffer->width * yOffset));
-    row = (row + xOffset);
-
-    // Down
-    for (int64 i = 0; i < height; i++) {
-        // Accross
-        uint32 *pixel = (uint32 *)row;
-        for (int64 x = 0; x < width; x++) {
-            *pixel = hexColour;
-            pixel = (pixel + 1);
-        }
-        row = (row + buffer->width);
-    }
-}
-
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
                                         AncillaryPlatformLayerData ancillaryPlatformLayerData,
                                         int redOffset,
                                         int greenOffset,
                                         AudioBuffer *audioBuffer)
 {
-    // Create a pointer to bitmapMemory
-    // In order for us to have maximum control over the pointer arithmatic, we cast it to
-    // an 1 byte datatype. This enables us to step through the memory block 1 byte
-    // at a time.
-    uint8 *row = (uint8*)buffer->memory;
-
-    // Create a loop that iterates for the same number of rows we have for the viewport. 
-    // (We know the number of pixel rows from the viewport height)
-    // We name the iterator x to denote the x axis (along the corridor)
-    for (uint32 x = 0; x < buffer->height; x++) {
-
-        // We know that each pixel is 4 bytes wide (bytesPerPixel) so we make
-        // our pointer the same width to grab the relevant block of memory for
-        // each pixel. (32 bits = 4 bytes)
-
-        uint32 *pixel = (uint32*)row;
-
-        // Create a loop that iterates for the same number of columns we have for the viewport.
-        // (We know the number of pixel columns from the viewport width)
-        // We name the iterator y to denote the y axis (up the stairs)
-        for (uint32 y = 0; y < buffer->width; y++) {
-
-            /*
-             * Write to this pixel...
-             *
-             * Each pixel looks like this (in hex): 00 00 00 00
-             * Each of the 00 represents 1 of our 4-byte pixels.
-             *
-             * As the order of bytes is little endian, the RGB bytes are backwards
-             * when writting to them:
-             *
-             * B    G   R   Padding
-             * 00   00  00  00
-            */
-
-            uint8 red     = (uint8)(x + redOffset);     // Chop off anything after the first 8 bits of the variable x + offset
-            uint8 green   = (uint8)(y + greenOffset);   // Chop off anything after the first 8 bits of the variable y + offset
-            uint8 blue    = 0;
-
-            //*pixel = ((red << 16) | (green << 8) | blue);
-            //*pixel = 0xffffff;
-
-            // Move the pointer forward to the start of the next 4 byte block
-            pixel = (pixel + 1);
-        }
-
-        // Move the row pointer forward by the byte width of the row so that for
-        // the next iteration of the row we're then starting at the first byte
-        // of that particular row
-        row = (row + buffer->byteWidthPerRow);
-    }
-
     // Background fill
     writeRectangle(buffer, 0x003366, buffer->height, buffer->width, 0, 0);
 
@@ -211,22 +139,22 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
         uint32 yOffset = 100;
         writeRectangle(buffer, 0x009933, height, width, yOffset, 0);
     }
-   
+
+    // Play cursor
     {
         uint16 height = 100;
+        uint16 width = 10;
         uint32 yOffset = 100;
         uint32 xOffset = (ancillaryPlatformLayerData.audioBuffer.playCursorPosition / 100);
-        //uint16 width = (buffer->width - xOffset);
-        uint16 width = 10;
         writeRectangle(buffer, 0xff00ff, height, width, yOffset, xOffset);
-
     }
 
+    // Write cursor
     {
         uint16 height = 100;
+        uint16 width = 10;
         uint32 yOffset = 100;
         uint32 xOffset = (ancillaryPlatformLayerData.audioBuffer.writeCursorPosition / 100);
-        uint16 width = 10;
         writeRectangle(buffer, 0xff0000, height, width, yOffset, xOffset);
     }
 }
@@ -262,6 +190,26 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
     audioBuffer->platformBufferSizeInBytes  = platformBufferSizeInBytes;
 
     return audioBuffer;
+}
+
+internal_func void writeRectangle(FrameBuffer *buffer, uint64 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
+{
+    uint32 *row = (uint32 *)buffer->memory;
+
+    // Move down to starting row
+    row = (row + (buffer->width * yOffset));
+    row = (row + xOffset);
+
+    // Down
+    for (int64 i = 0; i < height; i++) {
+        // Accross
+        uint32 *pixel = (uint32 *)row;
+        for (int64 x = 0; x < width; x++) {
+            *pixel = hexColour;
+            pixel = (pixel + 1);
+        }
+        row = (row + buffer->width);
+    }
 }
 
 uint64 kibibytesToBytes(uint8 kibibytes)

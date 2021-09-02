@@ -255,6 +255,8 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
                                         int greenOffset,
                                         AudioBuffer *audioBuffer);
 
+internal_func void writeRectangle(FrameBuffer *buffer, uint64 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
+
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
  * the code will assert if the value passed in is larger than 4 bytes
