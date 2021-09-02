@@ -142,7 +142,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Get the refresh rate of the monitor.
         uint8 monitorRefreshRate    = 60;
-        uint8 gameTargetFPS         = 60;
+        uint8 gameTargetFPS         = 30;
         float32 targetMSPerFrame    = (1000.0f / (float32)gameTargetFPS);
 
         DEVMODEA devMode = {};
@@ -205,6 +205,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Create a variable to hold the current time (we'll use this for profiling the elapsed game loop time)
         LARGE_INTEGER runningGameTime = win32GetTime();
+
+        AncillaryPlatformLayerData ancillaryPlatformLayerData = {};
 
         running = true;
 
@@ -383,12 +385,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
                     // one chuck of data.
                     if (writeCursorOffsetInBytes > playCursorOffsetInBytes) {
-                        lockSizeInBytes = ((win32AudioBuffer.bufferSizeInBytes - writeCursorOffsetInBytes) + (playCursorOffsetInBytes));
-                    }
-                    else if (writeCursorOffsetInBytes < playCursorOffsetInBytes) {
+                        lockSizeInBytes = (win32AudioBuffer.bufferSizeInBytes - (writeCursorOffsetInBytes - playCursorOffsetInBytes));
+                    } else if (writeCursorOffsetInBytes < playCursorOffsetInBytes) {
                         lockSizeInBytes = ((win32AudioBuffer.bufferSizeInBytes - (win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
                     }
 
+                    ancillaryPlatformLayerData.audioBuffer.playCursorPosition = playCursorOffsetInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.writeCursorPosition = writeCursorOffsetInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes = lockSizeInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.lockOffsetInBytes = lockOffsetInBytes;
                 }
                 else {
                     OutputDebugString("Could not get the position of the play and write cursors in the secondary sound buffer");
@@ -415,7 +420,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 win32FrameBuffer.memory);
 
             // Main game code.
-            gameUpdate(&memory, &frameBuffer, &audioBuffer, inputInstances, &controllerCounts);
+            gameUpdate(&memory, &frameBuffer, &audioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);

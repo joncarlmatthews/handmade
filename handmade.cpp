@@ -6,7 +6,8 @@ internal_func void gameUpdate(GameMemory *memory,
                                 FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
-                                ControllerCounts *controllerCounts)
+                                ControllerCounts *controllerCounts,
+                                AncillaryPlatformLayerData ancillaryPlatformLayerData)
 {
     /**
      * Game state initialisation
@@ -115,14 +116,38 @@ internal_func void gameUpdate(GameMemory *memory,
                 motor2Speed = 35000;
             }
 
-            //platformControllerVibrate(0, motor1Speed, motor2Speed);
+            platformControllerVibrate(0, motor1Speed, motor2Speed);
         }
     }
 
-    gameWriteFrameBuffer(frameBuffer, gameState->redOffset, gameState->greenOffset);
+    gameWriteFrameBuffer(frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
 }
 
-internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset)
+internal_func void writeRectangle(FrameBuffer *buffer, uint64 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
+{
+    uint32 *row = (uint32 *)buffer->memory;
+
+    // Move down to starting row
+    row = (row + (buffer->width * yOffset));
+    row = (row + xOffset);
+
+    // Down
+    for (int64 i = 0; i < height; i++) {
+        // Accross
+        uint32 *pixel = (uint32 *)row;
+        for (int64 x = 0; x < width; x++) {
+            *pixel = hexColour;
+            pixel = (pixel + 1);
+        }
+        row = (row + buffer->width);
+    }
+}
+
+internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
+                                        AncillaryPlatformLayerData ancillaryPlatformLayerData,
+                                        int redOffset,
+                                        int greenOffset,
+                                        AudioBuffer *audioBuffer)
 {
     // Create a pointer to bitmapMemory
     // In order for us to have maximum control over the pointer arithmatic, we cast it to
@@ -163,7 +188,8 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
             uint8 green   = (uint8)(y + greenOffset);   // Chop off anything after the first 8 bits of the variable y + offset
             uint8 blue    = 0;
 
-            *pixel = ((red << 16) | (green << 8) | blue);
+            //*pixel = ((red << 16) | (green << 8) | blue);
+            //*pixel = 0xffffff;
 
             // Move the pointer forward to the start of the next 4 byte block
             pixel = (pixel + 1);
@@ -173,6 +199,35 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int 
         // the next iteration of the row we're then starting at the first byte
         // of that particular row
         row = (row + buffer->byteWidthPerRow);
+    }
+
+    // Background fill
+    writeRectangle(buffer, 0x003366, buffer->height, buffer->width, 0, 0);
+
+    // Audio buffer box
+    {
+        uint16 height = 100;
+        uint16 width = (audioBuffer->platformBufferSizeInBytes / 100);
+        uint32 yOffset = 100;
+        writeRectangle(buffer, 0x009933, height, width, yOffset, 0);
+    }
+   
+    {
+        uint16 height = 100;
+        uint32 yOffset = 100;
+        uint32 xOffset = (ancillaryPlatformLayerData.audioBuffer.playCursorPosition / 100);
+        //uint16 width = (buffer->width - xOffset);
+        uint16 width = 10;
+        writeRectangle(buffer, 0xff00ff, height, width, yOffset, xOffset);
+
+    }
+
+    {
+        uint16 height = 100;
+        uint32 yOffset = 100;
+        uint32 xOffset = (ancillaryPlatformLayerData.audioBuffer.writeCursorPosition / 100);
+        uint16 width = 10;
+        writeRectangle(buffer, 0xff0000, height, width, yOffset, xOffset);
     }
 }
 

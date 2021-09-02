@@ -40,6 +40,10 @@
 // Return the number of elements in a static array
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+// Maximum number of supported controllers
+// 1 keyboard, 4 gamepad controllers.
+#define MAX_CONTROLLERS 5
+
 /**
  * Struct for the screen buffer
  */
@@ -96,10 +100,6 @@ typedef struct GameAudioBuffer
     uint32 platformRunningByteIndex;
 
 } AudioBuffer;
-
-// Maximum number of supported controllers
-// 1 keyboard, 4 gamepad controllers.
-#define MAX_CONTROLLERS 5
 
 typedef struct ControllerCounts
 {
@@ -160,9 +160,17 @@ typedef struct GameControllerInput
 
 typedef struct GameInput
 {
-   
     GameControllerInput controllers[MAX_CONTROLLERS];
 } GameInput;
+
+typedef struct AncillaryPlatformLayerData {
+    struct {
+        DWORD playCursorPosition;
+        DWORD writeCursorPosition;
+        DWORD lockSizeInBytes;
+        DWORD lockOffsetInBytes;
+    } audioBuffer;
+} AncillaryPlatformLayerData;
 
 typedef struct SineWave
 {
@@ -219,7 +227,8 @@ internal_func void gameUpdate(GameMemory *memory,
                                 FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
-                                uint8 maxControllers);
+                                uint8 maxControllers,
+                                AncillaryPlatformLayerData ancillaryPlatformLayerData);
 
 internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
                                                 uint32 height,
@@ -241,8 +250,10 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
                                                 uint32 platformLockOffsetInBytes);
 
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
-                                            int redOffset,
-                                            int greenOffset);
+                                        AncillaryPlatformLayerData ancillaryPlatformLayerData,
+                                        int redOffset,
+                                        int greenOffset,
+                                        AudioBuffer *audioBuffer);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
