@@ -1,21 +1,9 @@
 #ifndef HEADER_HANDMADE
 #define HEADER_HANDMADE
 
-/*
- * HANDMADE_LOCAL_BUILD
- *  - 0 for non-dev builds
- *  - 1 if the build is on a local development machine
- *
- * HANDMADE_DEBUG
- *  - 0 no arbitrary debug
- *  - 1 arbitrary debug
- * 
- * HANDMADE_DEBUG_FPS
- *  - 0 no FPS console debug
- *  - 1 to debug FPS counts to the console.
- */
 
 #define HANDMADE_DEBUG_FPS
+#define HANDMADE_DEBUG_AUDIO
 
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
@@ -44,8 +32,17 @@
 // 1 keyboard, 4 gamepad controllers.
 #define MAX_CONTROLLERS 5
 
-/**
+/*
  * Struct for the screen buffer
+ * 
+ * Each pixel looks like this (in hex): 00 00 00 00
+ * Each of the 00 represents 1 of our 4-byte pixels.
+ *
+ * As the order of bytes is little endian, the RGB bytes are backwards
+ * when writting to them:
+ *
+ * B    G   R   Padding
+ * 00   00  00  00
  */
 typedef struct GameFrameBuffer
 {
@@ -255,7 +252,7 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
                                         int greenOffset,
                                         AudioBuffer *audioBuffer);
 
-internal_func void writeRectangle(FrameBuffer *buffer, uint64 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
+internal_func void writeRectangle(FrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,

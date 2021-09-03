@@ -29,7 +29,7 @@ internal_func void gameUpdate(GameMemory *memory,
 
     // @TODO(JM) change the sine wave cycles per second based on controller input
     gameState->sineWave.hertz = 250;
-    gameState->sineWave.sizeOfWave = 150; // Volume
+    gameState->sineWave.sizeOfWave = 100; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
@@ -130,33 +130,40 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
                                         AudioBuffer *audioBuffer)
 {
     // Background fill
-    writeRectangle(buffer, 0x003366, buffer->height, buffer->width, 0, 0);
+    writeRectangle(buffer, 0x333399, buffer->height, buffer->width, 0, 0);
+
+#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
+
+    float32 coefficient = ((float32)buffer->width / (float32)audioBuffer->platformBufferSizeInBytes);
 
     // Audio buffer box
     {
         uint16 height = 100;
-        uint16 width = (audioBuffer->platformBufferSizeInBytes / 100);
+        uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
         uint32 yOffset = 100;
-        writeRectangle(buffer, 0x009933, height, width, yOffset, 0);
+        writeRectangle(buffer, 0x000066, height, width, yOffset, 0);
     }
 
-    // Play cursor
+    // Play cursor (green)
     {
         uint16 height = 100;
         uint16 width = 10;
         uint32 yOffset = 100;
-        uint32 xOffset = (ancillaryPlatformLayerData.audioBuffer.playCursorPosition / 100);
-        writeRectangle(buffer, 0xff00ff, height, width, yOffset, xOffset);
+        uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.playCursorPosition * coefficient);
+        writeRectangle(buffer, 0x006600, height, width, yOffset, xOffset);
     }
 
-    // Write cursor
+    // Write cursor (red)
     {
         uint16 height = 100;
         uint16 width = 10;
         uint32 yOffset = 100;
-        uint32 xOffset = (ancillaryPlatformLayerData.audioBuffer.writeCursorPosition / 100);
-        writeRectangle(buffer, 0xff0000, height, width, yOffset, xOffset);
+        uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.writeCursorPosition * coefficient);
+        writeRectangle(buffer, 0xcc0000, height, width, yOffset, xOffset);
     }
+
+#endif
+
 }
 
 internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
@@ -192,7 +199,7 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
     return audioBuffer;
 }
 
-internal_func void writeRectangle(FrameBuffer *buffer, uint64 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
+internal_func void writeRectangle(FrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
 {
     uint32 *row = (uint32 *)buffer->memory;
 
@@ -201,10 +208,10 @@ internal_func void writeRectangle(FrameBuffer *buffer, uint64 hexColour, uint64 
     row = (row + xOffset);
 
     // Down
-    for (int64 i = 0; i < height; i++) {
+    for (uint64 i = 0; i < height; i++) {
         // Accross
         uint32 *pixel = (uint32 *)row;
-        for (int64 x = 0; x < width; x++) {
+        for (uint64 x = 0; x < width; x++) {
             *pixel = hexColour;
             pixel = (pixel + 1);
         }
