@@ -277,23 +277,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 newController->isConnected = true;
 
-                win32ProcessXInputControllerButton(&newController->up,
-                    &oldController->up,
+                win32ProcessXInputControllerButton(&newController->dPadUp,
+                    &oldController->dPadUp,
                     gamepad,
                     XINPUT_GAMEPAD_DPAD_UP);
 
-                win32ProcessXInputControllerButton(&newController->up,
-                    &oldController->up,
+                win32ProcessXInputControllerButton(&newController->dPadDown,
+                    &oldController->dPadDown,
                     gamepad,
                     XINPUT_GAMEPAD_DPAD_DOWN);
 
-                win32ProcessXInputControllerButton(&newController->up,
-                    &oldController->up,
+                win32ProcessXInputControllerButton(&newController->dPadLeft,
+                    &oldController->dPadLeft,
                     gamepad,
                     XINPUT_GAMEPAD_DPAD_LEFT);
 
-                win32ProcessXInputControllerButton(&newController->up,
-                    &oldController->up,
+                win32ProcessXInputControllerButton(&newController->dPadRight,
+                    &oldController->dPadRight,
                     gamepad,
                     XINPUT_GAMEPAD_DPAD_RIGHT);
 

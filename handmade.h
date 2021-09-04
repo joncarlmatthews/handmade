@@ -2,7 +2,7 @@
 #define HEADER_HANDMADE
 
 
-#define HANDMADE_DEBUG_FPS
+//#define HANDMADE_DEBUG_FPS
 #define HANDMADE_DEBUG_AUDIO
 
 // If assertion isn't true, write to the null pointer and crash the program.
@@ -189,6 +189,8 @@ typedef struct GameState
     SineWave sineWave;
     int32 redOffset;
     int32 greenOffset;
+    uint16 sineWaveHertz[5] = { 60, 100, 200, 300, 400};
+    uint8 sineWaveHertzPos = 2;
 } GameState;
 
 typedef struct GameMemory

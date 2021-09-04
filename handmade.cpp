@@ -20,6 +20,35 @@ internal_func void gameUpdate(GameMemory *memory,
         gameState->sineWave = {0};
         gameState->greenOffset = 1;
         gameState->redOffset = 2;
+
+        for (size_t i = 0; i < countArray(gameState->sineWaveHertz); i++)
+        {
+            uint16 hertz;
+
+            switch (i) {
+                default:
+                case 0:
+                    hertz = 60;
+                    break;
+                case 1:
+                    hertz = 100;
+                    break;
+                case 2:
+                    hertz = 200;
+                    break;
+                case 3:
+                    hertz = 300;
+                    break;
+                case 4:
+                    hertz = 400;
+                    break;
+            }
+
+            gameState->sineWaveHertz[i] = hertz;
+        }
+
+        gameState->sineWaveHertzPos = 2;
+
         memory->initialised = true;
     }
 
@@ -28,7 +57,23 @@ internal_func void gameUpdate(GameMemory *memory,
      */
 
     // @TODO(JM) change the sine wave cycles per second based on controller input
-    gameState->sineWave.hertz = 250;
+    int16 sineWaveHertzPos = gameState->sineWaveHertzPos;
+
+    if (inputInstances->controllers[1].dPadUp.endedDown) {
+        if (sineWaveHertzPos != (countArray(gameState->sineWaveHertz) - 1)) {
+            sineWaveHertzPos = (sineWaveHertzPos + 1);
+        }
+    }
+
+    if (inputInstances->controllers[1].dPadDown.endedDown) {
+        if (sineWaveHertzPos != 0) {
+            sineWaveHertzPos = (sineWaveHertzPos - 1);
+        }
+    }
+
+    gameState->sineWaveHertzPos = sineWaveHertzPos;
+
+    gameState->sineWave.hertz = gameState->sineWaveHertz[gameState->sineWaveHertzPos];
     gameState->sineWave.sizeOfWave = 100; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
