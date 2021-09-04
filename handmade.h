@@ -81,9 +81,6 @@ typedef struct GameAudioBuffer
     // How many seconds worth of the audio should our buffer hold?
     uint8 secondsWorthOfAudio;
 
-    // Target frames per second for our frame buffer.
-    uint8 fps;
-
     // How many samples should we be writing to next?
     uint32 samplesToWrite;
 

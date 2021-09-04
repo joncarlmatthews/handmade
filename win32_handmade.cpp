@@ -351,6 +351,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Size, in bytes, of the portion of the buffer to write.
             DWORD lockSizeInBytes = 0;
 
+            // Difference in bytes between the play and the write cursors.
+            DWORD writePlayDifference = 0;
+
             // Offset, in bytes, from the start of the buffer to the point where the lock begins.
             // We Mod the result by the total number of bytes so that the value wraps.
             // Result will look like this: 0, 4, 8, 12, 16, 24 etc...
@@ -384,9 +387,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     // one chuck of data.
                     if (writeCursorOffsetInBytes > playCursorOffsetInBytes) {
                         lockSizeInBytes = (win32AudioBuffer.bufferSizeInBytes - (writeCursorOffsetInBytes - playCursorOffsetInBytes));
+                        writePlayDifference = (writeCursorOffsetInBytes - playCursorOffsetInBytes);
                     } else if (writeCursorOffsetInBytes < playCursorOffsetInBytes) {
                         lockSizeInBytes = ((win32AudioBuffer.bufferSizeInBytes - (win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
+                        writePlayDifference = (playCursorOffsetInBytes - writeCursorOffsetInBytes);
                     }
+
+#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
+
+                    // @TODO(JM) Make audio latency match a single frame
+                    // @TODO(JM) Bug fix for: every audio buffer wrap, there is a ~970ms audio latency calculation
+                    if (audioBuffer.platformBufferSizeInBytes > 0) {
+                        uint64 samplesLatent = (writePlayDifference / audioBuffer.bytesPerSample);
+                        float32 percentageOfAudioBuffer = ((((float32)samplesLatent * 100) / (float32)audioBuffer.samplesToWrite) / 100);
+                        float32 latency = ((1000.f * audioBuffer.secondsWorthOfAudio) * percentageOfAudioBuffer);
+                        char buff[50] = { 0 };
+                        sprintf_s(buff, sizeof(buff), "Audio latency: %.2fms (%.2f frames)\n", latency, (latency / targetMSPerFrame));
+                        OutputDebugString(buff);
+                    }
+
+#endif // HANDMADE_DEBUG_AUDIO
 
                     ancillaryPlatformLayerData.audioBuffer.playCursorPosition = playCursorOffsetInBytes;
                     ancillaryPlatformLayerData.audioBuffer.writeCursorPosition = writeCursorOffsetInBytes;
@@ -870,30 +890,23 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
         // that we have within the first block of memory IDirectSoundBuffer8::Lock has told us we can write to.
         uint64 audioSampleGroupsChunkOne = (chunkOneBytes / win32AudioBuffer->bytesPerSample);
 
-        // Grab the first 16-bits of the first audio sample from the first block of memory 
-        uint16 *audioSample = (uint16*)chunkOnePtr;
+        // Grab the first 4-bytes of the first audio sample grouping from the first block of memory 
+        uint32 *audioSample = (uint32 *)chunkOnePtr;
 
-        // Create a pointer to the game audio buffer.
-        uint16 *buffer = (uint16 *)audioBuffer->memory;
+        // Create a pointer to the game audio buffer with the same 4-byte single audio sample grouping range.
+        uint32 *buffer = (uint32 *)audioBuffer->memory;
 
-        // Advance the pointer to match the same as the lock offset.
-        // Divide by 2 as buffer is 2 bytes, whereas lockOffsetInBytes is a single byte.
-        buffer = (buffer + (lockOffsetInBytes / 2));
+        // Advance the game audio buffer pointer to match the same as the lock offset.
+        buffer = (buffer + (lockOffsetInBytes / win32AudioBuffer->bytesPerSample));
 
-        // Iterate over each 2 - bytes and write the same data for both...
+        // Iterate over each individual audio sample grouping (2-bytes for the left channel, 2-bytes for the right channel)
+        // and write the same data for both...
         for (size_t i = 0; i < audioSampleGroupsChunkOne; i++) {
 
-            // Left channel (16-bits)
+            // Left + right channel (4-bytes)
             *audioSample = *buffer;
 
-            // Move to the right sample (16-bits)
-            audioSample++;
-            buffer++;
-
-            // Right channel (16-bits)
-            *audioSample = *buffer;
-
-            // Move cursor to the start of the next sample grouping.
+            // Move cursor to the start of the next audio sample grouping.
             audioSample++;
             buffer++;
         }
@@ -901,26 +914,19 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
         // Calculate how many samples we need to write to in our second block of memory.
         uint64 audioSampleGroupsChunkTwo = (chunkTwoBytes / win32AudioBuffer->bytesPerSample);
 
-        // Grab the first 16-bit of the first audio sample from the second block of memory 
-        uint16 *audioTwoSample = (uint16*)chunkTwoPtr;
+        // Grab the first 4-bytes of the first audio sample grouping from the second block of memory 
+        uint32 *audioTwoSample = (uint32*)chunkTwoPtr;
 
         // Set the audio buffer pointer back to the start of the memory block as the
         // second block of memory always starts from the beginning
-        buffer = (uint16 *)audioBuffer->memory;
+        buffer = (uint32 *)audioBuffer->memory;
 
         for (size_t i = 0; i < audioSampleGroupsChunkTwo; i++) {
 
-            // Left channel (16-bits)
+            // Left + right channel (4-bytes)
             *audioTwoSample = *buffer;
 
-            // Move to the right sample (16-bits)
-            audioTwoSample++;
-            buffer++;
-
-            // Right channel (16-bits)
-            *audioTwoSample = *buffer;
-
-            // Move cursor to the start of the next sample grouping.
+            // Move cursor to the start of the next audio sample grouping.
             audioTwoSample++;
             buffer++;
         }

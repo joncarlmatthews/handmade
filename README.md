@@ -89,6 +89,10 @@ HANDMADE_DEBUG_AUDIO
 
 ## Episode Notes
 
+### Day 019 - Improving Audio Synchronization
+
+Good description of strategy here: [https://youtu.be/qFl62ka51Mc?t=5499](https://youtu.be/qFl62ka51Mc?t=5499)
+
 ### Day 018 - Enforcing a Video Frame Rate
 
 Hertz is another term for "cycles per second".
