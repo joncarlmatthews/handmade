@@ -390,13 +390,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         writePlayDifference = (writeCursorOffsetInBytes - playCursorOffsetInBytes);
                     } else if (writeCursorOffsetInBytes < playCursorOffsetInBytes) {
                         lockSizeInBytes = ((win32AudioBuffer.bufferSizeInBytes - (win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
-                        writePlayDifference = (playCursorOffsetInBytes - writeCursorOffsetInBytes);
+                        writePlayDifference = ((win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes) + writeCursorOffsetInBytes);
                     }
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
 
                     // @TODO(JM) Make audio latency match a single frame
-                    // @TODO(JM) Bug fix for: every audio buffer wrap, there is a ~970ms audio latency calculation
                     if (audioBuffer.platformBufferSizeInBytes > 0) {
                         uint64 samplesLatent = (writePlayDifference / audioBuffer.bytesPerSample);
                         float32 percentageOfAudioBuffer = ((((float32)samplesLatent * 100) / (float32)audioBuffer.samplesToWrite) / 100);
