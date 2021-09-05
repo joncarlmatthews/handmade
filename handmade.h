@@ -1,21 +1,9 @@
 #ifndef HEADER_HANDMADE
 #define HEADER_HANDMADE
 
-/*
- * HANDMADE_LOCAL_BUILD
- *  - 0 for non-dev builds
- *  - 1 if the build is on a local development machine
- *
- * HANDMADE_DEBUG
- *  - 0 no arbitrary debug
- *  - 1 arbitrary debug
- * 
- * HANDMADE_DEBUG_FPS
- *  - 0 no FPS console debug
- *  - 1 to debug FPS counts to the console.
- */
 
-#define HANDMADE_DEBUG_FPS
+//#define HANDMADE_DEBUG_FPS
+#define HANDMADE_DEBUG_AUDIO
 
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
@@ -40,8 +28,21 @@
 // Return the number of elements in a static array
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-/**
+// Maximum number of supported controllers
+// 1 keyboard, 4 gamepad controllers.
+#define MAX_CONTROLLERS 5
+
+/*
  * Struct for the screen buffer
+ * 
+ * Each pixel looks like this (in hex): 00 00 00 00
+ * Each of the 00 represents 1 of our 4-byte pixels.
+ *
+ * As the order of bytes is little endian, the RGB bytes are backwards
+ * when writting to them:
+ *
+ * B    G   R   Padding
+ * 00   00  00  00
  */
 typedef struct GameFrameBuffer
 {
@@ -80,9 +81,6 @@ typedef struct GameAudioBuffer
     // How many seconds worth of the audio should our buffer hold?
     uint8 secondsWorthOfAudio;
 
-    // Target frames per second for our frame buffer.
-    uint8 fps;
-
     // How many samples should we be writing to next?
     uint32 samplesToWrite;
 
@@ -96,10 +94,6 @@ typedef struct GameAudioBuffer
     uint32 platformRunningByteIndex;
 
 } AudioBuffer;
-
-// Maximum number of supported controllers
-// 1 keyboard, 4 gamepad controllers.
-#define MAX_CONTROLLERS 5
 
 typedef struct ControllerCounts
 {
@@ -160,9 +154,17 @@ typedef struct GameControllerInput
 
 typedef struct GameInput
 {
-   
     GameControllerInput controllers[MAX_CONTROLLERS];
 } GameInput;
+
+typedef struct AncillaryPlatformLayerData {
+    struct {
+        DWORD playCursorPosition;
+        DWORD writeCursorPosition;
+        DWORD lockSizeInBytes;
+        DWORD lockOffsetInBytes;
+    } audioBuffer;
+} AncillaryPlatformLayerData;
 
 typedef struct SineWave
 {
@@ -184,6 +186,8 @@ typedef struct GameState
     SineWave sineWave;
     int32 redOffset;
     int32 greenOffset;
+    uint16 sineWaveHertz[5] = { 60, 100, 200, 300, 400};
+    uint8 sineWaveHertzPos = 2;
 } GameState;
 
 typedef struct GameMemory
@@ -219,7 +223,8 @@ internal_func void gameUpdate(GameMemory *memory,
                                 FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
-                                uint8 maxControllers);
+                                uint8 maxControllers,
+                                AncillaryPlatformLayerData ancillaryPlatformLayerData);
 
 internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
                                                 uint32 height,
@@ -241,8 +246,12 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
                                                 uint32 platformLockOffsetInBytes);
 
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
-                                            int redOffset,
-                                            int greenOffset);
+                                        AncillaryPlatformLayerData ancillaryPlatformLayerData,
+                                        int redOffset,
+                                        int greenOffset,
+                                        AudioBuffer *audioBuffer);
+
+internal_func void writeRectangle(FrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,

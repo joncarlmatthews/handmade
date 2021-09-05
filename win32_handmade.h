@@ -85,13 +85,13 @@ internal_func LARGE_INTEGER win32GetTime();
  * Calculates the time elapsed (milliseconds) between time a (startCounter) and time b (endCounter)
  * relative to a counters per second value
  */
-internal_func float32 win32GetElapsedTimeMS(LARGE_INTEGER &startCounter, LARGE_INTEGER &endCounter, int64 countersPerSecond);
+internal_func float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
 
 /*
  * Calculates the time elapsed (in seconds) between time a (startCounter) and time b (endCounter)
  * relative to a counters per second value
  */
-internal_func float32 win32GetElapsedTimeS(LARGE_INTEGER &startCounter, LARGE_INTEGER &endCounter, int64 countersPerSecond);
+internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
 
 internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height);
 

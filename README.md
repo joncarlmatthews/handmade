@@ -61,7 +61,37 @@ or
 
 All build files and executables are placed within the root of the relevant `build\<arch>\` folder.
 
+## Command line flags
+
+```
+HANDMADE_LOCAL_BUILD
+  - 0 for all non-dev builds
+  - 1 to include code that should only be included within a local build of the game
+```
+
+```
+HANDMADE_DEBUG
+  - 0 no arbitrary debug
+  - 1 arbitrary debug
+```
+
+```
+HANDMADE_DEBUG_FPS
+  - 0 no FPS console debug
+  - 1 to debug FPS counts to the console.
+```
+
+```
+HANDMADE_DEBUG_AUDIO
+  - 0 no audio debug
+  - 1 debug audio
+```
+
 ## Episode Notes
+
+### Day 019 - Improving Audio Synchronization
+
+Good description of strategy here: [https://youtu.be/qFl62ka51Mc?t=5499](https://youtu.be/qFl62ka51Mc?t=5499)
 
 ### Day 018 - Enforcing a Video Frame Rate
 

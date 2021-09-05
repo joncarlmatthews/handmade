@@ -6,7 +6,8 @@ internal_func void gameUpdate(GameMemory *memory,
                                 FrameBuffer *frameBuffer,
                                 AudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
-                                ControllerCounts *controllerCounts)
+                                ControllerCounts *controllerCounts,
+                                AncillaryPlatformLayerData ancillaryPlatformLayerData)
 {
     /**
      * Game state initialisation
@@ -19,6 +20,35 @@ internal_func void gameUpdate(GameMemory *memory,
         gameState->sineWave = {0};
         gameState->greenOffset = 1;
         gameState->redOffset = 2;
+
+        for (size_t i = 0; i < countArray(gameState->sineWaveHertz); i++)
+        {
+            uint16 hertz;
+
+            switch (i) {
+                default:
+                case 0:
+                    hertz = 60;
+                    break;
+                case 1:
+                    hertz = 100;
+                    break;
+                case 2:
+                    hertz = 200;
+                    break;
+                case 3:
+                    hertz = 300;
+                    break;
+                case 4:
+                    hertz = 400;
+                    break;
+            }
+
+            gameState->sineWaveHertz[i] = hertz;
+        }
+
+        gameState->sineWaveHertzPos = 2;
+
         memory->initialised = true;
     }
 
@@ -27,8 +57,24 @@ internal_func void gameUpdate(GameMemory *memory,
      */
 
     // @TODO(JM) change the sine wave cycles per second based on controller input
-    gameState->sineWave.hertz = 250;
-    gameState->sineWave.sizeOfWave = 150; // Volume
+    int16 sineWaveHertzPos = gameState->sineWaveHertzPos;
+
+    if (inputInstances->controllers[1].dPadUp.endedDown) {
+        if (sineWaveHertzPos != (countArray(gameState->sineWaveHertz) - 1)) {
+            sineWaveHertzPos = (sineWaveHertzPos + 1);
+        }
+    }
+
+    if (inputInstances->controllers[1].dPadDown.endedDown) {
+        if (sineWaveHertzPos != 0) {
+            sineWaveHertzPos = (sineWaveHertzPos - 1);
+        }
+    }
+
+    gameState->sineWaveHertzPos = sineWaveHertzPos;
+
+    gameState->sineWave.hertz = gameState->sineWaveHertz[gameState->sineWaveHertzPos];
+    gameState->sineWave.sizeOfWave = 100; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
@@ -115,65 +161,54 @@ internal_func void gameUpdate(GameMemory *memory,
                 motor2Speed = 35000;
             }
 
-            //platformControllerVibrate(0, motor1Speed, motor2Speed);
+            platformControllerVibrate(0, motor1Speed, motor2Speed);
         }
     }
 
-    gameWriteFrameBuffer(frameBuffer, gameState->redOffset, gameState->greenOffset);
+    gameWriteFrameBuffer(frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
 }
 
-internal_func void gameWriteFrameBuffer(FrameBuffer *buffer, int redOffset, int greenOffset)
+internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
+                                        AncillaryPlatformLayerData ancillaryPlatformLayerData,
+                                        int redOffset,
+                                        int greenOffset,
+                                        AudioBuffer *audioBuffer)
 {
-    // Create a pointer to bitmapMemory
-    // In order for us to have maximum control over the pointer arithmatic, we cast it to
-    // an 1 byte datatype. This enables us to step through the memory block 1 byte
-    // at a time.
-    uint8 *row = (uint8*)buffer->memory;
+    // Background fill
+    writeRectangle(buffer, 0x333399, buffer->height, buffer->width, 0, 0);
 
-    // Create a loop that iterates for the same number of rows we have for the viewport. 
-    // (We know the number of pixel rows from the viewport height)
-    // We name the iterator x to denote the x axis (along the corridor)
-    for (uint32 x = 0; x < buffer->height; x++) {
+#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
 
-        // We know that each pixel is 4 bytes wide (bytesPerPixel) so we make
-        // our pointer the same width to grab the relevant block of memory for
-        // each pixel. (32 bits = 4 bytes)
+    float32 coefficient = ((float32)buffer->width / (float32)audioBuffer->platformBufferSizeInBytes);
 
-        uint32 *pixel = (uint32*)row;
-
-        // Create a loop that iterates for the same number of columns we have for the viewport.
-        // (We know the number of pixel columns from the viewport width)
-        // We name the iterator y to denote the y axis (up the stairs)
-        for (uint32 y = 0; y < buffer->width; y++) {
-
-            /*
-             * Write to this pixel...
-             *
-             * Each pixel looks like this (in hex): 00 00 00 00
-             * Each of the 00 represents 1 of our 4-byte pixels.
-             *
-             * As the order of bytes is little endian, the RGB bytes are backwards
-             * when writting to them:
-             *
-             * B    G   R   Padding
-             * 00   00  00  00
-            */
-
-            uint8 red     = (uint8)(x + redOffset);     // Chop off anything after the first 8 bits of the variable x + offset
-            uint8 green   = (uint8)(y + greenOffset);   // Chop off anything after the first 8 bits of the variable y + offset
-            uint8 blue    = 0;
-
-            *pixel = ((red << 16) | (green << 8) | blue);
-
-            // Move the pointer forward to the start of the next 4 byte block
-            pixel = (pixel + 1);
-        }
-
-        // Move the row pointer forward by the byte width of the row so that for
-        // the next iteration of the row we're then starting at the first byte
-        // of that particular row
-        row = (row + buffer->byteWidthPerRow);
+    // Audio buffer box
+    {
+        uint16 height = 100;
+        uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
+        uint32 yOffset = 100;
+        writeRectangle(buffer, 0x000066, height, width, yOffset, 0);
     }
+
+    // Play cursor (green)
+    {
+        uint16 height = 100;
+        uint16 width = 1;
+        uint32 yOffset = 100;
+        uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.playCursorPosition * coefficient);
+        writeRectangle(buffer, 0x006600, height, width, yOffset, xOffset);
+    }
+
+    // Write cursor (red)
+    {
+        uint16 height = 100;
+        uint16 width = 1;
+        uint32 yOffset = 100;
+        uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.writeCursorPosition * coefficient);
+        writeRectangle(buffer, 0xcc0000, height, width, yOffset, xOffset);
+    }
+
+#endif
+
 }
 
 internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
@@ -207,6 +242,26 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
     audioBuffer->platformBufferSizeInBytes  = platformBufferSizeInBytes;
 
     return audioBuffer;
+}
+
+internal_func void writeRectangle(FrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
+{
+    uint32 *row = (uint32 *)buffer->memory;
+
+    // Move down to starting row
+    row = (row + (buffer->width * yOffset));
+    row = (row + xOffset);
+
+    // Down
+    for (uint64 i = 0; i < height; i++) {
+        // Accross
+        uint32 *pixel = (uint32 *)row;
+        for (uint64 x = 0; x < width; x++) {
+            *pixel = hexColour;
+            pixel = (pixel + 1);
+        }
+        row = (row + buffer->width);
+    }
 }
 
 uint64 kibibytesToBytes(uint8 kibibytes)
