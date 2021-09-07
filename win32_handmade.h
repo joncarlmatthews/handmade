@@ -74,6 +74,25 @@ typedef struct Win32AudioBuffer
 
 } Win32AudioBuffer;
 
+typedef struct Win32FixedFrameRate {
+
+    // Monitor refresh rate in Hertz.
+    uint8 monitorRefreshRate;
+
+    // Target FPS.
+    uint8 gameTargetFPS;
+
+    // Target FPS in milliseconds.
+    float32 gameTargetMSPerFrame;
+
+    // System's minimum timer resolution.
+    UINT timeOutIntervalMS;
+
+    // Boolean did the system set the minimum timer resolution successfully.
+    MMRESULT timeOutIntervalSet;
+
+} Win32FixedFrameRate;
+
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
 /*

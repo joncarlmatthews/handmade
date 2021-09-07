@@ -192,16 +192,16 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
     // Play cursor (green)
     {
         uint16 height = 100;
-        uint16 width = 1;
+        uint16 width = 10;
         uint32 yOffset = 100;
         uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.playCursorPosition * coefficient);
         writeRectangle(buffer, 0x006600, height, width, yOffset, xOffset);
     }
 
-    // Write cursor (red)
+    // Write cursor + lock size (amount written) (red)
     {
         uint16 height = 100;
-        uint16 width = 1;
+        uint32 width = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes * coefficient);
         uint32 yOffset = 100;
         uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.writeCursorPosition * coefficient);
         writeRectangle(buffer, 0xcc0000, height, width, yOffset, xOffset);
@@ -232,8 +232,7 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
                                                 uint8 bytesPerSample,
                                                 uint8 secondsWorthOfAudio,
                                                 uint32 samplesToWrite,
-                                                uint64 platformBufferSizeInBytes,
-                                                uint32 platformLockOffsetInBytes)
+                                                uint64 platformBufferSizeInBytes)
 {
     audioBuffer->samplesPerSecond           = samplesPerSecond;
     audioBuffer->bytesPerSample             = bytesPerSample;

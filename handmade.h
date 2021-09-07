@@ -226,6 +226,10 @@ internal_func void gameUpdate(GameMemory *memory,
                                 uint8 maxControllers,
                                 AncillaryPlatformLayerData ancillaryPlatformLayerData);
 
+/**
+ * Initialises the game's frame buffer ready for writing.
+ *
+ */
 internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
                                                 uint32 height,
                                                 uint32 width,
@@ -234,7 +238,7 @@ internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
                                                 void *memory);
 
 /**
- * Initialises the game audio buffer ready for writing.
+ * Initialises the game's audio buffer ready for writing.
  *
  */
 internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
@@ -242,8 +246,7 @@ internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
                                                 uint8 bytesPerSample,
                                                 uint8 secondsWorthOfAudio,
                                                 uint32 samplesToWrite,
-                                                uint64 platformBufferSizeInBytes,
-                                                uint32 platformLockOffsetInBytes);
+                                                uint64 platformBufferSizeInBytes);
 
 internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
                                         AncillaryPlatformLayerData ancillaryPlatformLayerData,
