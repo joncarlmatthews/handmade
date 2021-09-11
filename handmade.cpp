@@ -3,8 +3,8 @@
 #include "handmade.h"
 
 internal_func void gameUpdate(GameMemory *memory,
-                                FrameBuffer *frameBuffer,
-                                AudioBuffer *audioBuffer,
+                                GameFrameBuffer *frameBuffer,
+                                GameAudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
                                 ControllerCounts *controllerCounts,
                                 AncillaryPlatformLayerData ancillaryPlatformLayerData)
@@ -74,7 +74,7 @@ internal_func void gameUpdate(GameMemory *memory,
     gameState->sineWaveHertzPos = sineWaveHertzPos;
 
     gameState->sineWave.hertz = gameState->sineWaveHertz[gameState->sineWaveHertzPos];
-    gameState->sineWave.sizeOfWave = 100; // Volume
+    gameState->sineWave.sizeOfWave = 10000; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
@@ -91,7 +91,7 @@ internal_func void gameUpdate(GameMemory *memory,
     uint16 *audioSample = (uint16 *)audioBuffer->memory;
 
     // Iterate over each 2 - bytes and write the same data for both...
-    for (uint32 i = 0; i < audioBuffer->samplesToWrite; i++) {
+    for (uint32 i = 0; i < audioBuffer->noOfSamplesToWrite; i++) {
 
         percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
         angle = (360.0f * (percentageOfAngle / 100.0f));
@@ -168,11 +168,11 @@ internal_func void gameUpdate(GameMemory *memory,
     gameWriteFrameBuffer(frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
 }
 
-internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
+internal_func void gameWriteFrameBuffer(GameFrameBuffer *buffer,
                                         AncillaryPlatformLayerData ancillaryPlatformLayerData,
                                         int redOffset,
                                         int greenOffset,
-                                        AudioBuffer *audioBuffer)
+                                        GameAudioBuffer *audioBuffer)
 {
     // Background fill
     writeRectangle(buffer, 0x333399, buffer->height, buffer->width, 0, 0);
@@ -211,7 +211,7 @@ internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
 
 }
 
-internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
+internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
                                                 uint32 height,
                                                 uint32 width,
                                                 uint16 bytesPerPixel,
@@ -227,23 +227,32 @@ internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
     return frameBuffer;
 }
 
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
-                                                uint16 samplesPerSecond,
-                                                uint8 bytesPerSample,
-                                                uint8 secondsWorthOfAudio,
-                                                uint32 samplesToWrite,
-                                                uint64 platformBufferSizeInBytes)
+internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
+                                                    uint8 bytesPerSample,
+                                                    uint32 noOfSamplesToWrite,
+                                                    uint64 platformBufferSizeInBytes)
 {
-    audioBuffer->samplesPerSecond           = samplesPerSecond;
+    if (audioBuffer->noOfSamplesToWrite != noOfSamplesToWrite) {
+
+        uint32 memorySize = (noOfSamplesToWrite * bytesPerSample);
+
+        // @TODO(JM) move the audio memory to the GameMemory object
+        if (!audioBuffer->initialised) {
+            audioBuffer->initialised = 1;
+            audioBuffer->memory = platformAllocateMemory(memorySize);
+        } else {
+            platformFreeMemory(audioBuffer->memory);
+            audioBuffer->memory = platformAllocateMemory(memorySize);
+        }
+    }
     audioBuffer->bytesPerSample             = bytesPerSample;
-    audioBuffer->secondsWorthOfAudio        = secondsWorthOfAudio;
-    audioBuffer->samplesToWrite             = samplesToWrite;
+    audioBuffer->noOfSamplesToWrite         = noOfSamplesToWrite;
     audioBuffer->platformBufferSizeInBytes  = platformBufferSizeInBytes;
 
     return audioBuffer;
 }
 
-internal_func void writeRectangle(FrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
+internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
 {
     uint32 *row = (uint32 *)buffer->memory;
 

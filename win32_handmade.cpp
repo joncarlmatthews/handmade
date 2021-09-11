@@ -170,11 +170,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Kick off playing the Windows audio buffer
         win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
 
-        // Create the game audio buffer. We do this outside of the game loop as we need
-        // to allocate memory
-        AudioBuffer audioBuffer = {0};
-        // @TODO(JM) move the audio memory to the GameMemory object
-        audioBuffer.memory = VirtualAlloc(NULL, win32AudioBuffer.bufferSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        // Create the game audio buffer.
+        GameAudioBuffer gameAudioBuffer = {0};
 
         /*
          * Graphics
@@ -398,16 +395,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     }
 
                     audioLatency.samplesLatent = (writePlayDifference / win32AudioBuffer.bytesPerSample);
-                    audioLatency.samplesLatentAsPercentageOfBuffer = ((((float32)audioLatency.samplesLatent * 100) / ((float32)win32AudioBuffer.samplesPerSecond * (float32)win32AudioBuffer.secondsWorthOfAudio)) / 100);
+                    audioLatency.samplesLatentAsPercentageOfBuffer = ((((float32)audioLatency.samplesLatent * 100.0f) / ((float32)win32AudioBuffer.samplesPerSecond * (float32)win32AudioBuffer.secondsWorthOfAudio)) / 100.0f);
                     audioLatency.latencyInMS = ((1000.f * win32AudioBuffer.secondsWorthOfAudio) * audioLatency.samplesLatentAsPercentageOfBuffer);
 
                     // How many samples do we need to write?
                     uint32 msToWrite;
                     if (win32FixedFrameRate.gameTargetMSPerFrame > audioLatency.latencyInMS) {
-                        msToWrite = win32FixedFrameRate.gameTargetMSPerFrame;
+                        msToWrite = (uint32)win32FixedFrameRate.gameTargetMSPerFrame;
                     } else {
                         msToWrite = (uint32)audioLatency.latencyInMS;
                     }
+
+                    uint32 lockSizeInSamples = (uint32)((float32)win32AudioBuffer.samplesPerSecond * (((float32)msToWrite * 100.0f) / 1000.0f));
+                    lockSizeInBytes = (lockSizeInSamples / 4);
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
 
@@ -425,10 +425,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
 #endif // HANDMADE_DEBUG_AUDIO
 
-                    ancillaryPlatformLayerData.audioBuffer.playCursorPosition = playCursorOffsetInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.writeCursorPosition = writeCursorOffsetInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes = lockSizeInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.lockOffsetInBytes = lockOffsetInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.playCursorPosition   = playCursorOffsetInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.writeCursorPosition  = writeCursorOffsetInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes      = lockSizeInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.lockOffsetInBytes    = lockOffsetInBytes;
                 } else {
                     OutputDebugString("Could not get the position of the play and write cursors in the secondary sound buffer");
                 }
@@ -436,16 +436,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             } // Audio buffer created.
 
             // Create the game's audio buffer
-            gameInitAudioBuffer(&audioBuffer,
-                                win32AudioBuffer.samplesPerSecond,
+            gameInitAudioBuffer(&gameAudioBuffer,
                                 win32AudioBuffer.bytesPerSample,
-                                win32AudioBuffer.secondsWorthOfAudio,
                                 (lockSizeInBytes / win32AudioBuffer.bytesPerSample),
                                 win32AudioBuffer.bufferSizeInBytes);
 
             // Create the game's frame buffer
-            FrameBuffer frameBuffer = {0};
-            gameInitFrameBuffer(&frameBuffer,
+            GameFrameBuffer gameFrameBuffer = {0};
+            gameInitFrameBuffer(&gameFrameBuffer,
                                 win32FrameBuffer.height,
                                 win32FrameBuffer.width,
                                 win32FrameBuffer.bytesPerPixel,
@@ -453,10 +451,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 win32FrameBuffer.memory);
 
             // Main game code.
-            gameUpdate(&memory, &frameBuffer, &audioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
+            gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
 
             // Output the audio buffer in Windows.
-            win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);
+            win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
 
             // How long did this game loop (frame) take?
 
@@ -872,7 +870,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
 internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
                                             DWORD lockOffsetInBytes,
                                             DWORD lockSizeInBytes,
-                                            GameAudioBuffer *audioBuffer)
+                                            GameAudioBuffer *gameAudioBuffer)
 {
     if (!win32AudioBuffer->bufferSuccessfulyCreated) {
         return;
@@ -910,10 +908,10 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
         uint32 *audioSample = (uint32 *)chunkOnePtr;
 
         // Create a pointer to the game audio buffer with the same 4-byte single audio sample grouping range.
-        uint32 *buffer = (uint32 *)audioBuffer->memory;
+        uint32 *buffer = (uint32 *)gameAudioBuffer->memory;
 
         // Advance the game audio buffer pointer to match the same as the lock offset.
-        buffer = (buffer + (lockOffsetInBytes / win32AudioBuffer->bytesPerSample));
+        //buffer = (buffer + (lockOffsetInBytes / win32AudioBuffer->bytesPerSample));
 
         // Iterate over each individual audio sample grouping (2-bytes for the left channel, 2-bytes for the right channel)
         // and write the same data for both...
@@ -935,7 +933,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
 
         // Set the audio buffer pointer back to the start of the memory block as the
         // second block of memory always starts from the beginning
-        buffer = (uint32 *)audioBuffer->memory;
+        buffer = (uint32 *)gameAudioBuffer->memory;
 
         for (size_t i = 0; i < audioSampleGroupsChunkTwo; i++) {
 
@@ -1156,6 +1154,16 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *ne
         (*newState).halfTransitionCount = ((*newState).halfTransitionCount + 1);
     }
     (*newState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
+}
+
+internal_func void *platformAllocateMemory(uint32 bytes)
+{
+    return VirtualAlloc(NULL, bytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+}
+
+internal_func void platformFreeMemory(void *address)
+{
+    VirtualFree(address, 0, MEM_RELEASE);
 }
 
 /**
