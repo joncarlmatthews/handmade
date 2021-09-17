@@ -18,12 +18,9 @@
 // Platform layer specific function signatures
 #include "win32_handmade.h"
 
-// Display output debug strings?
-const bool DEBUG_OUTPUT = FALSE;
-
 // Whether or not the application is running
-global_var bool running;
-global_var bool paused = false;
+global_var bool8 running;
+global_var bool8 paused;
 
 // Create the Windows frame buffer
 // @TOOD(JM) move this out of the global scope
@@ -414,16 +411,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     if ((!gameAudioBuffer.writeEntireBuffer) && (gameAudioBuffer.minFramesWorthOfAudio >= 1)) {
 
                         // How many samples do we need to write? (number of samples in MS)
-                        float32 msToWrite = 0;
+                        // Write at least the audio latency (in ms)
+                        float32 msToWrite = audioLatency.latencyInMS;
 
-                        // Write at least the target MS per frame or the audio latency in MS (whichever is greater)
+                        // If the game's target frame rate (in ms) is larger than the audio latency (in ms)
+                        // then set that as our minimum latency.
                         if (win32FixedFrameRate.gameTargetMSPerFrame > audioLatency.latencyInMS) {
                             msToWrite = win32FixedFrameRate.gameTargetMSPerFrame;
                         }
-                        else {
-                            msToWrite = audioLatency.latencyInMS;
-                        }
-
                         // Now add up to the margin of safety
                         float32 marginTotalInMS = (win32FixedFrameRate.gameTargetMSPerFrame * (float32)gameAudioBuffer.minFramesWorthOfAudio);
                         if (marginTotalInMS > msToWrite) {
@@ -598,48 +593,29 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         // This message is *only* sent when the application is first loaded OR
         // when the window is resized.
         case WM_SIZE: {
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("\nWM_SIZE\n");
-            }
         } break;
 
         case WM_DESTROY: {
             // @TODO(JM) Handle as an error. Recreate window?
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("WM_DESTROY\n");
-            }
             running = false;
         } break;
 
         // Called when the user requests to close the window.
         case WM_CLOSE: {
             // @TODO(JM) Display "are you sure" message to user?
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("WM_CLOSE\n");
-            }
             running = false;
         } break;
 
         case WM_QUIT: {
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("\nWM_QUIT\n\n");
-            }
             running = false;
         } break;
 
         // Called when the user makes the window active (e.g. by tabbing to it).
         case WM_ACTIVATEAPP: {
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("\nWM_ACTIVATEAPP\n\n");
-            }
         } break;
 
         // Request to paint a portion of an application's window.
         case WM_PAINT: {
-
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("\nWM_PAINT\n\n");
-            }
 
             // Prepare the window for painting.
 
@@ -700,10 +676,6 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  */
 internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height)
 {
-    if (DEBUG_OUTPUT) {
-        OutputDebugString("\nInitialising Win32 Buffer ");
-        OutputDebugString("(Allocating a chunk of memory that's large enough to have 32-bits for each pixel based on height & width)\n\n");
-    }
 
     // buffer->foo is a dereferencing shorthand for (*buffer).foo
 
@@ -757,11 +729,6 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                                             uint32 width,
                                             uint32 height)
 {
-    if (DEBUG_OUTPUT) {
-        OutputDebugString("\nCopying buffer memory to screen\n");
-    }
-    
-
     // @TODO(JM) Do some maths to stop the buffer's height and width being
     // skewed when the window's width and height doesn't match the aspect
     // ratio that we want. (e.g. when someone manually resizes the window)
