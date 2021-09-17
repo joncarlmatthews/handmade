@@ -23,6 +23,7 @@ const bool DEBUG_OUTPUT = FALSE;
 
 // Whether or not the application is running
 global_var bool running;
+global_var bool paused = false;
 
 // Create the Windows frame buffer
 // @TOOD(JM) move this out of the global scope
@@ -168,10 +169,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         win32InitAudioBuffer(window, &win32AudioBuffer);
 
         // Kick off playing the Windows audio buffer
-        win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
+        win32AudioBufferTogglePlay(&win32AudioBuffer);
 
         // Create the game audio buffer.
         GameAudioBuffer gameAudioBuffer = {0};
+        gameAudioBuffer.writeEntireBuffer = FALSE;
+        gameAudioBuffer.minFramesWorthOfAudio = 4;
 
         /*
          * Graphics
@@ -226,6 +229,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Handle the Win32 message loop
             win32ProcessMessages(window, message, keyboard);
+
+            if (paused) {
+
+                win32AudioBufferToggleStop(&win32AudioBuffer);
+                continue;
+
+            } else {
+                win32AudioBufferTogglePlay(&win32AudioBuffer);
+            }
 
             // After processing our messages, we can now (in our "while running = true"
             // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
@@ -351,7 +363,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Offset, in bytes, from the start of the buffer to the point where the lock begins.
             // We Mod the result by the total number of bytes so that the value wraps.
             // Result will look like this: 0, 4, 8, 12, 16, 24 etc...
-            // win32AudioBuffer.runningByteIndex and lockOffsetInBytes will be the same in theory.
             DWORD lockOffsetInBytes = 0;
 
             // Start playing sound. (Write a dummy wave sound)
@@ -398,16 +409,40 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     audioLatency.samplesLatentAsPercentageOfBuffer = ((((float32)audioLatency.samplesLatent * 100.0f) / ((float32)win32AudioBuffer.samplesPerSecond * (float32)win32AudioBuffer.secondsWorthOfAudio)) / 100.0f);
                     audioLatency.latencyInMS = ((1000.f * win32AudioBuffer.secondsWorthOfAudio) * audioLatency.samplesLatentAsPercentageOfBuffer);
 
-                    // How many samples do we need to write?
-                    uint32 msToWrite;
-                    if (win32FixedFrameRate.gameTargetMSPerFrame > audioLatency.latencyInMS) {
-                        msToWrite = (uint32)win32FixedFrameRate.gameTargetMSPerFrame;
-                    } else {
-                        msToWrite = (uint32)audioLatency.latencyInMS;
-                    }
+                   
+                    // If we're opting to *not* write the entire audio buffer, calculate how much to write here...
+                    if ((!gameAudioBuffer.writeEntireBuffer) && (gameAudioBuffer.minFramesWorthOfAudio >= 1)) {
 
-                    uint32 lockSizeInSamples = (uint32)((float32)win32AudioBuffer.samplesPerSecond * (((float32)msToWrite * 100.0f) / 1000.0f));
-                    lockSizeInBytes = (lockSizeInSamples / 4);
+                        // How many samples do we need to write? (number of samples in MS)
+                        float32 msToWrite = 0;
+
+                        // Write at least the target MS per frame or the audio latency in MS (whichever is greater)
+                        if (win32FixedFrameRate.gameTargetMSPerFrame > audioLatency.latencyInMS) {
+                            msToWrite = win32FixedFrameRate.gameTargetMSPerFrame;
+                        }
+                        else {
+                            msToWrite = audioLatency.latencyInMS;
+                        }
+
+                        // Now add up to the margin of safety
+                        float32 marginTotalInMS = (win32FixedFrameRate.gameTargetMSPerFrame * (float32)gameAudioBuffer.minFramesWorthOfAudio);
+                        if (marginTotalInMS > msToWrite) {
+                            msToWrite = (msToWrite + (marginTotalInMS - msToWrite));
+                        }
+
+                        float32 samplesToWrite = ((float32)win32AudioBuffer.samplesPerSecond * (((msToWrite * 100.0f) / 1000.0f) / 100));
+                        uint32 noOfBytesToWrite = (uint32)(samplesToWrite * win32AudioBuffer.bytesPerSample);
+
+                        if (noOfBytesToWrite > win32AudioBuffer.bufferSizeInBytes) {
+                            // We've somehow ended up with a calculation that's bigger than
+                            // the audio buffer available. Don't overwrite the lockSizeInBytes
+                            assert(!"noOfBytesToWrite calculation is > win32AudioBuffer.bufferSizeInBytes");
+                        } else {
+                            // Overwrite the lockSizeInBytes to match our smaller lock size.
+                            lockSizeInBytes = noOfBytesToWrite;
+                        }
+                    }
+                    
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
 
@@ -415,11 +450,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     if (win32AudioBuffer.bufferSizeInBytes > 0) {
                         char buff[200] = { 0 };
                         sprintf_s(buff,
-                                    sizeof(buff),
-                                    "Audio latency: %.2fms (%.2f frames) ms to write: %i\n",
-                                    audioLatency.latencyInMS,
-                                    (audioLatency.latencyInMS / win32FixedFrameRate.gameTargetMSPerFrame),
-                                    msToWrite);
+                            sizeof(buff),
+                            "Audio latency: %.2fms (%.2f frames)\n",
+                            audioLatency.latencyInMS,
+                            (audioLatency.latencyInMS / win32FixedFrameRate.gameTargetMSPerFrame));
                         OutputDebugString(buff);
                     }
 
@@ -437,8 +471,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Create the game's audio buffer
             gameInitAudioBuffer(&gameAudioBuffer,
+                                lockSizeInBytes,
                                 win32AudioBuffer.bytesPerSample,
-                                (lockSizeInBytes / win32AudioBuffer.bytesPerSample),
                                 win32AudioBuffer.bufferSizeInBytes);
 
             // Create the game's frame buffer
@@ -824,7 +858,6 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     win32AudioBuffer->bytesPerSample = ((win32AudioBuffer->bitsPerChannel * win32AudioBuffer->noOfChannels) / 8);
     win32AudioBuffer->secondsWorthOfAudio = 1;
     win32AudioBuffer->bufferSizeInBytes = (uint64)((win32AudioBuffer->bytesPerSample * win32AudioBuffer->samplesPerSecond) * win32AudioBuffer->secondsWorthOfAudio);
-    win32AudioBuffer->runningByteIndex = 0;
 
     // Set the format
     WAVEFORMATEX waveFormat = {0};
@@ -867,6 +900,26 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     OutputDebugString("Primary & secondary successfully buffer created\n");
 }
 
+internal_func void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer)
+{
+    DWORD pdwStatus;
+    if (SUCCEEDED(win32AudioBuffer->buffer->GetStatus(&pdwStatus))) {
+        if ((pdwStatus & DSBSTATUS_PLAYING) != DSBSTATUS_PLAYING) { // If not playing
+            win32AudioBuffer->buffer->Play(0, 0, DSBPLAY_LOOPING);
+        }
+    }
+}
+
+internal_func void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer)
+{
+    DWORD pdwStatus;
+    if (SUCCEEDED(win32AudioBuffer->buffer->GetStatus(&pdwStatus))) {
+        if ((pdwStatus & DSBSTATUS_PLAYING) == DSBSTATUS_PLAYING) { // If playing
+            win32AudioBuffer->buffer->Stop();
+        }
+    }
+}
+
 internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
                                             DWORD lockOffsetInBytes,
                                             DWORD lockSizeInBytes,
@@ -876,8 +929,8 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
         return;
     }
 
-    // Ensure the offset and lock size are both on the correct byte boundaries and that there are bytes to write
-    if (((lockOffsetInBytes % win32AudioBuffer->bytesPerSample) != 0) || ((lockSizeInBytes % win32AudioBuffer->bytesPerSample) != 0) || (lockSizeInBytes < win32AudioBuffer->bytesPerSample) ) {
+    // Ensure we have at least once sample to write
+    if (lockSizeInBytes < win32AudioBuffer->bytesPerSample) {
         return;
     }
 
@@ -951,8 +1004,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
             OutputDebugString("Could not unlock sound buffer");
         }
 
-    }
-    else {
+    } else {
         OutputDebugString("Could not lock secondary sound buffer");
     }
 
@@ -1069,6 +1121,16 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
 #endif // HANDMADE_DEBUG
 
                 switch (vkCode) {
+                    case 'P': {
+                        if (isDown) {
+                            if (paused) {
+                                paused = false;
+                            }else {
+                                paused = true;
+                            }
+                        }
+                    } break;
+
                     case 'W': {
                         GameControllerBtnState state = {0};
                         state.halfTransitionCount++;

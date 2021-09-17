@@ -20,6 +20,7 @@ internal_func void gameUpdate(GameMemory *memory,
         gameState->sineWave = {0};
         gameState->greenOffset = 1;
         gameState->redOffset = 2;
+        gameState->setBG = 0;
 
         for (size_t i = 0; i < countArray(gameState->sineWaveHertz); i++)
         {
@@ -74,7 +75,7 @@ internal_func void gameUpdate(GameMemory *memory,
     gameState->sineWaveHertzPos = sineWaveHertzPos;
 
     gameState->sineWave.hertz = gameState->sineWaveHertz[gameState->sineWaveHertzPos];
-    gameState->sineWave.sizeOfWave = 10000; // Volume
+    gameState->sineWave.sizeOfWave = 1000; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
@@ -165,28 +166,36 @@ internal_func void gameUpdate(GameMemory *memory,
         }
     }
 
-    gameWriteFrameBuffer(frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
+    gameWriteFrameBuffer(gameState, frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
+
+    gameState->setBG = 1;
 }
 
-internal_func void gameWriteFrameBuffer(GameFrameBuffer *buffer,
+internal_func void gameWriteFrameBuffer(GameState *gameState,
+                                        GameFrameBuffer *buffer,
                                         AncillaryPlatformLayerData ancillaryPlatformLayerData,
                                         int redOffset,
                                         int greenOffset,
                                         GameAudioBuffer *audioBuffer)
 {
     // Background fill
-    writeRectangle(buffer, 0x333399, buffer->height, buffer->width, 0, 0);
+    if (!gameState->setBG) {
+        writeRectangle(buffer, 0x333399, buffer->height, buffer->width, 0, 0);
+    }
+    
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
 
     float32 coefficient = ((float32)buffer->width / (float32)audioBuffer->platformBufferSizeInBytes);
 
     // Audio buffer box
-    {
-        uint16 height = 100;
-        uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
-        uint32 yOffset = 100;
-        writeRectangle(buffer, 0x000066, height, width, yOffset, 0);
+    if (!gameState->setBG) {
+        {
+            uint16 height = 100;
+            uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
+            uint32 yOffset = 100;
+            writeRectangle(buffer, 0x000066, height, width, yOffset, 0);
+        }
     }
 
     // Play cursor (green)
@@ -228,21 +237,25 @@ internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
 }
 
 internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
+                                                    uint32 noOfBytesToWrite,
                                                     uint8 bytesPerSample,
-                                                    uint32 noOfSamplesToWrite,
                                                     uint64 platformBufferSizeInBytes)
 {
-    if (audioBuffer->noOfSamplesToWrite != noOfSamplesToWrite) {
+    if ( (noOfBytesToWrite <= 0) || (bytesPerSample <= 0) ) {
+        return audioBuffer;
+    }
 
-        uint32 memorySize = (noOfSamplesToWrite * bytesPerSample);
+    uint32 noOfSamplesToWrite = (noOfBytesToWrite / bytesPerSample);
+
+    if (audioBuffer->noOfSamplesToWrite != noOfSamplesToWrite) {
 
         // @TODO(JM) move the audio memory to the GameMemory object
         if (!audioBuffer->initialised) {
             audioBuffer->initialised = 1;
-            audioBuffer->memory = platformAllocateMemory(memorySize);
+            audioBuffer->memory = platformAllocateMemory(noOfBytesToWrite);
         } else {
             platformFreeMemory(audioBuffer->memory);
-            audioBuffer->memory = platformAllocateMemory(memorySize);
+            audioBuffer->memory = platformAllocateMemory(noOfBytesToWrite);
         }
     }
     audioBuffer->bytesPerSample             = bytesPerSample;

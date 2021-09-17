@@ -76,8 +76,20 @@ typedef struct GameAudioBuffer
     // How many bytes to store per sample? 1 sample = left + right channel
     uint8 bytesPerSample;
 
+    // Write entire buffer? If FALSE, minFramesWorthOfAudio should be defined. 
+    bool8 writeEntireBuffer;
+
+    // As a minimum, how many frames worth of audio should we write per game loop?
+    // We add extra frames so we have reserve audio should the game hit
+    // a slowdown in the frame rate. This mitigates audio cuts.
+    // Ignored if writeEntireBuffer is TRUE
+    uint8 minFramesWorthOfAudio;
+
     // How many samples should we be writing to next?
     uint32 noOfSamplesToWrite;
+
+    // How many bytes should we be writing to next?
+    uint32 noOfBytesToWrite;
 
     // Pointer to an allocated block of heap memory to hold the data of the buffer.
     void *memory;
@@ -180,6 +192,7 @@ typedef struct GameState
     int32 greenOffset;
     uint16 sineWaveHertz[5] = { 60, 100, 200, 300, 400};
     int16 sineWaveHertzPos = 2;
+    uint8 setBG = false;
 } GameState;
 
 typedef struct GameMemory
@@ -234,11 +247,12 @@ internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
  *
  */
 internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
+                                                    uint32 noOfBytesToWrite,
                                                     uint8 bytesPerSample,
-                                                    uint32 noOfSamplesToWrite,
                                                     uint64 platformBufferSizeInBytes);
 
-internal_func void gameWriteFrameBuffer(GameFrameBuffer *buffer,
+internal_func void gameWriteFrameBuffer(GameState *gameState,
+                                        GameFrameBuffer *buffer,
                                         AncillaryPlatformLayerData ancillaryPlatformLayerData,
                                         int redOffset,
                                         int greenOffset,
