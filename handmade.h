@@ -2,7 +2,7 @@
 #define HEADER_HANDMADE
 
 
-//#define HANDMADE_DEBUG_FPS
+#define HANDMADE_DEBUG_FPS
 #define HANDMADE_DEBUG_AUDIO
 
 // If assertion isn't true, write to the null pointer and crash the program.
@@ -63,26 +63,33 @@ typedef struct GameFrameBuffer
     // Pointer to an allocated block of heap memory to hold the data of the buffer.
     void *memory;
 
-} FrameBuffer;
+} GameFrameBuffer;
 
 /**
  * Struct for the audio buffer
  */
 typedef struct GameAudioBuffer
 {
-    // Number of audio "samples" that our buffer contains.
-    // 1 sample = the grouping of a single left + right channel output.
-    // 48,000 samples per second, 4 bytes per sample = 192,000 bytes per buffer (assuming 1 second buffer).
-    uint32 samplesPerSecond;
+    // Memory and properties initialised?
+    bool8 initialised;
 
-    // How many bytes to store per sample?
+    // How many bytes to store per sample? 1 sample = left + right channel
     uint8 bytesPerSample;
 
-    // How many seconds worth of the audio should our buffer hold?
-    uint8 secondsWorthOfAudio;
+    // Write entire buffer? If FALSE, minFramesWorthOfAudio should be defined. 
+    bool8 writeEntireBuffer;
+
+    // As a minimum, how many frames worth of audio should we write per game loop?
+    // We add extra frames so we have reserve audio should the game hit
+    // a slowdown in the frame rate. This mitigates audio cuts.
+    // Ignored if writeEntireBuffer is TRUE
+    uint8 minFramesWorthOfAudio;
 
     // How many samples should we be writing to next?
-    uint32 samplesToWrite;
+    uint32 noOfSamplesToWrite;
+
+    // How many bytes should we be writing to next?
+    uint32 noOfBytesToWrite;
 
     // Pointer to an allocated block of heap memory to hold the data of the buffer.
     void *memory;
@@ -90,10 +97,7 @@ typedef struct GameAudioBuffer
     // Byte count of the platform's buffer memory
     uint64 platformBufferSizeInBytes;
 
-    // Last position within the buffer that we wrote to.
-    uint32 platformRunningByteIndex;
-
-} AudioBuffer;
+} GameAudioBuffer;
 
 typedef struct ControllerCounts
 {
@@ -187,7 +191,8 @@ typedef struct GameState
     int32 redOffset;
     int32 greenOffset;
     uint16 sineWaveHertz[5] = { 60, 100, 200, 300, 400};
-    uint8 sineWaveHertzPos = 2;
+    int16 sineWaveHertzPos = 2;
+    uint8 setBG = false;
 } GameState;
 
 typedef struct GameMemory
@@ -220,13 +225,17 @@ typedef struct GameMemory
 } GameMemory;
 
 internal_func void gameUpdate(GameMemory *memory,
-                                FrameBuffer *frameBuffer,
-                                AudioBuffer *audioBuffer,
+                                GameFrameBuffer *frameBuffer,
+                                GameAudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
                                 uint8 maxControllers,
                                 AncillaryPlatformLayerData ancillaryPlatformLayerData);
 
-internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
+/**
+ * Initialises the game's frame buffer ready for writing.
+ *
+ */
+internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
                                                 uint32 height,
                                                 uint32 width,
                                                 uint16 bytesPerPixel,
@@ -234,24 +243,22 @@ internal_func FrameBuffer* gameInitFrameBuffer(FrameBuffer *frameBuffer,
                                                 void *memory);
 
 /**
- * Initialises the game audio buffer ready for writing.
+ * Initialises the game's audio buffer ready for writing.
  *
  */
-internal_func AudioBuffer* gameInitAudioBuffer(AudioBuffer *audioBuffer,
-                                                uint16 samplesPerSecond,
-                                                uint8 bytesPerSample,
-                                                uint8 secondsWorthOfAudio,
-                                                uint32 samplesToWrite,
-                                                uint64 platformBufferSizeInBytes,
-                                                uint32 platformLockOffsetInBytes);
+internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
+                                                    uint32 noOfBytesToWrite,
+                                                    uint8 bytesPerSample,
+                                                    uint64 platformBufferSizeInBytes);
 
-internal_func void gameWriteFrameBuffer(FrameBuffer *buffer,
+internal_func void gameWriteFrameBuffer(GameState *gameState,
+                                        GameFrameBuffer *buffer,
                                         AncillaryPlatformLayerData ancillaryPlatformLayerData,
                                         int redOffset,
                                         int greenOffset,
-                                        AudioBuffer *audioBuffer);
+                                        GameAudioBuffer *audioBuffer);
 
-internal_func void writeRectangle(FrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
+internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
@@ -266,10 +273,10 @@ internal_func uint32 truncateToUint32Safe(uint64 value);
  * @see https://en.wikipedia.org/wiki/Byte#Multiple-byte_units
  * @see https://www.quora.com/Is-1-GB-equal-to-1024-MB-or-1000-MB
  */
-uint64 kibibytesToBytes(uint8 kibibytes);
-uint64 mebibytesToBytes(uint8 mebibytes);
-uint64 gibibytesToBytes(uint8 gibibytes);
-uint64 tebibyteToBytes(uint8 tebibytes);
+internal_func uint64 kibibytesToBytes(uint8 kibibytes);
+internal_func uint64 mebibytesToBytes(uint8 mebibytes);
+internal_func uint64 gibibytesToBytes(uint8 gibibytes);
+internal_func uint64 tebibyteToBytes(uint8 tebibytes);
 
 /**
  * Simple function to calculate one number as a percentage of another.
@@ -278,7 +285,10 @@ uint64 tebibyteToBytes(uint8 tebibytes);
  * @param float32 b ?
  * @return float32
  */
-float32 percentageOfAnotherf(float32 a, float32 b);
+internal_func float32 percentageOfAnotherf(float32 a, float32 b);
+
+internal_func void *platformAllocateMemory(uint32 bytes);
+internal_func void platformFreeMemory(void *address);
 
 /*
  * *********************************************

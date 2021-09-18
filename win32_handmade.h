@@ -69,10 +69,26 @@ typedef struct Win32AudioBuffer
     // Byte count of our buffer's memory
     uint32 bufferSizeInBytes;
 
-    // Last position within the buffer that we wrote to.
-    uint32 runningByteIndex;
-
 } Win32AudioBuffer;
+
+typedef struct Win32FixedFrameRate {
+
+    // Monitor refresh rate in Hertz.
+    uint8 monitorRefreshRate;
+
+    // Target FPS.
+    uint8 gameTargetFPS;
+
+    // Target FPS in milliseconds.
+    float32 gameTargetMSPerFrame;
+
+    // System's minimum timer resolution.
+    UINT timeOutIntervalMS;
+
+    // Boolean did the system set the minimum timer resolution successfully.
+    MMRESULT timeOutIntervalSet;
+
+} Win32FixedFrameRate;
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -106,6 +122,9 @@ internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATIO
 internal_func void loadXInputDLLFunctions(void);
 
 internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
+
+internal_func void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer);
+internal_func void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer);
 
 internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
                                             DWORD lockOffsetInBytes,

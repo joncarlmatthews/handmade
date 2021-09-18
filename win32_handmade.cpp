@@ -18,11 +18,9 @@
 // Platform layer specific function signatures
 #include "win32_handmade.h"
 
-// Display output debug strings?
-const bool DEBUG_OUTPUT = FALSE;
-
 // Whether or not the application is running
-global_var bool running;
+global_var bool8 running;
+global_var bool8 paused;
 
 // Create the Windows frame buffer
 // @TOOD(JM) move this out of the global scope
@@ -139,25 +137,25 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         /*
          * Framerate fixing.
          */
+        Win32FixedFrameRate win32FixedFrameRate = {0};
+        win32FixedFrameRate.monitorRefreshRate = 60;
+        win32FixedFrameRate.gameTargetFPS = 30;
+        win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
 
         // Get the refresh rate of the monitor.
-        uint8 monitorRefreshRate    = 60;
-        uint8 gameTargetFPS         = 30;
-        float32 targetMSPerFrame    = (1000.0f / (float32)gameTargetFPS);
-
         DEVMODEA devMode = {0};
         bool32 getDisplaySettings = EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &devMode);
 
         if (getDisplaySettings) {
-            monitorRefreshRate = (uint8)devMode.dmDisplayFrequency;
+            win32FixedFrameRate.monitorRefreshRate = (uint8)devMode.dmDisplayFrequency;
         }
 
         // Set the system's minimum timer resolution to 1 millisecond
         // so that calls to the Windows Sleep() function are more
         // granular. E.g. the wake from the Sleep() will be checked
         // every 1ms, rather than the system default.
-        UINT timeOutIntervalMS = 1;
-        MMRESULT timeOutIntervalSet = timeBeginPeriod(timeOutIntervalMS);
+        win32FixedFrameRate.timeOutIntervalMS = 1;
+        win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
 
         /*
          * Audio
@@ -168,13 +166,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         win32InitAudioBuffer(window, &win32AudioBuffer);
 
         // Kick off playing the Windows audio buffer
-        win32AudioBuffer.buffer->Play(0, 0, DSBPLAY_LOOPING);
+        win32AudioBufferTogglePlay(&win32AudioBuffer);
 
-        // Create the game audio buffer. We do this outside of the game loop as we need
-        // to allocate memory
-        AudioBuffer audioBuffer = {0};
-        // @TODO(JM) move the audio memory to the GameMemory object
-        audioBuffer.memory = VirtualAlloc(NULL, win32AudioBuffer.bufferSizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        // Create the game audio buffer.
+        GameAudioBuffer gameAudioBuffer = {0};
+        gameAudioBuffer.writeEntireBuffer = FALSE;
+        gameAudioBuffer.minFramesWorthOfAudio = 4;
 
         /*
          * Graphics
@@ -229,6 +226,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Handle the Win32 message loop
             win32ProcessMessages(window, message, keyboard);
+
+            if (paused) {
+
+                win32AudioBufferToggleStop(&win32AudioBuffer);
+                continue;
+
+            } else {
+                win32AudioBufferTogglePlay(&win32AudioBuffer);
+            }
 
             // After processing our messages, we can now (in our "while running = true"
             // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
@@ -351,13 +357,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Size, in bytes, of the portion of the buffer to write.
             DWORD lockSizeInBytes = 0;
 
-            // Difference in bytes between the play and the write cursors.
-            DWORD writePlayDifference = 0;
-
             // Offset, in bytes, from the start of the buffer to the point where the lock begins.
             // We Mod the result by the total number of bytes so that the value wraps.
             // Result will look like this: 0, 4, 8, 12, 16, 24 etc...
-            // win32AudioBuffer.runningByteIndex and lockOffsetInBytes will be the same in theory.
             DWORD lockOffsetInBytes = 0;
 
             // Start playing sound. (Write a dummy wave sound)
@@ -370,12 +372,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // the position of the play and write cursors in the sound buffer.
             if (win32AudioBuffer.bufferSuccessfulyCreated) {
 
-                DWORD playCursorOffsetInBytes = NULL; // Offset, in bytes, of the play cursor
-                DWORD writeCursorOffsetInBytes = NULL; // Offset, in bytes, of the write cursor
+                DWORD playCursorOffsetInBytes   = NULL; // Offset, in bytes, of the play cursor
+                DWORD writeCursorOffsetInBytes  = NULL; // Offset, in bytes, of the write cursor
+                DWORD writePlayDifference       = 0; // Difference in bytes between the play and the write cursors.
+
+                struct AuidioLatency {
+                    uint32 samplesLatent;
+                    float32 samplesLatentAsPercentageOfBuffer;
+                    float32 latencyInMS;
+                } audioLatency = {0};
 
                 HRESULT res = win32AudioBuffer.buffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
 
-                if (DS_OK == res) {
+                if ((DS_OK == res) && (win32AudioBuffer.bufferSizeInBytes > 0)) {
 
                     // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
                     // write and returns pointers to which data can be written
@@ -393,24 +402,62 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         writePlayDifference = ((win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes) + writeCursorOffsetInBytes);
                     }
 
+                    audioLatency.samplesLatent = (writePlayDifference / win32AudioBuffer.bytesPerSample);
+                    audioLatency.samplesLatentAsPercentageOfBuffer = ((((float32)audioLatency.samplesLatent * 100.0f) / ((float32)win32AudioBuffer.samplesPerSecond * (float32)win32AudioBuffer.secondsWorthOfAudio)) / 100.0f);
+                    audioLatency.latencyInMS = ((1000.f * win32AudioBuffer.secondsWorthOfAudio) * audioLatency.samplesLatentAsPercentageOfBuffer);
+
+                   
+                    // If we're opting to *not* write the entire audio buffer, calculate how much to write here...
+                    if ((!gameAudioBuffer.writeEntireBuffer) && (gameAudioBuffer.minFramesWorthOfAudio >= 1)) {
+
+                        // How many samples do we need to write? (number of samples in MS)
+                        // Write at least the audio latency (in ms)
+                        float32 msToWrite = audioLatency.latencyInMS;
+
+                        // If the game's target frame rate (in ms) is larger than the audio latency (in ms)
+                        // then set that as our minimum latency.
+                        if (win32FixedFrameRate.gameTargetMSPerFrame > audioLatency.latencyInMS) {
+                            msToWrite = win32FixedFrameRate.gameTargetMSPerFrame;
+                        }
+                        // Now add up to the margin of safety
+                        float32 marginTotalInMS = (win32FixedFrameRate.gameTargetMSPerFrame * (float32)gameAudioBuffer.minFramesWorthOfAudio);
+                        if (marginTotalInMS > msToWrite) {
+                            msToWrite = (msToWrite + (marginTotalInMS - msToWrite));
+                        }
+
+                        float32 samplesToWrite = ((float32)win32AudioBuffer.samplesPerSecond * (((msToWrite * 100.0f) / 1000.0f) / 100));
+                        uint32 noOfBytesToWrite = (uint32)(samplesToWrite * win32AudioBuffer.bytesPerSample);
+
+                        if (noOfBytesToWrite > win32AudioBuffer.bufferSizeInBytes) {
+                            // We've somehow ended up with a calculation that's bigger than
+                            // the audio buffer available. Don't overwrite the lockSizeInBytes
+                            assert(!"noOfBytesToWrite calculation is > win32AudioBuffer.bufferSizeInBytes");
+                        } else {
+                            // Overwrite the lockSizeInBytes to match our smaller lock size.
+                            lockSizeInBytes = noOfBytesToWrite;
+                        }
+                    }
+                    
+
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
 
                     // @TODO(JM) Make audio latency match a single frame
-                    if (audioBuffer.platformBufferSizeInBytes > 0) {
-                        uint64 samplesLatent = (writePlayDifference / audioBuffer.bytesPerSample);
-                        float32 percentageOfAudioBuffer = ((((float32)samplesLatent * 100) / (float32)audioBuffer.samplesToWrite) / 100);
-                        float32 latency = ((1000.f * audioBuffer.secondsWorthOfAudio) * percentageOfAudioBuffer);
-                        char buff[50] = { 0 };
-                        sprintf_s(buff, sizeof(buff), "Audio latency: %.2fms (%.2f frames)\n", latency, (latency / targetMSPerFrame));
+                    if (win32AudioBuffer.bufferSizeInBytes > 0) {
+                        char buff[200] = { 0 };
+                        sprintf_s(buff,
+                            sizeof(buff),
+                            "Audio latency: %.2fms (%.2f frames)\n",
+                            audioLatency.latencyInMS,
+                            (audioLatency.latencyInMS / win32FixedFrameRate.gameTargetMSPerFrame));
                         OutputDebugString(buff);
                     }
 
 #endif // HANDMADE_DEBUG_AUDIO
 
-                    ancillaryPlatformLayerData.audioBuffer.playCursorPosition = playCursorOffsetInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.writeCursorPosition = writeCursorOffsetInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes = lockSizeInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.lockOffsetInBytes = lockOffsetInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.playCursorPosition   = playCursorOffsetInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.writeCursorPosition  = writeCursorOffsetInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes      = lockSizeInBytes;
+                    ancillaryPlatformLayerData.audioBuffer.lockOffsetInBytes    = lockOffsetInBytes;
                 } else {
                     OutputDebugString("Could not get the position of the play and write cursors in the secondary sound buffer");
                 }
@@ -418,17 +465,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             } // Audio buffer created.
 
             // Create the game's audio buffer
-            gameInitAudioBuffer(&audioBuffer,
-                                win32AudioBuffer.samplesPerSecond,
+            gameInitAudioBuffer(&gameAudioBuffer,
+                                lockSizeInBytes,
                                 win32AudioBuffer.bytesPerSample,
-                                win32AudioBuffer.secondsWorthOfAudio,
-                                (win32AudioBuffer.bufferSizeInBytes / win32AudioBuffer.bytesPerSample),
-                                win32AudioBuffer.bufferSizeInBytes,
-                                0);
+                                win32AudioBuffer.bufferSizeInBytes);
 
             // Create the game's frame buffer
-            FrameBuffer frameBuffer = {0};
-            gameInitFrameBuffer(&frameBuffer,
+            GameFrameBuffer gameFrameBuffer = {0};
+            gameInitFrameBuffer(&gameFrameBuffer,
                                 win32FrameBuffer.height,
                                 win32FrameBuffer.width,
                                 win32FrameBuffer.bytesPerPixel,
@@ -436,10 +480,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 win32FrameBuffer.memory);
 
             // Main game code.
-            gameUpdate(&memory, &frameBuffer, &audioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
+            gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
 
             // Output the audio buffer in Windows.
-            win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &audioBuffer);
+            win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
 
             // How long did this game loop (frame) take?
 
@@ -451,15 +495,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             float32 secondsElapsedForFrame          = win32GetElapsedTimeS(runningGameTime, gameLoopTime, globalQPCFrequency);
 
             // Cap framerate to target FPS if we're running ahead.
-            if ((millisecondsElapsedForFrame < targetMSPerFrame) && ((floor(targetMSPerFrame) - floor(millisecondsElapsedForFrame)) >= 1)) {
-                if (TIMERR_NOERROR == timeOutIntervalSet) {
-                    DWORD sleepMS = ((DWORD)floor(targetMSPerFrame) - (DWORD)floor(millisecondsElapsedForFrame));
+            if ((millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) && ((floor(win32FixedFrameRate.gameTargetMSPerFrame) - floor(millisecondsElapsedForFrame)) >= 1)) {
+                if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
+                    DWORD sleepMS = ((DWORD)floor(win32FixedFrameRate.gameTargetMSPerFrame) - (DWORD)floor(millisecondsElapsedForFrame));
                     if (sleepMS > 0) {
                         Sleep(sleepMS);
                     }
                     millisecondsElapsedForFrame = win32GetElapsedTimeMS(runningGameTime, win32GetTime(), globalQPCFrequency);
                 }else{
-                    while (millisecondsElapsedForFrame < targetMSPerFrame) {
+                    while (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
                         millisecondsElapsedForFrame = win32GetElapsedTimeMS(runningGameTime, win32GetTime(), globalQPCFrequency);
                     }
                 }
@@ -501,8 +545,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         } // game loop
 
-        if (TIMERR_NOERROR == timeOutIntervalSet) {
-            timeEndPeriod(timeOutIntervalMS);
+        if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
+            timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
         }
 
 
@@ -549,48 +593,29 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         // This message is *only* sent when the application is first loaded OR
         // when the window is resized.
         case WM_SIZE: {
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("\nWM_SIZE\n");
-            }
         } break;
 
         case WM_DESTROY: {
             // @TODO(JM) Handle as an error. Recreate window?
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("WM_DESTROY\n");
-            }
             running = false;
         } break;
 
         // Called when the user requests to close the window.
         case WM_CLOSE: {
             // @TODO(JM) Display "are you sure" message to user?
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("WM_CLOSE\n");
-            }
             running = false;
         } break;
 
         case WM_QUIT: {
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("\nWM_QUIT\n\n");
-            }
             running = false;
         } break;
 
         // Called when the user makes the window active (e.g. by tabbing to it).
         case WM_ACTIVATEAPP: {
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("\nWM_ACTIVATEAPP\n\n");
-            }
         } break;
 
         // Request to paint a portion of an application's window.
         case WM_PAINT: {
-
-            if (DEBUG_OUTPUT) {
-                OutputDebugString("\nWM_PAINT\n\n");
-            }
 
             // Prepare the window for painting.
 
@@ -651,10 +676,6 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  */
 internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height)
 {
-    if (DEBUG_OUTPUT) {
-        OutputDebugString("\nInitialising Win32 Buffer ");
-        OutputDebugString("(Allocating a chunk of memory that's large enough to have 32-bits for each pixel based on height & width)\n\n");
-    }
 
     // buffer->foo is a dereferencing shorthand for (*buffer).foo
 
@@ -708,11 +729,6 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                                             uint32 width,
                                             uint32 height)
 {
-    if (DEBUG_OUTPUT) {
-        OutputDebugString("\nCopying buffer memory to screen\n");
-    }
-    
-
     // @TODO(JM) Do some maths to stop the buffer's height and width being
     // skewed when the window's width and height doesn't match the aspect
     // ratio that we want. (e.g. when someone manually resizes the window)
@@ -809,7 +825,6 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     win32AudioBuffer->bytesPerSample = ((win32AudioBuffer->bitsPerChannel * win32AudioBuffer->noOfChannels) / 8);
     win32AudioBuffer->secondsWorthOfAudio = 1;
     win32AudioBuffer->bufferSizeInBytes = (uint64)((win32AudioBuffer->bytesPerSample * win32AudioBuffer->samplesPerSecond) * win32AudioBuffer->secondsWorthOfAudio);
-    win32AudioBuffer->runningByteIndex = 0;
 
     // Set the format
     WAVEFORMATEX waveFormat = {0};
@@ -852,17 +867,37 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     OutputDebugString("Primary & secondary successfully buffer created\n");
 }
 
+internal_func void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer)
+{
+    DWORD pdwStatus;
+    if (SUCCEEDED(win32AudioBuffer->buffer->GetStatus(&pdwStatus))) {
+        if ((pdwStatus & DSBSTATUS_PLAYING) != DSBSTATUS_PLAYING) { // If not playing
+            win32AudioBuffer->buffer->Play(0, 0, DSBPLAY_LOOPING);
+        }
+    }
+}
+
+internal_func void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer)
+{
+    DWORD pdwStatus;
+    if (SUCCEEDED(win32AudioBuffer->buffer->GetStatus(&pdwStatus))) {
+        if ((pdwStatus & DSBSTATUS_PLAYING) == DSBSTATUS_PLAYING) { // If playing
+            win32AudioBuffer->buffer->Stop();
+        }
+    }
+}
+
 internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
                                             DWORD lockOffsetInBytes,
                                             DWORD lockSizeInBytes,
-                                            GameAudioBuffer *audioBuffer)
+                                            GameAudioBuffer *gameAudioBuffer)
 {
     if (!win32AudioBuffer->bufferSuccessfulyCreated) {
         return;
     }
 
-    // Ensure the offset and lock size are both on the correct byte boundaries and that there are bytes to write
-    if (((lockOffsetInBytes % win32AudioBuffer->bytesPerSample) != 0) || ((lockSizeInBytes % win32AudioBuffer->bytesPerSample) != 0) || (lockSizeInBytes < win32AudioBuffer->bytesPerSample) ) {
+    // Ensure we have at least once sample to write
+    if (lockSizeInBytes < win32AudioBuffer->bytesPerSample) {
         return;
     }
 
@@ -893,10 +928,10 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
         uint32 *audioSample = (uint32 *)chunkOnePtr;
 
         // Create a pointer to the game audio buffer with the same 4-byte single audio sample grouping range.
-        uint32 *buffer = (uint32 *)audioBuffer->memory;
+        uint32 *buffer = (uint32 *)gameAudioBuffer->memory;
 
         // Advance the game audio buffer pointer to match the same as the lock offset.
-        buffer = (buffer + (lockOffsetInBytes / win32AudioBuffer->bytesPerSample));
+        //buffer = (buffer + (lockOffsetInBytes / win32AudioBuffer->bytesPerSample));
 
         // Iterate over each individual audio sample grouping (2-bytes for the left channel, 2-bytes for the right channel)
         // and write the same data for both...
@@ -918,7 +953,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
 
         // Set the audio buffer pointer back to the start of the memory block as the
         // second block of memory always starts from the beginning
-        buffer = (uint32 *)audioBuffer->memory;
+        buffer = (uint32 *)gameAudioBuffer->memory;
 
         for (size_t i = 0; i < audioSampleGroupsChunkTwo; i++) {
 
@@ -936,8 +971,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
             OutputDebugString("Could not unlock sound buffer");
         }
 
-    }
-    else {
+    } else {
         OutputDebugString("Could not lock secondary sound buffer");
     }
 
@@ -1054,6 +1088,16 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
 #endif // HANDMADE_DEBUG
 
                 switch (vkCode) {
+                    case 'P': {
+                        if (isDown) {
+                            if (paused) {
+                                paused = false;
+                            }else {
+                                paused = true;
+                            }
+                        }
+                    } break;
+
                     case 'W': {
                         GameControllerBtnState state = {0};
                         state.halfTransitionCount++;
@@ -1139,6 +1183,16 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *ne
         (*newState).halfTransitionCount = ((*newState).halfTransitionCount + 1);
     }
     (*newState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
+}
+
+internal_func void *platformAllocateMemory(uint32 bytes)
+{
+    return VirtualAlloc(NULL, bytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+}
+
+internal_func void platformFreeMemory(void *address)
+{
+    VirtualFree(address, 0, MEM_RELEASE);
 }
 
 /**
