@@ -285,22 +285,22 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uin
     }
 }
 
-uint64 kibibytesToBytes(uint8 kibibytes)
+internal_func uint64 kibibytesToBytes(uint8 kibibytes)
 {
     return (uint64)((uint64)1024 * (uint64)kibibytes);
 }
 
-uint64 mebibytesToBytes(uint8 mebibytes)
+internal_func uint64 mebibytesToBytes(uint8 mebibytes)
 {
     return (uint64)(((uint64)1024 * kibibytesToBytes(1)) * mebibytes);
 }
 
-uint64 gibibytesToBytes(uint8 gibibytes)
+internal_func uint64 gibibytesToBytes(uint8 gibibytes)
 {
     return (uint64)(((uint64)1024 * mebibytesToBytes(1)) * gibibytes);
 }
 
-uint64 tebibyteToBytes(uint8 tebibytes)
+internal_func uint64 tebibyteToBytes(uint8 tebibytes)
 {
     return (uint64)(((uint64)1024 * gibibytesToBytes(1)) * tebibytes);
 }

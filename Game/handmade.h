@@ -1,6 +1,7 @@
 #ifndef HEADER_HANDMADE
 #define HEADER_HANDMADE
 
+#include "types.h"
 
 #define HANDMADE_DEBUG_FPS
 #define HANDMADE_DEBUG_AUDIO
@@ -228,7 +229,7 @@ internal_func void gameUpdate(GameMemory *memory,
                                 GameFrameBuffer *frameBuffer,
                                 GameAudioBuffer *audioBuffer,
                                 GameInput inputInstances[],
-                                uint8 maxControllers,
+                                ControllerCounts *controllerCounts,
                                 AncillaryPlatformLayerData ancillaryPlatformLayerData);
 
 /**

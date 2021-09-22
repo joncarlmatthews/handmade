@@ -3,13 +3,14 @@
 
 #include <strsafe.h> // sprintf_s support
 #include <dsound.h>  // Direct Sound for audio output.
-#include <xinput.h>  // Xinput for receiving controller input. 
+#include <xinput.h>  // Xinput for receiving controller input.
+#include <math.h>  // floor
 
 //=======================================
 // Game layer
 //=======================================
 
-#include "..\Game\handmade.cpp"
+#include "..\Game\handmade.h"
 
 //=======================================
 // End of game layer
