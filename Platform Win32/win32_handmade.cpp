@@ -9,7 +9,7 @@
 // Game layer
 //=======================================
 
-#include "handmade.cpp"
+#include "..\Game\handmade.cpp"
 
 //=======================================
 // End of game layer
@@ -77,21 +77,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // Instance of the running application.
     windowClass.hInstance = instance;
-    windowClass.lpszClassName = "handmadeHeroWindowClass";
+    windowClass.lpszClassName = TEXT("handmadeHeroWindowClass");
 
     // Registers the window class for subsequent use in calls to 
     // the CreateWindowEx function.
     if (!RegisterClass(&windowClass)) {
 
         // TODO(JM) Log error.
-        OutputDebugString("Error 1. windowClass not registered\n");
+        OutputDebugStringA("Error 1. windowClass not registered\n");
         return FALSE;
     }
 
     // Physically open the window using CreateWindowEx
     HWND window = CreateWindowEx(NULL,
                                     windowClass.lpszClassName,
-                                    "Handmade Hero",
+                                    TEXT("Handmade Hero"),
                                     WS_OVERLAPPEDWINDOW|WS_VISIBLE,
                                     CW_USEDEFAULT,
                                     CW_USEDEFAULT,
@@ -105,7 +105,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     if (!window) {
 
         // TODO(JM) Log error.
-        OutputDebugString("Error 2. window not created via CreateWindowEx\n");
+        OutputDebugStringA("Error 2. window not created via CreateWindowEx\n");
         return FALSE;
     }
 
@@ -449,7 +449,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                             "Audio latency: %.2fms (%.2f frames)\n",
                             audioLatency.latencyInMS,
                             (audioLatency.latencyInMS / win32FixedFrameRate.gameTargetMSPerFrame));
-                        OutputDebugString(buff);
+                        OutputDebugStringA(buff);
                     }
 
 #endif // HANDMADE_DEBUG_AUDIO
@@ -459,7 +459,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes      = lockSizeInBytes;
                     ancillaryPlatformLayerData.audioBuffer.lockOffsetInBytes    = lockOffsetInBytes;
                 } else {
-                    OutputDebugString("Could not get the position of the play and write cursors in the secondary sound buffer");
+                    OutputDebugStringA("Could not get the position of the play and write cursors in the secondary sound buffer");
                 }
 
             } // Audio buffer created.
@@ -540,7 +540,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             sprintf_s(output, sizeof(output),
                         "ms/frame: %.1f s/frame %.5f, FSP: %.1f. Cycles: %.1fm (%.2f GHz).\n",
                         millisecondsElapsedForFrame, secondsElapsedForFrame, fps, clockCycles_mega, processorSpeed);
-            OutputDebugString(output);
+            OutputDebugStringA(output);
 #endif
 
         } // game loop
@@ -551,7 +551,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
 
     }else{
-        OutputDebugString("Error allocating game memory. Unable to run game\n");
+        OutputDebugStringA("Error allocating game memory. Unable to run game\n");
     }
 
     // Close the application.
@@ -646,7 +646,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         // The standard request from GetMessage().
         default: {
 
-            //OutputDebugString("default\n");
+            //OutputDebugStringA("default\n");
 
             // The default window procedure to provide default processing for 
             // any window messages not explicitly handled. It's required by the
@@ -759,10 +759,10 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     win32AudioBuffer->bufferSuccessfulyCreated = FALSE;
 
     // Load the library
-    HMODULE libHandle = LoadLibrary("dsound.dll");
+    HMODULE libHandle = LoadLibrary(TEXT("dsound.dll"));
 
     if (!libHandle) {
-        OutputDebugString("Could not load DirectSound DLL (dsound.dll)");
+        OutputDebugStringA("Could not load DirectSound DLL (dsound.dll)");
         return;
     }
 
@@ -773,7 +773,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
 
     if (!DirectSoundCreateAddr) {
         // Function not found within library.
-        OutputDebugString("DirectSoundCreate not in dsound.dll. Invalid/malformed DLL.");
+        OutputDebugStringA("DirectSoundCreate not in dsound.dll. Invalid/malformed DLL.");
         return;
     }
 
@@ -784,14 +784,14 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     res = DirectSoundCreate(NULL, &directSound, NULL);
 
     if (FAILED(res)){
-        OutputDebugString("Could not create direct sound object");
+        OutputDebugStringA("Could not create direct sound object");
         return;
     }
 
     res = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
 
     if (FAILED(res)){
-        OutputDebugString("Could not set cooperative level on direct sound object");
+        OutputDebugStringA("Could not set cooperative level on direct sound object");
         return;
     }
 
@@ -814,7 +814,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     res = directSound->CreateSoundBuffer(&primarySoundBufferDesc, &primarySoundBuffer, NULL);
 
     if (FAILED(res)){
-        OutputDebugString("Could not create primary buffer");
+        OutputDebugStringA("Could not create primary buffer");
         return;
     }
 
@@ -840,7 +840,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     res = primarySoundBuffer->SetFormat(&waveFormat);
 
     if (FAILED(res)){
-        OutputDebugString("Could not set sound format on primary buffer");
+        OutputDebugStringA("Could not set sound format on primary buffer");
         return;
     }
 
@@ -858,13 +858,13 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     res = directSound->CreateSoundBuffer(&secondarySoundBufferDesc, &win32AudioBuffer->buffer, NULL);
 
     if (FAILED(res)){
-        OutputDebugString("Could not create secondary buffer");
+        OutputDebugStringA("Could not create secondary buffer");
         return;
     }
 
     win32AudioBuffer->bufferSuccessfulyCreated = TRUE;
 
-    OutputDebugString("Primary & secondary successfully buffer created\n");
+    OutputDebugStringA("Primary & secondary successfully buffer created\n");
 }
 
 internal_func void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer)
@@ -968,11 +968,11 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
         res = win32AudioBuffer->buffer->Unlock(chunkOnePtr, chunkOneBytes, chunkTwoPtr, chunkTwoBytes);
 
         if (FAILED(res)) {
-            OutputDebugString("Could not unlock sound buffer");
+            OutputDebugStringA("Could not unlock sound buffer");
         }
 
     } else {
-        OutputDebugString("Could not lock secondary sound buffer");
+        OutputDebugStringA("Could not lock secondary sound buffer");
     }
 
     return;
@@ -991,26 +991,28 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState) {
+internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState)
+{
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration) {
+internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
+{
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 internal_func void loadXInputDLLFunctions(void)
 {
-    HMODULE libHandle = LoadLibrary("XInput1_4.dll");
+    HMODULE libHandle = LoadLibrary(TEXT("XInput1_4.dll"));
 
     // No XInput 1.4? Try and load the older 9.1.0.
     if (!libHandle) {
-        libHandle = LoadLibrary("XInput9_1_0.dll");
+        libHandle = LoadLibrary(TEXT("XInput9_1_0.dll"));
     }
 
-    // No XInput 9.1.0? Try and load the older 1.3.
+    // No XInput 9.1.0? Try and load the even older 1.3.
     if (!libHandle) {
-        libHandle = LoadLibrary("XInput1_3.dll");
+        libHandle = LoadLibrary(TEXT("XInput1_3.dll"));
     }
 
     if (libHandle) {
@@ -1075,15 +1077,15 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
                 if (vkCode == 'W') {
                     char buff[100] = {0};
                     sprintf_s(buff, sizeof(buff), "is down? %i\n", isDown);
-                    OutputDebugString(buff);
+                    OutputDebugStringA(buff);
 
                     memset(buff, 0, sizeof(buff));
                     sprintf_s(buff, sizeof(buff), "was down? %i\n", wasDown);
-                    OutputDebugString(buff);
+                    OutputDebugStringA(buff);
 
                     memset(buff, 0, sizeof(buff));
                     sprintf_s(buff, sizeof(buff), "repeat count %i\n", *repeatCount);
-                    OutputDebugString(buff);
+                    OutputDebugStringA(buff);
                 }
 #endif // HANDMADE_DEBUG
 
@@ -1220,7 +1222,7 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
     HANDLE handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (INVALID_HANDLE_VALUE == handle) {
-        OutputDebugString("Cannot read file");
+        OutputDebugStringA("Cannot read file");
         return file;
     }
 
@@ -1229,7 +1231,7 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
     res = GetFileSizeEx(handle, &sizeStruct);
 
     if (!res) {
-        OutputDebugString("Cannot get file size");
+        OutputDebugStringA("Cannot get file size");
         CloseHandle(handle);
         return file;
     }
@@ -1245,7 +1247,7 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
     file.memory = VirtualAlloc(NULL, sizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
     if (NULL == file.memory) {
-        OutputDebugString("Cannot allocate memory for file");
+        OutputDebugStringA("Cannot allocate memory for file");
         CloseHandle(handle);
         return file;
     }
@@ -1255,7 +1257,7 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
     res = ReadFile(handle, file.memory, sizeInBytes32, &bytesRead, NULL);
 
     if ((!res) || (bytesRead != sizeInBytes32)) {
-        OutputDebugString("Cannot read file into memory");
+        OutputDebugStringA("Cannot read file into memory");
         DEBUG_platformFreeFileMemory(&file);
         CloseHandle(handle);
         return file;
@@ -1283,7 +1285,7 @@ internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, void *memory,
     HANDLE handle = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (INVALID_HANDLE_VALUE == handle) {
-        OutputDebugString("Cannot read file");
+        OutputDebugStringA("Cannot read file");
         return false;
     }
 
@@ -1292,7 +1294,7 @@ internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, void *memory,
     res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
 
     if ((!res) || (bytesWritten != memorySizeInBytes)) {
-        OutputDebugString("Could not write file to location");
+        OutputDebugStringA("Could not write file to location");
         CloseHandle(handle);
         return false;
     }
