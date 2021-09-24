@@ -1,13 +1,28 @@
-#include "types.h"
 #include <math.h> // For Sin
+#include "types.h"
 #include "handmade.h"
 
-internal_func void gameUpdate(GameMemory *memory,
-                                GameFrameBuffer *frameBuffer,
-                                GameAudioBuffer *audioBuffer,
-                                GameInput inputInstances[],
-                                ControllerCounts *controllerCounts,
-                                AncillaryPlatformLayerData ancillaryPlatformLayerData)
+// dllmain.cpp : Defines the entry point for the DLL application.
+/*
+#include "pch.h"
+
+BOOL APIENTRY DllMain(HMODULE hModule,
+                       DWORD  ul_reason_for_call,
+                       LPVOID lpReserved
+)
+{
+    switch (ul_reason_for_call) {
+        case DLL_PROCESS_ATTACH:
+        case DLL_THREAD_ATTACH:
+        case DLL_THREAD_DETACH:
+        case DLL_PROCESS_DETACH:
+            break;
+    }
+    return TRUE;
+}
+*/
+
+GAME_UPDATE(gameUpdate)
 {
     /**
      * Game state initialisation
@@ -166,17 +181,17 @@ internal_func void gameUpdate(GameMemory *memory,
         }
     }
 
-    gameWriteFrameBuffer(gameState, frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
+    writeFrameBuffer(gameState, frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
 
     gameState->setBG = 1;
 }
 
-internal_func void gameWriteFrameBuffer(GameState *gameState,
-                                        GameFrameBuffer *buffer,
-                                        AncillaryPlatformLayerData ancillaryPlatformLayerData,
-                                        int redOffset,
-                                        int greenOffset,
-                                        GameAudioBuffer *audioBuffer)
+internal_func void writeFrameBuffer(GameState *gameState,
+                                    GameFrameBuffer *buffer,
+                                    AncillaryPlatformLayerData ancillaryPlatformLayerData,
+                                    int redOffset,
+                                    int greenOffset,
+                                    GameAudioBuffer *audioBuffer)
 {
     // Background fill
     if (!gameState->setBG) {
@@ -220,12 +235,7 @@ internal_func void gameWriteFrameBuffer(GameState *gameState,
 
 }
 
-internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
-                                                uint32 height,
-                                                uint32 width,
-                                                uint16 bytesPerPixel,
-                                                uint32 byteWidthPerRow,
-                                                void *memory)
+GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
 {
     frameBuffer->height = height;
     frameBuffer->width = width;
@@ -236,10 +246,7 @@ internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
     return frameBuffer;
 }
 
-internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
-                                                    uint32 noOfBytesToWrite,
-                                                    uint8 bytesPerSample,
-                                                    uint64 platformBufferSizeInBytes)
+GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
 {
     if ( (noOfBytesToWrite <= 0) || (bytesPerSample <= 0) ) {
         return audioBuffer;
@@ -285,33 +292,7 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uin
     }
 }
 
-internal_func uint64 kibibytesToBytes(uint8 kibibytes)
-{
-    return (uint64)((uint64)1024 * (uint64)kibibytes);
-}
-
-internal_func uint64 mebibytesToBytes(uint8 mebibytes)
-{
-    return (uint64)(((uint64)1024 * kibibytesToBytes(1)) * mebibytes);
-}
-
-internal_func uint64 gibibytesToBytes(uint8 gibibytes)
-{
-    return (uint64)(((uint64)1024 * mebibytesToBytes(1)) * gibibytes);
-}
-
-internal_func uint64 tebibyteToBytes(uint8 tebibytes)
-{
-    return (uint64)(((uint64)1024 * gibibytesToBytes(1)) * tebibytes);
-}
-
-internal_func uint32 truncateToUint32Safe(uint64 value)
-{
-    assert((value <= 0xffffffff));
-    return (uint32)value;
-}
-
-float32 percentageOfAnotherf(float32 a, float32 b)
+internal_func float32 percentageOfAnotherf(float32 a, float32 b)
 {
     if (b == 0) {
         return 0;
@@ -319,4 +300,24 @@ float32 percentageOfAnotherf(float32 a, float32 b)
 
     float32 fract = (a / b);
     return (fract * 100.0f);
+}
+
+extern "C" __declspec(dllexport) GAME_KIBIBYTES_TO_BYTES(gameKibibytesToBytes)
+{
+    return (uint64)((uint64)1024 * (uint64)kibibytes);
+}
+
+extern "C" __declspec(dllexport) GAME_MEBIBYTES_TO_BYTES(gameMebibytesToBytes)
+{
+    return (uint64)(((uint64)1024 * gameKibibytesToBytes(1)) * mebibytes);
+}
+
+extern "C" __declspec(dllexport) GAME_GIBIBYTES_TO_BYTES(gameGibibytesToBytes)
+{
+    return (uint64)(((uint64)1024 * gameMebibytesToBytes(1)) * gibibytes);
+}
+
+extern "C" __declspec(dllexport) GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytes)
+{
+    return (uint64)(((uint64)1024 * gameGibibytesToBytes(1)) * tebibytes);
 }

@@ -115,18 +115,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
+    GameCode gameCode = { 0 };
+
+    loadGameDLLFunctions(&gameCode);
+
     /*
      * Game memory
      */
 #if HANDMADE_LOCAL_BUILD
-    LPVOID memoryStartAddress = (LPVOID)tebibyteToBytes(4);
+    LPVOID memoryStartAddress = (LPVOID)gameCode.gameTebibyteToBytes(4);
 #else
     LPVOID memoryStartAddress = NULL;
 #endif
 
     GameMemory memory = {0};
-    memory.permanentStorageSizeInBytes = mebibytesToBytes(64);
-    memory.transientStorageSizeInBytes = gibibytesToBytes(1);
+    memory.permanentStorageSizeInBytes = gameCode.gameMebibytesToBytes(64);
+    memory.transientStorageSizeInBytes = gameCode.gameGibibytesToBytes(1);
 
     uint64 memoryTotalSize = (memory.permanentStorageSizeInBytes + memory.transientStorageSizeInBytes);
 
@@ -466,22 +470,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             } // Audio buffer created.
 
             // Create the game's audio buffer
-            gameInitAudioBuffer(&gameAudioBuffer,
-                                lockSizeInBytes,
-                                win32AudioBuffer.bytesPerSample,
-                                win32AudioBuffer.bufferSizeInBytes);
+            gameCode.gameInitAudioBuffer(&gameAudioBuffer,
+                                            lockSizeInBytes,
+                                            win32AudioBuffer.bytesPerSample,
+                                            win32AudioBuffer.bufferSizeInBytes);
 
             // Create the game's frame buffer
             GameFrameBuffer gameFrameBuffer = {0};
-            gameInitFrameBuffer(&gameFrameBuffer,
-                                win32FrameBuffer.height,
-                                win32FrameBuffer.width,
-                                win32FrameBuffer.bytesPerPixel,
-                                win32FrameBuffer.byteWidthPerRow,
-                                win32FrameBuffer.memory);
+            gameCode.gameInitFrameBuffer(&gameFrameBuffer,
+                                            win32FrameBuffer.height,
+                                            win32FrameBuffer.width,
+                                            win32FrameBuffer.bytesPerPixel,
+                                            win32FrameBuffer.byteWidthPerRow,
+                                            win32FrameBuffer.memory);
 
             // Main game code.
-            gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
+            gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
@@ -992,44 +996,6 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState)
-{
-    return ERROR_DEVICE_NOT_CONNECTED;
-}
-
-internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
-{
-    return ERROR_DEVICE_NOT_CONNECTED;
-}
-
-internal_func void loadXInputDLLFunctions(void)
-{
-    HMODULE libHandle = LoadLibrary(TEXT("XInput1_4.dll"));
-
-    // No XInput 1.4? Try and load the older 9.1.0.
-    if (!libHandle) {
-        libHandle = LoadLibrary(TEXT("XInput9_1_0.dll"));
-    }
-
-    // No XInput 9.1.0? Try and load the even older 1.3.
-    if (!libHandle) {
-        libHandle = LoadLibrary(TEXT("XInput1_3.dll"));
-    }
-
-    if (libHandle) {
-
-        XInputGetStateDT *XInputGetStateAddr = (XInputGetStateDT*)GetProcAddress(libHandle, "XInputGetState");
-        XInputSetStateDT *XInputSetStateAddr = (XInputSetStateDT*)GetProcAddress(libHandle, "XInputSetState");
-
-        if (XInputGetStateAddr) {
-            XInputGetState = XInputGetStateAddr;
-        }
-        if (XInputSetStateAddr) {
-            XInputSetState = XInputSetStateAddr;
-        }
-    }
-}
-
 internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard)
 {
     // Win32 Message loop. Retrieves all messages (from the calling thread's message queue)
@@ -1188,12 +1154,18 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *ne
     (*newState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
 }
 
-internal_func void *platformAllocateMemory(uint32 bytes)
+internal_func uint32 win32TruncateToUint32Safe(uint64 value)
+{
+    assert((value <= 0xffffffff));
+    return (uint32)value;
+}
+
+PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory)
 {
     return VirtualAlloc(NULL, bytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 }
 
-internal_func void platformFreeMemory(void *address)
+PLATFORM_FREE_MEMORY(platformFreeMemory)
 {
     VirtualFree(address, 0, MEM_RELEASE);
 }
@@ -1204,7 +1176,7 @@ internal_func void platformFreeMemory(void *address)
  * high-frequency rumble motor.
  *
  */
-internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed)
+PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
 {
     XINPUT_VIBRATION pVibration = {0};
 
@@ -1214,9 +1186,91 @@ internal_func void platformControllerVibrate(uint8 controllerIndex, uint16 motor
     XInputSetState(controllerIndex, &pVibration);
 }
 
-internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
+//=======================================
+// Library loading
+//=======================================
+internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState)
 {
-    DEBUG_file file = {0};
+    return ERROR_DEVICE_NOT_CONNECTED;
+}
+
+internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
+{
+    return ERROR_DEVICE_NOT_CONNECTED;
+}
+
+internal_func void loadXInputDLLFunctions(void)
+{
+    HMODULE libHandle = LoadLibrary(TEXT("XInput1_4.dll"));
+
+    // No XInput 1.4? Try and load the older 9.1.0.
+    if (!libHandle) {
+        libHandle = LoadLibrary(TEXT("XInput9_1_0.dll"));
+    }
+
+    // No XInput 9.1.0? Try and load the even older 1.3.
+    if (!libHandle) {
+        libHandle = LoadLibrary(TEXT("XInput1_3.dll"));
+    }
+
+    if (libHandle) {
+
+        XInputGetStateDT *XInputGetStateAddr = (XInputGetStateDT *)GetProcAddress(libHandle, "XInputGetState");
+        XInputSetStateDT *XInputSetStateAddr = (XInputSetStateDT *)GetProcAddress(libHandle, "XInputSetState");
+
+        if (XInputGetStateAddr) {
+            XInputGetState = XInputGetStateAddr;
+        }
+        if (XInputSetStateAddr) {
+            XInputSetState = XInputSetStateAddr;
+        }
+    }
+}
+
+internal_func void loadGameDLLFunctions(GameCode *gameCode)
+{
+    HMODULE libHandle = LoadLibrary(TEXT("..\\build\\Game\\x64\\Debug\\Game.dll"));
+
+    if (libHandle) {
+
+        GameUpdate *gameUpdateAddr                      = (GameUpdate *)GetProcAddress(libHandle, "gameUpdate");
+        GameInitFrameBuffer *gameInitFrameBufferAddr    = (GameInitFrameBuffer *)GetProcAddress(libHandle, "gameInitFrameBuffer");
+        GameInitAudioBuffer *gameInitAudioBufferAddr    = (GameInitAudioBuffer *)GetProcAddress(libHandle, "gameInitAudioBuffer");
+        GameKibibytesToBytes *gameKibibytesToBytesAddr  = (GameKibibytesToBytes *)GetProcAddress(libHandle, "gameKibibytesToBytes");
+        GameMebibytesToBytes *gameMebibytesToBytesAddr  = (GameMebibytesToBytes *)GetProcAddress(libHandle, "gameMebibytesToBytes");
+        GameGibibytesToBytes *gameGibibytesToBytesAddr  = (GameGibibytesToBytes *)GetProcAddress(libHandle, "gameGibibytesToBytes");
+        GameTebibyteToBytes *gameTebibyteToBytesAddr    = (GameTebibyteToBytes *)GetProcAddress(libHandle, "gameTebibyteToBytes");
+
+        if (gameUpdateAddr) {
+            gameCode->gameUpdate = gameUpdateAddr;
+        }
+        if (gameInitFrameBufferAddr) {
+            gameCode->gameInitFrameBuffer = gameInitFrameBufferAddr;
+        }
+        if (gameInitAudioBufferAddr) {
+            gameCode->gameInitAudioBuffer = gameInitAudioBufferAddr;
+        }
+        if (gameKibibytesToBytesAddr) {
+            gameCode->gameKibibytesToBytes = gameKibibytesToBytesAddr;
+        }
+        if (gameMebibytesToBytesAddr) {
+            gameCode->gameMebibytesToBytes = gameMebibytesToBytesAddr;
+        }
+        if (gameGibibytesToBytesAddr) {
+            gameCode->gameGibibytesToBytes = gameGibibytesToBytesAddr;
+        }
+        if (gameTebibyteToBytesAddr) {
+            gameCode->gameTebibyteToBytes = gameTebibyteToBytesAddr;
+        }
+    }
+}
+
+//=======================================
+// Platform layer debug helper functions
+//=======================================
+DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
+{
+    DEBUG_file file = { 0 };
     bool32 res;
 
     // Open the file for reading.
@@ -1242,7 +1296,7 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
     // As GetFileSizeEx can read files larger than 4-bytes, but ReadFile can only
     // take a maximum of 4-bytes, lets make sure we're not reading files larger
     // than 4GB.
-    uint32 sizeInBytes32 = truncateToUint32Safe(sizeInBytes);
+    uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
 
     // Allocate enough memory for the file.
     file.memory = VirtualAlloc(NULL, sizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -1271,14 +1325,14 @@ internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename)
     return file;
 }
 
-internal_func void DEBUG_platformFreeFileMemory(DEBUG_file *file)
+DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
 {
     VirtualFree(file->memory, 0, MEM_RELEASE);
     file->memory = 0;
     file->sizeinBytes = 0;
 }
 
-internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, void *memory, uint32 memorySizeInBytes)
+DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
 {
     bool32 res;
 

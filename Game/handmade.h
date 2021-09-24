@@ -164,10 +164,10 @@ typedef struct GameInput
 
 typedef struct AncillaryPlatformLayerData {
     struct {
-        DWORD playCursorPosition;
-        DWORD writeCursorPosition;
-        DWORD lockSizeInBytes;
-        DWORD lockOffsetInBytes;
+        WIN32_DWORD playCursorPosition;
+        WIN32_DWORD writeCursorPosition;
+        WIN32_DWORD lockSizeInBytes;
+        WIN32_DWORD lockOffsetInBytes;
     } audioBuffer;
 } AncillaryPlatformLayerData;
 
@@ -223,49 +223,74 @@ typedef struct GameMemory
      */
     bool32 initialised;
 
+
 } GameMemory;
 
-internal_func void gameUpdate(GameMemory *memory,
-                                GameFrameBuffer *frameBuffer,
-                                GameAudioBuffer *audioBuffer,
-                                GameInput inputInstances[],
-                                ControllerCounts *controllerCounts,
-                                AncillaryPlatformLayerData ancillaryPlatformLayerData);
+/**
+ * @brief Main game loop update method
+ * 
+ * @param memory Pointer to game memory
+ * @param frameBuffer Pointer to the initialised frame buffer
+ * @param audioBuffer Pointer to the initialised audio buffer 
+ * @param inputInstances Array of GameInput devices
+ * @param controllerCounts Pointer to the ControllerCounts structs
+ * @param ancillaryPlatformLayerData Ancillary platform layer data to send in
+ * 
+ * @return void
+*/
+#define GAME_UPDATE(name) void name(GameMemory *memory, \
+                                    GameFrameBuffer *frameBuffer, \
+                                    GameAudioBuffer *audioBuffer, \
+                                    GameInput inputInstances[], \
+                                    ControllerCounts *controllerCounts, \
+                                    AncillaryPlatformLayerData ancillaryPlatformLayerData)
+typedef GAME_UPDATE(GameUpdate);
+GAME_UPDATE(gameUpdate);
+//GAME_UPDATE(gameUpdateStub) {}
+
 
 /**
- * Initialises the game's frame buffer ready for writing.
+ * @brief Initialises the game's frame buffer ready for writing.
  *
- */
-internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
-                                                uint32 height,
-                                                uint32 width,
-                                                uint16 bytesPerPixel,
-                                                uint32 byteWidthPerRow,
-                                                void *memory);
+ * @param frameBuffer
+ * @param height
+ * @param width
+ * @param bytesPerPixel
+ * @param byteWidthPerRow
+ * @parm memory
+ *
+ * @return GameFrameBuffer Pointer to the GameFrameBuffer struct
+*/
+#define GAME_INIT_FRAME_BUFFER(name) GameFrameBuffer* name(GameFrameBuffer *frameBuffer, \
+                                                                            uint32 height, \
+                                                                            uint32 width, \
+                                                                            uint16 bytesPerPixel, \
+                                                                            uint32 byteWidthPerRow, \
+                                                                            void *memory)
+typedef GAME_INIT_FRAME_BUFFER(GameInitFrameBuffer);
+GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer);
+//GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) {}
+
 
 /**
- * Initialises the game's audio buffer ready for writing.
- *
- */
-internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
-                                                    uint32 noOfBytesToWrite,
-                                                    uint8 bytesPerSample,
-                                                    uint64 platformBufferSizeInBytes);
+ * @brief Initialises the game's audio buffer ready for writing.
+ * 
+ * @param audioBuffer 
+ * @param noOfBytesToWrite 
+ * @param bytesPerSample 
+ * @param platformBufferSizeInBytes
+ * 
+ * @return GameAudioBuffer Pointer to the GameAudioBuffer struct
+*/
+#define GAME_INIT_AUDIO_BUFFER(name) GameAudioBuffer* name(GameAudioBuffer *audioBuffer, \
+                                                                            uint32 noOfBytesToWrite, \
+                                                                            uint8 bytesPerSample, \
+                                                                            uint64 platformBufferSizeInBytes)
+typedef GAME_INIT_AUDIO_BUFFER(GameInitAudioBuffer);
+GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer);
+//GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) {}
 
-internal_func void gameWriteFrameBuffer(GameState *gameState,
-                                        GameFrameBuffer *buffer,
-                                        AncillaryPlatformLayerData ancillaryPlatformLayerData,
-                                        int redOffset,
-                                        int greenOffset,
-                                        GameAudioBuffer *audioBuffer);
 
-internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
-
-/*
- * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
- * the code will assert if the value passed in is larger than 4 bytes
- */
-internal_func uint32 truncateToUint32Safe(uint64 value);
 
 /*
  * Helper functions to translate kibibytes, mebibytes and gibibytes
@@ -274,10 +299,44 @@ internal_func uint32 truncateToUint32Safe(uint64 value);
  * @see https://en.wikipedia.org/wiki/Byte#Multiple-byte_units
  * @see https://www.quora.com/Is-1-GB-equal-to-1024-MB-or-1000-MB
  */
-internal_func uint64 kibibytesToBytes(uint8 kibibytes);
-internal_func uint64 mebibytesToBytes(uint8 mebibytes);
-internal_func uint64 gibibytesToBytes(uint8 gibibytes);
-internal_func uint64 tebibyteToBytes(uint8 tebibytes);
+#define GAME_KIBIBYTES_TO_BYTES(name) uint64 name(uint8 kibibytes)
+typedef GAME_KIBIBYTES_TO_BYTES(GameKibibytesToBytes);
+GAME_KIBIBYTES_TO_BYTES(gameKibibytesToBytes);
+//GAME_KIBIBYTES_TO_BYTES(gameKibibytesToBytesStub) {}
+
+#define GAME_MEBIBYTES_TO_BYTES(name) uint64 name(uint8 mebibytes)
+typedef GAME_MEBIBYTES_TO_BYTES(GameMebibytesToBytes);
+GAME_MEBIBYTES_TO_BYTES(gameMebibytesToBytes);
+//GAME_MEBIBYTES_TO_BYTES(gameMebibytesToBytesStub) {}
+
+#define GAME_GIBIBYTES_TO_BYTES(name) uint64 name(uint8 gibibytes)
+typedef GAME_GIBIBYTES_TO_BYTES(GameGibibytesToBytes);
+GAME_GIBIBYTES_TO_BYTES(gameGibibytesToBytes);
+//GAME_GIBIBYTES_TO_BYTES(gameGibibytesToBytesStub) {}
+
+#define GAME_TEBIBYTE_TO_BYTES(name) uint64 name(uint8 tebibytes)
+typedef GAME_TEBIBYTE_TO_BYTES(GameTebibyteToBytes);
+GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytes);
+//GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytesStub) {}
+
+typedef struct GameCode {
+    GameUpdate *gameUpdate;
+    GameInitFrameBuffer *gameInitFrameBuffer;
+    GameInitAudioBuffer *gameInitAudioBuffer;
+    GameKibibytesToBytes *gameKibibytesToBytes;
+    GameMebibytesToBytes *gameMebibytesToBytes;
+    GameGibibytesToBytes *gameGibibytesToBytes;
+    GameTebibyteToBytes *gameTebibyteToBytes;
+} GameCode;
+
+internal_func void writeFrameBuffer(GameState *gameState,
+                                    GameFrameBuffer *buffer,
+                                    AncillaryPlatformLayerData ancillaryPlatformLayerData,
+                                    int redOffset,
+                                    int greenOffset,
+                                    GameAudioBuffer *audioBuffer);
+
+internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
 
 /**
  * Simple function to calculate one number as a percentage of another.
@@ -288,14 +347,43 @@ internal_func uint64 tebibyteToBytes(uint8 tebibytes);
  */
 internal_func float32 percentageOfAnotherf(float32 a, float32 b);
 
-internal_func void *platformAllocateMemory(uint32 bytes);
-internal_func void platformFreeMemory(void *address);
-
 /*
  * *********************************************
  * Services that the platform layer must provide
  * *********************************************
  */
+
+/**
+ * @brief Requests the platform layer allocated @link bytes worth of memory
+ * 
+ * @param bytes The amount of bytes to allocate
+ * 
+ * @return void pointer to the blockmemory
+*/
+#define PLATFORM_ALLOCATE_MEMORY(name) void *name(uint32 bytes)
+typedef PLATFORM_ALLOCATE_MEMORY(PlatformAllocateMemory);
+
+/**
+ * @brief Requests the platform layer free the memory for a given address
+ *
+ * @param address Pointer to the memory block
+ *
+ * @return void
+*/
+#define PLATFORM_FREE_MEMORY(name) void name(void *address)
+typedef PLATFORM_FREE_MEMORY(PlatformFreeMemory);
+
+/*
+ * Vibrates the controller
+ *
+ * @param uint8 controllerIndex which controller to vibrate
+ * @param uint16 speed to vibrate motor 1
+ * @param uint16 speed to vibrate motor 2
+ * 
+ * @return void
+ */
+#define PLATFORM_CONTROLLER_VIBRATE(name) void name(uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed)
+typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 
 /*
  * printf style output debugger
@@ -303,14 +391,8 @@ internal_func void platformFreeMemory(void *address);
  * @param char format Format specifier. E.g. "Var is %i\n"
  * @param optional command separated list of variables
  */
-internal_func void platformLog(char *format, ...);
+void platformLog(char *format, ...);
 
-/**
- * Function for vibrating the controller
- */
-internal_func void platformControllerVibrate(uint8 controllerIndex,
-                                                uint16 motor1Speed,
-                                                uint16 motor2Speed);
 
 /*
  * Definitions for local builds only. E.g. helper functions/structures
@@ -326,22 +408,28 @@ typedef struct DEBUG_file
 
 } DEBUG_file;
 
+#define GAME_GIBIBYTES_TO_BYTES(name) uint64 name(uint8 gibibytes)
+typedef GAME_GIBIBYTES_TO_BYTES(GameGibibytesToBytes);
+
 /*
  * Read an entire file into memory
  *
  * @note call DEBUG_platformFreeFileMemory in a subsequent call.
  */
-internal_func DEBUG_file DEBUG_platformReadEntireFile(char *filename);
+#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(char *filename)
+typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
 
 /*
  * Free file memory read from DEBUG_platformReadEntireFile
  */
-internal_func void DEBUG_platformFreeFileMemory(DEBUG_file *file);
+#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(DEBUG_file *file)
+typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
 
 /*
  * Write bytes into a new file
  */
-internal_func bool32 DEBUG_platformWriteEntireFile(char *filename, void *memory, uint32 memorySizeInBytes);
+#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(char *filename, void *memory, uint32 memorySizeInBytes)
+typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
 
 #endif
 
