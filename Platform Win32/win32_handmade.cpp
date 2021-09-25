@@ -1334,6 +1334,8 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
     HMODULE libHandle = LoadLibrary(TEXT("..\\build\\Game\\x64\\Debug\\Game.dll"));
 
+    bool8 valid = 1;
+
     if (libHandle) {
 
         GameUpdate *gameUpdateAddr                      = (GameUpdate *)GetProcAddress(libHandle, "gameUpdate");
@@ -1347,43 +1349,64 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
         if (gameUpdateAddr) {
             gameCode->gameUpdate = gameUpdateAddr;
         } else {
-            assert(!"unable to fund gameUpdate function");
+            assert(!"unable to find gameUpdate");
+            valid = 0;
         }
 
         if (gameInitFrameBufferAddr) {
             gameCode->gameInitFrameBuffer = gameInitFrameBufferAddr;
         } else {
-            assert(!"unable to fund gameInitFrameBuffer function");
+            assert(!"unable to find gameInitFrameBuffer");
+            valid = 0;
         }
 
         if (gameInitAudioBufferAddr) {
             gameCode->gameInitAudioBuffer = gameInitAudioBufferAddr;
         } else {
-            assert(!"unable to fund gameInitAudioBuffer function");
+            assert(!"unable to find gameInitAudioBuffer");
+            valid = 0;
         }
 
         if (gameKibibytesToBytesAddr) {
             gameCode->gameKibibytesToBytes = gameKibibytesToBytesAddr;
         } else {
-            assert(!"unable to fund gameKibibytesToBytes function");
+            assert(!"unable to find gameKibibytesToBytes");
+            valid = 0;
         }
 
         if (gameMebibytesToBytesAddr) {
             gameCode->gameMebibytesToBytes = gameMebibytesToBytesAddr;
         } else {
-            assert(!"unable to fund gameMebibytesToBytes function");
+            assert(!"unable to find gameMebibytesToBytes");
+            valid = 0;
         }
 
         if (gameGibibytesToBytesAddr) {
             gameCode->gameGibibytesToBytes = gameGibibytesToBytesAddr;
         } else {
-            assert(!"unable to fund gameGibibytesToBytes function");
+            assert(!"unable to find gameGibibytesToBytes");
+            valid = 0;
         }
 
         if (gameTebibyteToBytesAddr) {
             gameCode->gameTebibyteToBytes = gameTebibyteToBytesAddr;
         } else {
-            assert(!"unable to fund gameTebibyteToBytes function");
+            assert(!"unable to find gameTebibyteToBytes");
+            valid = 0;
         }
+
+    } else {
+        assert(!"unable to load game code");
+        valid = 0;
+    }
+
+    if (!valid) {
+        gameCode->gameUpdate            = &gameUpdateStub;
+        gameCode->gameInitFrameBuffer   = &gameInitFrameBufferStub;
+        gameCode->gameInitAudioBuffer   = &gameInitAudioBufferStub;
+        gameCode->gameKibibytesToBytes  = &gameKibibytesToBytesStub;
+        gameCode->gameMebibytesToBytes  = &gameMebibytesToBytesStub;
+        gameCode->gameGibibytesToBytes  = &gameGibibytesToBytesStub;
+        gameCode->gameTebibyteToBytes   = &gameTebibyteToBytesStub;
     }
 }

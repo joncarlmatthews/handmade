@@ -341,6 +341,7 @@ typedef struct GameMemory
                                     ControllerCounts *controllerCounts, \
                                     AncillaryPlatformLayerData ancillaryPlatformLayerData)
 typedef GAME_UPDATE(GameUpdate);
+GAME_UPDATE(gameUpdateStub) { return; }
 
 /**
  * @brief Initialises the game's frame buffer ready for writing.
@@ -361,6 +362,7 @@ typedef GAME_UPDATE(GameUpdate);
                                                                             uint32 byteWidthPerRow, \
                                                                             void *memory)
 typedef GAME_INIT_FRAME_BUFFER(GameInitFrameBuffer);
+GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) { return 0; }
 
 /**
  * @brief Initialises the game's audio buffer ready for writing.
@@ -378,6 +380,7 @@ typedef GAME_INIT_FRAME_BUFFER(GameInitFrameBuffer);
                                                             uint8 bytesPerSample, \
                                                             uint64 platformBufferSizeInBytes)
 typedef GAME_INIT_AUDIO_BUFFER(GameInitAudioBuffer);
+GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
 
 internal_func void writeFrameBuffer(GameState *gameState,
                                     GameFrameBuffer *buffer,
@@ -406,15 +409,19 @@ internal_func float32 percentageOfAnotherf(float32 a, float32 b);
  */
 #define GAME_KIBIBYTES_TO_BYTES(name) uint64 name(uint8 kibibytes)
 typedef GAME_KIBIBYTES_TO_BYTES(GameKibibytesToBytes);
+GAME_KIBIBYTES_TO_BYTES(gameKibibytesToBytesStub) { return 0; }
 
 #define GAME_MEBIBYTES_TO_BYTES(name) uint64 name(uint8 mebibytes)
 typedef GAME_MEBIBYTES_TO_BYTES(GameMebibytesToBytes);
+GAME_MEBIBYTES_TO_BYTES(gameMebibytesToBytesStub) { return 0; }
 
 #define GAME_GIBIBYTES_TO_BYTES(name) uint64 name(uint8 gibibytes)
 typedef GAME_GIBIBYTES_TO_BYTES(GameGibibytesToBytes);
+GAME_GIBIBYTES_TO_BYTES(gameGibibytesToBytesStub) { return 0; }
 
 #define GAME_TEBIBYTE_TO_BYTES(name) uint64 name(uint8 tebibytes)
 typedef GAME_TEBIBYTE_TO_BYTES(GameTebibyteToBytes);
+GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytesStub) { return 0; }
 
 /**
  * Struct to assign pointers to internal game code functions
