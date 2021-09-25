@@ -22,7 +22,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 }
 */
 
-GAME_UPDATE(gameUpdate)
+EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     /**
      * Game state initialisation
@@ -177,7 +177,7 @@ GAME_UPDATE(gameUpdate)
                 motor2Speed = 35000;
             }
 
-            platformControllerVibrate(0, motor1Speed, motor2Speed);
+            (memory->platformControllerVibrate)(0, motor1Speed, motor2Speed);
         }
     }
 
@@ -235,7 +235,7 @@ internal_func void writeFrameBuffer(GameState *gameState,
 
 }
 
-GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
+EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
 {
     frameBuffer->height = height;
     frameBuffer->width = width;
@@ -246,7 +246,7 @@ GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
     return frameBuffer;
 }
 
-GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
+EXTERN_DLL_EXPORT GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
 {
     if ( (noOfBytesToWrite <= 0) || (bytesPerSample <= 0) ) {
         return audioBuffer;
@@ -259,10 +259,10 @@ GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
         // @TODO(JM) move the audio memory to the GameMemory object
         if (!audioBuffer->initialised) {
             audioBuffer->initialised = 1;
-            audioBuffer->memory = platformAllocateMemory(noOfBytesToWrite);
+            audioBuffer->memory = memory->platformAllocateMemory(noOfBytesToWrite);
         } else {
-            platformFreeMemory(audioBuffer->memory);
-            audioBuffer->memory = platformAllocateMemory(noOfBytesToWrite);
+            memory->platformFreeMemory(audioBuffer->memory);
+            audioBuffer->memory = memory->platformAllocateMemory(noOfBytesToWrite);
         }
     }
     audioBuffer->bytesPerSample             = bytesPerSample;
@@ -302,22 +302,22 @@ internal_func float32 percentageOfAnotherf(float32 a, float32 b)
     return (fract * 100.0f);
 }
 
-extern "C" __declspec(dllexport) GAME_KIBIBYTES_TO_BYTES(gameKibibytesToBytes)
+EXTERN_DLL_EXPORT GAME_KIBIBYTES_TO_BYTES(gameKibibytesToBytes)
 {
     return (uint64)((uint64)1024 * (uint64)kibibytes);
 }
 
-extern "C" __declspec(dllexport) GAME_MEBIBYTES_TO_BYTES(gameMebibytesToBytes)
+EXTERN_DLL_EXPORT GAME_MEBIBYTES_TO_BYTES(gameMebibytesToBytes)
 {
     return (uint64)(((uint64)1024 * gameKibibytesToBytes(1)) * mebibytes);
 }
 
-extern "C" __declspec(dllexport) GAME_GIBIBYTES_TO_BYTES(gameGibibytesToBytes)
+EXTERN_DLL_EXPORT GAME_GIBIBYTES_TO_BYTES(gameGibibytesToBytes)
 {
     return (uint64)(((uint64)1024 * gameMebibytesToBytes(1)) * gibibytes);
 }
 
-extern "C" __declspec(dllexport) GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytes)
+EXTERN_DLL_EXPORT GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytes)
 {
     return (uint64)(((uint64)1024 * gameGibibytesToBytes(1)) * tebibytes);
 }
