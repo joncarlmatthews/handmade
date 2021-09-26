@@ -145,4 +145,6 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
  */
 internal_func uint32 win32TruncateToUint32Safe(uint64 value);
 
+internal_func void unloadGameDLL(GameCode *gameCode);
+
 #endif

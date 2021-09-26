@@ -173,6 +173,10 @@
   <ItemGroup>
     <ClCompile Include="handmade.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="build_x64_debug.bat" />
+    <None Include="shell_x64.bat" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

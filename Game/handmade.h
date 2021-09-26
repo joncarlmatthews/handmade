@@ -3,9 +3,6 @@
 
 #include "types.h"
 
-#define HANDMADE_DEBUG_FPS
-#define HANDMADE_DEBUG_AUDIO
-
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
 #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
@@ -428,6 +425,7 @@ GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytesStub) { return 0; }
  * so the platform layer can access them.
 */
 typedef struct GameCode {
+    void *dllHandle;
     GameUpdate *gameUpdate;
     GameInitFrameBuffer *gameInitFrameBuffer;
     GameInitAudioBuffer *gameInitAudioBuffer;

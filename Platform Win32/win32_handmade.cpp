@@ -237,7 +237,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     HDC deviceHandleForWindow = GetDC(window);
 
     GameCode gameCode = { 0 };
-
     loadGameDLLFunctions(&gameCode);
 
     /*
@@ -597,6 +596,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             } // Audio buffer created.
 
+
+            loadGameDLLFunctions(&gameCode);
+
             // Create the game's audio buffer
             gameCode.gameInitAudioBuffer(&memory,
                                             &gameAudioBuffer,
@@ -676,6 +678,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         millisecondsElapsedForFrame, secondsElapsedForFrame, fps, clockCycles_mega, processorSpeed);
             OutputDebugStringA(output);
 #endif
+
+            unloadGameDLL(&gameCode);
 
         } // game loop
 
@@ -1332,11 +1336,13 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
-    HMODULE libHandle = LoadLibrary(TEXT("..\\build\\Game\\x64\\Debug\\Game.dll"));
+    HMODULE libHandle = LoadLibrary(TEXT("..\\build\\Game\\x64\\Debug\\handmade.dll"));
 
     bool8 valid = 1;
 
     if (libHandle) {
+
+        gameCode->dllHandle = libHandle;
 
         GameUpdate *gameUpdateAddr                      = (GameUpdate *)GetProcAddress(libHandle, "gameUpdate");
         GameInitFrameBuffer *gameInitFrameBufferAddr    = (GameInitFrameBuffer *)GetProcAddress(libHandle, "gameInitFrameBuffer");
@@ -1409,4 +1415,10 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
         gameCode->gameGibibytesToBytes  = &gameGibibytesToBytesStub;
         gameCode->gameTebibyteToBytes   = &gameTebibyteToBytesStub;
     }
+}
+
+internal_func void unloadGameDLL(GameCode *gameCode)
+{
+    BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
+    res;
 }
