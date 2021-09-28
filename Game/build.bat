@@ -27,6 +27,9 @@ if %PlatformArg% == x64 (
 ) else if %PlatformArg% == x86 (
     SET Platform=x86
     SET PlatformUpper=X86
+) else if %PlatformArg% == Win32 (
+    SET Platform=x86
+    SET PlatformUpper=X86
 ) else (
     GOTO platform_usage
 )

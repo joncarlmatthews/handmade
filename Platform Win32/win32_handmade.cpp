@@ -5,6 +5,7 @@
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
 #include <math.h>  // floor
+#include "TCHAR.H"
 
 #include "..\Util\util.h" // Function signatures that are shared across the game and platform layer
 #include "..\Game\handmade.h" // Game layer specific function signatures
@@ -176,6 +177,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
+    char buff[100] = {};
+    DWORD res = GetEnvironmentVariableA("DefaultWindowsSDKVersion", buff, 100);
+
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     // @see https://www.codeproject.com/Questions/480201/whatplusQueryPerformanceFrequencyplusfor-3f
