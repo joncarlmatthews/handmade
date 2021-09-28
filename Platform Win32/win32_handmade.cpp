@@ -73,97 +73,100 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
 
     XInputSetState(controllerIndex, &pVibration);
 }
+#if HANDMADE_LOCAL_BUILD
 
-DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
-{
-    DEBUG_file file = { 0 };
-    bool32 res;
+    DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
+    {
+        DEBUG_file file = { 0 };
+        bool32 res;
 
-    // Open the file for reading.
-    HANDLE handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        // Open the file for reading.
+        HANDLE handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    if (INVALID_HANDLE_VALUE == handle) {
-        OutputDebugStringA("Cannot read file");
+        if (INVALID_HANDLE_VALUE == handle) {
+            OutputDebugStringA("Cannot read file");
+            return file;
+        }
+
+        // Get the size of the file in bytes.
+        LARGE_INTEGER sizeStruct;
+        res = GetFileSizeEx(handle, &sizeStruct);
+
+        if (!res) {
+            OutputDebugStringA("Cannot get file size");
+            CloseHandle(handle);
+            return file;
+        }
+
+        uint64 sizeInBytes = sizeStruct.QuadPart;
+
+        // As GetFileSizeEx can read files larger than 4-bytes, but ReadFile can only
+        // take a maximum of 4-bytes, lets make sure we're not reading files larger
+        // than 4GB.
+        uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
+
+        // Allocate enough memory for the file.
+        file.memory = VirtualAlloc(NULL, sizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
+        if (NULL == file.memory) {
+            OutputDebugStringA("Cannot allocate memory for file");
+            CloseHandle(handle);
+            return file;
+        }
+
+        // Read the file into the memory.
+        DWORD bytesRead;
+        res = ReadFile(handle, file.memory, sizeInBytes32, &bytesRead, NULL);
+
+        if ((!res) || (bytesRead != sizeInBytes32)) {
+            OutputDebugStringA("Cannot read file into memory");
+            //DEBUG_platformFreeFileMemory(&file);
+            //CloseHandle(handle);
+            //return file;
+        }
+
+        file.sizeinBytes = bytesRead;
+
+        CloseHandle(handle);
+
         return file;
     }
 
-    // Get the size of the file in bytes.
-    LARGE_INTEGER sizeStruct;
-    res = GetFileSizeEx(handle, &sizeStruct);
+    DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
+    {
+        VirtualFree(file->memory, 0, MEM_RELEASE);
+        file->memory = 0;
+        file->sizeinBytes = 0;
+    }
 
-    if (!res) {
-        OutputDebugStringA("Cannot get file size");
+    DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
+    {
+        bool32 res;
+
+        // Open the file for writing.
+        HANDLE handle = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+        if (INVALID_HANDLE_VALUE == handle) {
+            OutputDebugStringA("Cannot read file");
+            return false;
+        }
+
+        // Read the file into the memory.
+        DWORD bytesWritten;
+        res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
+
+        if ((!res) || (bytesWritten != memorySizeInBytes)) {
+            OutputDebugStringA("Could not write file to location");
+            CloseHandle(handle);
+            return false;
+        }
+
         CloseHandle(handle);
-        return file;
+
+        return true;
     }
 
-    uint64 sizeInBytes = sizeStruct.QuadPart;
-
-    // As GetFileSizeEx can read files larger than 4-bytes, but ReadFile can only
-    // take a maximum of 4-bytes, lets make sure we're not reading files larger
-    // than 4GB.
-    uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
-
-    // Allocate enough memory for the file.
-    file.memory = VirtualAlloc(NULL, sizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-
-    if (NULL == file.memory) {
-        OutputDebugStringA("Cannot allocate memory for file");
-        CloseHandle(handle);
-        return file;
-    }
-
-    // Read the file into the memory.
-    DWORD bytesRead;
-    res = ReadFile(handle, file.memory, sizeInBytes32, &bytesRead, NULL);
-
-    if ((!res) || (bytesRead != sizeInBytes32)) {
-        OutputDebugStringA("Cannot read file into memory");
-        //DEBUG_platformFreeFileMemory(&file);
-        //CloseHandle(handle);
-        //return file;
-    }
-
-    file.sizeinBytes = bytesRead;
-
-    CloseHandle(handle);
-
-    return file;
-}
-
-DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
-{
-    VirtualFree(file->memory, 0, MEM_RELEASE);
-    file->memory = 0;
-    file->sizeinBytes = 0;
-}
-
-DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
-{
-    bool32 res;
-
-    // Open the file for writing.
-    HANDLE handle = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    if (INVALID_HANDLE_VALUE == handle) {
-        OutputDebugStringA("Cannot read file");
-        return false;
-    }
-
-    // Read the file into the memory.
-    DWORD bytesWritten;
-    res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
-
-    if ((!res) || (bytesWritten != memorySizeInBytes)) {
-        OutputDebugStringA("Could not write file to location");
-        CloseHandle(handle);
-        return false;
-    }
-
-    CloseHandle(handle);
-
-    return true;
-}
+#endif
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -252,9 +255,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformAllocateMemory = &platformAllocateMemory;
     memory.platformFreeMemory = &platformFreeMemory;
     memory.platformControllerVibrate = &platformControllerVibrate;
+
+#if HANDMADE_LOCAL_BUILD
     memory.DEBUG_platformReadEntireFile = &DEBUG_platformReadEntireFile;
     memory.DEBUG_platformWriteEntireFile = &DEBUG_platformWriteEntireFile;
     memory.DEBUG_platformFreeFileMemory = &DEBUG_platformFreeFileMemory;
+#endif
 
     memory.permanentStorageSizeInBytes = gameCode.gameMebibytesToBytes(64);
     memory.transientStorageSizeInBytes = gameCode.gameGibibytesToBytes(1);

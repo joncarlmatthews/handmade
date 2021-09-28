@@ -84,35 +84,35 @@ void platformLog(char *format, ...);
  */
 #if HANDMADE_LOCAL_BUILD
 
-typedef struct DEBUG_file
-{
-    void *memory;
-    uint32 sizeinBytes;
+    typedef struct DEBUG_file
+    {
+        void *memory;
+        uint32 sizeinBytes;
 
-} DEBUG_file;
+    } DEBUG_file;
 
-#define GAME_GIBIBYTES_TO_BYTES(name) uint64 name(uint8 gibibytes)
-typedef GAME_GIBIBYTES_TO_BYTES(GameGibibytesToBytes);
+    #define GAME_GIBIBYTES_TO_BYTES(name) uint64 name(uint8 gibibytes)
+    typedef GAME_GIBIBYTES_TO_BYTES(GameGibibytesToBytes);
 
-/*
- * Read an entire file into memory
- *
- * @note call DEBUG_platformFreeFileMemory in a subsequent call.
- */
-#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(char *filename)
-typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
+    /*
+     * Read an entire file into memory
+     *
+     * @note call DEBUG_platformFreeFileMemory in a subsequent call.
+     */
+    #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(char *filename)
+    typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
 
-/*
- * Free file memory read from DEBUG_platformReadEntireFile
- */
-#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(DEBUG_file *file)
-typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
+    /*
+     * Free file memory read from DEBUG_platformReadEntireFile
+     */
+    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(DEBUG_file *file)
+    typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
 
-/*
- * Write bytes into a new file
- */
-#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(char *filename, void *memory, uint32 memorySizeInBytes)
-typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
+    /*
+     * Write bytes into a new file
+     */
+    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(char *filename, void *memory, uint32 memorySizeInBytes)
+    typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
 
 #endif
 
@@ -313,9 +313,12 @@ typedef struct GameMemory
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
     PlarformControllerVibrate *platformControllerVibrate;
+
+#if HANDMADE_LOCAL_BUILD
     DEBUGPlatformReadEntireFile *DEBUG_platformReadEntireFile;
     DEBUGPlatformFreeFileMemory *DEBUG_platformFreeFileMemory;
     DEBUGPlatformWriteEntireFile *DEBUG_platformWriteEntireFile;
+#endif
 
 } GameMemory;
 
