@@ -10,23 +10,25 @@ Install Visual Studio Community 2019. Once Visual Studio is installed navigate t
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
-All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\<arch>\<bldconfig>\` E.g. `build\Win32\Debug\`, `build\Win32\Release\` or `build\x64\Debug\`
+All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\<project>\<arch>\<config>\` E.g. `build\Game\x86\Debug\`, or `build\Platform Win32\x64\Release\`
 
 ## Running
 
-To run the executable, open the .exe within the relevant `build\<arch>\<bldconfig>\` directory
+To run the executable, open the .exe within the relevant `build\<platform>\<arch>\<config>\` directory
 
-To run the program from directly within Visual Studio, hit **Ctrl** + **F5**. To run the program in Visual Studio with the debugger attached, simply hit **F5**.
+To run the program from directly within Visual Studio, hit **Ctrl** + **F5**.
 
-## Building outside of Visual Studio
+To run the program in Visual Studio with the debugger attached, simply hit **F5**.
 
-Open Command Prompt. Navigate to the source directory:
+## Dynamically reloading the game code
+
+Open Command Prompt. Navigate to the Game source directory:
 
 ```
-> cd C:\work\dev\handmade
+> cd Game
 ```
 
-Configure Visual Studio's vcvarsall.bat to build in either x86 or x64 mode by running the relevant shell batch file:
+Configure the shell for building the source to the desired environment (x86 or x64). This only needs to be run once per shell environment, not every time before you want to build the source:
 
 ```
 > shell_x86.bat
@@ -45,21 +47,15 @@ If you don't, you'll receive the following error message when trying to build:
 operable program or batch file.
 ```
 
-The purpose of the shell scripts are to set the shell environment for building the source. This only needs to be run once per shell environment, not every time before you want to build the source.
-
-Lastly, run the relevant build script.
+Finally, run the build script with the relevant Configuration and Release arguments.
 
 ```
-> build_x86.bat
+> build.bat Debug x86
 ```
 
-or
+The platform layer will then dynamically reload the game code without the need to rebuild the platform code.
 
-```
-> build_x64.bat
-```
-
-All build files and executables are placed within the root of the relevant `build\<arch>\` folder.
+All build files and executables are placed within the root of the relevant `build\Game\<arch>\<config>\` folder.
 
 ## Command line flags
 
