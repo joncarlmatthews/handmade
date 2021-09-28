@@ -1,7 +1,8 @@
 @echo off
 REM Turn off comments being outputted to the command line.^
 
-REM Call vcvarsall.bat so we can run "cl" from the command line.^
-REM cl is the VS build tool for compiling C/C++ files^
-REM Pass the x64 flag so cl is set to compile in 64-bit mode^
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+REM Sets the build environment for this shell.
+REM Documentation: https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160#developer_command_file_locations
+
+REM Sets the environment to use the 64-bit x64-native tools to build 64-bit x64 code.
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
