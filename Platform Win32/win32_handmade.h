@@ -1,5 +1,7 @@
-#ifndef HEADER_FILE
-#define HEADER_FILE
+#ifndef HEADER_WIN32
+#define HEADER_WIN32
+
+#include "..\Util\util.h"
 
 /**
  * Struct for the Win32 screen buffer

@@ -1,6 +1,9 @@
 #include <math.h> // For Sin
-#include "types.h"
 #include "handmade.h"
+
+// Include the definitions of the utility/helper Functions that are
+// shared across the game and platform layer
+#include "..\Util\util.cpp"
 
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
@@ -270,34 +273,4 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uin
         }
         row = (row + buffer->width);
     }
-}
-
-internal_func float32 percentageOfAnotherf(float32 a, float32 b)
-{
-    if (b == 0) {
-        return 0;
-    }
-
-    float32 fract = (a / b);
-    return (fract * 100.0f);
-}
-
-EXTERN_DLL_EXPORT GAME_KIBIBYTES_TO_BYTES(gameKibibytesToBytes)
-{
-    return (uint64)((uint64)1024 * (uint64)kibibytes);
-}
-
-EXTERN_DLL_EXPORT GAME_MEBIBYTES_TO_BYTES(gameMebibytesToBytes)
-{
-    return (uint64)(((uint64)1024 * gameKibibytesToBytes(1)) * mebibytes);
-}
-
-EXTERN_DLL_EXPORT GAME_GIBIBYTES_TO_BYTES(gameGibibytesToBytes)
-{
-    return (uint64)(((uint64)1024 * gameMebibytesToBytes(1)) * gibibytes);
-}
-
-EXTERN_DLL_EXPORT GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytes)
-{
-    return (uint64)(((uint64)1024 * gameGibibytesToBytes(1)) * tebibytes);
 }

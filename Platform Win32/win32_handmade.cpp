@@ -6,18 +6,13 @@
 #include <xinput.h>  // Xinput for receiving controller input.
 #include <math.h>  // floor
 
-//=======================================
-// Game layer
-//=======================================
+#include "..\Util\util.h" // Function signatures that are shared across the game and platform layer
+#include "..\Game\handmade.h" // Game layer specific function signatures
+#include "win32_handmade.h" // Platform layer specific function signatures
 
-#include "..\Game\handmade.h"
-
-//=======================================
-// End of game layer
-//=======================================
-
-// Platform layer specific function signatures
-#include "win32_handmade.h"
+// Include the definitions of the utility/helper Functions that are
+// shared across the game and platform layer
+#include "..\Util\util.cpp"
 
 // Whether or not the application is running
 global_var bool8 running;
@@ -246,7 +241,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
      * Game memory
      */
 #if HANDMADE_LOCAL_BUILD
-    LPVOID memoryStartAddress = (LPVOID)gameCode.gameTebibyteToBytes(4);
+    LPVOID memoryStartAddress = (LPVOID)utilTebibyteToBytes(4);
 #else
     LPVOID memoryStartAddress = NULL;
 #endif
@@ -262,8 +257,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.DEBUG_platformFreeFileMemory = &DEBUG_platformFreeFileMemory;
 #endif
 
-    memory.permanentStorageSizeInBytes = gameCode.gameMebibytesToBytes(64);
-    memory.transientStorageSizeInBytes = gameCode.gameGibibytesToBytes(1);
+    memory.permanentStorageSizeInBytes = utilMebibytesToBytes(64);
+    memory.transientStorageSizeInBytes = utilGibibytesToBytes(1);
 
     uint64 memoryTotalSize = (memory.permanentStorageSizeInBytes + memory.transientStorageSizeInBytes);
 
@@ -1353,10 +1348,6 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
         GameUpdate *gameUpdateAddr                      = (GameUpdate *)GetProcAddress(libHandle, "gameUpdate");
         GameInitFrameBuffer *gameInitFrameBufferAddr    = (GameInitFrameBuffer *)GetProcAddress(libHandle, "gameInitFrameBuffer");
         GameInitAudioBuffer *gameInitAudioBufferAddr    = (GameInitAudioBuffer *)GetProcAddress(libHandle, "gameInitAudioBuffer");
-        GameKibibytesToBytes *gameKibibytesToBytesAddr  = (GameKibibytesToBytes *)GetProcAddress(libHandle, "gameKibibytesToBytes");
-        GameMebibytesToBytes *gameMebibytesToBytesAddr  = (GameMebibytesToBytes *)GetProcAddress(libHandle, "gameMebibytesToBytes");
-        GameGibibytesToBytes *gameGibibytesToBytesAddr  = (GameGibibytesToBytes *)GetProcAddress(libHandle, "gameGibibytesToBytes");
-        GameTebibyteToBytes *gameTebibyteToBytesAddr    = (GameTebibyteToBytes *)GetProcAddress(libHandle, "gameTebibyteToBytes");
 
         if (gameUpdateAddr) {
             gameCode->gameUpdate = gameUpdateAddr;
@@ -1379,34 +1370,6 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
             valid = 0;
         }
 
-        if (gameKibibytesToBytesAddr) {
-            gameCode->gameKibibytesToBytes = gameKibibytesToBytesAddr;
-        } else {
-            assert(!"unable to find gameKibibytesToBytes");
-            valid = 0;
-        }
-
-        if (gameMebibytesToBytesAddr) {
-            gameCode->gameMebibytesToBytes = gameMebibytesToBytesAddr;
-        } else {
-            assert(!"unable to find gameMebibytesToBytes");
-            valid = 0;
-        }
-
-        if (gameGibibytesToBytesAddr) {
-            gameCode->gameGibibytesToBytes = gameGibibytesToBytesAddr;
-        } else {
-            assert(!"unable to find gameGibibytesToBytes");
-            valid = 0;
-        }
-
-        if (gameTebibyteToBytesAddr) {
-            gameCode->gameTebibyteToBytes = gameTebibyteToBytesAddr;
-        } else {
-            assert(!"unable to find gameTebibyteToBytes");
-            valid = 0;
-        }
-
     } else {
         assert(!"unable to load game code");
         valid = 0;
@@ -1416,10 +1379,6 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
         gameCode->gameUpdate            = &gameUpdateStub;
         gameCode->gameInitFrameBuffer   = &gameInitFrameBufferStub;
         gameCode->gameInitAudioBuffer   = &gameInitAudioBufferStub;
-        gameCode->gameKibibytesToBytes  = &gameKibibytesToBytesStub;
-        gameCode->gameMebibytesToBytes  = &gameMebibytesToBytesStub;
-        gameCode->gameGibibytesToBytes  = &gameGibibytesToBytesStub;
-        gameCode->gameTebibyteToBytes   = &gameTebibyteToBytesStub;
     }
 }
 

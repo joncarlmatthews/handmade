@@ -1,7 +1,7 @@
 #ifndef HEADER_HANDMADE
 #define HEADER_HANDMADE
 
-#include "types.h"
+#include "..\Util\util.h"
 
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
@@ -90,9 +90,6 @@ void platformLog(char *format, ...);
         uint32 sizeinBytes;
 
     } DEBUG_file;
-
-    #define GAME_GIBIBYTES_TO_BYTES(name) uint64 name(uint8 gibibytes)
-    typedef GAME_GIBIBYTES_TO_BYTES(GameGibibytesToBytes);
 
     /*
      * Read an entire file into memory
@@ -392,38 +389,6 @@ internal_func void writeFrameBuffer(GameState *gameState,
 internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
 
 /**
- * Simple function to calculate one number as a percentage of another.
- *
- * @param float32 a What is (a) as a percentage of...
- * @param float32 b ?
- * @return float32
- */
-internal_func float32 percentageOfAnotherf(float32 a, float32 b);
-
-/*
- * Helper functions to translate kibibytes, mebibytes and gibibytes
- * to bytes (IEC binary standard)
- *
- * @see https://en.wikipedia.org/wiki/Byte#Multiple-byte_units
- * @see https://www.quora.com/Is-1-GB-equal-to-1024-MB-or-1000-MB
- */
-#define GAME_KIBIBYTES_TO_BYTES(name) uint64 name(uint8 kibibytes)
-typedef GAME_KIBIBYTES_TO_BYTES(GameKibibytesToBytes);
-GAME_KIBIBYTES_TO_BYTES(gameKibibytesToBytesStub) { return 0; }
-
-#define GAME_MEBIBYTES_TO_BYTES(name) uint64 name(uint8 mebibytes)
-typedef GAME_MEBIBYTES_TO_BYTES(GameMebibytesToBytes);
-GAME_MEBIBYTES_TO_BYTES(gameMebibytesToBytesStub) { return 0; }
-
-#define GAME_GIBIBYTES_TO_BYTES(name) uint64 name(uint8 gibibytes)
-typedef GAME_GIBIBYTES_TO_BYTES(GameGibibytesToBytes);
-GAME_GIBIBYTES_TO_BYTES(gameGibibytesToBytesStub) { return 0; }
-
-#define GAME_TEBIBYTE_TO_BYTES(name) uint64 name(uint8 tebibytes)
-typedef GAME_TEBIBYTE_TO_BYTES(GameTebibyteToBytes);
-GAME_TEBIBYTE_TO_BYTES(gameTebibyteToBytesStub) { return 0; }
-
-/**
  * Struct to assign pointers to internal game code functions
  * so the platform layer can access them.
 */
@@ -432,10 +397,6 @@ typedef struct GameCode {
     GameUpdate *gameUpdate;
     GameInitFrameBuffer *gameInitFrameBuffer;
     GameInitAudioBuffer *gameInitAudioBuffer;
-    GameKibibytesToBytes *gameKibibytesToBytes;
-    GameMebibytesToBytes *gameMebibytesToBytes;
-    GameGibibytesToBytes *gameGibibytesToBytes;
-    GameTebibyteToBytes *gameTebibyteToBytes;
 } GameCode;
 
 
