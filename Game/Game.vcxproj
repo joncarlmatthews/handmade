@@ -174,7 +174,7 @@
     <ClCompile Include="handmade.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="build_x64_debug.bat" />
+    <None Include="build.bat" />
     <None Include="shell_x64.bat" />
     <None Include="shell_x86.bat" />
   </ItemGroup>

@@ -1342,7 +1342,7 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
-    HMODULE libHandle = LoadLibrary(TEXT("..\\build\\Game\\x64\\Debug\\handmade.dll"));
+    HMODULE libHandle = LoadLibrary(TEXT("..\\build\\Game\\x64\\Debug\\Game.dll"));
 
     bool8 valid = 1;
 

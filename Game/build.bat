@@ -42,15 +42,21 @@ SET ConfigurationFolder=%ArchFolder%%Configuration%\
 REM /nologo Suppresses display of sign-on banner.
 REM /GS Buffers security check.
 REM /sdl Enables additional security features and warnings.
+REM /TP Specifies that all files are C++ source file (regardless of .c or .cpp extension)
 REM /FC Display full path of source code files passed to cl.exe in diagnostic text.
 REM /Oi Generates intrinsic functions.
 REM /GR- disables run-time type information
+REM /EHsc Catches only standard C++ exceptions and assumes that functions declared as extern "C" never throw a C++ exception.
+REM /fp:precise Compiler preserves the source expression ordering and rounding properties of floating-point code when it generates and optimizes object code.
+REM /permissive- Uses the conformance support in the current compiler version to determine which language constructs are non-conforming.
+REM /diagnostics:column Controls the display of error and warning information, includes the column where the issue was found.
+REM /D _UNICODE /D UNICODE Express support for Unicode strings
 REM /WX Treats all warnings as errors.
 REM /W4 Set compiler warning level to 4
 REM /wd	Disables the specified warning.
 REM /wd4201	Disables warning 4201 (permits specifying a structure without a declarator as members of another structure or union.)
 REM /wd4201	Disables warning 4100 (permits unreferenced function parameters)
-SET CommonCompilerFlags=/nologo /sdl /GS /FC /Oi /GR- /WX /W4 /wd4201 /wd4100
+SET CommonCompilerFlags=/nologo /GS /sdl /TP /FC /Oi /GR- /EHsc /fp:precise /permissive- /diagnostics:column /D _UNICODE /D UNICODE /WX /W4 /wd4201 /wd4100
 
 REM Build specific flags:
 IF %Configuration% == Debug (
@@ -58,35 +64,36 @@ IF %Configuration% == Debug (
     REM /MTd Creates a debug multithreaded executable file using LIBCMTD.lib.
     REM /Zi Generates complete debugging information.
     REM /Od	Disables optimization.
+    REM /RTC1 Enables run-time error checks
     REM /D Defines constants and macros.
-    SET BuildSpecifcCompilerFlags=/MTd /Zi /Od /D HANDMADE_LOCAL_BUILD=1 /D HANDMADE_DEBUG_FPS=1 /D HANDMADE_DEBUG_AUDIO=1
+    SET BuildSpecifcCompilerFlags=/MTd /Zi /Od /RTC1 /D _DEBUG /D HANDMADE_LOCAL_BUILD=1 /D HANDMADE_DEBUG_FPS=1 /D HANDMADE_DEBUG_AUDIO=1
 
 ) else (
 
     REM /MT Creates a multithreaded executable file using LIBCMT.lib.
-    SET BuildSpecifcCompilerFlags=/MT
+    REM /O2 Maximize Speed of generated code.
+    SET BuildSpecifcCompilerFlags=/MT /O2
 )
 
 REM /DLL Builds a DLL.
 REM /INCREMENTAL Disable the Linker from running in incremental mode.
 REM /OPT:REF eliminates functions and data that are never referenced
+REM /NXCOMPAT Security feature that monitors and protects certain pages or regions of memory
+REM /SUBSYSTEM:WINDOWS Application does not require a console, because it creates its own windows for interaction with the user.
+REM /MACHINE Specifies the target platform.
 REM /OUT Specifies the output file name.
-SET CommonLinkerFlags=/DLL /INCREMENTAL:NO /OPT:REF /MACHINE:%Platform% /OUT:Game.dll
+SET CommonLinkerFlags=/DLL /INCREMENTAL:NO /OPT:REF /NXCOMPAT /SUBSYSTEM:WINDOWS /MACHINE:%Platform% /OUT:Game.dll
 
 REM Build specific flags:
 IF %Configuration% == Debug (
 
-    REM /MACHINE Specifies the target platform.
     REM /DEBUG Creates debugging information.
     SET BuildSpecificLinkerFlags=/DEBUG
 
 ) else (
 
-    REM /MACHINE Specifies the target platform.
-    REM /DEBUG Creates debugging information.
     SET BuildSpecificLinkerFlags=
 )
-
 
 IF not exist %ProjectFolder% ( mkdir %ProjectFolder% )
 IF not exist %ArchFolder% ( mkdir  %ArchFolder% )
