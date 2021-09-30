@@ -102,7 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalOptions>/wd4201 /wd4100 /D HANDMADE_PLATFORM=x86 /GR- -D HANDMADE_LOCAL_BUILD=1 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4201 /wd4100 /D HANDMADE_PLATFORM="x86" /GR- -D HANDMADE_LOCAL_BUILD=1 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -118,7 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalOptions>/wd4201 /wd4100 /D HANDMADE_PLATFORM=x86 /GR- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4201 /wd4100 /D HANDMADE_PLATFORM="x86" /GR- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalOptions>/wd4201 /wd4100 /D HANDMADE_PLATFORM=x64 /GR- -D HANDMADE_LOCAL_BUILD=1 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4201 /wd4100 /D HANDMADE_PLATFORM="x64" /GR- -D HANDMADE_LOCAL_BUILD=1 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -150,7 +150,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalOptions>/wd4201 /wd4100 /D HANDMADE_PLATFORM=x64 /GR- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4201 /wd4100 /D HANDMADE_PLATFORM="x64" /GR- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

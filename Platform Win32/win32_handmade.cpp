@@ -5,7 +5,6 @@
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
 #include <math.h>  // floor
-#include "TCHAR.H"
 
 #include "..\Util\util.h" // Function signatures that are shared across the game and platform layer
 #include "..\Game\handmade.h" // Game layer specific function signatures
