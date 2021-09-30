@@ -15,16 +15,6 @@
 // Generic stuff
 #define PIf 3.14159265359f
 
-// Global variables
-#define global_var static
-
-// Static variables within a local scope (e.g. case statement, function)
-#define local_persist_var static
-
-// Functions that are only available within the translation unit they're declared in.
-// This helps the compiler out, knowing that there is no external linking to be done.
-#define internal_func static 
-
 // Return the number of elements in a static array
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 

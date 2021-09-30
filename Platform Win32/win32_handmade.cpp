@@ -177,9 +177,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
-    char buff[100] = {};
-    DWORD res = GetEnvironmentVariableA("DefaultWindowsSDKVersion", buff, 100);
-
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     // @see https://www.codeproject.com/Questions/480201/whatplusQueryPerformanceFrequencyplusfor-3f
@@ -1341,7 +1338,11 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
-    HMODULE libHandle = LoadLibrary(TEXT("..\\build\\Game\\x64\\Debug\\Game.dll"));
+    char buff[50] = { 0 };
+    sprintf_s(buff, sizeof(buff), "..\\build\\Game\\%s\\Debug\\Game.dll", HANDMADE_PLATFORM);
+    wchar_t wtext[51];
+    mbstowcs(wtext, buff.c_str(), text.length());//includes null
+    HMODULE libHandle = LoadLibraryW(TEXT(""));
 
     bool8 valid = 1;
 

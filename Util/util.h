@@ -10,10 +10,10 @@
  * @see https://en.wikipedia.org/wiki/Byte#Multiple-byte_units
  * @see https://www.quora.com/Is-1-GB-equal-to-1024-MB-or-1000-MB
  */
-uint64 utilKibibytesToBytesStub(uint8 kibibytes);
-uint64 utilMebibytesToBytesStub(uint8 mebibytes);
-uint64 utilGibibytesToBytesStub(uint8 gibibytes);
-uint64 utilTebibyteToBytesStub(uint8 tebibytes);
+internal_func uint64 utilKibibytesToBytesStub(uint8 kibibytes);
+internal_func uint64 utilMebibytesToBytesStub(uint8 mebibytes);
+internal_func uint64 utilGibibytesToBytesStub(uint8 gibibytes);
+internal_func uint64 utilTebibyteToBytesStub(uint8 tebibytes);
 
 /**
  * Simple function to calculate one number as a percentage of another.
@@ -22,6 +22,6 @@ uint64 utilTebibyteToBytesStub(uint8 tebibytes);
  * @param float32 b ?
  * @return float32
  */
-float32 percentageOfAnotherf(float32 a, float32 b);
+internal_func float32 percentageOfAnotherf(float32 a, float32 b);
 
 #endif

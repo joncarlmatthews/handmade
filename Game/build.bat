@@ -59,7 +59,8 @@ REM /W4 Set compiler warning level to 4
 REM /wd	Disables the specified warning.
 REM /wd4201	Disables warning 4201 (permits specifying a structure without a declarator as members of another structure or union.)
 REM /wd4201	Disables warning 4100 (permits unreferenced function parameters)
-SET CommonCompilerFlags=/nologo /GS /sdl /TP /FC /Oi /GR- /EHsc /fp:precise /permissive- /diagnostics:column /D _UNICODE /D UNICODE /WX /W4 /wd4201 /wd4100
+REM /wd4201	Disables warning 4505 (permits local and unreferenced functions aka dead code).
+SET CommonCompilerFlags=/nologo /GS /sdl /TP /FC /Oi /GR- /EHsc /fp:precise /permissive- /diagnostics:column /D _UNICODE /D UNICODE /WX /W4 /wd4201 /wd4100 /wd4505
 
 REM Build specific flags:
 IF %Configuration% == Debug (
