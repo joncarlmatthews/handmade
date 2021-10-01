@@ -1339,8 +1339,8 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
     //wchar_t myArray[100] = {0};
     //swprintf_s(myArray, sizeof(myArray), L"..\\build\\Game\\%hs\\Debug\\Game.dll", L"x64");
-
-    BOOL res = CopyFile(L".\\Game.dll", L".\\Game_temp.dll", false);
+    //BOOL res = CopyFile(L"C:\\Users\\jonca\\Documents\\clones\\handmade_hero\\day_021_util2\\build\\Win32\\x64\\Debug\\Game.dll", L"C:\\Users\\jonca\\Documents\\clones\\handmade_hero\\day_021_util2\\build\\Win32\\x64\\Debug\\Game_temp.dll", false);
+    //BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
     DWORD lastError = GetLastError();
     if (lastError == ERROR_ACCESS_DENIED) {
         OutputDebugString(TEXT("ERROR_ACCESS_DENIED"));
@@ -1351,7 +1351,7 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
     if (lastError == FILE_ATTRIBUTE_READONLY) {
         OutputDebugString(TEXT("FILE_ATTRIBUTE_READONLY"));
     }
-    HMODULE libHandle = LoadLibraryW(L"Game_temp.dll");
+    HMODULE libHandle = LoadLibraryW(L"Game.dll");
 
     bool8 valid = 1;
 
