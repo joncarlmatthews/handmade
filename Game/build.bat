@@ -38,7 +38,7 @@ ECHO ============
 ECHO Building %Platform%
 ECHO ============
 
-SET ProjectFolder=%~dp0..\build\Game\
+SET ProjectFolder=%~dp0"..\build\Platform Win32\"
 SET ArchFolder=%ProjectFolder%%Platform%\
 SET ConfigurationFolder=%ArchFolder%%Configuration%\
 

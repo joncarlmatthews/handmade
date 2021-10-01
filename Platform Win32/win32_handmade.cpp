@@ -1337,11 +1337,21 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
-    char buff[50] = { 0 };
-    sprintf_s(buff, sizeof(buff), "..\\build\\Game\\%s\\Debug\\Game.dll", HANDMADE_PLATFORM);
-    wchar_t wtext[51];
-    mbstowcs(wtext, buff.c_str(), text.length());//includes null
-    HMODULE libHandle = LoadLibraryW(TEXT(""));
+    //wchar_t myArray[100] = {0};
+    //swprintf_s(myArray, sizeof(myArray), L"..\\build\\Game\\%hs\\Debug\\Game.dll", L"x64");
+
+    BOOL res = CopyFile(L".\\Game.dll", L".\\Game_temp.dll", false);
+    DWORD lastError = GetLastError();
+    if (lastError == ERROR_ACCESS_DENIED) {
+        OutputDebugString(TEXT("ERROR_ACCESS_DENIED"));
+    }
+    if (lastError == FILE_ATTRIBUTE_HIDDEN) {
+        OutputDebugString(TEXT("FILE_ATTRIBUTE_HIDDEN"));
+    }
+    if (lastError == FILE_ATTRIBUTE_READONLY) {
+        OutputDebugString(TEXT("FILE_ATTRIBUTE_READONLY"));
+    }
+    HMODULE libHandle = LoadLibraryW(L"Game_temp.dll");
 
     bool8 valid = 1;
 
