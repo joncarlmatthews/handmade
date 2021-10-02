@@ -247,6 +247,7 @@ typedef struct AncillaryPlatformLayerData {
 
 typedef struct SineWave
 {
+    int foo;
     // Hertz is the same as "cycles per second".
     // The number of cycles that occur in one second is equal to the
     // frequency of the signal in hertz (abbreviated Hz).

@@ -178,7 +178,7 @@ internal_func void writeFrameBuffer(GameState *gameState,
 {
     // Background fill
     if (!gameState->setBG) {
-        writeRectangle(buffer, 0x333398, buffer->height, buffer->width, 0, 0);
+        writeRectangle(buffer, 0x343436, buffer->height, buffer->width, 0, 0);
     }
     
 

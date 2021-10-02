@@ -5,6 +5,7 @@
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
 #include <math.h>  // floor
+#include <tchar.h>
 
 #include "..\Util\util.h" // Function signatures that are shared across the game and platform layer
 #include "..\Game\handmade.h" // Game layer specific function signatures
@@ -1337,20 +1338,14 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
-    //wchar_t myArray[100] = {0};
-    //swprintf_s(myArray, sizeof(myArray), L"..\\build\\Game\\%hs\\Debug\\Game.dll", L"x64");
-    //BOOL res = CopyFile(L"C:\\Users\\jonca\\Documents\\clones\\handmade_hero\\day_021_util2\\build\\Win32\\x64\\Debug\\Game.dll", L"C:\\Users\\jonca\\Documents\\clones\\handmade_hero\\day_021_util2\\build\\Win32\\x64\\Debug\\Game_temp.dll", false);
-    //BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
+    BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
     DWORD lastError = GetLastError();
-    if (lastError == ERROR_ACCESS_DENIED) {
-        OutputDebugString(TEXT("ERROR_ACCESS_DENIED"));
+    if (lastError) {
+        wchar_t buff[500] = { 0 };
+        swprintf_s(buff, sizeof(buff), L"Error %d\n", lastError);
+        OutputDebugString(buff);
     }
-    if (lastError == FILE_ATTRIBUTE_HIDDEN) {
-        OutputDebugString(TEXT("FILE_ATTRIBUTE_HIDDEN"));
-    }
-    if (lastError == FILE_ATTRIBUTE_READONLY) {
-        OutputDebugString(TEXT("FILE_ATTRIBUTE_READONLY"));
-    }
+    
     HMODULE libHandle = LoadLibraryW(L"Game.dll");
 
     bool8 valid = 1;
