@@ -8,7 +8,7 @@
 #include <tchar.h>
 
 #include "..\Util\util.h" // Function signatures that are shared across the game and platform layer
-#include "..\Game\handmade.h" // Game layer specific function signatures
+#include "..\Game\game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
 // Include the definitions of the utility/helper Functions that are
@@ -1338,6 +1338,7 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
+    /*
     BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
     DWORD lastError = GetLastError();
     if (lastError) {
@@ -1345,6 +1346,7 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
         swprintf_s(buff, sizeof(buff), L"Error %d\n", lastError);
         OutputDebugString(buff);
     }
+    */
     
     HMODULE libHandle = LoadLibraryW(L"Game.dll");
 

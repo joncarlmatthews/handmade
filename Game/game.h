@@ -6,6 +6,7 @@
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
 #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
+#define HANDMADE_DEBUG_AUDIO
 #else
 #define assert(expression)
 #endif
