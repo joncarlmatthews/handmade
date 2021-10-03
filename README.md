@@ -6,15 +6,19 @@ Low level game programming concepts in C/C++
 
 Install Visual Studio Community 2019. Once Visual Studio is installed navigate to **Tools** -> **Get Tools and Features** options and check that the latest version of the Windows 10 SDK is installed. The Windows SDK gives you access to `windows.h`. If it's not installed you'll receive the `cannot open source file "windows.h"` error message when attempting the build the source code.
 
+## Project Structure
+
+There are two main parts to the project, the Win32 platform code (`Platform Win32\`) and the game code (`Game\`). Both are built into the same build directory. The platform code is built as an exe and the game code is built as a DLL.
+
 ## Building
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
-All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\<project>\<arch>\<config>\` E.g. `build\Game\x86\Debug\`, or `build\Platform Win32\x64\Release\`
+All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\Win32\<arch>\<config>\` E.g. `build\Win32\x86\Debug\`, or `build\Win32\x64\Release\`
 
 ## Running
 
-To run the executable, open the .exe within the relevant `build\<platform>\<arch>\<config>\` directory
+To run the executable, open the .exe within the relevant `build\Win32\<arch>\<config>\` directory
 
 To run the program from directly within Visual Studio, hit **Ctrl** + **F5**.
 
@@ -22,7 +26,7 @@ To run the program in Visual Studio with the debugger attached, simply hit **F5*
 
 ## Dynamically reloading the game code
 
-Open Command Prompt. Navigate to the Game source directory:
+The game code is built as a DLL to enable dynamic reloading of (just) the game code without having the rebuild the whole program. If you want to dynamically reload the game code, run the `built.bat` file using the Windows command prompt from with the `Game` directory.
 
 ```
 > cd Game
@@ -55,7 +59,7 @@ Finally, run the build script with the relevant Configuration and Release argume
 
 The platform layer will then dynamically reload the game code without the need to rebuild the platform code.
 
-All build files and executables are placed within the root of the relevant `build\Game\<arch>\<config>\` folder.
+This `build.bat` build script has been coded to match the Visual Studio build commands and so all files generated are placed in the usual directories.
 
 ## Command line flags
 
@@ -87,7 +91,13 @@ HANDMADE_DEBUG_AUDIO
 
 ### Day 021 - Loading Game Code Dynamically
 
-Added back in a build file. Still need to tidy these up.
+Re organised the Visual Studio project so there is now a single `Solution` that contains three `Projects`.
+
+- The Win32 platform code
+- The game code
+- Utility code that is shared between the platform and game.
+
+I've configured VS so that when you build the project, all three Projects are compiled and built and ready to run without any additional work needed. However, I also created the `Game\build.bat` to facilitate dynamic game code reloading outside of VS. At the moment, this `build.bat` file can only be run when the .exe is running outside of the VS Debugger.
 
 ### Day 020 - Debugging the Audio Sync
 
