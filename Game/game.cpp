@@ -178,7 +178,7 @@ internal_func void writeFrameBuffer(GameState *gameState,
 {
     // Background fill
     if (!gameState->setBG) {
-        writeRectangle(buffer, 0x343434, buffer->height, buffer->width, 0, 0);
+        writeRectangle(buffer, 0xFFFFFF, buffer->height, buffer->width, 0, 0);
     }
     
 
@@ -202,7 +202,7 @@ internal_func void writeFrameBuffer(GameState *gameState,
         uint16 width = 10;
         uint32 yOffset = 100;
         uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.playCursorPosition * coefficient);
-        writeRectangle(buffer, 0x006600, height, width, yOffset, xOffset);
+        writeRectangle(buffer, 0xc4c4c4, height, width, yOffset, xOffset);
     }
 
     // Write cursor + lock size (amount written) (red)

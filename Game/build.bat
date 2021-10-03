@@ -21,15 +21,16 @@ if %ConfigurationArg% == Release (
     GOTO configuration_usage
 )
 
+REM PlatformFolder to match Visual Studio's build directory structures
 if %PlatformArg% == x64 (
     SET Platform=x64
-    SET PlatformUpper=X64
+    SET PlatformFolder=x64
 ) else if %PlatformArg% == x86 (
     SET Platform=x86
-    SET PlatformUpper=X86
+    SET PlatformFolder=Win32
 ) else if %PlatformArg% == Win32 (
     SET Platform=x86
-    SET PlatformUpper=X86
+    SET PlatformFolder=Win3
 ) else (
     GOTO platform_usage
 )
@@ -38,76 +39,81 @@ ECHO ============
 ECHO Building %Platform%
 ECHO ============
 
+REM Root build folder for project
 SET ProjectFolder=%~dp0..\build\Win32\
-SET ArchFolder=%ProjectFolder%%Platform%\
-SET ConfigurationFolder=%ArchFolder%%Configuration%\
 
-REM /nologo Suppresses display of sign-on banner.
-REM /GS Buffers security check.
-REM /sdl Enables additional security features and warnings.
-REM /TP Specifies that all files are C++ source file (regardless of .c or .cpp extension)
-REM /FC Display full path of source code files passed to cl.exe in diagnostic text.
-REM /Oi Generates intrinsic functions.
-REM /GR- disables run-time type information
-REM /EHsc Catches only standard C++ exceptions and assumes that functions declared as extern "C" never throw a C++ exception.
-REM /fp:precise Compiler preserves the source expression ordering and rounding properties of floating-point code when it generates and optimizes object code.
-REM /permissive- Uses the conformance support in the current compiler version to determine which language constructs are non-conforming.
-REM /diagnostics:column Controls the display of error and warning information, includes the column where the issue was found.
-REM /D _UNICODE /D UNICODE Express support for Unicode strings
-REM /WX Treats all warnings as errors.
-REM /W4 Set compiler warning level to 4
-REM /wd	Disables the specified warning.
-REM /wd4201	Disables warning 4201 (permits specifying a structure without a declarator as members of another structure or union.)
-REM /wd4100	Disables warning 4100 (permits unreferenced function parameters)
-REM /wd4505	Disables warning 4505 (permits local and unreferenced functions aka dead code).
-SET CommonCompilerFlags=/nologo /GS /sdl /TP /FC /Oi /GR- /EHsc /fp:precise /permissive- /diagnostics:column /D _UNICODE /D UNICODE /WX /W4 /wd4201 /wd4100 /wd4505
+REM folders for the build location
+SET BuildArchFolder=%ProjectFolder%%PlatformFolder%\
+SET BuildConfigurationFolder=%BuildArchFolder%%Configuration%\
 
-REM Build specific flags:
-IF %Configuration% == Debug (
+REM folders for the intermediates location
+SET IntermediatesRootFolder=%ProjectFolder%intermediates\
+SET IntermediatesProjectFolder=%IntermediatesRootFolder%Game\
+SET IntermediatesArchFolder=%IntermediatesProjectFolder%%PlatformFolder%\
+SET IntermediatesConfigurationFolder=%IntermediatesArchFolder%%Configuration%\
 
-    REM /MTd Creates a debug multithreaded executable file using LIBCMTD.lib.
-    REM /Zi Generates complete debugging information.
-    REM /Od	Disables optimization.
-    REM /RTC1 Enables run-time error checks
-    REM /D Defines constants and macros.
-    SET BuildSpecifcCompilerFlags=/MTd /Zi /Od /RTC1 /D _DEBUG /D HANDMADE_LOCAL_BUILD=1 /D HANDMADE_DEBUG_FPS=1 /D HANDMADE_DEBUG_AUDIO=1
+REM double backslash directories
+SET ProjectFolder=%ProjectFolder:\=\\%
+SET BuildArchFolder=%BuildArchFolder:\=\\%
+SET BuildConfigurationFolder=%BuildConfigurationFolder:\=\\%
+SET IntermediatesRootFolder=%IntermediatesRootFolder:\=\\%
+SET IntermediatesProjectFolder=%IntermediatesProjectFolder:\=\\%
+SET IntermediatesArchFolder=%IntermediatesArchFolder:\=\\%
+SET IntermediatesConfigurationFolder=%IntermediatesConfigurationFolder:\=\\%
 
-) else (
+REM Debug:
+REM ECHO "%BuildConfigurationFolder%"
+REM ECHO %IntermediatesConfigurationFolder%
 
-    REM /MT Creates a multithreaded executable file using LIBCMT.lib.
-    REM /O2 Maximize Speed of generated code.
-    SET BuildSpecifcCompilerFlags=/MT /O2
-)
-
-REM /DLL Builds a DLL.
-REM /INCREMENTAL Disable the Linker from running in incremental mode.
-REM /OPT:REF eliminates functions and data that are never referenced
-REM /NXCOMPAT Security feature that monitors and protects certain pages or regions of memory
-REM /SUBSYSTEM:WINDOWS Application does not require a console, because it creates its own windows for interaction with the user.
-REM /MACHINE Specifies the target platform.
-REM /OUT Specifies the output file name.
-SET CommonLinkerFlags=/DLL /INCREMENTAL:NO /OPT:REF /NXCOMPAT /SUBSYSTEM:WINDOWS /MACHINE:%Platform% /OUT:Game.dll
-
-REM Build specific flags:
-IF %Configuration% == Debug (
-
-    REM /DEBUG Creates debugging information.
-    SET BuildSpecificLinkerFlags=/DEBUG
-
-) else (
-
-    SET BuildSpecificLinkerFlags=
-)
-
+REM create the directories if they dont exist
 IF not exist %ProjectFolder% ( mkdir %ProjectFolder% )
-IF not exist %ArchFolder% ( mkdir  %ArchFolder% )
-IF not exist %ConfigurationFolder% ( mkdir %ConfigurationFolder% )
+IF not exist %BuildArchFolder% ( mkdir  %BuildArchFolder% )
+IF not exist %BuildConfigurationFolder% ( mkdir %BuildConfigurationFolder% )
+IF not exist %IntermediatesRootFolder% ( mkdir %IntermediatesRootFolder% )
+IF not exist %IntermediatesProjectFolder% ( mkdir  %IntermediatesProjectFolder% )
+IF not exist %IntermediatesArchFolder% ( mkdir %IntermediatesArchFolder% )
+IF not exist %IntermediatesConfigurationFolder% ( mkdir %IntermediatesConfigurationFolder% )
 
-cd %ConfigurationFolder%
+SET CompilerFlags=""
+SET LinkerFlags=""
 
-cl %CommonCompilerFlags% %BuildSpecifcCompilerFlags% %~dp0\handmade.cpp /link %CommonLinkerFlags% %BuildSpecificLinkerFlags%
+REM 32-bit builds
+IF %Platform% == x86 (
 
-cd %~dp0
+    IF %Configuration% == Debug (
+
+        SET CompilerFlags=/c /ZI /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /Oy- /D WIN32 /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142.pdb" /external:W4 /Gd /TP /analyze- /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
+
+        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /DLL %IntermediatesConfigurationFolder%game.obj
+    )
+
+    IF %Configuration% == Release (
+
+        SET CompilerFlags=/c /Zi /nologo /W4 /WX /diagnostics:column /sdl /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142.pdb" /external:W4 /Gd /TP /analyze- /FC /errorReport:prompt /wd4201 /wd4100 /wd4505
+
+        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /LTCGOUT:"%IntermediatesConfigurationFolder%Game.iobj" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /SAFESEH /DLL %IntermediatesConfigurationFolder%game.obj
+    )
+)
+
+IF %Platform% == x64 (
+
+    IF %Configuration% == Debug (
+
+        SET CompilerFlags=/c /ZI /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142.pdb" /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
+
+        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X64 /DLL %IntermediatesConfigurationFolder%game.obj
+    )
+
+    IF %Configuration% == Release (
+
+        SET CompilerFlags=/c /Zi /nologo /W4 /WX /diagnostics:column /sdl /O2 /Oi /GL /D NDEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142.pdb" /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505
+
+        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /LTCGOUT:"%IntermediatesConfigurationFolder%Game.iobj" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X64 /DLL %IntermediatesConfigurationFolder%game.obj
+    )
+)
+
+cl %CompilerFlags% %~dp0game.cpp
+link %LinkerFlags%
 
 GOTO :eof
 

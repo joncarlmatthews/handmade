@@ -341,10 +341,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         running = true;
 
+        uint32 loadCounter = 0;
+        uint32 loadCounterRefresh = 120;
+
         /**
          * MAIN GAME LOOP
          */
         while (running) {
+
+            loadCounter++;
 
             MSG message = {0};
 
@@ -598,9 +603,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             } // Audio buffer created.
 
-
-            loadGameDLLFunctions(&gameCode);
-
             // Create the game's audio buffer
             gameCode.gameInitAudioBuffer(&memory,
                                             &gameAudioBuffer,
@@ -619,6 +621,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Main game code.
             gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
+
+            if ((loadCounter % loadCounterRefresh) == 0) {
+                unloadGameDLL(&gameCode);
+                loadGameDLLFunctions(&gameCode);
+            }
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
@@ -680,8 +687,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         millisecondsElapsedForFrame, secondsElapsedForFrame, fps, clockCycles_mega, processorSpeed);
             OutputDebugStringA(output);
 #endif
-
-            unloadGameDLL(&gameCode);
 
         } // game loop
 
@@ -1338,7 +1343,6 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
-    /*
     BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
     DWORD lastError = GetLastError();
     if (lastError) {
@@ -1346,9 +1350,8 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
         swprintf_s(buff, sizeof(buff), L"Error %d\n", lastError);
         OutputDebugString(buff);
     }
-    */
     
-    HMODULE libHandle = LoadLibraryW(L"Game.dll");
+    HMODULE libHandle = LoadLibrary(L"Game_temp.dll");
 
     bool8 valid = 1;
 
