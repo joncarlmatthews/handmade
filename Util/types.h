@@ -1,6 +1,16 @@
 #ifndef HEADER_GC_TYPES
 #define HEADER_GC_TYPES
 
+// Global variables
+#define global_var static
+
+// Static variables within a local scope (e.g. case statement, function)
+#define local_persist_var static
+
+// Functions that are only available within the translation unit they're declared in.
+// This helps the compiler out by knowing that there is no external linking to be done.
+#define internal_func static 
+
 // Typedefs that specify exact-width integer types for increased code portability.
 /*
  * char:                                (1)     int8   (-128 127)
@@ -31,5 +41,9 @@ typedef int8                bool8;
 typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
+
+// Temp sopport for including platform layer specific types within the game layer
+typedef unsigned long      WIN32_DWORD;
+
 
 #endif

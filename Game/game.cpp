@@ -1,13 +1,11 @@
-#include "types.h"
 #include <math.h> // For Sin
-#include "handmade.h"
+#include "game.h"
 
-internal_func void gameUpdate(GameMemory *memory,
-                                GameFrameBuffer *frameBuffer,
-                                GameAudioBuffer *audioBuffer,
-                                GameInput inputInstances[],
-                                ControllerCounts *controllerCounts,
-                                AncillaryPlatformLayerData ancillaryPlatformLayerData)
+// Include the definitions of the utility/helper Functions that are
+// shared across the game and platform layer
+#include "..\Util\util.cpp"
+
+EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     /**
      * Game state initialisation
@@ -75,7 +73,7 @@ internal_func void gameUpdate(GameMemory *memory,
     gameState->sineWaveHertzPos = sineWaveHertzPos;
 
     gameState->sineWave.hertz = gameState->sineWaveHertz[gameState->sineWaveHertzPos];
-    gameState->sineWave.sizeOfWave = 1000; // Volume
+    gameState->sineWave.sizeOfWave = 0; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
@@ -128,6 +126,25 @@ internal_func void gameUpdate(GameMemory *memory,
             continue;
         }
 
+        // Move the player
+        if (inputInstances->controllers[i].dPadUp.endedDown) {
+            gameState->playerPosY = (gameState->playerPosY - movementSpeed);
+        }
+
+        if (inputInstances->controllers[i].dPadDown.endedDown) {
+            gameState->playerPosY = (gameState->playerPosY + movementSpeed);
+        }
+
+        if (inputInstances->controllers[i].dPadLeft.endedDown) {
+            gameState->playerPosX = (gameState->playerPosX - movementSpeed);
+        }
+
+        if (inputInstances->controllers[i].dPadRight.endedDown) {
+            gameState->playerPosX = (gameState->playerPosX + movementSpeed);
+        }
+
+        //// Sanitise position
+
         // Animate the screen.
         if (inputInstances->controllers[i].dPadUp.endedDown) {
             gameState->redOffset = (gameState->redOffset + movementSpeed);
@@ -162,26 +179,28 @@ internal_func void gameUpdate(GameMemory *memory,
                 motor2Speed = 35000;
             }
 
-            platformControllerVibrate(0, motor1Speed, motor2Speed);
+            (memory->platformControllerVibrate)(0, motor1Speed, motor2Speed);
         }
     }
 
-    gameWriteFrameBuffer(gameState, frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
+    writeFrameBuffer(gameState, frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
 
     gameState->setBG = 1;
 }
 
-internal_func void gameWriteFrameBuffer(GameState *gameState,
-                                        GameFrameBuffer *buffer,
-                                        AncillaryPlatformLayerData ancillaryPlatformLayerData,
-                                        int redOffset,
-                                        int greenOffset,
-                                        GameAudioBuffer *audioBuffer)
+internal_func void writeFrameBuffer(GameState *gameState,
+                                    GameFrameBuffer *buffer,
+                                    AncillaryPlatformLayerData ancillaryPlatformLayerData,
+                                    int redOffset,
+                                    int greenOffset,
+                                    GameAudioBuffer *audioBuffer)
 {
     // Background fill
-    if (!gameState->setBG) {
-        writeRectangle(buffer, 0x333399, buffer->height, buffer->width, 0, 0);
-    }
+    //if (!gameState->setBG) {
+        writeRectangle(buffer, 0x000066, buffer->height, buffer->width, 0, 0);
+    //}
+
+    writeRectangle(buffer, 0xff00ff, 1, 25, gameState->playerPosY, gameState->playerPosX);
     
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
@@ -194,7 +213,7 @@ internal_func void gameWriteFrameBuffer(GameState *gameState,
             uint16 height = 100;
             uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
             uint32 yOffset = 100;
-            writeRectangle(buffer, 0x000066, height, width, yOffset, 0);
+            writeRectangle(buffer, 0x3333ff, height, width, yOffset, 0);
         }
     }
 
@@ -204,7 +223,7 @@ internal_func void gameWriteFrameBuffer(GameState *gameState,
         uint16 width = 10;
         uint32 yOffset = 100;
         uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.playCursorPosition * coefficient);
-        writeRectangle(buffer, 0x006600, height, width, yOffset, xOffset);
+        writeRectangle(buffer, 0x669900, height, width, yOffset, xOffset);
     }
 
     // Write cursor + lock size (amount written) (red)
@@ -220,12 +239,7 @@ internal_func void gameWriteFrameBuffer(GameState *gameState,
 
 }
 
-internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
-                                                uint32 height,
-                                                uint32 width,
-                                                uint16 bytesPerPixel,
-                                                uint32 byteWidthPerRow,
-                                                void *memory)
+EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
 {
     frameBuffer->height = height;
     frameBuffer->width = width;
@@ -236,10 +250,7 @@ internal_func GameFrameBuffer* gameInitFrameBuffer(GameFrameBuffer *frameBuffer,
     return frameBuffer;
 }
 
-internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
-                                                    uint32 noOfBytesToWrite,
-                                                    uint8 bytesPerSample,
-                                                    uint64 platformBufferSizeInBytes)
+EXTERN_DLL_EXPORT GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
 {
     if ( (noOfBytesToWrite <= 0) || (bytesPerSample <= 0) ) {
         return audioBuffer;
@@ -252,10 +263,10 @@ internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
         // @TODO(JM) move the audio memory to the GameMemory object
         if (!audioBuffer->initialised) {
             audioBuffer->initialised = 1;
-            audioBuffer->memory = platformAllocateMemory(noOfBytesToWrite);
+            audioBuffer->memory = memory->platformAllocateMemory(noOfBytesToWrite);
         } else {
-            platformFreeMemory(audioBuffer->memory);
-            audioBuffer->memory = platformAllocateMemory(noOfBytesToWrite);
+            memory->platformFreeMemory(audioBuffer->memory);
+            audioBuffer->memory = memory->platformAllocateMemory(noOfBytesToWrite);
         }
     }
     audioBuffer->bytesPerSample             = bytesPerSample;
@@ -268,6 +279,15 @@ internal_func GameAudioBuffer* gameInitAudioBuffer(GameAudioBuffer *audioBuffer,
 internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
 {
     uint32 *row = (uint32 *)buffer->memory;
+
+    // Safe bounds
+    if (yOffset >= buffer->height) {
+        yOffset = (buffer->height - 500);
+    }
+
+    if (xOffset > buffer->width) {
+        xOffset = buffer->width;
+    }
 
     // Move down to starting row
     row = (row + (buffer->width * yOffset));
@@ -283,40 +303,4 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uin
         }
         row = (row + buffer->width);
     }
-}
-
-uint64 kibibytesToBytes(uint8 kibibytes)
-{
-    return (uint64)((uint64)1024 * (uint64)kibibytes);
-}
-
-uint64 mebibytesToBytes(uint8 mebibytes)
-{
-    return (uint64)(((uint64)1024 * kibibytesToBytes(1)) * mebibytes);
-}
-
-uint64 gibibytesToBytes(uint8 gibibytes)
-{
-    return (uint64)(((uint64)1024 * mebibytesToBytes(1)) * gibibytes);
-}
-
-uint64 tebibyteToBytes(uint8 tebibytes)
-{
-    return (uint64)(((uint64)1024 * gibibytesToBytes(1)) * tebibytes);
-}
-
-internal_func uint32 truncateToUint32Safe(uint64 value)
-{
-    assert((value <= 0xffffffff));
-    return (uint32)value;
-}
-
-float32 percentageOfAnotherf(float32 a, float32 b)
-{
-    if (b == 0) {
-        return 0;
-    }
-
-    float32 fract = (a / b);
-    return (fract * 100.0f);
 }

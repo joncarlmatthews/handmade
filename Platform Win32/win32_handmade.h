@@ -1,5 +1,7 @@
-#ifndef HEADER_FILE
-#define HEADER_FILE
+#ifndef HEADER_WIN32
+#define HEADER_WIN32
+
+#include "..\Util\util.h"
 
 /**
  * Struct for the Win32 screen buffer
@@ -120,6 +122,7 @@ internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *p
 internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration);
 
 internal_func void loadXInputDLLFunctions(void);
+internal_func void loadGameDLLFunctions(GameCode *gameCode);
 
 internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
 
@@ -137,5 +140,13 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *ne
                                                         uint16 gamepadButtonBit);
 
 internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard);
+
+/*
+ * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
+ * the code will assert if the value passed in is larger than 4 bytes
+ */
+internal_func uint32 win32TruncateToUint32Safe(uint64 value);
+
+internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
 
 #endif
