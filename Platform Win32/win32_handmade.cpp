@@ -177,6 +177,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
+    // @TODO(JM) remove the .exe filename part and write this value to memory
+    {
+        wchar_t buff[MAX_PATH] = { 0 };
+        DWORD res = GetModuleFileName(NULL, buff, MAX_PATH);
+        OutputDebugString(L"test");
+    }
+    
+
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     // @see https://www.codeproject.com/Questions/480201/whatplusQueryPerformanceFrequencyplusfor-3f
@@ -1342,7 +1350,14 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
 
     if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))) {
 
-        CopyFile(L"Game.dll", L"Game_temp.dll", false);
+        BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
+
+        if (!res) {
+            wchar_t buff[500] = { 0 };
+            swprintf_s(buff, 500, L"Game_temp.dll doesnt exist, but could not copy: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
+            OutputDebugString(buff);
+            assert(!"Game code can not be loaded");
+        }
 
         loadGameCode = true;
 

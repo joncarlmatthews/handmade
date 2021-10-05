@@ -20,6 +20,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->redOffset = 2;
         gameState->setBG = 0;
 
+        gameState->player1.height = 25;
+        gameState->player1.width = 25;
+
         for (size_t i = 0; i < countArray(gameState->sineWaveHertz); i++)
         {
             uint16 hertz;
@@ -128,22 +131,25 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Move the player
         if (inputInstances->controllers[i].dPadUp.endedDown) {
-            gameState->playerPosY = (gameState->playerPosY - movementSpeed);
+            gameState->player1.posY = (gameState->player1.posY - movementSpeed);
         }
 
         if (inputInstances->controllers[i].dPadDown.endedDown) {
-            gameState->playerPosY = (gameState->playerPosY + movementSpeed);
+            gameState->player1.posY = (gameState->player1.posY + movementSpeed);
         }
 
         if (inputInstances->controllers[i].dPadLeft.endedDown) {
-            gameState->playerPosX = (gameState->playerPosX - movementSpeed);
+            gameState->player1.posX = (gameState->player1.posX - movementSpeed);
         }
 
         if (inputInstances->controllers[i].dPadRight.endedDown) {
-            gameState->playerPosX = (gameState->playerPosX + movementSpeed);
+            gameState->player1.posX = (gameState->player1.posX + movementSpeed);
         }
 
-        //// Sanitise position
+        // Sanitise position
+        if ((uint32)(gameState->player1.posY + gameState->player1.height) > frameBuffer->height) {
+            gameState->player1.posY = (uint16)(frameBuffer->height - gameState->player1.height);
+        }
 
         // Animate the screen.
         if (inputInstances->controllers[i].dPadUp.endedDown) {
@@ -184,8 +190,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
 
     writeFrameBuffer(gameState, frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
-
-    gameState->setBG = 1;
 }
 
 internal_func void writeFrameBuffer(GameState *gameState,
@@ -200,7 +204,7 @@ internal_func void writeFrameBuffer(GameState *gameState,
         writeRectangle(buffer, 0x000066, buffer->height, buffer->width, 0, 0);
     //}
 
-    writeRectangle(buffer, 0xff00ff, 1, 25, gameState->playerPosY, gameState->playerPosX);
+    writeRectangle(buffer, 0xff00ff, 1, 25, gameState->player1.posY, gameState->player1.posX);
     
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)

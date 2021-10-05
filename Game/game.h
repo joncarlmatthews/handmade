@@ -269,8 +269,12 @@ typedef struct SineWave
 typedef struct GameState
 {
     uint8 setBG = false;
-    uint32 playerPosX = 0;
-    uint32 playerPosY = 0;
+    struct player1 {
+        uint16 posX = 0;
+        uint16 posY = 0;
+        uint16 height = 0;
+        uint16 width = 0;
+    } player1;
 
     SineWave sineWave;
     int32 redOffset;
