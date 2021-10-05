@@ -5,10 +5,14 @@
 
 // If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
+
 #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
-#define HANDMADE_DEBUG_AUDIO
+// #define HANDMADE_DEBUG
+// #define HANDMADE_DEBUG_FPS
+// #define HANDMADE_DEBUG_AUDIO
+
 #else
-#define assert(expression)
+    #define assert(expression)
 #endif
 
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
@@ -264,12 +268,15 @@ typedef struct SineWave
 
 typedef struct GameState
 {
+    uint8 setBG = false;
+    uint32 playerPosX = 0;
+    uint32 playerPosY = 0;
+
     SineWave sineWave;
     int32 redOffset;
     int32 greenOffset;
     uint16 sineWaveHertz[5] = { 60, 100, 200, 300, 400 };
     int16 sineWaveHertzPos = 2;
-    uint8 setBG = false;
 } GameState;
 
 typedef struct GameMemory

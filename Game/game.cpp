@@ -73,7 +73,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     gameState->sineWaveHertzPos = sineWaveHertzPos;
 
     gameState->sineWave.hertz = gameState->sineWaveHertz[gameState->sineWaveHertzPos];
-    gameState->sineWave.sizeOfWave = 1000; // Volume
+    gameState->sineWave.sizeOfWave = 0; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
@@ -126,6 +126,25 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             continue;
         }
 
+        // Move the player
+        if (inputInstances->controllers[i].dPadUp.endedDown) {
+            gameState->playerPosY = (gameState->playerPosY - movementSpeed);
+        }
+
+        if (inputInstances->controllers[i].dPadDown.endedDown) {
+            gameState->playerPosY = (gameState->playerPosY + movementSpeed);
+        }
+
+        if (inputInstances->controllers[i].dPadLeft.endedDown) {
+            gameState->playerPosX = (gameState->playerPosX - movementSpeed);
+        }
+
+        if (inputInstances->controllers[i].dPadRight.endedDown) {
+            gameState->playerPosX = (gameState->playerPosX + movementSpeed);
+        }
+
+        //// Sanitise position
+
         // Animate the screen.
         if (inputInstances->controllers[i].dPadUp.endedDown) {
             gameState->redOffset = (gameState->redOffset + movementSpeed);
@@ -177,9 +196,11 @@ internal_func void writeFrameBuffer(GameState *gameState,
                                     GameAudioBuffer *audioBuffer)
 {
     // Background fill
-    if (!gameState->setBG) {
-        writeRectangle(buffer, 0x0d1117, buffer->height, buffer->width, 0, 0);
-    }
+    //if (!gameState->setBG) {
+        writeRectangle(buffer, 0x000066, buffer->height, buffer->width, 0, 0);
+    //}
+
+    writeRectangle(buffer, 0xff00ff, 1, 25, gameState->playerPosY, gameState->playerPosX);
     
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
@@ -192,7 +213,7 @@ internal_func void writeFrameBuffer(GameState *gameState,
             uint16 height = 100;
             uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
             uint32 yOffset = 100;
-            writeRectangle(buffer, 0x9a9a9a, height, width, yOffset, 0);
+            writeRectangle(buffer, 0x3333ff, height, width, yOffset, 0);
         }
     }
 
@@ -202,7 +223,7 @@ internal_func void writeFrameBuffer(GameState *gameState,
         uint16 width = 10;
         uint32 yOffset = 100;
         uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.playCursorPosition * coefficient);
-        writeRectangle(buffer, 0x56772b, height, width, yOffset, xOffset);
+        writeRectangle(buffer, 0x669900, height, width, yOffset, xOffset);
     }
 
     // Write cursor + lock size (amount written) (red)
@@ -211,7 +232,7 @@ internal_func void writeFrameBuffer(GameState *gameState,
         uint32 width = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes * coefficient);
         uint32 yOffset = 100;
         uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.writeCursorPosition * coefficient);
-        writeRectangle(buffer, 0xdcdcaa, height, width, yOffset, xOffset);
+        writeRectangle(buffer, 0xcc0000, height, width, yOffset, xOffset);
     }
 
 #endif
@@ -258,6 +279,15 @@ EXTERN_DLL_EXPORT GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
 internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
 {
     uint32 *row = (uint32 *)buffer->memory;
+
+    // Safe bounds
+    if (yOffset >= buffer->height) {
+        yOffset = (buffer->height - 500);
+    }
+
+    if (xOffset > buffer->width) {
+        xOffset = buffer->width;
+    }
 
     // Move down to starting row
     row = (row + (buffer->width * yOffset));

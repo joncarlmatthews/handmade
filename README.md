@@ -57,7 +57,7 @@ Finally, run the build script with the relevant Configuration and Release argume
 > build.bat Debug x86
 ```
 
-The platform layer will then dynamically reload the game code without the need to rebuild the platform code.
+The platform layer will then dynamically reload the game code without the need to rebuild the platform code. You can safely run `build.bat` with (a) the Visual Studio debugger running the platform layer or (b) when simply running primary the .exe
 
 This `build.bat` build script has been coded to match the Visual Studio build commands and so all files generated are placed in the usual directories.
 
@@ -88,6 +88,10 @@ HANDMADE_DEBUG_AUDIO
 ```
 
 ## Episode Notes
+
+### Day 022 -  Instantaneous Live Code Editing
+
+Can now live reload the game code whilst the platform layer is running either directly via the .exe or via the VS debugger!
 
 ### Day 021 - Loading Game Code Dynamically
 

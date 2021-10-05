@@ -21,6 +21,8 @@ if %ConfigurationArg% == Release (
     GOTO configuration_usage
 )
 
+SET Timestamp=%date:~6,4%-%date:~3,2%-%date:~0,2%-%time:~0,2%-%time:~3,2%-%time:~6,2%
+
 REM PlatformFolder to match Visual Studio's build directory structures
 if %PlatformArg% == x64 (
     SET Platform=x64
@@ -52,7 +54,19 @@ SET IntermediatesProjectFolder=%IntermediatesRootFolder%Game\
 SET IntermediatesArchFolder=%IntermediatesProjectFolder%%PlatformFolder%\
 SET IntermediatesConfigurationFolder=%IntermediatesArchFolder%%Configuration%\
 
-REM double backslash directories
+REM create the directories (if they dont already exist)
+IF not exist %ProjectFolder% ( mkdir %ProjectFolder% )
+IF not exist %BuildArchFolder% ( mkdir  %BuildArchFolder% )
+IF not exist %BuildConfigurationFolder% ( mkdir %BuildConfigurationFolder% )
+IF not exist %IntermediatesRootFolder% ( mkdir %IntermediatesRootFolder% )
+IF not exist %IntermediatesProjectFolder% ( mkdir  %IntermediatesProjectFolder% )
+IF not exist %IntermediatesArchFolder% ( mkdir %IntermediatesArchFolder% )
+IF not exist %IntermediatesConfigurationFolder% ( mkdir %IntermediatesConfigurationFolder% )
+
+REM delete any old PDB files from any previous build
+del %BuildConfigurationFolder%Game_*.pdb
+
+REM double backslash directories (cl.exe and link.exe need the directories to be double backslashed)
 SET ProjectFolder=%ProjectFolder:\=\\%
 SET BuildArchFolder=%BuildArchFolder:\=\\%
 SET BuildConfigurationFolder=%BuildConfigurationFolder:\=\\%
@@ -65,15 +79,6 @@ REM Debug:
 REM ECHO "%BuildConfigurationFolder%"
 REM ECHO %IntermediatesConfigurationFolder%
 
-REM create the directories if they dont exist
-IF not exist %ProjectFolder% ( mkdir %ProjectFolder% )
-IF not exist %BuildArchFolder% ( mkdir  %BuildArchFolder% )
-IF not exist %BuildConfigurationFolder% ( mkdir %BuildConfigurationFolder% )
-IF not exist %IntermediatesRootFolder% ( mkdir %IntermediatesRootFolder% )
-IF not exist %IntermediatesProjectFolder% ( mkdir  %IntermediatesProjectFolder% )
-IF not exist %IntermediatesArchFolder% ( mkdir %IntermediatesArchFolder% )
-IF not exist %IntermediatesConfigurationFolder% ( mkdir %IntermediatesConfigurationFolder% )
-
 SET CompilerFlags=""
 SET LinkerFlags=""
 
@@ -82,16 +87,16 @@ IF %Platform% == x86 (
 
     IF %Configuration% == Debug (
 
-        SET CompilerFlags=/c /ZI /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /Oy- /D WIN32 /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142.pdb" /external:W4 /Gd /TP /analyze- /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
+        SET CompilerFlags=/c /ZI /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /Oy- /D WIN32 /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb" /external:W4 /Gd /TP /analyze- /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
 
-        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /DLL %IntermediatesConfigurationFolder%game.obj
+        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /DLL %IntermediatesConfigurationFolder%game.obj
     )
 
     IF %Configuration% == Release (
 
-        SET CompilerFlags=/c /Zi /nologo /W4 /WX /diagnostics:column /sdl /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142.pdb" /external:W4 /Gd /TP /analyze- /FC /errorReport:prompt /wd4201 /wd4100 /wd4505
+        SET CompilerFlags=/c /Zi /nologo /W4 /WX /diagnostics:column /sdl /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb" /external:W4 /Gd /TP /analyze- /FC /errorReport:prompt /wd4201 /wd4100 /wd4505
 
-        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /LTCGOUT:"%IntermediatesConfigurationFolder%Game.iobj" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /SAFESEH /DLL %IntermediatesConfigurationFolder%game.obj
+        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /LTCGOUT:"%IntermediatesConfigurationFolder%Game.iobj" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /SAFESEH /DLL %IntermediatesConfigurationFolder%game.obj
     )
 )
 
@@ -99,20 +104,23 @@ IF %Platform% == x64 (
 
     IF %Configuration% == Debug (
 
-        SET CompilerFlags=/c /ZI /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142.pdb" /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
+        SET CompilerFlags=/c /ZI /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb" /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
 
-        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X64 /DLL %IntermediatesConfigurationFolder%game.obj
+        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X64 /DLL %IntermediatesConfigurationFolder%game.obj
     )
 
     IF %Configuration% == Release (
 
-        SET CompilerFlags=/c /Zi /nologo /W4 /WX /diagnostics:column /sdl /O2 /Oi /GL /D NDEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142.pdb" /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505
+        SET CompilerFlags=/c /Zi /nologo /W4 /WX /diagnostics:column /sdl /O2 /Oi /GL /D NDEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb" /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505
 
-        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /LTCGOUT:"%IntermediatesConfigurationFolder%Game.iobj" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X64 /DLL %IntermediatesConfigurationFolder%game.obj
+        SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /LTCGOUT:"%IntermediatesConfigurationFolder%Game.iobj" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X64 /DLL %IntermediatesConfigurationFolder%game.obj
     )
 )
 
+REM Compile the source code
 cl %CompilerFlags% %~dp0game.cpp
+
+REM Run the linker
 link %LinkerFlags%
 
 GOTO :eof

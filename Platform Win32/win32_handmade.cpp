@@ -341,15 +341,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         running = true;
 
-        uint32 loadCounter = 0;
-        uint32 loadCounterRefresh = 120;
-
         /**
          * MAIN GAME LOOP
          */
         while (running) {
-
-            loadCounter++;
 
             MSG message = {0};
 
@@ -622,10 +617,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Main game code.
             gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
 
-            if ((loadCounter % loadCounterRefresh) == 0) {
-                unloadGameDLL(&gameCode);
-                loadGameDLLFunctions(&gameCode);
-            }
+            loadGameDLLFunctions(&gameCode);
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
@@ -1343,61 +1335,115 @@ internal_func void loadXInputDLLFunctions(void)
 
 internal_func void loadGameDLLFunctions(GameCode *gameCode)
 {
-    BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
-    DWORD lastError = GetLastError();
-    if (lastError) {
-        wchar_t buff[500] = { 0 };
-        swprintf_s(buff, sizeof(buff), L"Error %d\n", lastError);
-        OutputDebugString(buff);
-    }
-    
-    HMODULE libHandle = LoadLibrary(L"Game_temp.dll");
+    BOOL loadGameCode = false;
 
-    bool8 valid = 1;
+    // Doesnt yet exist?
+    DWORD dwAttrib = GetFileAttributes(L"Game_temp.dll");
 
-    if (libHandle) {
+    if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))) {
 
-        gameCode->dllHandle = libHandle;
+        CopyFile(L"Game.dll", L"Game_temp.dll", false);
 
-        GameUpdate *gameUpdateAddr                      = (GameUpdate *)GetProcAddress(libHandle, "gameUpdate");
-        GameInitFrameBuffer *gameInitFrameBufferAddr    = (GameInitFrameBuffer *)GetProcAddress(libHandle, "gameInitFrameBuffer");
-        GameInitAudioBuffer *gameInitAudioBufferAddr    = (GameInitAudioBuffer *)GetProcAddress(libHandle, "gameInitAudioBuffer");
-
-        if (gameUpdateAddr) {
-            gameCode->gameUpdate = gameUpdateAddr;
-        } else {
-            assert(!"unable to find gameUpdate");
-            valid = 0;
-        }
-
-        if (gameInitFrameBufferAddr) {
-            gameCode->gameInitFrameBuffer = gameInitFrameBufferAddr;
-        } else {
-            assert(!"unable to find gameInitFrameBuffer");
-            valid = 0;
-        }
-
-        if (gameInitAudioBufferAddr) {
-            gameCode->gameInitAudioBuffer = gameInitAudioBufferAddr;
-        } else {
-            assert(!"unable to find gameInitAudioBuffer");
-            valid = 0;
-        }
+        loadGameCode = true;
 
     } else {
-        assert(!"unable to load game code");
-        valid = 0;
+
+        // File already exists...
+
+        // Check to see if we actually need to do the copy.
+        FILETIME lastWriteTimeGame = {};
+        lastWriteTimeGame = win32GetFileLastWriteDate(L"Game.dll");
+        FILETIME lastWriteTimeGameCopy = {};
+        lastWriteTimeGameCopy = win32GetFileLastWriteDate(L"Game_temp.dll");
+
+        if (CompareFileTime(&lastWriteTimeGame, &lastWriteTimeGameCopy) != 0) {
+
+            // Free a lock if there is one...
+            if (gameCode->dllHandle != 0x0) {
+                BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
+
+                if (!res) {
+                    wchar_t buff[500] = { 0 };
+                    swprintf_s(buff, 500, L"Could not free DLL handle: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
+                    OutputDebugString(buff);
+                }
+            }
+
+            BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
+            if (!res) {
+                wchar_t buff[500] = { 0 };
+                swprintf_s(buff, 500, L"DLL copy failed: 0x%X\n", GetLastError()); // 0x20 = The process cannot access the file because it is being used by another process.
+                OutputDebugString(buff);
+            }
+
+            loadGameCode = true;
+        } else {
+
+            if (gameCode->dllHandle == 0x0) {
+                loadGameCode = true;
+            }
+        }
     }
 
-    if (!valid) {
-        gameCode->gameUpdate            = &gameUpdateStub;
-        gameCode->gameInitFrameBuffer   = &gameInitFrameBufferStub;
-        gameCode->gameInitAudioBuffer   = &gameInitAudioBufferStub;
+    if (loadGameCode) {
+        HMODULE libHandle = LoadLibrary(L"Game_temp.dll");
+
+        bool8 valid = 1;
+
+        if (libHandle) {
+
+            gameCode->dllHandle = libHandle;
+
+            GameUpdate *gameUpdateAddr = (GameUpdate *)GetProcAddress(libHandle, "gameUpdate");
+            GameInitFrameBuffer *gameInitFrameBufferAddr = (GameInitFrameBuffer *)GetProcAddress(libHandle, "gameInitFrameBuffer");
+            GameInitAudioBuffer *gameInitAudioBufferAddr = (GameInitAudioBuffer *)GetProcAddress(libHandle, "gameInitAudioBuffer");
+
+            if (gameUpdateAddr) {
+                gameCode->gameUpdate = gameUpdateAddr;
+            } else {
+                assert(!"unable to find gameUpdate");
+                valid = 0;
+            }
+
+            if (gameInitFrameBufferAddr) {
+                gameCode->gameInitFrameBuffer = gameInitFrameBufferAddr;
+            } else {
+                assert(!"unable to find gameInitFrameBuffer");
+                valid = 0;
+            }
+
+            if (gameInitAudioBufferAddr) {
+                gameCode->gameInitAudioBuffer = gameInitAudioBufferAddr;
+            } else {
+                assert(!"unable to find gameInitAudioBuffer");
+                valid = 0;
+            }
+
+        } else {
+            assert(!"unable to load game code");
+            valid = 0;
+        }
+
+        if (!valid) {
+            gameCode->gameUpdate = &gameUpdateStub;
+            gameCode->gameInitFrameBuffer = &gameInitFrameBufferStub;
+            gameCode->gameInitAudioBuffer = &gameInitAudioBufferStub;
+        }
     }
 }
 
-internal_func void unloadGameDLL(GameCode *gameCode)
+internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
 {
-    BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
-    res;
+    WIN32_FIND_DATA fileData = { 0 };
+    HANDLE file = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    FILETIME creationTime = { 0 };
+    FILETIME lastAccessTime = { 0 };
+    FILETIME lastWriteTime = { 0 };
+
+    GetFileTime(file, &creationTime, &lastAccessTime, &lastWriteTime);
+
+    CloseHandle(file);
+
+    return lastWriteTime;
 }
