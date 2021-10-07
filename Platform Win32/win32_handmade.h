@@ -121,8 +121,9 @@ internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *p
 
 internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration);
 
-internal_func void loadXInputDLLFunctions(void);
-internal_func void loadGameDLLFunctions(GameCode *gameCode);
+internal_func void win32LoadXInputDLLFunctions(void);
+internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode);
+internal_func void win32GetAbsolutePath(wchar_t *path);
 
 internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
 

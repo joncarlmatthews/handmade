@@ -9,7 +9,7 @@
 #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
 // #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
-// #define HANDMADE_DEBUG_AUDIO
+//#define HANDMADE_DEBUG_AUDIO
 
 #else
     #define assert(expression)
@@ -270,10 +270,10 @@ typedef struct GameState
 {
     uint8 setBG = false;
     struct player1 {
-        uint16 posX = 0;
-        uint16 posY = 0;
-        uint16 height = 0;
-        uint16 width = 0;
+        int32 posX = 0;
+        int32 posY = 0;
+        int32 height = 0;
+        int32 width = 0;
     } player1;
 
     SineWave sineWave;

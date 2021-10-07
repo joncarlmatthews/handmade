@@ -123,32 +123,43 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      */
     uint16 movementSpeed = 30;
 
+    // Move the player
+#define CTRL_INDEX 2
+
+    if (inputInstances->controllers[CTRL_INDEX].dPadUp.endedDown) {
+        gameState->player1.posY = (gameState->player1.posY - movementSpeed);
+    }
+
+    if (inputInstances->controllers[CTRL_INDEX].dPadDown.endedDown) {
+        gameState->player1.posY = (gameState->player1.posY + movementSpeed);
+    }
+
+    if (inputInstances->controllers[CTRL_INDEX].dPadLeft.endedDown) {
+        gameState->player1.posX = (gameState->player1.posX - movementSpeed);
+    }
+
+    if (inputInstances->controllers[CTRL_INDEX].dPadRight.endedDown) {
+        gameState->player1.posX = (gameState->player1.posX + movementSpeed);
+    }
+
+    // Sanitise position
+    if (gameState->player1.posY < 0) {
+        gameState->player1.posY = 0;
+    }
+    if (((int64)gameState->player1.posY + gameState->player1.height) > frameBuffer->height) {
+        gameState->player1.posY = (int32)(frameBuffer->height - gameState->player1.height);
+    }
+    if (((int64)gameState->player1.posX + gameState->player1.width) > frameBuffer->width) {
+        gameState->player1.posX = (int32)(frameBuffer->width - gameState->player1.width);
+    }
+    if (gameState->player1.posX < 0) {
+        gameState->player1.posX = 0;
+    }
+
     for (uint8 i = 0; i < controllerCounts->connectedControllers; i++){
 
         if (!inputInstances->controllers[i].isConnected) {
             continue;
-        }
-
-        // Move the player
-        if (inputInstances->controllers[i].dPadUp.endedDown) {
-            gameState->player1.posY = (gameState->player1.posY - movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].dPadDown.endedDown) {
-            gameState->player1.posY = (gameState->player1.posY + movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].dPadLeft.endedDown) {
-            gameState->player1.posX = (gameState->player1.posX - movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].dPadRight.endedDown) {
-            gameState->player1.posX = (gameState->player1.posX + movementSpeed);
-        }
-
-        // Sanitise position
-        if ((uint32)(gameState->player1.posY + gameState->player1.height) > frameBuffer->height) {
-            gameState->player1.posY = (uint16)(frameBuffer->height - gameState->player1.height);
         }
 
         // Animate the screen.
@@ -200,26 +211,22 @@ internal_func void writeFrameBuffer(GameState *gameState,
                                     GameAudioBuffer *audioBuffer)
 {
     // Background fill
-    //if (!gameState->setBG) {
-        writeRectangle(buffer, 0x000066, buffer->height, buffer->width, 0, 0);
-    //}
+    writeRectangle(buffer, 0x000066, buffer->height, buffer->width, 0, 0);
 
-    writeRectangle(buffer, 0xff00ff, 1, 25, gameState->player1.posY, gameState->player1.posX);
+    writeRectangle(buffer, 0xff00ff, gameState->player1.height, gameState->player1.width, gameState->player1.posY, gameState->player1.posX);
     
 
-#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
+#if defined(HANDMADE_DEBUG_AUDIO)
 
     float32 coefficient = ((float32)buffer->width / (float32)audioBuffer->platformBufferSizeInBytes);
 
     // Audio buffer box
-    if (!gameState->setBG) {
         {
             uint16 height = 100;
             uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
             uint32 yOffset = 100;
             writeRectangle(buffer, 0x3333ff, height, width, yOffset, 0);
         }
-    }
 
     // Play cursor (green)
     {
@@ -286,7 +293,7 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uin
 
     // Safe bounds
     if (yOffset >= buffer->height) {
-        yOffset = (buffer->height - 500);
+        //yOffset = (buffer->height - 1000);
     }
 
     if (xOffset > buffer->width) {

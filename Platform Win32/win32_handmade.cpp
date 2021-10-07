@@ -179,10 +179,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 {
     // @TODO(JM) remove the .exe filename part and write this value to memory
     {
-        wchar_t buff[MAX_PATH] = { 0 };
-        DWORD res = GetModuleFileName(NULL, buff, MAX_PATH);
-        OutputDebugString(L"test");
+        
+
     }
+
+    
     
 
     // Get the current performance-counter frequency, in counts per second.
@@ -193,7 +194,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     globalQPCFrequency = perfFrequencyCounterRes.QuadPart;
 
     // Load XInput DLL functions.
-    loadXInputDLLFunctions();
+    win32LoadXInputDLLFunctions();
 
     // Create a new window struct and set all of it's values to 0.
     WNDCLASS windowClass = {0};
@@ -244,7 +245,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     HDC deviceHandleForWindow = GetDC(window);
 
     GameCode gameCode = { 0 };
-    loadGameDLLFunctions(&gameCode);
+    wchar_t absPath[MAX_PATH] = { 0 };
+    win32GetAbsolutePath(absPath);
+    win32LoadGameDLLFunctions(absPath, &gameCode);
 
     /*
      * Game memory
@@ -581,7 +584,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     }
                     
 
-#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
+#if defined(HANDMADE_DEBUG_AUDIO)
 
                     // @TODO(JM) Make audio latency match a single frame
                     if (win32AudioBuffer.bufferSizeInBytes > 0) {
@@ -594,7 +597,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         OutputDebugStringA(buff);
                     }
 
-#endif // HANDMADE_DEBUG_AUDIO
+#endif
 
                     ancillaryPlatformLayerData.audioBuffer.playCursorPosition   = playCursorOffsetInBytes;
                     ancillaryPlatformLayerData.audioBuffer.writeCursorPosition  = writeCursorOffsetInBytes;
@@ -625,7 +628,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Main game code.
             gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
 
-            loadGameDLLFunctions(&gameCode);
+            win32LoadGameDLLFunctions(absPath, &gameCode);
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
@@ -1009,7 +1012,9 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
 
     win32AudioBuffer->bufferSuccessfulyCreated = TRUE;
 
+#if defined(HANDMADE_DEBUG)
     OutputDebugStringA("Primary & secondary successfully buffer created\n");
+#endif
 }
 
 internal_func void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer)
@@ -1313,7 +1318,7 @@ internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATIO
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-internal_func void loadXInputDLLFunctions(void)
+internal_func void win32LoadXInputDLLFunctions(void)
 {
     HMODULE libHandle = LoadLibrary(TEXT("XInput1_4.dll"));
 
@@ -1341,23 +1346,64 @@ internal_func void loadXInputDLLFunctions(void)
     }
 }
 
-internal_func void loadGameDLLFunctions(GameCode *gameCode)
+internal_func void win32ConcatStrings(wchar_t *source1,
+                                       size_t source1Length,
+                                       wchar_t *source2,
+                                       size_t source2Length,
+                                       wchar_t *dest)
 {
+    size_t runningIndex = 0;
+    for (size_t i = 0; i < source1Length; i++) {
+        if (source1[i] == '\0') {
+            break;
+        }
+        dest[i] = source1[i];
+        runningIndex++;
+    }
+
+    for (size_t i = 0; i < source2Length; i++) {
+        if (source2[i] == '\0') {
+            break;
+        }
+        dest[runningIndex] = source2[i];
+        runningIndex++;
+    }
+}
+
+internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
+{
+    wchar_t gameDLLFileName[20] = L"Game.dll";
+    wchar_t gameDLLFilePath[276] = { 0 };
+
+    wchar_t gameCopyDLLFileName[20] = L"Game_copy.dll";
+    wchar_t gameCopyDLLFilePath[276] = {0};
+
+    win32ConcatStrings(absPath, MAX_PATH, gameDLLFileName, 20, gameDLLFilePath);
+    win32ConcatStrings(absPath, MAX_PATH, gameCopyDLLFileName, 20, gameCopyDLLFilePath);
+
     BOOL loadGameCode = false;
 
-    // Doesnt yet exist?
-    DWORD dwAttrib = GetFileAttributes(L"Game_temp.dll");
+    // Does the copy yet exist?
+    DWORD dwAttrib = GetFileAttributes(gameCopyDLLFilePath);
 
     if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))) {
 
-        BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
+#if defined(HANDMADE_DEBUG)
+        wchar_t buff[500] = { 0 };
+        swprintf_s(buff, 500, L"Game_copy.dll doesnt exist, going to copy...\n");
+        OutputDebugString(buff);
+#endif
 
+        BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
+
+#if defined(HANDMADE_DEBUG)
         if (!res) {
             wchar_t buff[500] = { 0 };
             swprintf_s(buff, 500, L"Game_temp.dll doesnt exist, but could not copy: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
             OutputDebugString(buff);
             assert(!"Game code can not be loaded");
         }
+#endif
 
         loadGameCode = true;
 
@@ -1367,9 +1413,9 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
 
         // Check to see if we actually need to do the copy.
         FILETIME lastWriteTimeGame = {};
-        lastWriteTimeGame = win32GetFileLastWriteDate(L"Game.dll");
+        lastWriteTimeGame = win32GetFileLastWriteDate(gameDLLFilePath);
         FILETIME lastWriteTimeGameCopy = {};
-        lastWriteTimeGameCopy = win32GetFileLastWriteDate(L"Game_temp.dll");
+        lastWriteTimeGameCopy = win32GetFileLastWriteDate(gameCopyDLLFilePath);
 
         if (CompareFileTime(&lastWriteTimeGame, &lastWriteTimeGameCopy) != 0) {
 
@@ -1377,19 +1423,25 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
             if (gameCode->dllHandle != 0x0) {
                 BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
 
+#if defined(HANDMADE_DEBUG)
                 if (!res) {
                     wchar_t buff[500] = { 0 };
                     swprintf_s(buff, 500, L"Could not free DLL handle: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
                     OutputDebugString(buff);
                 }
+#endif
+
             }
 
-            BOOL res = CopyFile(L"Game.dll", L"Game_temp.dll", false);
+            BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
+
+#if defined(HANDMADE_DEBUG)
             if (!res) {
                 wchar_t buff[500] = { 0 };
                 swprintf_s(buff, 500, L"DLL copy failed: 0x%X\n", GetLastError()); // 0x20 = The process cannot access the file because it is being used by another process.
                 OutputDebugString(buff);
             }
+#endif
 
             loadGameCode = true;
         } else {
@@ -1401,7 +1453,7 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
     }
 
     if (loadGameCode) {
-        HMODULE libHandle = LoadLibrary(L"Game_temp.dll");
+        HMODULE libHandle = LoadLibrary(gameCopyDLLFilePath);
 
         bool8 valid = 1;
 
@@ -1445,6 +1497,44 @@ internal_func void loadGameDLLFunctions(GameCode *gameCode)
             gameCode->gameInitAudioBuffer = &gameInitAudioBufferStub;
         }
     }
+}
+
+internal_func void win32GetAbsolutePath(wchar_t *path)
+{
+    // Get the module path for the running exe
+    wchar_t modulePath[MAX_PATH] = { 0 };
+    GetModuleFileName(NULL, modulePath, MAX_PATH);
+
+    // Set a pointer to the last backslash
+    void *ptr = 0x0;
+    for (size_t i = 0; i < MAX_PATH; i++) {
+        if (modulePath[i] == '\\') {
+            ptr = &modulePath[i];
+        }
+        if (modulePath[i] == '\0') {
+            if (ptr == 0x0) {
+                ptr = &modulePath[i];
+            }
+            break;
+        }
+    }
+
+    // Write to a new char array, copying the contents of the
+    // module path, until we hit the last slash
+    for (size_t i = 0; i < MAX_PATH; i++) {
+        path[i] = modulePath[i];
+        if (&modulePath[i] == ptr) {
+            break;
+        }
+        if (modulePath[i] == '\0') {
+            break;
+        }
+    }
+
+    /*
+    swprintf_s(moduleDirectory, MAX_PATH, L"%ls", moduleDirectory);
+    OutputDebugString(moduleDirectory);
+    */
 }
 
 internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
