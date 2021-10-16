@@ -3,13 +3,13 @@
 
 #include "..\Util\util.h"
 
-// If assertion isn't true, write to the null pointer and crash the program.
 #if HANDMADE_LOCAL_BUILD
 
+// If assertion isn't true, write to the null pointer and crash the program.
 #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
 // #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
-//#define HANDMADE_DEBUG_AUDIO
+// #define HANDMADE_DEBUG_AUDIO
 
 #else
     #define assert(expression)
@@ -18,7 +18,9 @@
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
 
 // Generic stuff
-#define PIf 3.14159265359f
+#ifndef M_PI
+#define M_PI       3.14159265358979323846
+#endif     
 
 // Return the number of elements in a static array
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -34,11 +36,11 @@
  /**
   * @brief Requests the platform layer allocated @link bytes worth of memory
   *
+  * @param memoryStartAddress The location in memory to start the allocation
   * @param bytes The amount of bytes to allocate
-  *
   * @return void pointer to the blockmemory
  */
-#define PLATFORM_ALLOCATE_MEMORY(name) void *name(uint32 bytes)
+#define PLATFORM_ALLOCATE_MEMORY(name) void *name(uint64 memoryStartAddress, uint64 memorySizeInBytes)
 typedef PLATFORM_ALLOCATE_MEMORY(PlatformAllocateMemory);
 
 /**
@@ -177,6 +179,14 @@ typedef struct GameAudioBuffer
     // Byte count of the platform's buffer memory
     uint64 platformBufferSizeInBytes;
 
+#if defined(HANDMADE_DEBUG_AUDIO)
+
+    unsigned long playCursorPosition;
+    unsigned long writeCursorPosition;
+    unsigned long lockSizeInBytes;
+
+#endif
+
 } GameAudioBuffer;
 
 typedef struct ControllerCounts
@@ -241,18 +251,8 @@ typedef struct GameInput
     GameControllerInput controllers[MAX_CONTROLLERS];
 } GameInput;
 
-typedef struct AncillaryPlatformLayerData {
-    struct {
-        WIN32_DWORD playCursorPosition;
-        WIN32_DWORD writeCursorPosition;
-        WIN32_DWORD lockSizeInBytes;
-        WIN32_DWORD lockOffsetInBytes;
-    } audioBuffer;
-} AncillaryPlatformLayerData;
-
 typedef struct SineWave
 {
-    int foo;
     // Hertz is the same as "cycles per second".
     // The number of cycles that occur in one second is equal to the
     // frequency of the signal in hertz (abbreviated Hz).
@@ -266,14 +266,25 @@ typedef struct SineWave
 
 } SineWave;
 
+enum jumpDirection { JUMP_UP, JUMP_DOWN };
+
 typedef struct GameState
 {
     uint8 setBG = false;
     struct player1 {
         int32 posX = 0;
         int32 posY = 0;
-        int32 height = 0;
-        int32 width = 0;
+        uint16 height = 0;
+        uint16 width = 0;
+        uint8 movementSpeed = 0;
+
+        bool8 jumping = 0;
+        float32 jumpDuration = 0.0f;
+        float32 totalJumpMovement = 0.0f;
+        float32 jumpRunningFrameCtr = 0.0f;
+        float32 jumpDirection = 0;
+        int32 jumpStartPos = 0;
+        
     } player1;
 
     SineWave sineWave;
@@ -330,7 +341,6 @@ typedef struct GameMemory
  * @param audioBuffer Pointer to the initialised audio buffer 
  * @param inputInstances Array of GameInput devices
  * @param controllerCounts Pointer to the ControllerCounts structs
- * @param ancillaryPlatformLayerData Ancillary platform layer data to send in
  * 
  * @return void
 */
@@ -338,8 +348,7 @@ typedef struct GameMemory
                                     GameFrameBuffer *frameBuffer, \
                                     GameAudioBuffer *audioBuffer, \
                                     GameInput inputInstances[], \
-                                    ControllerCounts *controllerCounts, \
-                                    AncillaryPlatformLayerData ancillaryPlatformLayerData)
+                                    ControllerCounts *controllerCounts)
 typedef GAME_UPDATE(GameUpdate);
 GAME_UPDATE(gameUpdateStub) { return; }
 
@@ -382,14 +391,17 @@ GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) { return 0; }
 typedef GAME_INIT_AUDIO_BUFFER(GameInitAudioBuffer);
 GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
 
-internal_func void writeFrameBuffer(GameState *gameState,
-                                    GameFrameBuffer *buffer,
-                                    AncillaryPlatformLayerData ancillaryPlatformLayerData,
-                                    int redOffset,
-                                    int greenOffset,
-                                    GameAudioBuffer *audioBuffer);
-
 internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
+
+internal_func void frameBufferWriteBackground(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
+
+internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
+
+internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
+
+internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller);
+
+internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffer *audioBuffer);
 
 /**
  * Struct to assign pointers to internal game code functions

@@ -46,7 +46,8 @@ global_var int64 globalQPCFrequency;
 
 PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory)
 {
-    return VirtualAlloc(NULL, bytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    LPVOID startAddress = (LPVOID)memoryStartAddress;
+    return VirtualAlloc(startAddress, memorySizeInBytes, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
 }
 
 PLATFORM_FREE_MEMORY(platformFreeMemory)
@@ -102,7 +103,7 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
         uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
 
         // Allocate enough memory for the file.
-        file.memory = VirtualAlloc(NULL, sizeInBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        file.memory = platformAllocateMemory(0, sizeInBytes);
 
         if (NULL == file.memory) {
             OutputDebugStringA("Cannot allocate memory for file");
@@ -177,15 +178,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
-    // @TODO(JM) remove the .exe filename part and write this value to memory
-    {
-        
-
-    }
-
-    
-    
-
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     // @see https://www.codeproject.com/Questions/480201/whatplusQueryPerformanceFrequencyplusfor-3f
@@ -244,18 +236,30 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
-    GameCode gameCode = { 0 };
+    // Create a Win32 state object to hold persistent data for the platform layer.
+    Win32State win32State = { 0 };
+    win32State.inputRecordingIndex = 0;
+    win32State.inputPlaybackIndex = 0;
+
+    // Calculate the absolute path to this executable.
     wchar_t absPath[MAX_PATH] = { 0 };
+    char    absPathA[MAX_PATH] = { 0 };
     win32GetAbsolutePath(absPath);
+    win32WideChartoChar(absPath, MAX_PATH, absPathA, MAX_PATH);
+
+    wcsncpy_s(win32State.absPath, MAX_PATH, absPath, MAX_PATH);
+    strncpy_s(win32State.absPathA, sizeof(win32State.absPathA), absPathA, MAX_PATH);
+
+    GameCode gameCode = { 0 };
     win32LoadGameDLLFunctions(absPath, &gameCode);
 
     /*
      * Game memory
      */
 #if HANDMADE_LOCAL_BUILD
-    LPVOID memoryStartAddress = (LPVOID)utilTebibyteToBytes(4);
+    uint64 memoryStartAddress = utilTebibyteToBytes(4);
 #else
-    LPVOID memoryStartAddress = NULL;
+    uint64 memoryStartAddress = 0;
 #endif
 
     GameMemory memory = {0};
@@ -274,7 +278,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     uint64 memoryTotalSize = (memory.permanentStorageSizeInBytes + memory.transientStorageSizeInBytes);
 
-    memory.permanentStorage = VirtualAlloc(memoryStartAddress, memoryTotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    memory.permanentStorage = platformAllocateMemory(memoryStartAddress, memoryTotalSize);
     memory.transientStorage = (((uint8 *)memory.permanentStorage) + memory.permanentStorageSizeInBytes);
 
     if (memory.permanentStorage && memory.transientStorage) {
@@ -338,7 +342,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         GameInput inputInstances[2] = {0};
 
         // We save a copy of what we've written to the inputs (in the old instance variable)
-        // so we can compare last frame's values to this frames values.
+        // so we can compare last frame's values to this frame's values.
         GameInput *inputNewInstance = &inputInstances[0];
         GameInput *inputOldInstance = &inputInstances[1];
 
@@ -347,8 +351,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Create a variable to hold the current time (we'll use this for profiling the elapsed game loop time)
         LARGE_INTEGER runningGameTime = win32GetTime();
-
-        AncillaryPlatformLayerData ancillaryPlatformLayerData = {0};
 
         running = true;
 
@@ -370,7 +372,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             controllerCounts.connectedControllers = 1;
 
             // Handle the Win32 message loop
-            win32ProcessMessages(window, message, keyboard);
+            win32ProcessMessages(window, message, keyboard, &win32State);
 
             if (paused) {
 
@@ -586,6 +588,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
 #if defined(HANDMADE_DEBUG_AUDIO)
 
+                    gameAudioBuffer.playCursorPosition = playCursorOffsetInBytes;
+                    gameAudioBuffer.writeCursorPosition = writeCursorOffsetInBytes;
+                    gameAudioBuffer.lockSizeInBytes = lockSizeInBytes;
+
                     // @TODO(JM) Make audio latency match a single frame
                     if (win32AudioBuffer.bufferSizeInBytes > 0) {
                         char buff[200] = { 0 };
@@ -598,19 +604,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     }
 
 #endif
-
-                    ancillaryPlatformLayerData.audioBuffer.playCursorPosition   = playCursorOffsetInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.writeCursorPosition  = writeCursorOffsetInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes      = lockSizeInBytes;
-                    ancillaryPlatformLayerData.audioBuffer.lockOffsetInBytes    = lockOffsetInBytes;
                 } else {
                     OutputDebugStringA("Could not get the position of the play and write cursors in the secondary sound buffer");
                 }
 
             } // Audio buffer created.
 
+#if HANDMADE_LOCAL_BUILD
+
+            // Recording/playback
+            if (win32State.inputRecordingIndex) {
+                win32RecordInput(&win32State, inputNewInstance);
+            }
+
+            if (win32State.inputPlaybackIndex) {
+               win32PlaybackInput(&win32State, inputNewInstance);
+            }
+#endif
+
             // Create the game's audio buffer
-            gameCode.gameInitAudioBuffer(&memory,
+             gameCode.gameInitAudioBuffer(&memory,
                                             &gameAudioBuffer,
                                             lockSizeInBytes,
                                             win32AudioBuffer.bytesPerSample,
@@ -626,7 +639,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                             win32FrameBuffer.memory);
 
             // Main game code.
-            gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts, ancillaryPlatformLayerData);
+            gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts);
 
             win32LoadGameDLLFunctions(absPath, &gameCode);
 
@@ -854,7 +867,7 @@ internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, 
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySizeInBytes
-    buffer->memory = VirtualAlloc(NULL, bitmapMemorySizeInBytes, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    buffer->memory = platformAllocateMemory(0, bitmapMemorySizeInBytes);
 
     // Calculate the width in bytes per row.
     buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
@@ -1141,7 +1154,7 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard)
+internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, Win32State *win32State)
 {
     // Win32 Message loop. Retrieves all messages (from the calling thread's message queue)
     // that are sent to the window. E.g. clicks and key inputs.
@@ -1202,6 +1215,22 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
 #endif // HANDMADE_DEBUG
 
                 switch (vkCode) {
+
+#if HANDMADE_LOCAL_BUILD
+                    // Playback recording/looping
+                    case 'L': {
+                        if (isDown) {
+                            if (0 == win32State->inputRecordingIndex) {
+                                win32EndRecordingPlayback(win32State);
+                                win32BeginInputRecording(win32State);
+                            } else {
+                                win32EndInputRecording(win32State);
+                                win32BeginRecordingPlayback(win32State);
+                            }
+                        }
+                    } break;
+#endif
+
                     case 'P': {
                         if (isDown) {
                             if (paused) {
@@ -1346,30 +1375,6 @@ internal_func void win32LoadXInputDLLFunctions(void)
     }
 }
 
-internal_func void win32ConcatStrings(wchar_t *source1,
-                                       size_t source1Length,
-                                       wchar_t *source2,
-                                       size_t source2Length,
-                                       wchar_t *dest)
-{
-    size_t runningIndex = 0;
-    for (size_t i = 0; i < source1Length; i++) {
-        if (source1[i] == '\0') {
-            break;
-        }
-        dest[i] = source1[i];
-        runningIndex++;
-    }
-
-    for (size_t i = 0; i < source2Length; i++) {
-        if (source2[i] == '\0') {
-            break;
-        }
-        dest[runningIndex] = source2[i];
-        runningIndex++;
-    }
-}
-
 internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
 {
     wchar_t gameDLLFileName[20] = L"Game.dll";
@@ -1378,8 +1383,8 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
     wchar_t gameCopyDLLFileName[20] = L"Game_copy.dll";
     wchar_t gameCopyDLLFilePath[276] = {0};
 
-    win32ConcatStrings(absPath, MAX_PATH, gameDLLFileName, 20, gameDLLFilePath);
-    win32ConcatStrings(absPath, MAX_PATH, gameCopyDLLFileName, 20, gameCopyDLLFilePath);
+    win32ConcatStrings(absPath, MAX_PATH, gameDLLFileName, 20, gameDLLFilePath, 276);
+    win32ConcatStrings(absPath, MAX_PATH, gameCopyDLLFileName, 20, gameCopyDLLFilePath, 276);
 
     BOOL loadGameCode = false;
 
@@ -1552,3 +1557,162 @@ internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
 
     return lastWriteTime;
 }
+
+internal_func void win32ConcatStrings(wchar_t *source1,
+                                       uint source1Length,
+                                       wchar_t *source2,
+                                       uint source2Length,
+                                       wchar_t *dest,
+                                       uint destLength)
+{
+    uint runningIndex = 0;
+    for (uint i = 0; i < source1Length; i++) {
+        if (source1[i] == '\0') {
+            break;
+        }
+        if (runningIndex >= (destLength-1)) {
+            break;
+        }
+        dest[i] = source1[i];
+        runningIndex++;
+    }
+
+    for (uint i = 0; i < source2Length; i++) {
+        if (source2[i] == '\0') {
+            break;
+        }
+        if (runningIndex >= (destLength - 1)) {
+            break;
+        }
+        dest[runningIndex] = source2[i];
+        runningIndex++;
+    }
+}
+
+internal_func void win32ConcatStringsA(char *source1,
+                                       uint source1Length,
+                                       char *source2,
+                                       uint source2Length,
+                                       char *dest,
+                                       uint destLength)
+{
+    uint runningIndex = 0;
+    for (uint i = 0; i < source1Length; i++) {
+        if (source1[i] == '\0') {
+            break;
+        }
+        if (runningIndex >= (destLength - 1)) {
+            break;
+        }
+        dest[i] = source1[i];
+        runningIndex++;
+    }
+
+    for (uint i = 0; i < source2Length; i++) {
+        if (source2[i] == '\0') {
+            break;
+        }
+        if (runningIndex >= (destLength - 1)) {
+            break;
+        }
+        dest[runningIndex] = source2[i];
+        runningIndex++;
+    }
+}
+
+internal_func void win32WideChartoChar(wchar_t *wideCharArr,
+                                       uint wideCharLength,
+                                       char *charArr,
+                                       uint charLength)
+{
+    for (uint x = 0; x < wideCharLength; x++) {
+        charArr[x] = (char)wideCharArr[x];
+        if ('\0' == wideCharArr[x]) {
+            break;
+        }
+        if (x >= (charLength - 1)) {
+            break;
+        }
+    }
+}
+
+#if HANDMADE_LOCAL_BUILD
+
+internal_func void win32BeginInputRecording(Win32State *win32State)
+{
+    char fileName[20] = "recorded_input.hmi";
+    char fullFilePathA[MAX_PATH] = { 0 };
+
+    win32ConcatStringsA(win32State->absPathA, MAX_PATH, fileName, 20, fullFilePathA, MAX_PATH);
+
+    // Open the file for writing.
+    HANDLE handle = CreateFileA(fullFilePathA, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (INVALID_HANDLE_VALUE == handle) {
+        OutputDebugStringA("Cannot read file");
+    }
+
+    win32State->recordingFileHandle = handle;
+    win32State->inputRecordingIndex = 1;
+}
+
+internal_func void win32EndInputRecording(Win32State *win32State)
+{
+    CloseHandle(win32State->recordingFileHandle);
+    win32State->inputRecordingIndex = 0;
+}
+
+internal_func void win32BeginRecordingPlayback(Win32State *win32State)
+{
+    char fileName[20] = "recorded_input.hmi";
+    char fullFilePathA[MAX_PATH] = { 0 };
+
+    win32ConcatStringsA(win32State->absPathA, MAX_PATH, fileName, 20, fullFilePathA, MAX_PATH);
+
+    // Open the file for reading
+    HANDLE handle = CreateFileA(fullFilePathA, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+
+    if (INVALID_HANDLE_VALUE == handle) {
+        OutputDebugStringA("Cannot read file");
+    }
+
+    win32State->playbackFileHandle = handle;
+    win32State->inputPlaybackIndex = 1;
+}
+
+internal_func void win32EndRecordingPlayback(Win32State *win32State)
+{
+    CloseHandle(win32State->playbackFileHandle);
+    win32State->inputPlaybackIndex = 0;
+}
+
+internal_func void win32RecordInput(Win32State *win32State, GameInput *inputNewInstance)
+{
+    DWORD bytesWritten;
+    BOOL res = WriteFile(win32State->recordingFileHandle, inputNewInstance, sizeof(*inputNewInstance), &bytesWritten, 0);
+
+    if (!res) {
+        OutputDebugStringA("Could not write file to location");
+    }
+}
+
+internal_func void win32PlaybackInput(Win32State *win32State, GameInput *inputNewInstance)
+{
+    DWORD bytesRead = 0;
+
+    // Read the next 520 bytes from the playback file handle. (520 bytes being the size of
+    // inputNewInstance at the time of writing ) When an application calls CreateFile to open
+    // a file for the first time, Windows places the file pointer at the beginning of the file.
+    // As bytes are read from or written to the file, Windows advances the file pointer the
+    // number of bytes read. Therefore, on each loop, the next set of 520 bytes are read and
+    // so on, until there are no more bytes to read from the input recording.
+    BOOL res = ReadFile(win32State->playbackFileHandle, inputNewInstance, sizeof(*inputNewInstance), &bytesRead, NULL);
+
+    if (res && (0 == bytesRead)) {
+
+        // We have read all the bytes from the file, loop back to the start...
+        win32EndRecordingPlayback(win32State);
+        win32BeginRecordingPlayback(win32State);
+    }
+}
+#endif

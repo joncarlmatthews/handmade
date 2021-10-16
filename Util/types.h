@@ -42,8 +42,6 @@ typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
 
-// Temp sopport for including platform layer specific types within the game layer
-typedef unsigned long      WIN32_DWORD;
-
+typedef signed long long    uint;
 
 #endif
