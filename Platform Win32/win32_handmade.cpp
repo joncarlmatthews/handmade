@@ -210,8 +210,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         return FALSE;
     }
 
-    // Physically open the window using CreateWindowEx
-    HWND window = CreateWindowEx(NULL,
+    // Physically open the window using CreateWindowEx. (WS_EX_TOPMOST is
+    // handy to have the game window not disappear behind Visual Studio dialogs when debugging
+    HWND window = CreateWindowEx(WS_EX_TOPMOST, 
                                     windowClass.lpszClassName,
                                     TEXT("Handmade Hero"),
                                     WS_OVERLAPPEDWINDOW|WS_VISIBLE,
