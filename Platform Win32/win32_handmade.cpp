@@ -212,7 +212,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // Physically open the window using CreateWindowEx. (WS_EX_TOPMOST is
     // handy to have the game window not disappear behind Visual Studio dialogs when debugging
-    HWND window = CreateWindowEx(WS_EX_TOPMOST, 
+    DWORD windowStyle = NULL;
+    //windowStyle = WS_EX_TOPMOST;
+    HWND window = CreateWindowEx(windowStyle,
                                     windowClass.lpszClassName,
                                     TEXT("Handmade Hero"),
                                     WS_OVERLAPPEDWINDOW|WS_VISIBLE,
@@ -252,7 +254,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     strncpy_s(win32State.absPathA, sizeof(win32State.absPathA), absPathA, MAX_PATH);
 
     GameCode gameCode = { 0 };
-    win32LoadGameDLLFunctions(absPath, &gameCode);
+    win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 
     /*
      * Game memory
@@ -343,12 +345,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         controllerCounts.platformMaxControllers = XUSER_MAX_COUNT;
 
         // An array to hold pointers to the old and new instances of the inputs.
-        GameInput inputInstances[2] = {0};
+        GameInput GameInputInstances[2] = {0};
 
         // We save a copy of what we've written to the inputs (in the old instance variable)
         // so we can compare last frame's values to this frame's values.
-        GameInput *inputNewInstance = &inputInstances[0];
-        GameInput *inputOldInstance = &inputInstances[1];
+        GameInput *gameInput        = &GameInputInstances[0];
+        GameInput *gameInputOld     = &GameInputInstances[1];
 
         // Get the number of processor clock cycles
         uint64 runningProcessorClockCyclesCounter = __rdtsc();
@@ -366,17 +368,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             MSG message = {0};
 
             // Define keyboard controller support.
-            // @TODO(JM) check that keyboard is connected.
-            GameControllerInput *keyboard = &inputNewInstance->controllers[0];
-
-            // Clear keyboard to zero.
-            *keyboard = {0};
-            keyboard->isConnected = true;
-
+            GameControllerInput keyboard = { 0 };
+            keyboard.isConnected = true; // @TODO(JM) check that keyboard is connected.
             controllerCounts.connectedControllers = 1;
 
+            // Assignt the first game input controller as the keyboard
+            gameInput->controllers[0] = keyboard;
+
             // Handle the Win32 message loop
-            win32ProcessMessages(window, message, keyboard, &win32State);
+            win32ProcessMessages(window, message, &keyboard, &win32State);
 
             if (paused) {
 
@@ -403,11 +403,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
 
-                XINPUT_STATE controllerInstance = { 0 };
-                SecureZeroMemory(&controllerInstance, sizeof(XINPUT_STATE));
+                XINPUT_STATE xinputControllerInstance = { 0 };
+                SecureZeroMemory(&xinputControllerInstance, sizeof(XINPUT_STATE));
 
                 // Simply get the state of the controller from XInput.
-                dwResult = XInputGetState(controllerIndex, &controllerInstance);
+                dwResult = XInputGetState(controllerIndex, &xinputControllerInstance);
 
                 if (dwResult != ERROR_SUCCESS) {
                     // Controller is not connected/available.
@@ -425,58 +425,56 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 controllerCounts.connectedControllers = (controllerCounts.connectedControllers + 1);
 
                 // Fetch the gamepad
-                XINPUT_GAMEPAD *gamepad = &controllerInstance.Gamepad;
+                XINPUT_GAMEPAD *gamepad = &xinputControllerInstance.Gamepad;
 
                 uint8 ourControllerIndex = ((uint8)controllerIndex + 1);
 
-                GameControllerInput *newController = &inputNewInstance->controllers[ourControllerIndex];
-                GameControllerInput *oldController = &inputOldInstance->controllers[ourControllerIndex];
+                GameControllerInput *gameController     = &gameInput->controllers[ourControllerIndex];
+                GameControllerInput *gameControllerOld  = &gameInputOld->controllers[ourControllerIndex];
 
-                newController->isConnected = true;
+                gameController->isConnected = true;
 
-                win32ProcessXInputControllerButton(&newController->dPadUp,
-                    &oldController->dPadUp,
+                win32ProcessXInputControllerButton(&gameController->dPadUp,
+                    &gameControllerOld->dPadUp,
                     gamepad,
                     XINPUT_GAMEPAD_DPAD_UP);
 
-                win32ProcessXInputControllerButton(&newController->dPadDown,
-                    &oldController->dPadDown,
+                win32ProcessXInputControllerButton(&gameController->dPadDown,
+                    &gameControllerOld->dPadDown,
                     gamepad,
                     XINPUT_GAMEPAD_DPAD_DOWN);
 
-                win32ProcessXInputControllerButton(&newController->dPadLeft,
-                    &oldController->dPadLeft,
+                win32ProcessXInputControllerButton(&gameController->dPadLeft,
+                    &gameControllerOld->dPadLeft,
                     gamepad,
                     XINPUT_GAMEPAD_DPAD_LEFT);
 
-                win32ProcessXInputControllerButton(&newController->dPadRight,
-                    &oldController->dPadRight,
+                win32ProcessXInputControllerButton(&gameController->dPadRight,
+                    &gameControllerOld->dPadRight,
                     gamepad,
                     XINPUT_GAMEPAD_DPAD_RIGHT);
 
-                win32ProcessXInputControllerButton(&newController->up,
-                    &oldController->up,
+                win32ProcessXInputControllerButton(&gameController->up,
+                    &gameControllerOld->up,
                     gamepad,
                     XINPUT_GAMEPAD_Y);
 
-                win32ProcessXInputControllerButton(&newController->down,
-                    &oldController->down,
+                win32ProcessXInputControllerButton(&gameController->down,
+                    &gameControllerOld->down,
                     gamepad,
                     XINPUT_GAMEPAD_A);
 
-                win32ProcessXInputControllerButton(&newController->right,
-                    &oldController->right,
+                win32ProcessXInputControllerButton(&gameController->right,
+                    &gameControllerOld->right,
                     gamepad,
                     XINPUT_GAMEPAD_B);
 
-                win32ProcessXInputControllerButton(&newController->left,
-                    &oldController->left,
+                win32ProcessXInputControllerButton(&gameController->left,
+                    &gameControllerOld->left,
                     gamepad,
                     XINPUT_GAMEPAD_X);
 
-                // Left controller thumbstick support
-                newController->isAnalog = true;
-
+                // Left controller thumbstick support...
                 // Normalise the axis values so the values are between -1.0 and 1.0
                 // @see maximum signed short values
                 float32 leftThumbstickX = 0.0f;
@@ -495,13 +493,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     leftThumbstickY = ((float32)(gamepad->sThumbLY + XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) / (32768.0f - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE));
                 }
 
-                newController->leftThumbstick.position.x = leftThumbstickX;
-                newController->leftThumbstick.position.y = leftThumbstickY;
+                gameController->leftThumbstick.position.x = leftThumbstickX;
+                gameController->leftThumbstick.position.y = leftThumbstickY;
+
+                // If the user is using the thumbstick, then set the controller
+                // to analog mode, if they're using the D-pad set to non-alanlog mode
+                if (!gameController->isAnalog) {
+                    if ((leftThumbstickX != 0.0f) || (leftThumbstickY != 0.0f)) {
+                        gameController->isAnalog = true;
+                    }
+                }
+
+                if (gameController->isAnalog) {
+                    if ((gameController->dPadUp.endedDown)
+                        || (gameController->dPadDown.endedDown)
+                        || (gameController->dPadLeft.endedDown)
+                        || (gameController->dPadRight.endedDown)
+                        ) {
+                        gameController->isAnalog = false;
+                    }
+                }
 
                 // Swap the controller intances
-                GameControllerInput *temp = newController;
-                newController = oldController;
-                oldController = temp;
+                GameControllerInput *temp = gameController;
+                gameController = gameControllerOld;
+                gameControllerOld = temp;
 
             } // controller loop
 
@@ -618,11 +634,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Recording/playback
             if (win32State.inputRecording) {
-                win32RecordInput(&win32State, inputNewInstance);
+                win32RecordInput(&win32State, gameInput);
             }
 
             if (win32State.inputPlayback) {
-               win32PlaybackInput(&win32State, inputNewInstance);
+               win32PlaybackInput(&win32State, gameInput);
             }
 #endif
 
@@ -643,9 +659,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                             win32FrameBuffer.memory);
 
             // Main game code.
-            gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, inputInstances, &controllerCounts);
+            gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, GameInputInstances, &controllerCounts);
 
-            win32LoadGameDLLFunctions(absPath, &gameCode);
+            win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
@@ -903,7 +919,20 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
     // the specified destination. The first parameter is the handle for
     // the destination's window that we want to write the data to.
     // Pixels are drawn to screen from the top left to the top right, then drops a row,
-    // draws from left to right and so on. Finally finishing on the bottom right pixel
+    // draws from left to right and so on. Finally finishing on the bottom right pixel.
+ 
+    // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
+    // sure we don't introduce artifacts. We can achieve this by not allowing the image
+    // to stretch (by setting the destination width and height to be fixed to what the
+    // source width and height are). This will help us when it comes to learning how
+    // to write our renderer.
+    bool stretch = false;
+
+    if (!stretch) {
+        width = buffer.width;
+        height = buffer.height;
+    }
+
     StretchDIBits(deviceHandleForWindow,
                     0,
                     0,
@@ -1548,18 +1577,15 @@ internal_func void win32GetAbsolutePath(wchar_t *path)
 
 internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
 {
-    WIN32_FIND_DATA fileData = { 0 };
-    HANDLE file = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    WIN32_FILE_ATTRIBUTE_DATA fileData;
 
-    FILETIME creationTime = { 0 };
-    FILETIME lastAccessTime = { 0 };
-    FILETIME lastWriteTime = { 0 };
+    BOOL res = GetFileAttributesExW(filename, GetFileExInfoStandard, &fileData);
 
-    GetFileTime(file, &creationTime, &lastAccessTime, &lastWriteTime);
+    if (!res) {
+        assert(!"Cannot get file data");
+    }
 
-    CloseHandle(file);
-
-    return lastWriteTime;
+    return fileData.ftLastWriteTime;
 }
 
 internal_func void win32ConcatStrings(wchar_t *source1,
@@ -1674,10 +1700,10 @@ internal_func void win32EndInputRecording(Win32State *win32State)
     win32State->inputRecording = 0;
 }
 
-internal_func void win32RecordInput(Win32State *win32State, GameInput *inputNewInstance)
+internal_func void win32RecordInput(Win32State *win32State, GameInput *gameInput)
 {
     DWORD bytesWritten;
-    BOOL res = WriteFile(win32State->recordingFileHandle, inputNewInstance, sizeof(*inputNewInstance), &bytesWritten, 0);
+    BOOL res = WriteFile(win32State->recordingFileHandle, gameInput, sizeof(*gameInput), &bytesWritten, 0);
 
     if (!res) {
         assert(!"Cannot write to file");
@@ -1717,17 +1743,17 @@ internal_func void win32EndRecordingPlayback(Win32State *win32State)
     win32State->inputPlayback = 0;
 }
 
-internal_func void win32PlaybackInput(Win32State *win32State, GameInput *inputNewInstance)
+internal_func void win32PlaybackInput(Win32State *win32State, GameInput *gameInput)
 {
     DWORD bytesRead = 0;
 
     // Read the next 520 bytes from the playback file handle. (520 bytes being the size of
-    // inputNewInstance at the time of writing ) When an application calls CreateFile to open
+    // gameInput at the time of writing ) When an application calls CreateFile to open
     // a file for the first time, Windows places the file pointer at the beginning of the file.
     // As bytes are read from or written to the file, Windows advances the file pointer the
     // number of bytes read. Therefore, on each loop, the next set of 520 bytes are read and
     // so on, until there are no more bytes to read from the input recording.
-    BOOL res = ReadFile(win32State->playbackFileHandle, inputNewInstance, sizeof(*inputNewInstance), &bytesRead, NULL);
+    BOOL res = ReadFile(win32State->playbackFileHandle, gameInput, sizeof(*gameInput), &bytesRead, NULL);
 
     // When res is TRUE and the number of bytes read is zero, this indicates we have reached
     // the end of the file

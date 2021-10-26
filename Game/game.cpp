@@ -18,8 +18,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->bgColour = 0x000066;
         gameState->player1.height = 25;
         gameState->player1.width = 25;
-        gameState->player1.totalJumpMovement = 20.0f;
-        gameState->player1.movementSpeed = 30;
+        gameState->player1.totalJumpMovement = 15.0f;
+        gameState->player1.movementSpeed = 20;
 
         gameState->sineWave = { 0 };
 
