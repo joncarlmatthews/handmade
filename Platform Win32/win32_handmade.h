@@ -103,11 +103,14 @@ typedef struct Win32State
     wchar_t absPath[MAX_PATH];
     char absPathA[MAX_PATH];
 
+    uint64 gameMemorySize;
+    void *gameMemory;
+
     HANDLE recordingFileHandle;
-    uint8 inputRecordingIndex;
+    bool8 inputRecording;
 
     HANDLE playbackFileHandle;
-    uint8 inputPlaybackIndex;
+    bool8 inputPlayback;
 } Win32State;
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);

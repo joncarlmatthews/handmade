@@ -14,12 +14,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     GameState *gameState = (GameState *)memory->permanentStorage;
 
     if (!memory->initialised) {
-        gameState->sineWave = {0};
 
+        gameState->bgColour = 0x000066;
         gameState->player1.height = 25;
         gameState->player1.width = 25;
         gameState->player1.totalJumpMovement = 20.0f;
         gameState->player1.movementSpeed = 30;
+
+        gameState->sineWave = { 0 };
 
         memory->initialised = true;
     }
@@ -45,7 +47,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
 
     // Which controller has the user selected as the main controller?
-    uint8 userSelectedMainController = 2; // @TODO(JM) make this selectable through a UI
+    uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
 
     controllerHandlePlayer(gameState, frameBuffer, audioBuffer, inputInstances->controllers[userSelectedMainController]);
 
@@ -110,6 +112,10 @@ internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffe
 
 internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller)
 {
+    if (controller.up.endedDown) {
+        gameState->bgColour = 0xffffff;
+    }
+
     // Temp jump code
     if ((controller.down.endedDown) && (0 == gameState->player1.jumping)) {
         gameState->player1.jumping = 1;
@@ -201,7 +207,7 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
 
 internal_func void frameBufferWriteBackground(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
 {
-    writeRectangle(buffer, 0x000066, buffer->height, buffer->width, 0, 0);
+    writeRectangle(buffer, gameState->bgColour, buffer->height, buffer->width, 0, 0);
 }
 
 internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)

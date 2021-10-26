@@ -270,7 +270,7 @@ enum jumpDirection { JUMP_UP, JUMP_DOWN };
 
 typedef struct GameState
 {
-    uint8 setBG = false;
+    uint32 bgColour;
     struct player1 {
         int32 posX = 0;
         int32 posY = 0;
@@ -288,8 +288,6 @@ typedef struct GameState
     } player1;
 
     SineWave sineWave;
-    int32 redOffset;
-    int32 greenOffset;
     uint16 sineWaveHertz[5] = { 60, 100, 200, 300, 400 };
     int16 sineWaveHertzPos = 2;
 } GameState;
