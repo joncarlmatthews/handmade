@@ -92,6 +92,27 @@ typedef struct Win32FixedFrameRate {
 
 } Win32FixedFrameRate;
 
+typedef struct Win32GameInputRecording
+{
+    uint8 count;
+    GameInput *gameInput;
+} Win32GameInputRecording;
+
+typedef struct Win32State
+{
+    wchar_t absPath[MAX_PATH];
+    char absPathA[MAX_PATH];
+
+    uint64 gameMemorySize;
+    void *gameMemory;
+
+    HANDLE recordingFileHandle;
+    bool8 inputRecording;
+
+    HANDLE playbackFileHandle;
+    bool8 inputPlayback;
+} Win32State;
+
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
 /*
@@ -121,8 +142,9 @@ internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *p
 
 internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration);
 
-internal_func void loadXInputDLLFunctions(void);
-internal_func void loadGameDLLFunctions(GameCode *gameCode);
+internal_func void win32LoadXInputDLLFunctions(void);
+internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode);
+internal_func void win32GetAbsolutePath(wchar_t *path);
 
 internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
 
@@ -139,7 +161,7 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *ne
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit);
 
-internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard);
+internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, Win32State *win32State);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
@@ -148,5 +170,27 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
 internal_func uint32 win32TruncateToUint32Safe(uint64 value);
 
 internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
+
+internal_func void win32ConcatStrings(wchar_t *source1, uint source1Length, wchar_t *source2, uint source2Length, wchar_t *dest, uint destLength);
+
+internal_func void win32ConcatStringsA(char *source1, uint source1Length, char *source2, uint source2Length, char *dest, uint destLength);
+
+internal_func void win32WideChartoChar(wchar_t *wideCharArr, uint wideCharLength, char *charArr, uint charLength);
+
+#if HANDMADE_LOCAL_BUILD
+
+internal_func void win32BeginInputRecording(Win32State *win32State);
+
+internal_func void win32EndInputRecording(Win32State *win32State);
+
+internal_func void win32RecordInput(Win32State *win32State, GameInput *inputNewInstance);
+
+internal_func void win32BeginRecordingPlayback(Win32State *win32State);
+
+internal_func void win32EndRecordingPlayback(Win32State *win32State);
+
+internal_func void win32PlaybackInput(Win32State *win32State, GameInput *inputNewInstance);
+
+#endif
 
 #endif

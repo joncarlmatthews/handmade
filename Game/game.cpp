@@ -11,69 +11,63 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      * Game state initialisation
      */
     assert(sizeof(GameState) <= memory->permanentStorageSizeInBytes);
-
     GameState *gameState = (GameState *)memory->permanentStorage;
 
     if (!memory->initialised) {
-        gameState->sineWave = {0};
-        gameState->greenOffset = 1;
-        gameState->redOffset = 2;
-        gameState->setBG = 0;
 
-        for (size_t i = 0; i < countArray(gameState->sineWaveHertz); i++)
-        {
-            uint16 hertz;
+        gameState->bgColour = 0x000066;
+        gameState->player1.height = 25;
+        gameState->player1.width = 25;
+        gameState->player1.totalJumpMovement = 20.0f;
+        gameState->player1.movementSpeed = 30;
 
-            switch (i) {
-                default:
-                case 0:
-                    hertz = 60;
-                    break;
-                case 1:
-                    hertz = 100;
-                    break;
-                case 2:
-                    hertz = 200;
-                    break;
-                case 3:
-                    hertz = 300;
-                    break;
-                case 4:
-                    hertz = 400;
-                    break;
-            }
-
-            gameState->sineWaveHertz[i] = hertz;
-        }
-
-        gameState->sineWaveHertzPos = 2;
+        gameState->sineWave = { 0 };
 
         memory->initialised = true;
     }
 
     /**
-     * Audio stuff
+     * Audio stuff...
      */
 
-    // @TODO(JM) change the sine wave cycles per second based on controller input
-    int16 sineWaveHertzPos = gameState->sineWaveHertzPos;
+    //audioBufferWriteSineWave(gameState, audioBuffer);
 
-    if (inputInstances->controllers[1].dPadUp.endedDown) {
-        if (sineWaveHertzPos != (countArray(gameState->sineWaveHertz) - 1)) {
-            sineWaveHertzPos = (sineWaveHertzPos + 1);
+    /**
+     * Handle controller input...
+     */
+
+    // Main controller loop
+    for (uint8 i = 0; i < controllerCounts->connectedControllers; i++){
+
+        if (!inputInstances->controllers[i].isConnected) {
+            continue;
         }
+
+        // @TODO(JM) Support for multiple controllers. See below for single controller support.
     }
 
-    if (inputInstances->controllers[1].dPadDown.endedDown) {
-        if (sineWaveHertzPos != 0) {
-            sineWaveHertzPos = (sineWaveHertzPos - 1);
-        }
-    }
+    // Which controller has the user selected as the main controller?
+    uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
 
-    gameState->sineWaveHertzPos = sineWaveHertzPos;
+    controllerHandlePlayer(gameState, frameBuffer, audioBuffer, inputInstances->controllers[userSelectedMainController]);
 
-    gameState->sineWave.hertz = gameState->sineWaveHertz[gameState->sineWaveHertzPos];
-    gameState->sineWave.sizeOfWave = 0; // Volume
+    /**
+     * Write the frame buffer...
+     * 
+     */
+    frameBufferWriteBackground(gameState, frameBuffer, audioBuffer);
+    frameBufferWritePlayer(gameState, frameBuffer, audioBuffer);
+
+#if defined(HANDMADE_DEBUG_AUDIO)
+    frameBufferWriteAudioDebug(gameState, frameBuffer, audioBuffer);
+#endif
+
+}
+
+internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffer *audioBuffer)
+{
+    gameState->sineWave.hertz = 100;
+    gameState->sineWave.sizeOfWave = 1000; // Volume
 
     // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
     uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
@@ -85,7 +79,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     float32 percentageOfAngle = 0.0f;
     float32 angle = 0.0f;
     float32 radians = 0.0f;
-    float32 sine = 0.0f;
+    float64 sine = 0.0f;
 
     uint16 *audioSample = (uint16 *)audioBuffer->memory;
 
@@ -94,8 +88,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
         angle = (360.0f * (percentageOfAngle / 100.0f));
-        radians = (angle * (PIf / 180.0f));
-        sine = sinf(radians);
+        radians = (angle * ((float32)M_PI / 180.0f));
+        sine = sin(radians);
 
         int16 audioSampleValue = (int16)(sine * gameState->sineWave.sizeOfWave);
 
@@ -114,107 +108,125 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // Write another 4 to the running byte group index.
         byteGroupIndex = (uint32)((uint64)(byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
     }
+}
 
-    /**
-     * Graphics stuff
-     */
-    uint16 movementSpeed = 30;
+internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller)
+{
+    if (controller.up.endedDown) {
+        gameState->bgColour = 0xffffff;
+    }
 
-    for (uint8 i = 0; i < controllerCounts->connectedControllers; i++){
+    // Temp jump code
+    if ((controller.down.endedDown) && (0 == gameState->player1.jumping)) {
+        gameState->player1.jumping = 1;
+        gameState->player1.jumpDuration = 20.0f;
+        gameState->player1.jumpRunningFrameCtr = 0.0f;
+        gameState->player1.jumpStartPos = gameState->player1.posY;
+    }
 
-        if (!inputInstances->controllers[i].isConnected) {
-            continue;
+    if (gameState->player1.jumping) {
+
+        float32 jumpPercentageOfAngle = 0.0f;
+        float32 jumpAngle = 0.0f;
+        float32 jumpRadians = 0.0f;
+        float32 jumpSine = 0.0f;
+
+        gameState->player1.jumpRunningFrameCtr++;
+
+        jumpPercentageOfAngle = percentageOfAnotherf(gameState->player1.jumpRunningFrameCtr, gameState->player1.jumpDuration);
+        jumpAngle = (360.0f * (jumpPercentageOfAngle / 100.0f));
+        jumpRadians = (jumpAngle * ((float32)M_PI / 180.0f));
+        jumpSine = sinf(jumpRadians);
+
+        if (jumpAngle >= 0.0f && jumpAngle <= 180.0f) {
+            gameState->player1.jumpDirection = JUMP_UP;
+        } else {
+            gameState->player1.jumpDirection = JUMP_DOWN;
         }
 
-        // Move the player
-        if (inputInstances->controllers[i].dPadUp.endedDown) {
-            gameState->playerPosY = (gameState->playerPosY - movementSpeed);
+        float32 amtToMove   = (gameState->player1.totalJumpMovement * jumpSine);
+        int32 newPos        = (int32)(gameState->player1.posY - amtToMove);
+
+        // Have we hit the top?
+        if (newPos < 0) {
+            gameState->player1.posY = 0;
+            gameState->player1.jumpDuration = (gameState->player1.jumpRunningFrameCtr / 2);
+        } else {
+            gameState->player1.posY = newPos;
         }
 
-        if (inputInstances->controllers[i].dPadDown.endedDown) {
-            gameState->playerPosY = (gameState->playerPosY + movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].dPadLeft.endedDown) {
-            gameState->playerPosX = (gameState->playerPosX - movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].dPadRight.endedDown) {
-            gameState->playerPosX = (gameState->playerPosX + movementSpeed);
-        }
-
-        //// Sanitise position
-
-        // Animate the screen.
-        if (inputInstances->controllers[i].dPadUp.endedDown) {
-            gameState->redOffset = (gameState->redOffset + movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].dPadDown.endedDown) {
-            gameState->redOffset = (gameState->redOffset - movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].dPadRight.endedDown) {
-            gameState->greenOffset = (gameState->greenOffset - movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].dPadLeft.endedDown) {
-            gameState->greenOffset = (gameState->greenOffset + movementSpeed);
-        }
-
-        if (inputInstances->controllers[i].isAnalog) {
-            if (inputInstances->controllers[i].leftThumbstick.position.x) {
-                gameState->greenOffset = (gameState->greenOffset - (int16)(inputInstances->controllers[i].leftThumbstick.position.x * movementSpeed));
-            }
-
-            if (inputInstances->controllers[i].leftThumbstick.position.y) {
-                gameState->redOffset = (gameState->redOffset + (int16)(inputInstances->controllers[i].leftThumbstick.position.y * movementSpeed));
-            }
-
-            // Controller feedback.
-            uint16 motor1Speed = 0;
-            uint16 motor2Speed = 0;
-            if ((inputInstances->controllers[i].leftThumbstick.position.x != 0)
-                || (inputInstances->controllers[i].leftThumbstick.position.y != 0)) {
-                motor2Speed = 35000;
-            }
-
-            (memory->platformControllerVibrate)(0, motor1Speed, motor2Speed);
+        // Jump finished?
+        if (jumpAngle >= 360.0f) {
+            gameState->player1.jumping = 0;
+            // Force reset the position.
+            // @NOTE(JM) This is a bug if you land on a new level.
+            gameState->player1.posY = gameState->player1.jumpStartPos; 
         }
     }
 
-    writeFrameBuffer(gameState, frameBuffer, ancillaryPlatformLayerData, gameState->redOffset, gameState->greenOffset, audioBuffer);
+    // Basic player movement
+    if (controller.dPadUp.endedDown) {
+        gameState->player1.posY = (gameState->player1.posY - gameState->player1.movementSpeed);
+    }
 
-    gameState->setBG = 1;
+    if (controller.dPadDown.endedDown) {
+        gameState->player1.posY = (gameState->player1.posY + gameState->player1.movementSpeed);
+    }
+
+    if (controller.dPadLeft.endedDown) {
+        gameState->player1.posX = (gameState->player1.posX - gameState->player1.movementSpeed);
+    }
+
+    if (controller.dPadRight.endedDown) {
+        gameState->player1.posX = (gameState->player1.posX + gameState->player1.movementSpeed);
+    }
+
+    if (controller.isAnalog) {
+        if (controller.leftThumbstick.position.x) {
+            gameState->player1.posX = (gameState->player1.posX + (int32)(gameState->player1.movementSpeed * controller.leftThumbstick.position.x));
+        }
+        if (controller.leftThumbstick.position.y) {
+            gameState->player1.posY = (gameState->player1.posY - (int32)(gameState->player1.movementSpeed * controller.leftThumbstick.position.y));
+        }
+    }
+
+    // Safe bounds checking
+    if (gameState->player1.posY < 0) {
+        gameState->player1.posY = 0;
+    }
+    if (((int64)gameState->player1.posY + gameState->player1.height) > frameBuffer->height) {
+        gameState->player1.posY = (int32)(frameBuffer->height - gameState->player1.height);
+    }
+    if (((int64)gameState->player1.posX + gameState->player1.width) > frameBuffer->width) {
+        gameState->player1.posX = (int32)(frameBuffer->width - gameState->player1.width);
+    }
+    if (gameState->player1.posX < 0) {
+        gameState->player1.posX = 0;
+    }
 }
 
-internal_func void writeFrameBuffer(GameState *gameState,
-                                    GameFrameBuffer *buffer,
-                                    AncillaryPlatformLayerData ancillaryPlatformLayerData,
-                                    int redOffset,
-                                    int greenOffset,
-                                    GameAudioBuffer *audioBuffer)
+internal_func void frameBufferWriteBackground(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
 {
-    // Background fill
-    //if (!gameState->setBG) {
-        writeRectangle(buffer, 0x000066, buffer->height, buffer->width, 0, 0);
-    //}
+    writeRectangle(buffer, gameState->bgColour, buffer->height, buffer->width, 0, 0);
+}
 
-    writeRectangle(buffer, 0xff00ff, 1, 25, gameState->playerPosY, gameState->playerPosX);
-    
+internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
+{
+    writeRectangle(buffer, 0xff00ff, gameState->player1.height, gameState->player1.width, gameState->player1.posY, gameState->player1.posX);
+}
 
-#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_AUDIO)
+#if defined(HANDMADE_DEBUG_AUDIO)
 
+internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
+{
     float32 coefficient = ((float32)buffer->width / (float32)audioBuffer->platformBufferSizeInBytes);
 
     // Audio buffer box
-    if (!gameState->setBG) {
-        {
-            uint16 height = 100;
-            uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
-            uint32 yOffset = 100;
-            writeRectangle(buffer, 0x3333ff, height, width, yOffset, 0);
-        }
+    {
+        uint16 height = 100;
+        uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
+        uint32 yOffset = 100;
+        writeRectangle(buffer, 0x3333ff, height, width, yOffset, 0);
     }
 
     // Play cursor (green)
@@ -222,72 +234,29 @@ internal_func void writeFrameBuffer(GameState *gameState,
         uint16 height = 100;
         uint16 width = 10;
         uint32 yOffset = 100;
-        uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.playCursorPosition * coefficient);
+        uint32 xOffset = (uint32)((float32)audioBuffer->playCursorPosition * coefficient);
         writeRectangle(buffer, 0x669900, height, width, yOffset, xOffset);
     }
 
     // Write cursor + lock size (amount written) (red)
     {
         uint16 height = 100;
-        uint32 width = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.lockSizeInBytes * coefficient);
+        uint32 width = (uint32)((float32)audioBuffer->lockSizeInBytes * coefficient);
         uint32 yOffset = 100;
-        uint32 xOffset = (uint32)((float32)ancillaryPlatformLayerData.audioBuffer.writeCursorPosition * coefficient);
+        uint32 xOffset = (uint32)((float32)audioBuffer->writeCursorPosition * coefficient);
         writeRectangle(buffer, 0xcc0000, height, width, yOffset, xOffset);
     }
+}
 
 #endif
 
-}
-
-EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
-{
-    frameBuffer->height = height;
-    frameBuffer->width = width;
-    frameBuffer->bytesPerPixel = bytesPerPixel;
-    frameBuffer->byteWidthPerRow = byteWidthPerRow;
-    frameBuffer->memory = memory;
-
-    return frameBuffer;
-}
-
-EXTERN_DLL_EXPORT GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
-{
-    if ( (noOfBytesToWrite <= 0) || (bytesPerSample <= 0) ) {
-        return audioBuffer;
-    }
-
-    uint32 noOfSamplesToWrite = (noOfBytesToWrite / bytesPerSample);
-
-    if (audioBuffer->noOfSamplesToWrite != noOfSamplesToWrite) {
-
-        // @TODO(JM) move the audio memory to the GameMemory object
-        if (!audioBuffer->initialised) {
-            audioBuffer->initialised = 1;
-            audioBuffer->memory = memory->platformAllocateMemory(noOfBytesToWrite);
-        } else {
-            memory->platformFreeMemory(audioBuffer->memory);
-            audioBuffer->memory = memory->platformAllocateMemory(noOfBytesToWrite);
-        }
-    }
-    audioBuffer->bytesPerSample             = bytesPerSample;
-    audioBuffer->noOfSamplesToWrite         = noOfSamplesToWrite;
-    audioBuffer->platformBufferSizeInBytes  = platformBufferSizeInBytes;
-
-    return audioBuffer;
-}
-
+/**
+ * Simple pixel loop. Note, no safety bounds checking
+ * 
+ */
 internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
 {
     uint32 *row = (uint32 *)buffer->memory;
-
-    // Safe bounds
-    if (yOffset >= buffer->height) {
-        yOffset = (buffer->height - 500);
-    }
-
-    if (xOffset > buffer->width) {
-        xOffset = buffer->width;
-    }
 
     // Move down to starting row
     row = (row + (buffer->width * yOffset));
@@ -303,4 +272,41 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uin
         }
         row = (row + buffer->width);
     }
+}
+
+EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
+{
+    frameBuffer->height = height;
+    frameBuffer->width = width;
+    frameBuffer->bytesPerPixel = bytesPerPixel;
+    frameBuffer->byteWidthPerRow = byteWidthPerRow;
+    frameBuffer->memory = memory;
+
+    return frameBuffer;
+}
+
+EXTERN_DLL_EXPORT GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
+{
+    if ((noOfBytesToWrite <= 0) || (bytesPerSample <= 0)) {
+        return audioBuffer;
+    }
+
+    uint32 noOfSamplesToWrite = (noOfBytesToWrite / bytesPerSample);
+
+    if (audioBuffer->noOfSamplesToWrite != noOfSamplesToWrite) {
+
+        // @TODO(JM) move the audio memory to the GameMemory object
+        if (!audioBuffer->initialised) {
+            audioBuffer->initialised = 1;
+            audioBuffer->memory = memory->platformAllocateMemory(0, noOfBytesToWrite);
+        } else {
+            memory->platformFreeMemory(audioBuffer->memory);
+            audioBuffer->memory = memory->platformAllocateMemory(0, noOfBytesToWrite);
+        }
+    }
+    audioBuffer->bytesPerSample = bytesPerSample;
+    audioBuffer->noOfSamplesToWrite = noOfSamplesToWrite;
+    audioBuffer->platformBufferSizeInBytes = platformBufferSizeInBytes;
+
+    return audioBuffer;
 }
