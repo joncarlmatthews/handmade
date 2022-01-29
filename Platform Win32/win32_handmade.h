@@ -132,7 +132,7 @@ internal_func float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, co
  */
 internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
 
-internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height);
+internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height);
 
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32FrameBuffer buffer, uint32 width, uint32 height);
 
@@ -161,7 +161,7 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *ne
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit);
 
-internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, Win32State *win32State);
+internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, GameMouseInput *mouse, Win32State *win32State);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,

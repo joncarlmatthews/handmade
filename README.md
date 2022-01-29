@@ -99,6 +99,10 @@ HANDMADE_DEBUG_AUDIO
 
 ## Episode Notes
 
+### Day 025 -  Finishing the Win32 Prototyping Layer
+
+
+
 ### Day 023 -  Looped Live Code Editing
 
 When we hit the L key, for each frame, we blast the memory held within the input struct out to a file on disk. When we hit the L key again we stop writing out to the recording file. We write the entire input struct each time. At the time of writing the input struct is 520 bytes in size. Meaning we write 520 bytes worth of data for each frame recorded.

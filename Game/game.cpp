@@ -58,6 +58,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     frameBufferWriteBackground(gameState, frameBuffer, audioBuffer);
     frameBufferWritePlayer(gameState, frameBuffer, audioBuffer);
 
+    if (inputInstances->mouse.leftClick.endedDown) {
+        writeRectangle(frameBuffer, 0xff00ff, 25, 25, 500, 500);
+    }
+
 #if defined(HANDMADE_DEBUG_AUDIO)
     frameBufferWriteAudioDebug(gameState, frameBuffer, audioBuffer);
 #endif
@@ -298,10 +302,10 @@ EXTERN_DLL_EXPORT GAME_INIT_AUDIO_BUFFER(gameInitAudioBuffer)
         // @TODO(JM) move the audio memory to the GameMemory object
         if (!audioBuffer->initialised) {
             audioBuffer->initialised = 1;
-            audioBuffer->memory = memory->platformAllocateMemory(0, noOfBytesToWrite);
+            audioBuffer->memory = memory->platformAllocateMemory(thread, 0, noOfBytesToWrite);
         } else {
-            memory->platformFreeMemory(audioBuffer->memory);
-            audioBuffer->memory = memory->platformAllocateMemory(0, noOfBytesToWrite);
+            memory->platformFreeMemory(thread, audioBuffer->memory);
+            audioBuffer->memory = memory->platformAllocateMemory(thread, 0, noOfBytesToWrite);
         }
     }
     audioBuffer->bytesPerSample = bytesPerSample;

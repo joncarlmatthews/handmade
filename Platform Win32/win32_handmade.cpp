@@ -103,7 +103,7 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
         uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
 
         // Allocate enough memory for the file.
-        file.memory = platformAllocateMemory(0, sizeInBytes);
+        file.memory = platformAllocateMemory(thread, 0, sizeInBytes);
 
         if (NULL == file.memory) {
             OutputDebugStringA("Cannot allocate memory for file");
@@ -239,6 +239,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
+    // Get the thread's content (@TODO JM)
+    PlatformThreadContext thread = { 0 };
+
     // Create a Win32 state object to hold persistent data for the platform layer.
     Win32State win32State = { 0 };
     win32State.inputRecording = 0;
@@ -281,7 +284,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     uint64 memoryTotalSize = (memory.permanentStorageSizeInBytes + memory.transientStorageSizeInBytes);
 
-    memory.permanentStorage = platformAllocateMemory(memoryStartAddress, memoryTotalSize);
+    memory.permanentStorage = platformAllocateMemory(&thread, memoryStartAddress, memoryTotalSize);
     memory.transientStorage = (((uint8 *)memory.permanentStorage) + memory.permanentStorageSizeInBytes);
 
     if (memory.permanentStorage && memory.transientStorage) {
@@ -297,12 +300,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         win32FixedFrameRate.gameTargetFPS = 30;
         win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
 
-        // Get the refresh rate of the monitor.
-        DEVMODEA devMode = {0};
-        bool32 getDisplaySettings = EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &devMode);
+        // Get the refresh rate of the monitor from the Windows API.
+        int32 gdcRes = GetDeviceCaps(deviceHandleForWindow, VREFRESH);
 
-        if (getDisplaySettings) {
-            win32FixedFrameRate.monitorRefreshRate = (uint8)devMode.dmDisplayFrequency;
+        if (gdcRes > 1) {
+            win32FixedFrameRate.monitorRefreshRate = (uint8)gdcRes;
         }
 
         // Set the system's minimum timer resolution to 1 millisecond
@@ -333,7 +335,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Create the Windows frame buffer
-        win32InitFrameBuffer(&win32FrameBuffer, 1920, 1080);
+        win32InitFrameBuffer(&thread, &win32FrameBuffer, 1920, 1080);
 
         /*
          * Controllers
@@ -367,16 +369,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             MSG message = {0};
 
-            // Define keyboard controller support.
+            // Mouse and keyboard support
+            GameMouseInput mouse = { 0 };
+            mouse.isConnected = 1; // @TODO(JM) check that it's actually is connected.
+
             GameControllerInput keyboard = { 0 };
-            keyboard.isConnected = true; // @TODO(JM) check that keyboard is connected.
-            controllerCounts.connectedControllers = 1;
+            keyboard.isConnected = 1; // @TODO(JM) check that it's actually is connected.
+
+            // Handle the Win32 message loop
+            win32ProcessMessages(window, message, &keyboard, &mouse, &win32State);
+
+            // Assignt the mouse to the game input
+            gameInput->mouse = mouse;
 
             // Assignt the first game input controller as the keyboard
             gameInput->controllers[0] = keyboard;
-
-            // Handle the Win32 message loop
-            win32ProcessMessages(window, message, &keyboard, &win32State);
+            controllerCounts.connectedControllers = 1;
 
             if (paused) {
 
@@ -643,7 +651,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #endif
 
             // Create the game's audio buffer
-             gameCode.gameInitAudioBuffer(&memory,
+             gameCode.gameInitAudioBuffer(&thread,
+                                            &memory,
                                             &gameAudioBuffer,
                                             lockSizeInBytes,
                                             win32AudioBuffer.bytesPerSample,
@@ -651,7 +660,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Create the game's frame buffer
             GameFrameBuffer gameFrameBuffer = {0};
-            gameCode.gameInitFrameBuffer(&gameFrameBuffer,
+            gameCode.gameInitFrameBuffer(&thread,
+                                            &gameFrameBuffer,
                                             win32FrameBuffer.height,
                                             win32FrameBuffer.width,
                                             win32FrameBuffer.bytesPerPixel,
@@ -659,7 +669,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                             win32FrameBuffer.memory);
 
             // Main game code.
-            gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, GameInputInstances, &controllerCounts);
+            gameCode.gameUpdate(&thread, &memory, &gameFrameBuffer, &gameAudioBuffer, GameInputInstances, &controllerCounts);
 
             win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 
@@ -855,7 +865,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param int                   height      The height of the window's viewport
  * 
  */
-internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height)
+internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height)
 {
 
     // buffer->foo is a dereferencing shorthand for (*buffer).foo
@@ -887,7 +897,7 @@ internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, 
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySizeInBytes
-    buffer->memory = platformAllocateMemory(0, bitmapMemorySizeInBytes);
+    buffer->memory = platformAllocateMemory(thread, 0, bitmapMemorySizeInBytes);
 
     // Calculate the width in bytes per row.
     buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
@@ -1187,11 +1197,34 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, Win32State *win32State)
+internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, GameMouseInput *mouse, Win32State *win32State)
 {
     // Win32 Message loop. Retrieves all messages (from the calling thread's message queue)
     // that are sent to the window. E.g. clicks and key inputs.
     while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
+
+        // Which key was pressed?
+        WPARAM vkCode = message.wParam;
+
+        /*
+         * lParam bitmask. Written from right to left
+         *
+         *  First two bytes              Second two bytes
+         * |-------------------------|  |---------------|
+         * 31 30 29 28-25 24 23-16      15-0
+         * 0  0  0  0000  1  01001011   0000000000000001
+        */
+
+        // lParam is 4-bytes wide.
+        uint32 *lParamBitmask = (uint32 *)&message.lParam;
+
+        // Fetch the second two bytes (bits 0-15)
+        // @BUG(JM) this count is wrong
+        uint16 *repeatCount = (uint16 *)&message.lParam;
+        repeatCount = (repeatCount + 1);
+
+        bool32 isDown = ((*lParamBitmask & (1 << 31)) == 0); // 1 if the key is down
+        bool32 wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key was down
 
         switch (message.message) {
 
@@ -1202,34 +1235,28 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
                 running = false;
             } break;
 
+            // All mouse input messages
+            case WM_LBUTTONDOWN:
+            case WM_LBUTTONUP: {
+                GameControllerBtnState state = { 0 };
+                state.halfTransitionCount++;
+                state.endedDown = isDown;
+                mouse->leftClick = state;
+            } break;
+
+            case WM_RBUTTONDOWN:
+            case WM_RBUTTONUP: {
+                GameControllerBtnState state = { 0 };
+                state.halfTransitionCount++;
+                state.endedDown = isDown;
+                mouse->rightClick = state;
+            } break;
+
             // All keyboard input messages
             case WM_KEYDOWN:
             case WM_KEYUP:
             case WM_SYSKEYDOWN:
             case WM_SYSKEYUP: {
-
-                // Which key was pressed?
-                WPARAM vkCode = message.wParam;
-
-                /*
-                 * lParam bitmask. Written from right to left
-                 *
-                 *  First two bytes              Second two bytes
-                 * |-------------------------|  |---------------|
-                 * 31 30 29 28-25 24 23-16      15-0
-                 * 0  0  0  0000  1  01001011   0000000000000001
-                */
-
-                // lParam is 4-bytes wide.
-                uint32 *lParamBitmask = (uint32 *)&message.lParam;
-
-                // Fetch the second two bytes (bits 0-15)
-                // @BUG(JM) this count is wrong
-                uint16 *repeatCount = (uint16 *)&message.lParam;
-                repeatCount = (repeatCount + 1);
-
-                bool32 isDown = ((*lParamBitmask & (1 << 31)) == 0); // 1 if the key is down
-                bool32 wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key was down
 
 #ifdef HANDMADE_DEBUG
                 if (vkCode == 'W') {
@@ -1262,7 +1289,6 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
                             }
                         }
                     } break;
-#endif
 
                     case 'P': {
                         if (isDown) {
@@ -1273,6 +1299,8 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
                             }
                         }
                     } break;
+
+#endif
 
                     case 'W': {
                         GameControllerBtnState state = {0};
