@@ -9,7 +9,15 @@
 
 // Functions that are only available within the translation unit they're declared in.
 // This helps the compiler out by knowing that there is no external linking to be done.
-#define internal_func static 
+#define internal_func static
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
 
 // Typedefs that specify exact-width integer types for increased code portability.
 /*
@@ -43,6 +51,7 @@ typedef int32               bool32;
 typedef int64               bool64;
 
 // Basic types
+typedef int                 BOOL;
 typedef char                CHAR;
 typedef unsigned char       UCHAR;
 typedef short               SHORT;

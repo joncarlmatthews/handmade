@@ -9,7 +9,7 @@
 #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
 // #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
-// #define HANDMADE_DEBUG_AUDIO
+#define HANDMADE_DEBUG_AUDIO
 
 #else
     #define assert(expression)
@@ -206,8 +206,8 @@ typedef struct ControllerCounts
 
 typedef struct GameControllerBtnState
 {
-    bool32 halfTransitionCount;
-    bool32 endedDown;
+    BOOL endedDown;
+    BOOL wasDown;
 } GameControllerBtnState;
 
 typedef struct GameControllerThumbstickState
@@ -255,12 +255,12 @@ typedef struct GameControllerInput
 } GameControllerInput;
 
 typedef struct GameMouseInput {
-    bool8 isConnected;
+    BOOL isConnected;
     GameControllerBtnState leftClick;
     GameControllerBtnState rightClick;
     struct position {
-        float32 x;
-        float32 y;
+        LONG x;
+        LONG y;
     } position;
 } GameMouseInput;
 

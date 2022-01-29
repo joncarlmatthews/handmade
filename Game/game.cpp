@@ -30,24 +30,27 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      * Audio stuff...
      */
 
-    //audioBufferWriteSineWave(gameState, audioBuffer);
+#ifdef HANDMADE_DEBUG_AUDIO
+    audioBufferWriteSineWave(gameState, audioBuffer);
+#endif // HANDMADE_DEBUG_AUDIO
 
     /**
      * Handle controller input...
      */
 
     // Main controller loop
+    // @TODO(JM) Support for multiple controllers.See below for single controller support.
+    /*
     for (uint8 i = 0; i < controllerCounts->connectedControllers; i++){
 
         if (!inputInstances->controllers[i].isConnected) {
             continue;
         }
-
-        // @TODO(JM) Support for multiple controllers. See below for single controller support.
     }
+    */
 
     // Which controller has the user selected as the main controller?
-    uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
+    uint8 userSelectedMainController = 0; // @TODO(JM) make this selectable through a UI
 
     controllerHandlePlayer(gameState, frameBuffer, audioBuffer, inputInstances->controllers[userSelectedMainController]);
 
@@ -59,7 +62,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     frameBufferWritePlayer(gameState, frameBuffer, audioBuffer);
 
     if (inputInstances->mouse.leftClick.endedDown) {
-        writeRectangle(frameBuffer, 0xff00ff, 25, 25, 500, 500);
+        writeRectangle(frameBuffer, 0xff00ff, 25, 25, inputInstances->mouse.position.y, inputInstances->mouse.position.x);
     }
 
 #if defined(HANDMADE_DEBUG_AUDIO)

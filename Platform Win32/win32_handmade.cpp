@@ -15,9 +15,9 @@
 // shared across the game and platform layer
 #include "..\Util\util.cpp"
 
-// Whether or not the application is running
-global_var bool8 running;
-global_var bool8 paused;
+// Whether or not the application is running/paused
+global_var bool8 running = TRUE;
+global_var bool8 paused = FALSE;
 
 // Create the Windows frame buffer
 // @TOOD(JM) move this out of the global scope
@@ -360,45 +360,40 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Create a variable to hold the current time (we'll use this for profiling the elapsed game loop time)
         LARGE_INTEGER runningGameTime = win32GetTime();
 
-        running = true;
+        // Mouse support
+        GameMouseInput mouse = { 0 };
+
+        // Assign the mouse object to the game input
+        gameInput->mouse = mouse;
+
+        // Keyboard support
+        GameControllerInput keyboard = { 0 };
+        keyboard.isConnected = 1; // @TODO(JM) check that it's actually is connected.
+
+        // Assign the keyboard object to the game input
+        gameInput->controllers[0] = keyboard; // Assign the first game input controller as the keyboard
+        controllerCounts.connectedControllers = 1; // @TODO(JM) Support for multiple controllers
 
         /**
          * MAIN GAME LOOP
          */
         while (running) {
 
-            MSG message = {0};
+            // Get the position of the mouse
+            win32GetMousePosition(window, &gameInput->mouse);
 
-            // Mouse and keyboard support
-            GameMouseInput mouse = { 0 };
-            mouse.isConnected = 1; // @TODO(JM) check that it's actually is connected.
-
-            GameControllerInput keyboard = { 0 };
-            keyboard.isConnected = 1; // @TODO(JM) check that it's actually is connected.
-
-            // Handle the Win32 message loop
-            win32ProcessMessages(window, message, &keyboard, &mouse, &win32State);
-
-            // Assignt the mouse to the game input
-            gameInput->mouse = mouse;
-
-            // Assignt the first game input controller as the keyboard
-            gameInput->controllers[0] = keyboard;
-            controllerCounts.connectedControllers = 1;
+            // Handle the Win32 message loop and handle mouse and keyboard input
+            win32ProcessMessages(window, gameInput, *gameInputOld, &win32State);
 
             if (paused) {
-
                 win32AudioBufferToggleStop(&win32AudioBuffer);
                 continue;
-
             } else {
                 win32AudioBufferTogglePlay(&win32AudioBuffer);
             }
 
             // After processing our messages, we can now (in our "while running = true"
-            // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
-            // application has been launched, so we'll have built the window and 
-            // declared viewport height, width etc by this point.
+            // loop) do what we like..!
 
             /*
              * Controller input stuff
@@ -676,6 +671,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
 
+            // Take a copy of this frame's controller inputs
+            gameInputOld->mouse = mouse;
+            gameInputOld->controllers[0] = gameInput->controllers[0];
+
             // How long did this game loop (frame) take?
 
             // Performance-counter frequency for MS/frame & FPS
@@ -788,17 +787,17 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
         case WM_DESTROY: {
             // @TODO(JM) Handle as an error. Recreate window?
-            running = false;
+            running = FALSE;
         } break;
 
         // Called when the user requests to close the window.
         case WM_CLOSE: {
             // @TODO(JM) Display "are you sure" message to user?
-            running = false;
+            running = FALSE;
         } break;
 
         case WM_QUIT: {
-            running = false;
+            running = FALSE;
         } break;
 
         // Called when the user makes the window active (e.g. by tabbing to it).
@@ -830,8 +829,6 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         case WM_KEYUP:
         case WM_SYSKEYDOWN: 
         case WM_SYSKEYUP: {
-            // This shouldnt happen. assert during development to make sure.
-            assert(!"Windows has called this directtly and not throug PeekMessage");
         } break;
 
         // The standard request from GetMessage().
@@ -1197,34 +1194,16 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, GameMouseInput *mouse, Win32State *win32State)
+internal_func void win32ProcessMessages(HWND window,
+                                        GameInput *gameInput,
+                                        GameInput oldGameInput,
+                                        Win32State *win32State)
 {
+    MSG message = {0};
+
     // Win32 Message loop. Retrieves all messages (from the calling thread's message queue)
     // that are sent to the window. E.g. clicks and key inputs.
     while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
-
-        // Which key was pressed?
-        WPARAM vkCode = message.wParam;
-
-        /*
-         * lParam bitmask. Written from right to left
-         *
-         *  First two bytes              Second two bytes
-         * |-------------------------|  |---------------|
-         * 31 30 29 28-25 24 23-16      15-0
-         * 0  0  0  0000  1  01001011   0000000000000001
-        */
-
-        // lParam is 4-bytes wide.
-        uint32 *lParamBitmask = (uint32 *)&message.lParam;
-
-        // Fetch the second two bytes (bits 0-15)
-        // @BUG(JM) this count is wrong
-        uint16 *repeatCount = (uint16 *)&message.lParam;
-        repeatCount = (repeatCount + 1);
-
-        bool32 isDown = ((*lParamBitmask & (1 << 31)) == 0); // 1 if the key is down
-        bool32 wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key was down
 
         switch (message.message) {
 
@@ -1235,51 +1214,91 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
                 running = false;
             } break;
 
-            // All mouse input messages
+            // Mouse left click
             case WM_LBUTTONDOWN:
-            case WM_LBUTTONUP: {
-                GameControllerBtnState state = { 0 };
-                state.halfTransitionCount++;
-                state.endedDown = isDown;
-                mouse->leftClick = state;
+            {
+                GameControllerBtnState state = {0};
+                state.endedDown = TRUE;
+                state.wasDown = oldGameInput.mouse.leftClick.endedDown;
+                gameInput->mouse.leftClick = state;
+            } break;
+
+            case WM_LBUTTONUP:
+            {
+                GameControllerBtnState state = {0};
+                state.endedDown = FALSE;
+                state.wasDown = oldGameInput.mouse.leftClick.endedDown;
+                gameInput->mouse.leftClick = state;
             } break;
 
             case WM_RBUTTONDOWN:
             case WM_RBUTTONUP: {
-                GameControllerBtnState state = { 0 };
-                state.halfTransitionCount++;
-                state.endedDown = isDown;
-                mouse->rightClick = state;
             } break;
 
-            // All keyboard input messages
             case WM_KEYDOWN:
-            case WM_KEYUP:
             case WM_SYSKEYDOWN:
-            case WM_SYSKEYUP: {
+            case WM_KEYUP:
+            case WM_SYSKEYUP:{
 
-#ifdef HANDMADE_DEBUG
-                if (vkCode == 'W') {
-                    char buff[100] = {0};
-                    sprintf_s(buff, sizeof(buff), "is down? %i\n", isDown);
-                    OutputDebugStringA(buff);
+                /*
+                 * lParam bitmask. Written from right to left
+                 *
+                 * @see https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
+                 *
+                 *  First two bytes              Second two bytes
+                 * |-------------------------|  |---------------|
+                 * 31 30 29 28-25 24 23-16      15-0
+                 * 0  0  0  0000  1  01001011   0000000000000001
+                */
 
-                    memset(buff, 0, sizeof(buff));
-                    sprintf_s(buff, sizeof(buff), "was down? %i\n", wasDown);
-                    OutputDebugStringA(buff);
+                // Which key was pressed?
+                WPARAM vkCode = message.wParam;
 
-                    memset(buff, 0, sizeof(buff));
-                    sprintf_s(buff, sizeof(buff), "repeat count %i\n", *repeatCount);
-                    OutputDebugStringA(buff);
+                // Was the button down or up?
+                BOOL keyDown = FALSE;
+
+                if (0 == (message.lParam & ((uint64)1 << 31))){
+                    keyDown = TRUE;
                 }
-#endif // HANDMADE_DEBUG
+
+                GameControllerBtnState state = { 0 };
+
+                if (keyDown) {
+                    state.endedDown = TRUE;
+                } else {
+                    state.endedDown = FALSE;
+                }
 
                 switch (vkCode) {
+                    case 'W': {
+                        state.wasDown = oldGameInput.controllers[0].dPadUp.endedDown;
+                        gameInput->controllers[0].dPadUp = state;
+                    } break;
+                    case 'A': {
+                        state.wasDown = oldGameInput.controllers[0].dPadLeft.endedDown;
+                        gameInput->controllers[0].dPadLeft = state;
+                    } break;
+                    case 'S': {
+                        state.wasDown = oldGameInput.controllers[0].dPadDown.endedDown;
+                        gameInput->controllers[0].dPadDown = state;
+                    } break;
+                    case 'D': {
+                        state.wasDown = oldGameInput.controllers[0].dPadRight.endedDown;
+                        gameInput->controllers[0].dPadRight = state;
+                    } break;
+                    case 'Q': {
+                        state.wasDown = oldGameInput.controllers[0].shoulderL1.endedDown;
+                        gameInput->controllers[0].shoulderL1 = state;
+                    } break;
+                    case 'E': {
+                        state.wasDown = oldGameInput.controllers[0].shoulderR1.endedDown;
+                        gameInput->controllers[0].shoulderR1 = state;
+                    } break;
 
 #if HANDMADE_LOCAL_BUILD
                     // Playback recording/looping
                     case 'L': {
-                        if (isDown) {
+                        if (keyDown) {
                             if (0 == win32State->inputRecording) {
                                 win32EndRecordingPlayback(win32State);
                                 win32BeginInputRecording(win32State);
@@ -1290,62 +1309,18 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
                         }
                     } break;
 
-                    case 'P': {
-                        if (isDown) {
+                    case 'P':{
+                        if (keyDown) {
                             if (paused) {
                                 paused = false;
-                            }else {
+                            } else {
                                 paused = true;
                             }
                         }
                     } break;
-
 #endif
-
-                    case 'W': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->dPadUp = state;
-                    } break;
-
-                    case 'A': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->dPadLeft = state;
-                    } break;
-
-                    case 'S': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->dPadDown = state;
-                    } break;
-
-                    case 'D': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->dPadRight = state;
-                    } break;
-
-                    case 'Q': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->shoulderL1 = state;
-                    } break;
-
-                    case 'E': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->shoulderR1 = state;
-                    } break;
                 }
-
-            } break;
+            }
 
             // The standard request from GetMessage().
             default: {
@@ -1384,7 +1359,7 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *ne
                                                         uint16 gamepadButtonBit)
 {
     if ((*newState).endedDown != (*oldState).endedDown) {
-        (*newState).halfTransitionCount = ((*newState).halfTransitionCount + 1);
+        //(*newState).halfTransitionCount = ((*newState).halfTransitionCount + 1);
     }
     (*newState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
 }
@@ -1617,14 +1592,14 @@ internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
 }
 
 internal_func void win32ConcatStrings(wchar_t *source1,
-                                       uint source1Length,
+                                       UINT source1Length,
                                        wchar_t *source2,
-                                       uint source2Length,
+                                       UINT source2Length,
                                        wchar_t *dest,
-                                       uint destLength)
+                                       UINT destLength)
 {
-    uint runningIndex = 0;
-    for (uint i = 0; i < source1Length; i++) {
+    UINT runningIndex = 0;
+    for (UINT i = 0; i < source1Length; i++) {
         if (source1[i] == '\0') {
             break;
         }
@@ -1635,7 +1610,7 @@ internal_func void win32ConcatStrings(wchar_t *source1,
         runningIndex++;
     }
 
-    for (uint i = 0; i < source2Length; i++) {
+    for (UINT i = 0; i < source2Length; i++) {
         if (source2[i] == '\0') {
             break;
         }
@@ -1648,14 +1623,14 @@ internal_func void win32ConcatStrings(wchar_t *source1,
 }
 
 internal_func void win32ConcatStringsA(char *source1,
-                                       uint source1Length,
+                                       UINT source1Length,
                                        char *source2,
-                                       uint source2Length,
+                                       UINT source2Length,
                                        char *dest,
-                                       uint destLength)
+                                       UINT destLength)
 {
-    uint runningIndex = 0;
-    for (uint i = 0; i < source1Length; i++) {
+    UINT runningIndex = 0;
+    for (UINT i = 0; i < source1Length; i++) {
         if (source1[i] == '\0') {
             break;
         }
@@ -1666,7 +1641,7 @@ internal_func void win32ConcatStringsA(char *source1,
         runningIndex++;
     }
 
-    for (uint i = 0; i < source2Length; i++) {
+    for (UINT i = 0; i < source2Length; i++) {
         if (source2[i] == '\0') {
             break;
         }
@@ -1679,17 +1654,37 @@ internal_func void win32ConcatStringsA(char *source1,
 }
 
 internal_func void win32WideChartoChar(wchar_t *wideCharArr,
-                                       uint wideCharLength,
+                                       UINT wideCharLength,
                                        char *charArr,
-                                       uint charLength)
+                                       UINT charLength)
 {
-    for (uint x = 0; x < wideCharLength; x++) {
+    for (UINT x = 0; x < wideCharLength; x++) {
         charArr[x] = (char)wideCharArr[x];
         if ('\0' == wideCharArr[x]) {
             break;
         }
         if (x >= (charLength - 1)) {
             break;
+        }
+    }
+}
+
+internal_func void win32GetMousePosition(HWND window, GameMouseInput *mouseInput)
+{
+    if (paused){
+        return;
+    }
+
+    // Get the mouse inputs from the Windows API
+    POINT point = { 0 };
+
+    mouseInput->isConnected = GetCursorPos(&point);
+
+    if (mouseInput->isConnected) {
+
+        if (ScreenToClient(window, &point)) {
+            mouseInput->position.x = point.x;
+            mouseInput->position.y = point.y;
         }
     }
 }
