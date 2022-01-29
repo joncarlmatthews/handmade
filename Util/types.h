@@ -42,6 +42,14 @@ typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
 
-typedef signed long long    uint;
+// Basic types
+typedef char                CHAR;
+typedef unsigned char       UCHAR;
+typedef short               SHORT;
+typedef unsigned short      USHORT;
+typedef int                 INT;
+typedef unsigned int        UINT;
+typedef long                LONG;
+typedef unsigned long       ULONG;
 
 #endif
