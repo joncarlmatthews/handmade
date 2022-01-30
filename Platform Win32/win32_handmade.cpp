@@ -432,50 +432,41 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 uint8 ourControllerIndex = ((uint8)controllerIndex + 1);
 
-                GameControllerInput *gameController     = &gameInput->controllers[ourControllerIndex];
-                GameControllerInput *gameControllerOld  = &gameInputOld->controllers[ourControllerIndex];
+                GameControllerInput *gameController = &gameInput->controllers[ourControllerIndex];
 
                 gameController->isConnected = true;
 
                 win32ProcessXInputControllerButton(&gameController->dPadUp,
-                    &gameControllerOld->dPadUp,
-                    gamepad,
-                    XINPUT_GAMEPAD_DPAD_UP);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_DPAD_UP);
 
                 win32ProcessXInputControllerButton(&gameController->dPadDown,
-                    &gameControllerOld->dPadDown,
-                    gamepad,
-                    XINPUT_GAMEPAD_DPAD_DOWN);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_DPAD_DOWN);
 
                 win32ProcessXInputControllerButton(&gameController->dPadLeft,
-                    &gameControllerOld->dPadLeft,
-                    gamepad,
-                    XINPUT_GAMEPAD_DPAD_LEFT);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_DPAD_LEFT);
 
                 win32ProcessXInputControllerButton(&gameController->dPadRight,
-                    &gameControllerOld->dPadRight,
-                    gamepad,
-                    XINPUT_GAMEPAD_DPAD_RIGHT);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_DPAD_RIGHT);
 
                 win32ProcessXInputControllerButton(&gameController->up,
-                    &gameControllerOld->up,
-                    gamepad,
-                    XINPUT_GAMEPAD_Y);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_Y);
 
                 win32ProcessXInputControllerButton(&gameController->down,
-                    &gameControllerOld->down,
-                    gamepad,
-                    XINPUT_GAMEPAD_A);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_A);
 
                 win32ProcessXInputControllerButton(&gameController->right,
-                    &gameControllerOld->right,
-                    gamepad,
-                    XINPUT_GAMEPAD_B);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_B);
 
                 win32ProcessXInputControllerButton(&gameController->left,
-                    &gameControllerOld->left,
-                    gamepad,
-                    XINPUT_GAMEPAD_X);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_X);
 
                 // Left controller thumbstick support...
                 // Normalise the axis values so the values are between -1.0 and 1.0
@@ -516,11 +507,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         gameController->isAnalog = false;
                     }
                 }
-
-                // Swap the controller intances
-                GameControllerInput *temp = gameController;
-                gameController = gameControllerOld;
-                gameControllerOld = temp;
 
             } // controller loop
 
@@ -672,7 +658,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
 
             // Take a copy of this frame's controller inputs
-            gameInputOld->mouse = mouse;
+            gameInputOld->mouse = gameInput->mouse;
             gameInputOld->controllers[0] = gameInput->controllers[0];
 
             // How long did this game loop (frame) take?
@@ -1219,7 +1205,6 @@ internal_func void win32ProcessMessages(HWND window,
             {
                 GameControllerBtnState state = {0};
                 state.endedDown = TRUE;
-                state.wasDown = oldGameInput.mouse.leftClick.endedDown;
                 gameInput->mouse.leftClick = state;
             } break;
 
@@ -1227,7 +1212,6 @@ internal_func void win32ProcessMessages(HWND window,
             {
                 GameControllerBtnState state = {0};
                 state.endedDown = FALSE;
-                state.wasDown = oldGameInput.mouse.leftClick.endedDown;
                 gameInput->mouse.leftClick = state;
             } break;
 
@@ -1246,9 +1230,9 @@ internal_func void win32ProcessMessages(HWND window,
                  * @see https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
                  *
                  *  First two bytes              Second two bytes
-                 * |-------------------------|  |---------------|
+                 * |-------------------------|  |----------------|
                  * 31 30 29 28-25 24 23-16      15-0
-                 * 0  0  0  0000  1  01001011   0000000000000001
+                 * 0  0  0  0000  1  01001011   00000000 00000001
                 */
 
                 // Which key was pressed?
@@ -1353,15 +1337,11 @@ internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, con
     return ((float32)(endCounter.QuadPart - startCounter.QuadPart) / (float32)countersPerSecond);
 }
 
-internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *newState,
-                                                        GameControllerBtnState *oldState,
+internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit)
 {
-    if ((*newState).endedDown != (*oldState).endedDown) {
-        //(*newState).halfTransitionCount = ((*newState).halfTransitionCount + 1);
-    }
-    (*newState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
+    (*currentState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
 }
 
 internal_func uint32 win32TruncateToUint32Safe(uint64 value)

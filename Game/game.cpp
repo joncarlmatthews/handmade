@@ -50,7 +50,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     */
 
     // Which controller has the user selected as the main controller?
-    uint8 userSelectedMainController = 0; // @TODO(JM) make this selectable through a UI
+    uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
 
     controllerHandlePlayer(gameState, frameBuffer, audioBuffer, inputInstances->controllers[userSelectedMainController]);
 
