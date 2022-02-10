@@ -289,6 +289,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     if (memory.permanentStorage && memory.transientStorage) {
 
+#if HANDMADE_LOCAL_BUILD
+        memory.recordingStorage = platformAllocateMemory(&thread, (memoryStartAddress + memoryTotalSize), memoryTotalSize);
+        memory.recordingStorageSizeInBytes = memoryTotalSize;
+#endif
+
         win32State.gameMemorySize = memoryTotalSize;
         win32State.gameMemory = memory.permanentStorage;
 
@@ -632,7 +637,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #endif
 
             // Create the game's audio buffer
-             gameCode.gameInitAudioBuffer(&thread,
+            gameCode.gameInitAudioBuffer(&thread,
                                             &memory,
                                             &gameAudioBuffer,
                                             lockSizeInBytes,
@@ -1730,8 +1735,7 @@ internal_func void win32BeginRecordingPlayback(Win32State *win32State)
     win32State->playbackFileHandle = handle;
     win32State->inputPlayback = 1;
 
-    // Read the first n number bytes from the playback file handle. The number of bytes
-    // being the game memory bytes size
+    // Read out the copy of the game's memory from the recorded input file.
     DWORD bytesRead = 0;
     BOOL res = ReadFile(win32State->playbackFileHandle, win32State->gameMemory, win32State->gameMemorySize, &bytesRead, NULL);
 

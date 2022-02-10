@@ -333,6 +333,11 @@ typedef struct GameMemory
      */
     uint64 transientStorageSizeInBytes;
 
+#if HANDMADE_LOCAL_BUILD
+    void *recordingStorage;
+    uint64 recordingStorageSizeInBytes;
+#endif
+
     /*
      * Flag to set whether or not our game memory has had its initial fill of data.
      */
@@ -340,6 +345,8 @@ typedef struct GameMemory
 
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
+
+    // @NOTE(JM) Move this??
     PlarformControllerVibrate *platformControllerVibrate;
 
 #if HANDMADE_LOCAL_BUILD
