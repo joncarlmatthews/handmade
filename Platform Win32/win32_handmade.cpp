@@ -289,13 +289,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     if (memory.permanentStorage && memory.transientStorage) {
 
-#if HANDMADE_LOCAL_BUILD
-        memory.recordingStorage = platformAllocateMemory(&thread, (memoryStartAddress + memoryTotalSize), memoryTotalSize);
-        memory.recordingStorageSizeInBytes = memoryTotalSize;
-#endif
-
         win32State.gameMemorySize = memoryTotalSize;
         win32State.gameMemory = memory.permanentStorage;
+
+#if HANDMADE_LOCAL_BUILD
+        memory.recordingStorageGameMemory   = platformAllocateMemory(&thread, (memoryStartAddress + memoryTotalSize), memoryTotalSize);
+        memory.recordingStorageInput        = platformAllocateMemory(&thread, (memoryStartAddress + (memoryTotalSize * 2)), memoryTotalSize);
+
+        win32State.gameMemoryRecordedState = memory.recordingStorageGameMemory;
+        win32State.gameMemoryRecordedInput = memory.recordingStorageInput;
+#endif
 
         /*
          * Framerate fixing.
@@ -1678,6 +1681,10 @@ internal_func void win32GetMousePosition(HWND window, GameMouseInput *mouseInput
 
 internal_func void win32BeginInputRecording(Win32State *win32State)
 {
+    CopyMemory(win32State->gameMemoryRecordedState, win32State->gameMemory, win32State->gameMemorySize);
+    win32State->inputRecording = 1;
+    return;
+
     char fileName[20] = "recorded_input.hmi"; // .hmi = "handmade input"
     char fullFilePathA[MAX_PATH] = { 0 };
 
@@ -1704,12 +1711,23 @@ internal_func void win32BeginInputRecording(Win32State *win32State)
 
 internal_func void win32EndInputRecording(Win32State *win32State)
 {
+    win32State->inputRecording = 0;
+    return;
+
     CloseHandle(win32State->recordingFileHandle);
     win32State->inputRecording = 0;
 }
 
 internal_func void win32RecordInput(Win32State *win32State, GameInput *gameInput)
 {
+    uint64 offset = 0;
+    if (win32State->recordingWriteFrameIndex >= 1) {
+        offset = ((sizeof(*gameInput)) * win32State->recordingWriteFrameIndex);
+    }
+    CopyMemory(((CHAR*)win32State->gameMemoryRecordedInput + offset), gameInput, sizeof(*gameInput));
+    win32State->recordingWriteFrameIndex += 1;
+    return;
+
     DWORD bytesWritten;
     BOOL res = WriteFile(win32State->recordingFileHandle, gameInput, sizeof(*gameInput), &bytesWritten, 0);
 
@@ -1720,6 +1738,11 @@ internal_func void win32RecordInput(Win32State *win32State, GameInput *gameInput
 
 internal_func void win32BeginRecordingPlayback(Win32State *win32State)
 {
+    // Read out the copy of the game's memory from the recorded input file.
+    CopyMemory(win32State->gameMemory, win32State->gameMemoryRecordedState, win32State->gameMemorySize);
+    win32State->inputPlayback = 1;
+    return;
+
     char fileName[20] = "recorded_input.hmi";
     char fullFilePathA[MAX_PATH] = { 0 };
 
@@ -1746,12 +1769,27 @@ internal_func void win32BeginRecordingPlayback(Win32State *win32State)
 
 internal_func void win32EndRecordingPlayback(Win32State *win32State)
 {
+    win32State->recordingWriteFrameIndex = 0;
+    win32State->recordingReadFrameIndex = 0;
+    ZeroMemory(win32State->gameMemoryRecordedState, win32State->gameMemorySize);
+    ZeroMemory(win32State->gameMemoryRecordedInput, win32State->gameMemorySize);
+    win32State->inputPlayback = 0;
+    return;
+
     CloseHandle(win32State->playbackFileHandle);
     win32State->inputPlayback = 0;
 }
 
 internal_func void win32PlaybackInput(Win32State *win32State, GameInput *gameInput)
 {
+    uint64 offset = 0;
+    if (win32State->recordingReadFrameIndex >= 1) {
+        offset = ((sizeof(*gameInput)) * win32State->recordingReadFrameIndex);
+    }
+    CopyMemory(gameInput, ((CHAR*)win32State->gameMemoryRecordedInput + offset), sizeof(*gameInput));
+    win32State->recordingReadFrameIndex += 1;
+    return;
+
     DWORD bytesRead = 0;
 
     // Read the next 520 bytes from the playback file handle. (520 bytes being the size of

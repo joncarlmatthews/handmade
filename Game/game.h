@@ -334,8 +334,8 @@ typedef struct GameMemory
     uint64 transientStorageSizeInBytes;
 
 #if HANDMADE_LOCAL_BUILD
-    void *recordingStorage;
-    uint64 recordingStorageSizeInBytes;
+    void *recordingStorageGameMemory;
+    void *recordingStorageInput;
 #endif
 
     /*

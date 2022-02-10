@@ -106,11 +106,19 @@ typedef struct Win32State
     uint64 gameMemorySize;
     void *gameMemory;
 
+#if HANDMADE_LOCAL_BUILD
+    uint64 recordingWriteFrameIndex;
+    uint64 recordingReadFrameIndex;
+    void *gameMemoryRecordedState;
+    void *gameMemoryRecordedInput;
+
     HANDLE recordingFileHandle;
     bool8 inputRecording;
 
     HANDLE playbackFileHandle;
     bool8 inputPlayback;
+#endif
+
 } Win32State;
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
