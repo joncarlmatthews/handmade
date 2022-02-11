@@ -11,6 +11,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      * Game state initialisation
      */
     assert(sizeof(GameState) <= memory->permanentStorageSizeInBytes);
+
     GameState *gameState = (GameState *)memory->permanentStorage;
 
     if (!memory->initialised) {

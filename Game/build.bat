@@ -4,10 +4,11 @@ REM ============================================================================
 REM 
 REM You need to set the shell environment by running shell_x64.bat or shell_x86.bat once per
 REM shell before running this build script.
+REM 
 REM Usage: build.bat <Configuration> <Platform>
 REM E.g. build.bat Release x86
 REM
-REM To find out the build options Visual Studio is using:
+REM To view the build options Visual Studio is using:
 REM 
 REM Options > Projects and Solutions > Build and Run > MSBuild project build output verbosity.
 REM 

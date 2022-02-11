@@ -107,15 +107,11 @@ typedef struct Win32State
     void *gameMemory;
 
 #if HANDMADE_LOCAL_BUILD
-    uint64 recordingWriteFrameIndex;
-    uint64 recordingReadFrameIndex;
     void *gameMemoryRecordedState;
     void *gameMemoryRecordedInput;
-
-    HANDLE recordingFileHandle;
+    uint64 recordingWriteFrameIndex;
+    uint64 recordingReadFrameIndex;
     bool8 inputRecording;
-
-    HANDLE playbackFileHandle;
     bool8 inputPlayback;
 #endif
 
@@ -179,11 +175,7 @@ internal_func uint32 win32TruncateToUint32Safe(uint64 value);
 
 internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
 
-internal_func void win32ConcatStrings(wchar_t *source1, UINT source1Length, wchar_t *source2, UINT source2Length, wchar_t *dest, UINT destLength);
-
-internal_func void win32ConcatStringsA(char *source1, UINT source1Length, char *source2, UINT source2Length, char *dest, UINT destLength);
-
-internal_func void win32WideChartoChar(wchar_t *wideCharArr, UINT wideCharLength, char *charArr, UINT charLength);
+internal_func void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 
 #if HANDMADE_LOCAL_BUILD
 
@@ -198,8 +190,6 @@ internal_func void win32BeginRecordingPlayback(Win32State *win32State);
 internal_func void win32EndRecordingPlayback(Win32State *win32State);
 
 internal_func void win32PlaybackInput(Win32State *win32State, GameInput *inputNewInstance);
-
-internal_func void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 
 #endif
 

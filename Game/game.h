@@ -5,11 +5,14 @@
 
 #if HANDMADE_LOCAL_BUILD
 
-// If assertion isn't true, write to the null pointer and crash the program.
-#define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
-// #define HANDMADE_DEBUG
-// #define HANDMADE_DEBUG_FPS
-#define HANDMADE_DEBUG_AUDIO
+    // Flags:
+
+    // #define HANDMADE_DEBUG
+    // #define HANDMADE_DEBUG_FPS
+    #define HANDMADE_DEBUG_AUDIO
+
+    // If assertion isn't true, write to the null pointer and crash the program.
+    #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
 
 #else
     #define assert(expression)
@@ -334,7 +337,7 @@ typedef struct GameMemory
     uint64 transientStorageSizeInBytes;
 
 #if HANDMADE_LOCAL_BUILD
-    void *recordingStorageGameMemory;
+    void *recordingStorageGameState;
     void *recordingStorageInput;
 #endif
 

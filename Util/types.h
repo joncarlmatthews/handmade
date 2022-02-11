@@ -1,6 +1,14 @@
 #ifndef HEADER_GC_TYPES
 #define HEADER_GC_TYPES
 
+// Wide-strings. Defines wchar_t
+// @see https://www.cplusplus.com/reference/cwchar/
+#include <wchar.h>
+
+// Unicode characters. Defines char16_t, char32_t
+// @see https://www.cplusplus.com/reference/cuchar/
+#include <uchar.h>
+
 // Global variables
 #define global_var static
 
