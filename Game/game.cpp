@@ -28,16 +28,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
 
     /**
-     * Audio stuff...
-     */
-
-#ifdef HANDMADE_DEBUG_AUDIO
-    audioBufferWriteSineWave(gameState, audioBuffer);
-#endif // HANDMADE_DEBUG_AUDIO
-
-    /**
-     * Handle controller input...
-     */
+    * Handle controller input...
+    */
 
     // Main controller loop
     // @TODO(JM) Support for multiple controllers.See below for single controller support.
@@ -50,6 +42,15 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
     */
 
+    /**
+     * Audio stuff...
+     */
+
+#ifdef HANDMADE_DEBUG_AUDIO
+    audioBufferWriteSineWave(gameState, audioBuffer);
+#endif // HANDMADE_DEBUG_AUDIO
+   
+
     // Which controller has the user selected as the main controller?
     uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
 
@@ -59,11 +60,16 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      * Write the frame buffer...
      * 
      */
-    frameBufferWriteBackground(gameState, frameBuffer, audioBuffer);
+
+    // Solid background
+    writeRectangle(frameBuffer, 0, 0, frameBuffer->width, frameBuffer->height, gameState->bgColour);
+
+    // Player
     frameBufferWritePlayer(gameState, frameBuffer, audioBuffer);
 
+    // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
-        writeRectangle(frameBuffer, 0xff00ff, 25, 25, inputInstances->mouse.position.y, inputInstances->mouse.position.x);
+        writeRectangle(frameBuffer, inputInstances->mouse.position.x, inputInstances->mouse.position.y, 50, 50, 0xff00ff);
     }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -199,6 +205,7 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
     }
 
     // Safe bounds checking
+#if 0
     if (gameState->player1.posY < 0) {
         gameState->player1.posY = 0;
     }
@@ -211,16 +218,12 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
     if (gameState->player1.posX < 0) {
         gameState->player1.posX = 0;
     }
-}
-
-internal_func void frameBufferWriteBackground(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
-{
-    writeRectangle(buffer, gameState->bgColour, buffer->height, buffer->width, 0, 0);
+#endif
 }
 
 internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
 {
-    writeRectangle(buffer, 0xff00ff, gameState->player1.height, gameState->player1.width, gameState->player1.posY, gameState->player1.posX);
+    writeRectangle(buffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, 0xff00ff);
 }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -259,25 +262,82 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 #endif
 
 /**
- * Simple pixel loop. Note, no safety bounds checking
+ * Simple pixel loop.
+ *
+ * x = along the corridoor, y = down the stairs.
+ *
+ * Therefore x is concerned with the screen buffer's width,
+ * and y is concerned with the screen buffer's height.
  * 
  */
-internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset)
+internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, uint32 hexColour)
 {
+    // Bounds checking
+    if (xOffset >= buffer->width) {
+        return;
+    }
+
+    if (yOffset >= buffer->height) {
+        return;
+    }
+
+    // Min x
+    if (xOffset < 0) {
+        width = (width - (xOffset*-1));
+        if (width <= 0) {
+            return;
+        }
+        xOffset = 0;
+    }
+
+    // Min y
+    if (yOffset < 0) {
+        height = (height - (yOffset * -1));
+        if (height <= 0) {
+            return;
+        }
+        yOffset = 0;
+    }
+
+    // Max x
+    int64 maxX = (xOffset + width);
+
+    if (maxX > buffer->width) {
+        maxX = (buffer->width - xOffset);
+        if (width > maxX) {
+            width = maxX;
+        }
+    }
+
+    // Max y
+    int64 maxY = (yOffset + height);
+
+    if (maxY > buffer->height) {
+        maxY = (buffer->height - yOffset);
+        if (height > maxY) {
+            height = maxY;
+        }
+    }
+
     uint32 *row = (uint32 *)buffer->memory;
 
     // Move down to starting row
     row = (row + (buffer->width * yOffset));
+
+    // Move in from left to starting position
     row = (row + xOffset);
 
     // Down
-    for (uint64 i = 0; i < height; i++) {
+    for (int64 i = 0; i < height; i++) {
+
         // Accross
         uint32 *pixel = (uint32 *)row;
-        for (uint64 x = 0; x < width; x++) {
+        for (int64 x = 0; x < width; x++) {
             *pixel = hexColour;
             pixel = (pixel + 1);
         }
+
+        // Move down one entire row
         row = (row + buffer->width);
     }
 }

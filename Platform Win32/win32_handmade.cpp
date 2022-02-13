@@ -341,7 +341,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Create the Windows frame buffer
-        win32InitFrameBuffer(&thread, &win32FrameBuffer, 1920, 1080);
+        win32InitFrameBuffer(&thread, &win32FrameBuffer, 960, 540);
 
         /*
          * Controllers

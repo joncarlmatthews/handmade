@@ -9,7 +9,7 @@
 
     // #define HANDMADE_DEBUG
     // #define HANDMADE_DEBUG_FPS
-    #define HANDMADE_DEBUG_AUDIO
+    // #define HANDMADE_DEBUG_AUDIO
 
     // If assertion isn't true, write to the null pointer and crash the program.
     #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
@@ -360,9 +360,7 @@ typedef struct GameMemory
 
 } GameMemory;
 
-internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
-
-internal_func void frameBufferWriteBackground(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
+internal_func void writeRectangle(GameFrameBuffer* buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, uint32 hexColour);
 
 internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
 
