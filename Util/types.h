@@ -1,6 +1,14 @@
 #ifndef HEADER_GC_TYPES
 #define HEADER_GC_TYPES
 
+// Wide-strings. Defines wchar_t
+// @see https://www.cplusplus.com/reference/cwchar/
+#include <wchar.h>
+
+// Unicode characters. Defines char16_t, char32_t
+// @see https://www.cplusplus.com/reference/cuchar/
+#include <uchar.h>
+
 // Global variables
 #define global_var static
 
@@ -9,7 +17,15 @@
 
 // Functions that are only available within the translation unit they're declared in.
 // This helps the compiler out by knowing that there is no external linking to be done.
-#define internal_func static 
+#define internal_func static
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
 
 // Typedefs that specify exact-width integer types for increased code portability.
 /*
@@ -42,6 +58,15 @@ typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
 
-typedef signed long long    uint;
+// Basic types
+typedef int                 BOOL;
+typedef char                CHAR;
+typedef unsigned char       UCHAR;
+typedef short               SHORT;
+typedef unsigned short      USHORT;
+typedef int                 INT;
+typedef unsigned int        UINT;
+typedef long                LONG;
+typedef unsigned long       ULONG;
 
 #endif

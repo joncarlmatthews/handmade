@@ -4,10 +4,8 @@
 #include <strsafe.h> // sprintf_s support
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
-#include <math.h>  // floor
-#include <tchar.h>
 
-#include "..\Util\util.h" // Function signatures that are shared across the game and platform layer
+#include "..\Util\util.h" // Function signatures and basic types that are shared across the game and platform layer
 #include "..\Game\game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
@@ -15,9 +13,9 @@
 // shared across the game and platform layer
 #include "..\Util\util.cpp"
 
-// Whether or not the application is running
-global_var bool8 running;
-global_var bool8 paused;
+// Whether or not the application is running/paused
+global_var bool8 running = TRUE;
+global_var bool8 paused = FALSE;
 
 // Create the Windows frame buffer
 // @TOOD(JM) move this out of the global scope
@@ -103,7 +101,7 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
         uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
 
         // Allocate enough memory for the file.
-        file.memory = platformAllocateMemory(0, sizeInBytes);
+        file.memory = platformAllocateMemory(thread, 0, sizeInBytes);
 
         if (NULL == file.memory) {
             OutputDebugStringA("Cannot allocate memory for file");
@@ -239,6 +237,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // and use it forever.
     HDC deviceHandleForWindow = GetDC(window);
 
+    // Get the thread's content (@TODO JM)
+    PlatformThreadContext thread = { 0 };
+
     // Create a Win32 state object to hold persistent data for the platform layer.
     Win32State win32State = { 0 };
     win32State.inputRecording = 0;
@@ -248,7 +249,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     wchar_t absPath[MAX_PATH] = { 0 };
     char    absPathA[MAX_PATH] = { 0 };
     win32GetAbsolutePath(absPath);
-    win32WideChartoChar(absPath, MAX_PATH, absPathA, MAX_PATH);
+    utilWideCharToChar(absPath, MAX_PATH, absPathA, MAX_PATH);
 
     wcsncpy_s(win32State.absPath, MAX_PATH, absPath, MAX_PATH);
     strncpy_s(win32State.absPathA, sizeof(win32State.absPathA), absPathA, MAX_PATH);
@@ -281,13 +282,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     uint64 memoryTotalSize = (memory.permanentStorageSizeInBytes + memory.transientStorageSizeInBytes);
 
-    memory.permanentStorage = platformAllocateMemory(memoryStartAddress, memoryTotalSize);
+    memory.permanentStorage = platformAllocateMemory(&thread, memoryStartAddress, memoryTotalSize);
     memory.transientStorage = (((uint8 *)memory.permanentStorage) + memory.permanentStorageSizeInBytes);
 
     if (memory.permanentStorage && memory.transientStorage) {
 
         win32State.gameMemorySize = memoryTotalSize;
         win32State.gameMemory = memory.permanentStorage;
+
+#if HANDMADE_LOCAL_BUILD
+        memory.recordingStorageGameState   = platformAllocateMemory(&thread, (memoryStartAddress + memoryTotalSize), memoryTotalSize);
+        memory.recordingStorageInput       = platformAllocateMemory(&thread, (memoryStartAddress + (memoryTotalSize * 2)), memoryTotalSize);
+
+        win32State.gameMemoryRecordedState = memory.recordingStorageGameState;
+        win32State.gameMemoryRecordedInput = memory.recordingStorageInput;
+#endif
 
         /*
          * Framerate fixing.
@@ -297,12 +306,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         win32FixedFrameRate.gameTargetFPS = 30;
         win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
 
-        // Get the refresh rate of the monitor.
-        DEVMODEA devMode = {0};
-        bool32 getDisplaySettings = EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &devMode);
+        // Get the refresh rate of the monitor from the Windows API.
+        int32 gdcRes = GetDeviceCaps(deviceHandleForWindow, VREFRESH);
 
-        if (getDisplaySettings) {
-            win32FixedFrameRate.monitorRefreshRate = (uint8)devMode.dmDisplayFrequency;
+        if (gdcRes > 1) {
+            win32FixedFrameRate.monitorRefreshRate = (uint8)gdcRes;
         }
 
         // Set the system's minimum timer resolution to 1 millisecond
@@ -333,7 +341,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Create the Windows frame buffer
-        win32InitFrameBuffer(&win32FrameBuffer, 1920, 1080);
+        win32InitFrameBuffer(&thread, &win32FrameBuffer, 960, 540);
 
         /*
          * Controllers
@@ -358,39 +366,40 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Create a variable to hold the current time (we'll use this for profiling the elapsed game loop time)
         LARGE_INTEGER runningGameTime = win32GetTime();
 
-        running = true;
+        // Mouse support
+        GameMouseInput mouse = { 0 };
+
+        // Assign the mouse object to the game input
+        gameInput->mouse = mouse;
+
+        // Keyboard support
+        GameControllerInput keyboard = { 0 };
+        keyboard.isConnected = 1; // @TODO(JM) check that it's actually is connected.
+
+        // Assign the keyboard object to the game input
+        gameInput->controllers[0] = keyboard; // Assign the first game input controller as the keyboard
+        controllerCounts.connectedControllers = 1; // @TODO(JM) Support for multiple controllers
 
         /**
          * MAIN GAME LOOP
          */
         while (running) {
 
-            MSG message = {0};
+            // Get the position of the mouse
+            win32GetMousePosition(window, &gameInput->mouse);
 
-            // Define keyboard controller support.
-            GameControllerInput keyboard = { 0 };
-            keyboard.isConnected = true; // @TODO(JM) check that keyboard is connected.
-            controllerCounts.connectedControllers = 1;
-
-            // Assignt the first game input controller as the keyboard
-            gameInput->controllers[0] = keyboard;
-
-            // Handle the Win32 message loop
-            win32ProcessMessages(window, message, &keyboard, &win32State);
+            // Handle the Win32 message loop and handle mouse and keyboard input
+            win32ProcessMessages(window, gameInput, *gameInputOld, &win32State);
 
             if (paused) {
-
                 win32AudioBufferToggleStop(&win32AudioBuffer);
                 continue;
-
             } else {
                 win32AudioBufferTogglePlay(&win32AudioBuffer);
             }
 
             // After processing our messages, we can now (in our "while running = true"
-            // loop) do what we like! WM_SIZE and WM_PAINT get called as soon as the
-            // application has been launched, so we'll have built the window and 
-            // declared viewport height, width etc by this point.
+            // loop) do what we like..!
 
             /*
              * Controller input stuff
@@ -429,50 +438,41 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 uint8 ourControllerIndex = ((uint8)controllerIndex + 1);
 
-                GameControllerInput *gameController     = &gameInput->controllers[ourControllerIndex];
-                GameControllerInput *gameControllerOld  = &gameInputOld->controllers[ourControllerIndex];
+                GameControllerInput *gameController = &gameInput->controllers[ourControllerIndex];
 
                 gameController->isConnected = true;
 
                 win32ProcessXInputControllerButton(&gameController->dPadUp,
-                    &gameControllerOld->dPadUp,
-                    gamepad,
-                    XINPUT_GAMEPAD_DPAD_UP);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_DPAD_UP);
 
                 win32ProcessXInputControllerButton(&gameController->dPadDown,
-                    &gameControllerOld->dPadDown,
-                    gamepad,
-                    XINPUT_GAMEPAD_DPAD_DOWN);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_DPAD_DOWN);
 
                 win32ProcessXInputControllerButton(&gameController->dPadLeft,
-                    &gameControllerOld->dPadLeft,
-                    gamepad,
-                    XINPUT_GAMEPAD_DPAD_LEFT);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_DPAD_LEFT);
 
                 win32ProcessXInputControllerButton(&gameController->dPadRight,
-                    &gameControllerOld->dPadRight,
-                    gamepad,
-                    XINPUT_GAMEPAD_DPAD_RIGHT);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_DPAD_RIGHT);
 
                 win32ProcessXInputControllerButton(&gameController->up,
-                    &gameControllerOld->up,
-                    gamepad,
-                    XINPUT_GAMEPAD_Y);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_Y);
 
                 win32ProcessXInputControllerButton(&gameController->down,
-                    &gameControllerOld->down,
-                    gamepad,
-                    XINPUT_GAMEPAD_A);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_A);
 
                 win32ProcessXInputControllerButton(&gameController->right,
-                    &gameControllerOld->right,
-                    gamepad,
-                    XINPUT_GAMEPAD_B);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_B);
 
                 win32ProcessXInputControllerButton(&gameController->left,
-                    &gameControllerOld->left,
-                    gamepad,
-                    XINPUT_GAMEPAD_X);
+                                                    gamepad,
+                                                    XINPUT_GAMEPAD_X);
 
                 // Left controller thumbstick support...
                 // Normalise the axis values so the values are between -1.0 and 1.0
@@ -513,11 +513,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         gameController->isAnalog = false;
                     }
                 }
-
-                // Swap the controller intances
-                GameControllerInput *temp = gameController;
-                gameController = gameControllerOld;
-                gameControllerOld = temp;
 
             } // controller loop
 
@@ -643,7 +638,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #endif
 
             // Create the game's audio buffer
-             gameCode.gameInitAudioBuffer(&memory,
+            gameCode.gameInitAudioBuffer(&thread,
+                                            &memory,
                                             &gameAudioBuffer,
                                             lockSizeInBytes,
                                             win32AudioBuffer.bytesPerSample,
@@ -651,7 +647,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Create the game's frame buffer
             GameFrameBuffer gameFrameBuffer = {0};
-            gameCode.gameInitFrameBuffer(&gameFrameBuffer,
+            gameCode.gameInitFrameBuffer(&thread,
+                                            &gameFrameBuffer,
                                             win32FrameBuffer.height,
                                             win32FrameBuffer.width,
                                             win32FrameBuffer.bytesPerPixel,
@@ -659,14 +656,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                             win32FrameBuffer.memory);
 
             // Main game code.
-            gameCode.gameUpdate(&memory, &gameFrameBuffer, &gameAudioBuffer, GameInputInstances, &controllerCounts);
+            gameCode.gameUpdate(&thread, &memory, &gameFrameBuffer, &gameAudioBuffer, GameInputInstances, &controllerCounts);
 
             win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
 
+            // Take a copy of this frame's controller inputs
+            gameInputOld->mouse = gameInput->mouse;
+            gameInputOld->controllers[0] = gameInput->controllers[0];
+
             // How long did this game loop (frame) take?
+            // (excluding the time it takes Windows to render the graphics)
 
             // Performance-counter frequency for MS/frame & FPS
             LARGE_INTEGER gameLoopTime = win32GetTime();
@@ -778,17 +780,17 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
 
         case WM_DESTROY: {
             // @TODO(JM) Handle as an error. Recreate window?
-            running = false;
+            running = FALSE;
         } break;
 
         // Called when the user requests to close the window.
         case WM_CLOSE: {
             // @TODO(JM) Display "are you sure" message to user?
-            running = false;
+            running = FALSE;
         } break;
 
         case WM_QUIT: {
-            running = false;
+            running = FALSE;
         } break;
 
         // Called when the user makes the window active (e.g. by tabbing to it).
@@ -820,8 +822,6 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         case WM_KEYUP:
         case WM_SYSKEYDOWN: 
         case WM_SYSKEYUP: {
-            // This shouldnt happen. assert during development to make sure.
-            assert(!"Windows has called this directtly and not throug PeekMessage");
         } break;
 
         // The standard request from GetMessage().
@@ -855,7 +855,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param int                   height      The height of the window's viewport
  * 
  */
-internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height)
+internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height)
 {
 
     // buffer->foo is a dereferencing shorthand for (*buffer).foo
@@ -887,7 +887,7 @@ internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, 
 
     // Now allocate the memory using VirtualAlloc to the size of the previously
     // calculated bitmapMemorySizeInBytes
-    buffer->memory = platformAllocateMemory(0, bitmapMemorySizeInBytes);
+    buffer->memory = platformAllocateMemory(thread, 0, bitmapMemorySizeInBytes);
 
     // Calculate the width in bytes per row.
     buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
@@ -994,8 +994,8 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
     // so that when we create the secondary buffer that we actually write 
     // to, the sound card is already in the correct format. This is the only
     // purpose of the primary buffer.
-    DSBUFFERDESC primarySoundBufferDesc;
-    ZeroMemory(&primarySoundBufferDesc, sizeof(DSBUFFERDESC));
+    DSBUFFERDESC primarySoundBufferDesc = {0};
+    SecureZeroMemory(&primarySoundBufferDesc, sizeof(DSBUFFERDESC));
 
     primarySoundBufferDesc.dwSize            = sizeof(primarySoundBufferDesc);
     primarySoundBufferDesc.dwFlags           = DSBCAPS_PRIMARYBUFFER;
@@ -1040,8 +1040,8 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
 
     // Create the secondary buffer. This is the buffer we'll use to actually
     // write bytes to.
-    DSBUFFERDESC secondarySoundBufferDesc;
-    ZeroMemory(&secondarySoundBufferDesc, sizeof(DSBUFFERDESC));
+    DSBUFFERDESC secondarySoundBufferDesc = { 0 };
+    SecureZeroMemory(&secondarySoundBufferDesc, sizeof(DSBUFFERDESC));
 
     secondarySoundBufferDesc.dwSize              = sizeof(secondarySoundBufferDesc);
     secondarySoundBufferDesc.dwFlags             = 0;
@@ -1187,8 +1187,13 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, Win32State *win32State)
+internal_func void win32ProcessMessages(HWND window,
+                                        GameInput *gameInput,
+                                        GameInput oldGameInput,
+                                        Win32State *win32State)
 {
+    MSG message = {0};
+
     // Win32 Message loop. Retrieves all messages (from the calling thread's message queue)
     // that are sent to the window. E.g. clicks and key inputs.
     while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
@@ -1202,122 +1207,113 @@ internal_func void win32ProcessMessages(HWND window, MSG message, GameController
                 running = false;
             } break;
 
-            // All keyboard input messages
-            case WM_KEYDOWN:
-            case WM_KEYUP:
-            case WM_SYSKEYDOWN:
-            case WM_SYSKEYUP: {
+            // Mouse left click
+            case WM_LBUTTONDOWN:
+            {
+                GameControllerBtnState state = {0};
+                state.endedDown = TRUE;
+                gameInput->mouse.leftClick = state;
+            } break;
 
-                // Which key was pressed?
-                WPARAM vkCode = message.wParam;
+            case WM_LBUTTONUP:
+            {
+                GameControllerBtnState state = {0};
+                state.endedDown = FALSE;
+                gameInput->mouse.leftClick = state;
+            } break;
+
+            case WM_RBUTTONDOWN:
+            case WM_RBUTTONUP: {
+            } break;
+
+            case WM_KEYDOWN:
+            case WM_SYSKEYDOWN:
+            case WM_KEYUP:
+            case WM_SYSKEYUP:{
 
                 /*
                  * lParam bitmask. Written from right to left
                  *
+                 * @see https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
+                 *
                  *  First two bytes              Second two bytes
-                 * |-------------------------|  |---------------|
+                 * |-------------------------|  |----------------|
                  * 31 30 29 28-25 24 23-16      15-0
-                 * 0  0  0  0000  1  01001011   0000000000000001
+                 * 0  0  0  0000  1  01001011   00000000 00000001
                 */
 
-                // lParam is 4-bytes wide.
-                uint32 *lParamBitmask = (uint32 *)&message.lParam;
+                // Which key was pressed?
+                WPARAM vkCode = message.wParam;
 
-                // Fetch the second two bytes (bits 0-15)
-                // @BUG(JM) this count is wrong
-                uint16 *repeatCount = (uint16 *)&message.lParam;
-                repeatCount = (repeatCount + 1);
+                // Was the button down or up?
+                BOOL keyDown = FALSE;
 
-                bool32 isDown = ((*lParamBitmask & (1 << 31)) == 0); // 1 if the key is down
-                bool32 wasDown = ((*lParamBitmask & (1 << 30)) != 0); // 1 if the key was down
-
-#ifdef HANDMADE_DEBUG
-                if (vkCode == 'W') {
-                    char buff[100] = {0};
-                    sprintf_s(buff, sizeof(buff), "is down? %i\n", isDown);
-                    OutputDebugStringA(buff);
-
-                    memset(buff, 0, sizeof(buff));
-                    sprintf_s(buff, sizeof(buff), "was down? %i\n", wasDown);
-                    OutputDebugStringA(buff);
-
-                    memset(buff, 0, sizeof(buff));
-                    sprintf_s(buff, sizeof(buff), "repeat count %i\n", *repeatCount);
-                    OutputDebugStringA(buff);
+                if (0 == (message.lParam & ((uint64)1 << 31))){
+                    keyDown = TRUE;
                 }
-#endif // HANDMADE_DEBUG
+
+                GameControllerBtnState state = { 0 };
+
+                if (keyDown) {
+                    state.endedDown = TRUE;
+                } else {
+                    state.endedDown = FALSE;
+                }
 
                 switch (vkCode) {
+                    case 'W': {
+                        state.wasDown = oldGameInput.controllers[0].dPadUp.endedDown;
+                        gameInput->controllers[0].dPadUp = state;
+                    } break;
+                    case 'A': {
+                        state.wasDown = oldGameInput.controllers[0].dPadLeft.endedDown;
+                        gameInput->controllers[0].dPadLeft = state;
+                    } break;
+                    case 'S': {
+                        state.wasDown = oldGameInput.controllers[0].dPadDown.endedDown;
+                        gameInput->controllers[0].dPadDown = state;
+                    } break;
+                    case 'D': {
+                        state.wasDown = oldGameInput.controllers[0].dPadRight.endedDown;
+                        gameInput->controllers[0].dPadRight = state;
+                    } break;
+                    case 'Q': {
+                        state.wasDown = oldGameInput.controllers[0].shoulderL1.endedDown;
+                        gameInput->controllers[0].shoulderL1 = state;
+                    } break;
+                    case 'E': {
+                        state.wasDown = oldGameInput.controllers[0].shoulderR1.endedDown;
+                        gameInput->controllers[0].shoulderR1 = state;
+                    } break;
 
 #if HANDMADE_LOCAL_BUILD
                     // Playback recording/looping
                     case 'L': {
-                        if (isDown) {
-                            if (0 == win32State->inputRecording) {
-                                win32EndRecordingPlayback(win32State);
-                                win32BeginInputRecording(win32State);
-                            } else {
-                                win32EndInputRecording(win32State);
-                                win32BeginRecordingPlayback(win32State);
+                        if (keyDown) {
+                            if (0 == win32State->inputPlayback){ // Lock the developer into the loop. Have to rebuild to exit.
+                                if (!win32State->inputRecording) {
+                                    win32BeginInputRecording(win32State);
+                                }
+                                else {
+                                    win32EndInputRecording(win32State);
+                                    win32BeginRecordingPlayback(win32State);
+                                }
                             }
                         }
                     } break;
-#endif
 
-                    case 'P': {
-                        if (isDown) {
+                    case 'P':{
+                        if (keyDown) {
                             if (paused) {
                                 paused = false;
-                            }else {
+                            } else {
                                 paused = true;
                             }
                         }
                     } break;
-
-                    case 'W': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->dPadUp = state;
-                    } break;
-
-                    case 'A': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->dPadLeft = state;
-                    } break;
-
-                    case 'S': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->dPadDown = state;
-                    } break;
-
-                    case 'D': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->dPadRight = state;
-                    } break;
-
-                    case 'Q': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->shoulderL1 = state;
-                    } break;
-
-                    case 'E': {
-                        GameControllerBtnState state = {0};
-                        state.halfTransitionCount++;
-                        state.endedDown = isDown;
-                        keyboard->shoulderR1 = state;
-                    } break;
+#endif
                 }
-
-            } break;
+            }
 
             // The standard request from GetMessage().
             default: {
@@ -1350,15 +1346,11 @@ internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, con
     return ((float32)(endCounter.QuadPart - startCounter.QuadPart) / (float32)countersPerSecond);
 }
 
-internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *newState,
-                                                        GameControllerBtnState *oldState,
+internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit)
 {
-    if ((*newState).endedDown != (*oldState).endedDown) {
-        (*newState).halfTransitionCount = ((*newState).halfTransitionCount + 1);
-    }
-    (*newState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
+    (*currentState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
 }
 
 internal_func uint32 win32TruncateToUint32Safe(uint64 value)
@@ -1416,8 +1408,8 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
     wchar_t gameCopyDLLFileName[20] = L"Game_copy.dll";
     wchar_t gameCopyDLLFilePath[276] = {0};
 
-    win32ConcatStrings(absPath, MAX_PATH, gameDLLFileName, 20, gameDLLFilePath, 276);
-    win32ConcatStrings(absPath, MAX_PATH, gameCopyDLLFileName, 20, gameCopyDLLFilePath, 276);
+    utilConcatStringsW(absPath, MAX_PATH, gameDLLFileName, 20, gameDLLFilePath, 276);
+    utilConcatStringsW(absPath, MAX_PATH, gameCopyDLLFileName, 20, gameCopyDLLFilePath, 276);
 
     BOOL loadGameCode = false;
 
@@ -1577,7 +1569,7 @@ internal_func void win32GetAbsolutePath(wchar_t *path)
 
 internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
 {
-    WIN32_FILE_ATTRIBUTE_DATA fileData;
+    WIN32_FILE_ATTRIBUTE_DATA fileData = { 0 };
 
     BOOL res = GetFileAttributesExW(filename, GetFileExInfoStandard, &fileData);
 
@@ -1588,80 +1580,22 @@ internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
     return fileData.ftLastWriteTime;
 }
 
-internal_func void win32ConcatStrings(wchar_t *source1,
-                                       uint source1Length,
-                                       wchar_t *source2,
-                                       uint source2Length,
-                                       wchar_t *dest,
-                                       uint destLength)
+internal_func void win32GetMousePosition(HWND window, GameMouseInput *mouseInput)
 {
-    uint runningIndex = 0;
-    for (uint i = 0; i < source1Length; i++) {
-        if (source1[i] == '\0') {
-            break;
-        }
-        if (runningIndex >= (destLength-1)) {
-            break;
-        }
-        dest[i] = source1[i];
-        runningIndex++;
+    if (paused){
+        return;
     }
 
-    for (uint i = 0; i < source2Length; i++) {
-        if (source2[i] == '\0') {
-            break;
-        }
-        if (runningIndex >= (destLength - 1)) {
-            break;
-        }
-        dest[runningIndex] = source2[i];
-        runningIndex++;
-    }
-}
+    // Get the mouse inputs from the Windows API
+    POINT point = { 0 };
 
-internal_func void win32ConcatStringsA(char *source1,
-                                       uint source1Length,
-                                       char *source2,
-                                       uint source2Length,
-                                       char *dest,
-                                       uint destLength)
-{
-    uint runningIndex = 0;
-    for (uint i = 0; i < source1Length; i++) {
-        if (source1[i] == '\0') {
-            break;
-        }
-        if (runningIndex >= (destLength - 1)) {
-            break;
-        }
-        dest[i] = source1[i];
-        runningIndex++;
-    }
+    mouseInput->isConnected = GetCursorPos(&point);
 
-    for (uint i = 0; i < source2Length; i++) {
-        if (source2[i] == '\0') {
-            break;
-        }
-        if (runningIndex >= (destLength - 1)) {
-            break;
-        }
-        dest[runningIndex] = source2[i];
-        runningIndex++;
-    }
-}
+    if (mouseInput->isConnected) {
 
-internal_func void win32WideChartoChar(wchar_t *wideCharArr,
-                                       uint wideCharLength,
-                                       char *charArr,
-                                       uint charLength)
-{
-    for (uint x = 0; x < wideCharLength; x++) {
-        charArr[x] = (char)wideCharArr[x];
-        if ('\0' == wideCharArr[x]) {
-            break;
-        }
-        if (x >= (charLength - 1)) {
-            break;
+        if (ScreenToClient(window, &point)) {
+            mouseInput->position.x = point.x;
+            mouseInput->position.y = point.y;
         }
     }
 }
@@ -1670,96 +1604,49 @@ internal_func void win32WideChartoChar(wchar_t *wideCharArr,
 
 internal_func void win32BeginInputRecording(Win32State *win32State)
 {
-    char fileName[20] = "recorded_input.hmi"; // .hmi = "handmade input"
-    char fullFilePathA[MAX_PATH] = { 0 };
-
-    win32ConcatStringsA(win32State->absPathA, MAX_PATH, fileName, 20, fullFilePathA, MAX_PATH);
-
-    // Open the file for writing.
-    HANDLE handle = CreateFileA(fullFilePathA, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    if (INVALID_HANDLE_VALUE == handle) {
-        assert(!"Cannot read file");
-    }
-
-    win32State->recordingFileHandle = handle;
+    CopyMemory(win32State->gameMemoryRecordedState, win32State->gameMemory, win32State->gameMemorySize);
     win32State->inputRecording = 1;
-
-    // Write all of our game memory (as a snapshot)
-    DWORD bytesWritten;
-    BOOL res = WriteFile(win32State->recordingFileHandle, win32State->gameMemory, win32State->gameMemorySize, &bytesWritten, 0);
-
-    if (!res) {
-        assert(!"Cannot write game memory to file");
-    }
 }
 
 internal_func void win32EndInputRecording(Win32State *win32State)
 {
-    CloseHandle(win32State->recordingFileHandle);
     win32State->inputRecording = 0;
 }
 
 internal_func void win32RecordInput(Win32State *win32State, GameInput *gameInput)
 {
-    DWORD bytesWritten;
-    BOOL res = WriteFile(win32State->recordingFileHandle, gameInput, sizeof(*gameInput), &bytesWritten, 0);
-
-    if (!res) {
-        assert(!"Cannot write to file");
+    uint64 offset = 0;
+    if (win32State->recordingWriteFrameIndex >= 1) {
+        offset = ((sizeof(*gameInput)) * win32State->recordingWriteFrameIndex);
     }
+    CopyMemory(((CHAR*)win32State->gameMemoryRecordedInput + offset), gameInput, sizeof(*gameInput));
+    win32State->recordingWriteFrameIndex += 1;
 }
 
 internal_func void win32BeginRecordingPlayback(Win32State *win32State)
 {
-    char fileName[20] = "recorded_input.hmi";
-    char fullFilePathA[MAX_PATH] = { 0 };
-
-    win32ConcatStringsA(win32State->absPathA, MAX_PATH, fileName, 20, fullFilePathA, MAX_PATH);
-
-    // Open the file for reading
-    HANDLE handle = CreateFileA(fullFilePathA, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
-
-    if (INVALID_HANDLE_VALUE == handle) {
-        assert(!"Cannot read file");
-    }
-
-    win32State->playbackFileHandle = handle;
+    // Read out the copy of the game's memory from the recorded memory block.
+    CopyMemory(win32State->gameMemory, win32State->gameMemoryRecordedState, win32State->gameMemorySize);
     win32State->inputPlayback = 1;
-
-    // Read the first n number bytes from the playback file handle. The number of bytes
-    // being the game memory bytes size
-    DWORD bytesRead = 0;
-    BOOL res = ReadFile(win32State->playbackFileHandle, win32State->gameMemory, win32State->gameMemorySize, &bytesRead, NULL);
-
-    if (!res) {
-        assert(!"Cannot read file");
-    }
 }
 
 internal_func void win32EndRecordingPlayback(Win32State *win32State)
 {
-    CloseHandle(win32State->playbackFileHandle);
+    win32State->recordingReadFrameIndex = 0;
     win32State->inputPlayback = 0;
 }
 
 internal_func void win32PlaybackInput(Win32State *win32State, GameInput *gameInput)
 {
-    DWORD bytesRead = 0;
+    uint64 offset = 0;
+    if (win32State->recordingReadFrameIndex >= 1) {
+        offset = ((sizeof(*gameInput)) * win32State->recordingReadFrameIndex);
+    }
+    CopyMemory(gameInput, ((CHAR*)win32State->gameMemoryRecordedInput + offset), sizeof(*gameInput));
+    win32State->recordingReadFrameIndex += 1;
 
-    // Read the next 520 bytes from the playback file handle. (520 bytes being the size of
-    // gameInput at the time of writing ) When an application calls CreateFile to open
-    // a file for the first time, Windows places the file pointer at the beginning of the file.
-    // As bytes are read from or written to the file, Windows advances the file pointer the
-    // number of bytes read. Therefore, on each loop, the next set of 520 bytes are read and
-    // so on, until there are no more bytes to read from the input recording.
-    BOOL res = ReadFile(win32State->playbackFileHandle, gameInput, sizeof(*gameInput), &bytesRead, NULL);
-
-    // When res is TRUE and the number of bytes read is zero, this indicates we have reached
-    // the end of the file
-    if (res && (0 == bytesRead)) {
-
-        // We have read all the bytes from the file, loop back to the start...
+    if (win32State->recordingReadFrameIndex == win32State->recordingWriteFrameIndex) {
+        // We have read all the bytes from the recorded input, loop back to the start...
         win32EndRecordingPlayback(win32State);
         win32BeginRecordingPlayback(win32State);
     }

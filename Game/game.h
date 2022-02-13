@@ -5,11 +5,14 @@
 
 #if HANDMADE_LOCAL_BUILD
 
-// If assertion isn't true, write to the null pointer and crash the program.
-#define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
-// #define HANDMADE_DEBUG
-// #define HANDMADE_DEBUG_FPS
-// #define HANDMADE_DEBUG_AUDIO
+    // Flags:
+
+    // #define HANDMADE_DEBUG
+    // #define HANDMADE_DEBUG_FPS
+    // #define HANDMADE_DEBUG_AUDIO
+
+    // If assertion isn't true, write to the null pointer and crash the program.
+    #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
 
 #else
     #define assert(expression)
@@ -30,8 +33,14 @@
 #define MAX_CONTROLLERS 5
 
 //====================================================
+//====================================================
 // Services that the platform layer must provide
-//=====================================================
+//====================================================
+//====================================================
+
+typedef struct PlatformThreadContext {
+    uint8 placeholder;
+} PlatformThreadContext;
 
  /**
   * @brief Requests the platform layer allocated @link bytes worth of memory
@@ -40,7 +49,7 @@
   * @param bytes The amount of bytes to allocate
   * @return void pointer to the blockmemory
  */
-#define PLATFORM_ALLOCATE_MEMORY(name) void *name(uint64 memoryStartAddress, uint64 memorySizeInBytes)
+#define PLATFORM_ALLOCATE_MEMORY(name) void *name(PlatformThreadContext *thread, uint64 memoryStartAddress, uint64 memorySizeInBytes)
 typedef PLATFORM_ALLOCATE_MEMORY(PlatformAllocateMemory);
 
 /**
@@ -50,7 +59,7 @@ typedef PLATFORM_ALLOCATE_MEMORY(PlatformAllocateMemory);
  *
  * @return void
 */
-#define PLATFORM_FREE_MEMORY(name) void name(void *address)
+#define PLATFORM_FREE_MEMORY(name) void name(PlatformThreadContext *thread, void *address)
 typedef PLATFORM_FREE_MEMORY(PlatformFreeMemory);
 
 /*
@@ -62,7 +71,7 @@ typedef PLATFORM_FREE_MEMORY(PlatformFreeMemory);
  *
  * @return void
  */
-#define PLATFORM_CONTROLLER_VIBRATE(name) void name(uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed)
+#define PLATFORM_CONTROLLER_VIBRATE(name) void name(PlatformThreadContext *thread, uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed)
 typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 
 /*
@@ -93,26 +102,28 @@ void platformLog(char *format, ...);
      *
      * @note call DEBUG_platformFreeFileMemory in a subsequent call.
      */
-    #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(char *filename)
+    #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, char *filename)
     typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
 
     /*
      * Free file memory read from DEBUG_platformReadEntireFile
      */
-    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(DEBUG_file *file)
+    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(PlatformThreadContext *thread, DEBUG_file *file)
     typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
 
     /*
      * Write bytes into a new file
      */
-    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(char *filename, void *memory, uint32 memorySizeInBytes)
+    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(PlatformThreadContext *thread, char *filename, void *memory, uint32 memorySizeInBytes)
     typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
 
 #endif
 
 //====================================================
+//====================================================
 // End platform layer services
 //=====================================================
+//====================================================
 
 /*
  * Struct for the screen buffer
@@ -198,8 +209,8 @@ typedef struct ControllerCounts
 
 typedef struct GameControllerBtnState
 {
-    bool32 halfTransitionCount;
-    bool32 endedDown;
+    BOOL endedDown;
+    BOOL wasDown;
 } GameControllerBtnState;
 
 typedef struct GameControllerThumbstickState
@@ -246,8 +257,19 @@ typedef struct GameControllerInput
 
 } GameControllerInput;
 
+typedef struct GameMouseInput {
+    BOOL isConnected;
+    GameControllerBtnState leftClick;
+    GameControllerBtnState rightClick;
+    struct position {
+        LONG x;
+        LONG y;
+    } position;
+} GameMouseInput;
+
 typedef struct GameInput
 {
+    GameMouseInput mouse;
     GameControllerInput controllers[MAX_CONTROLLERS];
 } GameInput;
 
@@ -271,25 +293,25 @@ enum jumpDirection { JUMP_UP, JUMP_DOWN };
 typedef struct GameState
 {
     uint32 bgColour;
-    struct player1 {
-        int32 posX = 0;
-        int32 posY = 0;
-        uint16 height = 0;
-        uint16 width = 0;
-        uint8 movementSpeed = 0;
 
-        bool8 jumping = 0;
-        float32 jumpDuration = 0.0f;
-        float32 totalJumpMovement = 0.0f;
-        float32 jumpRunningFrameCtr = 0.0f;
-        float32 jumpDirection = 0;
-        int32 jumpStartPos = 0;
+    struct player1 {
+        int32 posX;
+        int32 posY;
+        uint16 height;
+        uint16 width;
+        uint8 movementSpeed;
+
+        bool8 jumping;
+        float32 jumpDuration;
+        float32 totalJumpMovement;
+        float32 jumpRunningFrameCtr;
+        float32 jumpDirection;
+        int32 jumpStartPos;
         
     } player1;
 
     SineWave sineWave;
-    uint16 sineWaveHertz[5] = { 60, 100, 200, 300, 400 };
-    int16 sineWaveHertzPos = 2;
+
 } GameState;
 
 typedef struct GameMemory
@@ -314,6 +336,11 @@ typedef struct GameMemory
      */
     uint64 transientStorageSizeInBytes;
 
+#if HANDMADE_LOCAL_BUILD
+    void *recordingStorageGameState;
+    void *recordingStorageInput;
+#endif
+
     /*
      * Flag to set whether or not our game memory has had its initial fill of data.
      */
@@ -321,6 +348,8 @@ typedef struct GameMemory
 
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
+
+    // @NOTE(JM) Move this??
     PlarformControllerVibrate *platformControllerVibrate;
 
 #if HANDMADE_LOCAL_BUILD
@@ -330,6 +359,24 @@ typedef struct GameMemory
 #endif
 
 } GameMemory;
+
+internal_func void writeRectangle(GameFrameBuffer* buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, uint32 hexColour);
+
+internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
+
+internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
+
+internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller);
+
+internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffer *audioBuffer);
+
+//====================================================
+//====================================================
+// Functions that the game layer exposes to the platform
+// layer. These functions are externally exposed from
+// within the DLL
+//====================================================
+//====================================================
 
 /**
  * @brief Main game loop update method
@@ -342,7 +389,8 @@ typedef struct GameMemory
  * 
  * @return void
 */
-#define GAME_UPDATE(name) void name(GameMemory *memory, \
+#define GAME_UPDATE(name) void name(PlatformThreadContext *thread, \
+                                    GameMemory *memory, \
                                     GameFrameBuffer *frameBuffer, \
                                     GameAudioBuffer *audioBuffer, \
                                     GameInput inputInstances[], \
@@ -362,12 +410,13 @@ GAME_UPDATE(gameUpdateStub) { return; }
  *
  * @return GameFrameBuffer Pointer to the GameFrameBuffer struct
 */
-#define GAME_INIT_FRAME_BUFFER(name) GameFrameBuffer* name(GameFrameBuffer *frameBuffer, \
-                                                                            uint32 height, \
-                                                                            uint32 width, \
-                                                                            uint16 bytesPerPixel, \
-                                                                            uint32 byteWidthPerRow, \
-                                                                            void *memory)
+#define GAME_INIT_FRAME_BUFFER(name) GameFrameBuffer* name(PlatformThreadContext *thread, \
+                                                            GameFrameBuffer *frameBuffer, \
+                                                            uint32 height, \
+                                                            uint32 width, \
+                                                            uint16 bytesPerPixel, \
+                                                            uint32 byteWidthPerRow, \
+                                                            void *memory)
 typedef GAME_INIT_FRAME_BUFFER(GameInitFrameBuffer);
 GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) { return 0; }
 
@@ -381,25 +430,14 @@ GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) { return 0; }
  * 
  * @return GameAudioBuffer Pointer to the GameAudioBuffer struct
 */
-#define GAME_INIT_AUDIO_BUFFER(name) GameAudioBuffer* name(GameMemory *memory, \
+#define GAME_INIT_AUDIO_BUFFER(name) GameAudioBuffer* name(PlatformThreadContext *thread, \
+                                                            GameMemory *memory, \
                                                             GameAudioBuffer *audioBuffer, \
                                                             uint32 noOfBytesToWrite, \
                                                             uint8 bytesPerSample, \
                                                             uint64 platformBufferSizeInBytes)
 typedef GAME_INIT_AUDIO_BUFFER(GameInitAudioBuffer);
 GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
-
-internal_func void writeRectangle(GameFrameBuffer *buffer, uint32 hexColour, uint64 height, uint64 width, uint64 yOffset, uint64 xOffset);
-
-internal_func void frameBufferWriteBackground(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
-
-internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
-
-internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
-
-internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller);
-
-internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffer *audioBuffer);
 
 /**
  * Struct to assign pointers to internal game code functions
@@ -412,5 +450,10 @@ typedef struct GameCode {
     GameInitAudioBuffer *gameInitAudioBuffer;
 } GameCode;
 
+//====================================================
+//====================================================
+// End exposed game layer functions
+//====================================================
+//====================================================
 
 #endif

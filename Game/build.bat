@@ -1,10 +1,21 @@
 @echo off
 
 REM =========================================================================================
+REM 
 REM You need to set the shell environment by running shell_x64.bat or shell_x86.bat once per
 REM shell before running this build script.
+REM 
 REM Usage: build.bat <Configuration> <Platform>
 REM E.g. build.bat Release x86
+REM
+REM To view the build options Visual Studio is using:
+REM 
+REM Options > Projects and Solutions > Build and Run > MSBuild project build output verbosity.
+REM 
+REM Select "Detailed"
+REM 
+REM You'll then see the flsgs used within the Build dropdown of the Output Window
+REM 
 REM =========================================================================================
 
 IF [%1]==[] GOTO usage

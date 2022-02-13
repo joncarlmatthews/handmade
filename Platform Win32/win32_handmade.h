@@ -106,11 +106,15 @@ typedef struct Win32State
     uint64 gameMemorySize;
     void *gameMemory;
 
-    HANDLE recordingFileHandle;
+#if HANDMADE_LOCAL_BUILD
+    void *gameMemoryRecordedState;
+    void *gameMemoryRecordedInput;
+    uint64 recordingWriteFrameIndex;
+    uint64 recordingReadFrameIndex;
     bool8 inputRecording;
-
-    HANDLE playbackFileHandle;
     bool8 inputPlayback;
+#endif
+
 } Win32State;
 
 internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
@@ -132,7 +136,7 @@ internal_func float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, co
  */
 internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
 
-internal_func void win32InitFrameBuffer(Win32FrameBuffer *buffer, uint32 width, int32 height);
+internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height);
 
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32FrameBuffer buffer, uint32 width, uint32 height);
 
@@ -156,12 +160,12 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
                                             DWORD lockSizeInBytes,
                                             GameAudioBuffer *audioBuffer);
 
-internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *newState,
-                                                        GameControllerBtnState *oldState,
+internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit);
 
-internal_func void win32ProcessMessages(HWND window, MSG message, GameControllerInput *keyboard, Win32State *win32State);
+
+internal_func void win32ProcessMessages(HWND window, GameInput *gameInput, GameInput oldGameInput, Win32State *win32State);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
@@ -171,11 +175,7 @@ internal_func uint32 win32TruncateToUint32Safe(uint64 value);
 
 internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
 
-internal_func void win32ConcatStrings(wchar_t *source1, uint source1Length, wchar_t *source2, uint source2Length, wchar_t *dest, uint destLength);
-
-internal_func void win32ConcatStringsA(char *source1, uint source1Length, char *source2, uint source2Length, char *dest, uint destLength);
-
-internal_func void win32WideChartoChar(wchar_t *wideCharArr, uint wideCharLength, char *charArr, uint charLength);
+internal_func void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 
 #if HANDMADE_LOCAL_BUILD
 
