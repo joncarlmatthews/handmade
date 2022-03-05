@@ -8,7 +8,9 @@
     // Flags:
 
     // #define HANDMADE_DEBUG
-    // #define HANDMADE_DEBUG_FPS
+    //#define HANDMADE_DEBUG_FPS
+    //#define HANDMADE_DEBUG_CLOCKCYCLES
+
     // #define HANDMADE_DEBUG_AUDIO
 
     // If assertion isn't true, write to the null pointer and crash the program.
@@ -290,10 +292,15 @@ typedef struct SineWave
 
 enum jumpDirection { JUMP_UP, JUMP_DOWN };
 
+typedef struct Colour {
+    float32 r;
+    float32 g;
+    float32 b;
+    float32 a;
+} Colour;
+
 typedef struct GameState
 {
-    uint32 bgColour;
-
     struct player1 {
         int32 posX;
         int32 posY;
@@ -360,7 +367,7 @@ typedef struct GameMemory
 
 } GameMemory;
 
-internal_func void writeRectangle(GameFrameBuffer* buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, uint32 hexColour);
+internal_func void writeRectangle(GameFrameBuffer* buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, Colour colour);
 
 internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
 

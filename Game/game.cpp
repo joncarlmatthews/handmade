@@ -16,11 +16,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-        gameState->bgColour = 0x000066;
-        gameState->player1.height = 25;
-        gameState->player1.width = 25;
+        gameState->player1.height = 30;
+        gameState->player1.width = 30;
         gameState->player1.totalJumpMovement = 15.0f;
-        gameState->player1.movementSpeed = 20;
+        gameState->player1.movementSpeed = 1;
 
         gameState->sineWave = { 0 };
 
@@ -42,6 +41,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
     */
 
+    // Which controller has the user selected as the main controller?
+    uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
+
+    controllerHandlePlayer(gameState, frameBuffer, audioBuffer, inputInstances->controllers[userSelectedMainController]);
+
     /**
      * Audio stuff...
      */
@@ -51,25 +55,49 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 #endif // HANDMADE_DEBUG_AUDIO
    
 
-    // Which controller has the user selected as the main controller?
-    uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
-
-    controllerHandlePlayer(gameState, frameBuffer, audioBuffer, inputInstances->controllers[userSelectedMainController]);
-
     /**
      * Write the frame buffer...
      * 
      */
 
     // Solid background
-    writeRectangle(frameBuffer, 0, 0, frameBuffer->width, frameBuffer->height, gameState->bgColour);
+    writeRectangle(frameBuffer, 0, 0, frameBuffer->width, frameBuffer->height, { 0.8f , 0.0f, 0.8f });
+
+    // Tilemap
+    uint32 tileMap[9][16] = {
+        {1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 0, 0, 0},
+        {1, 0, 0, 0,  0, 0, 0, 1,  0, 1, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1},
+    };
+
+    uint16 tileHeight = 60;
+    uint16 tileWidth = 60;
+
+    for (uint32 row = 0; row < 9; row++){
+        for (uint32 column = 0; column < 16; column++){
+            uint32 tileState = tileMap[row][column];
+            Colour tileColour = { 0.85f, 0.85f, 0.85f };
+            if (tileState) {
+                tileColour = { 0.349f, 0.349f, 0.349f };
+            }
+            uint32 tileXOffset = (tileWidth * column);
+            uint32 tileYOffset = (tileHeight * row);
+            writeRectangle(frameBuffer, tileXOffset, tileYOffset, tileWidth, tileHeight, tileColour);
+        }
+    }
 
     // Player
-    frameBufferWritePlayer(gameState, frameBuffer, audioBuffer);
+    writeRectangle(frameBuffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, { 0.0f, 0.0f, 0.4f });
 
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
-        writeRectangle(frameBuffer, inputInstances->mouse.position.x, inputInstances->mouse.position.y, 50, 50, 0xff00ff);
+        //writeRectangle(frameBuffer, inputInstances->mouse.position.x, inputInstances->mouse.position.y, 50, 50, 0xff00ff);
     }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -126,10 +154,6 @@ internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffe
 
 internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller)
 {
-    if (controller.up.endedDown) {
-        gameState->bgColour = 0xffffff;
-    }
-
     // Temp jump code
     if ((controller.down.endedDown) && (0 == gameState->player1.jumping)) {
         gameState->player1.jumping = 1;
@@ -205,7 +229,6 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
     }
 
     // Safe bounds checking
-#if 0
     if (gameState->player1.posY < 0) {
         gameState->player1.posY = 0;
     }
@@ -218,12 +241,11 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
     if (gameState->player1.posX < 0) {
         gameState->player1.posX = 0;
     }
-#endif
 }
 
 internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
 {
-    writeRectangle(buffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, 0xff00ff);
+    //writeRectangle(buffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, 0xff00ff);
 }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -270,7 +292,7 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
  * and y is concerned with the screen buffer's height.
  * 
  */
-internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, uint32 hexColour)
+internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, Colour colour)
 {
     // Bounds checking
     if (xOffset >= buffer->width) {
@@ -319,6 +341,15 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 
         }
     }
 
+    // Set the colour
+    uint32 alpha    = ((uint32)(255.0f * colour.a) << 24);
+    uint32 red      = ((uint32)(255.0f * colour.r) << 16);
+    uint32 green    = ((uint32)(255.0f * colour.g) << 8);
+    uint32 blue     = ((uint32)(255.0f * colour.b) << 0);
+
+    uint32 hexColour = (alpha | red | green | blue);
+
+    // Write the memory
     uint32 *row = (uint32 *)buffer->memory;
 
     // Move down to starting row
@@ -327,10 +358,10 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 
     // Move in from left to starting position
     row = (row + xOffset);
 
-    // Down
+    // Down (rows)
     for (int64 i = 0; i < height; i++) {
 
-        // Accross
+        // Accross (columns)
         uint32 *pixel = (uint32 *)row;
         for (int64 x = 0; x < width; x++) {
             *pixel = hexColour;

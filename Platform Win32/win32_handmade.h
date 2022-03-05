@@ -3,6 +3,9 @@
 
 #include "..\Util\util.h"
 
+#define FRAME_RATE_CAP_MODE_SPIN_LOCK   0x1
+#define FRAME_RATE_CAP_MODE_SLEEP       0x2
+
 /**
  * Struct for the Win32 screen buffer
  */
@@ -16,7 +19,7 @@ typedef struct Win32FrameBuffer
 
     // 1 byte each for R, G & B and 1 byte for padding to match byte boundries (4)
     // Therefore our pixels are always 32-bits wide and are in Little Endian 
-    // memory order (backwards) 0xBBGGRRPP
+    // memory order 0xPPRRGGBB
     uint16 bytesPerPixel;
 
     // The number of bytes per row. (width * bytesPerPixel)
@@ -74,6 +77,9 @@ typedef struct Win32AudioBuffer
 } Win32AudioBuffer;
 
 typedef struct Win32FixedFrameRate {
+
+    // Sleep or spin lock.
+    uint8 capMode;
 
     // Monitor refresh rate in Hertz.
     uint8 monitorRefreshRate;
