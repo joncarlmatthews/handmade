@@ -19,7 +19,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->player1.height = 30;
         gameState->player1.width = 30;
         gameState->player1.totalJumpMovement = 15.0f;
-        gameState->player1.movementSpeed = 1;
+        gameState->player1.movementSpeed = 5;
 
         gameState->sineWave = { 0 };
 

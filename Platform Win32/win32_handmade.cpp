@@ -305,7 +305,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          * Framerate fixing.
          */
         Win32FixedFrameRate win32FixedFrameRate = {0};
-        win32FixedFrameRate.capMode = FRAME_RATE_CAP_MODE_SPIN_LOCK;
+        win32FixedFrameRate.capMode = FRAME_RATE_CAP_MODE_SLEEP;
         win32FixedFrameRate.monitorRefreshRate = 60;
         win32FixedFrameRate.gameTargetFPS = 30;
         win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
@@ -732,9 +732,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                     Sleep(msToSleepI);
 
+                    // Update the MS taken for this frame
+                    millisecondsElapsedForFrame = win32GetElapsedTimeMS(gameLoopTime, win32GetTime(), globalQPCFrequency);
+
+                    // Spin lock for any fractions of time left
+                    if (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
+                        while (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
+                            millisecondsElapsedForFrame = win32GetElapsedTimeMS(gameLoopTime, win32GetTime(), globalQPCFrequency);
+                        }
+                    }
+
                 } else {
 
-                    // Spin lock
+                    // Spin lock for full duration of time
                     #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
                         OutputDebugStringA("Entering spin lock...\n");
                     #endif
