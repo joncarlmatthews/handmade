@@ -1,8 +1,6 @@
 #ifndef HEADER_WIN32
 #define HEADER_WIN32
 
-#include "..\Util\util.h"
-
 #define FRAME_RATE_CAP_MODE_SPIN_LOCK   0x1
 #define FRAME_RATE_CAP_MODE_SLEEP       0x2
 

@@ -4,9 +4,15 @@
 // Basic types
 #include "types.h"
 
-// Common mathematical operations and transformations. Defines floor
+// Common mathematical operations and transformations.
+// Defines floor, M_PI
 // @see https://www.cplusplus.com/reference/cmath/
 #include <math.h>
+
+// Common input/output operations.
+// Defines: sprintf_s
+// @see https://www.cplusplus.com/reference/cstdio/
+#include <stdio.h>
 
 /*
  * Helper functions to translate kibibytes, mebibytes and gibibytes

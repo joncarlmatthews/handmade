@@ -5,13 +5,14 @@
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
 
-#include "..\Util\util.h" // Function signatures and basic types that are shared across the game and platform layer
+#include "..\Game\types.h" // Basic types
+#include "..\Game\util.h" // Function signatures and basic types that are shared across the game and platform layer
 #include "..\Game\game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
 // Include the definitions of the utility/helper Functions that are
 // shared across the game and platform layer
-#include "..\Util\util.cpp"
+#include "..\Game\util.cpp"
 
 // Whether or not the application is running/paused
 global_var bool8 running = TRUE;
@@ -69,6 +70,11 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
     XInputSetState(controllerIndex, &pVibration);
 }
 #if HANDMADE_LOCAL_BUILD
+
+    DEBUG_PLATFORM_LOG(DEBUG_platformLog)
+    {
+        OutputDebugStringA(buff);
+    }
 
     DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
     {
@@ -275,6 +281,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformControllerVibrate = &platformControllerVibrate;
 
 #if HANDMADE_LOCAL_BUILD
+    memory.DEBUG_platformLog = &DEBUG_platformLog;
     memory.DEBUG_platformReadEntireFile = &DEBUG_platformReadEntireFile;
     memory.DEBUG_platformWriteEntireFile = &DEBUG_platformWriteEntireFile;
     memory.DEBUG_platformFreeFileMemory = &DEBUG_platformFreeFileMemory;
@@ -573,7 +580,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     audioLatency.samplesLatent = (writePlayDifference / win32AudioBuffer.bytesPerSample);
                     audioLatency.samplesLatentAsPercentageOfBuffer = ((((float32)audioLatency.samplesLatent * 100.0f) / ((float32)win32AudioBuffer.samplesPerSecond * (float32)win32AudioBuffer.secondsWorthOfAudio)) / 100.0f);
                     audioLatency.latencyInMS = ((1000.f * win32AudioBuffer.secondsWorthOfAudio) * audioLatency.samplesLatentAsPercentageOfBuffer);
-
                    
                     // If we're opting to *not* write the entire audio buffer, calculate how much to write here...
                     if ((!gameAudioBuffer.writeEntireBuffer) && (gameAudioBuffer.minFramesWorthOfAudio >= 1)) {
@@ -677,12 +683,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
             win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
 
-            // How long did this game loop (frame) take?
+            // How long did this game loop (frame) take? (E.g. 2ms)
             LARGE_INTEGER gameLoopTime = win32GetTime();
 
             float32 millisecondsElapsedForFrame = win32GetElapsedTimeMS(netFrameTime, gameLoopTime, globalQPCFrequency);
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
+
             {
                 char output[100] = { 0 };
                 sprintf_s(output, sizeof(output),
@@ -770,12 +777,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 #endif
             }
 
-            // Set net frame time
+            // Set net frame time (E.g. 33.33ms or 16.66ms)
             netFrameTime = win32GetTime();
+            float32 netFrameTimeMS = win32GetElapsedTimeMS(gameLoopTime, netFrameTime, globalQPCFrequency);
+
+            // Set the ms per frame to the game input object so we can regulate movement speed
+            gameInput->msPerFrame = netFrameTimeMS;
 
             #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
-                float32 netFrameTimeMS = win32GetElapsedTimeMS(gameLoopTime, netFrameTime, globalQPCFrequency);
-
                 {
                     char output[100] = { 0 };
                     sprintf_s(output, sizeof(output),

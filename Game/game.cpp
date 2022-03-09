@@ -1,9 +1,29 @@
-#include <math.h> // For Sin
+// Wide-strings.
+// Defines wchar_t
+// @see https://www.cplusplus.com/reference/cwchar/
+#include <wchar.h>
+
+// Unicode characters.
+// Defines char16_t, char32_t
+// @see https://www.cplusplus.com/reference/cuchar/
+#include <uchar.h>
+
+// Common mathematical operations and transformations.
+// Defines floor, M_PI
+// @see https://www.cplusplus.com/reference/cmath/
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+// Common input/output operations.
+// Defines: sprintf_s
+// @see https://www.cplusplus.com/reference/cstdio/
+#include <stdio.h>
+
+#include "types.h"
+#include "util.h"
 #include "game.h"
 
-// Include the definitions of the utility/helper Functions that are
-// shared across the game and platform layer
-#include "..\Util\util.cpp"
+#include "util.cpp"
 
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
@@ -19,7 +39,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->player1.height = 30;
         gameState->player1.width = 30;
         gameState->player1.totalJumpMovement = 15.0f;
-        gameState->player1.movementSpeed = 5;
 
         gameState->sineWave = { 0 };
 
@@ -44,7 +63,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Which controller has the user selected as the main controller?
     uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
 
-    controllerHandlePlayer(gameState, frameBuffer, audioBuffer, inputInstances->controllers[userSelectedMainController]);
+    controllerHandlePlayer(gameState, memory, frameBuffer, audioBuffer, inputInstances[0], userSelectedMainController);
 
     /**
      * Audio stuff...
@@ -152,8 +171,57 @@ internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffe
     }
 }
 
-internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller)
+internal_func void controllerHandlePlayer(GameState *gameState,
+                                            GameMemory *memory,
+                                            GameFrameBuffer
+                                            *frameBuffer,
+                                            GameAudioBuffer *audioBuffer,
+                                            GameInput gameInput,
+                                            uint8 selectedController)
 {
+    GameControllerInput controller = gameInput.controllers[selectedController];
+
+    // Basic player movement
+    float32 speed = 0.3f;
+
+    if (controller.dPadUp.endedDown) {
+        gameState->player1.posY += (INT)(gameInput.msPerFrame * (speed * -1));
+    }
+
+    if (controller.dPadDown.endedDown) {
+        gameState->player1.posY += (INT)(gameInput.msPerFrame * speed);
+    }
+
+    if (controller.dPadLeft.endedDown) {
+        gameState->player1.posX += (INT)(gameInput.msPerFrame * (speed * -1));
+    }
+
+    if (controller.dPadRight.endedDown) {
+        gameState->player1.posX += (INT)(gameInput.msPerFrame * speed);
+    }
+
+
+
+    if (controller.isAnalog) {
+
+        if (controller.leftThumbstick.position.x) {
+            if (controller.leftThumbstick.position.x >= 0.0f) {
+                gameState->player1.posX += (INT)(gameInput.msPerFrame * speed);
+            }else{
+                gameState->player1.posX += (INT)(gameInput.msPerFrame * (speed * -1));
+            }
+        }
+
+        if (controller.leftThumbstick.position.y) {
+            if (controller.leftThumbstick.position.y >= 0.0f) {
+                gameState->player1.posY += (INT)(gameInput.msPerFrame * (speed * -1));
+            }
+            else {
+                gameState->player1.posY += (INT)(gameInput.msPerFrame * speed);
+            }
+        }
+    }
+
     // Temp jump code
     if ((controller.down.endedDown) && (0 == gameState->player1.jumping)) {
         gameState->player1.jumping = 1;
@@ -202,32 +270,6 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
         }
     }
 
-    // Basic player movement
-    if (controller.dPadUp.endedDown) {
-        gameState->player1.posY = (gameState->player1.posY - gameState->player1.movementSpeed);
-    }
-
-    if (controller.dPadDown.endedDown) {
-        gameState->player1.posY = (gameState->player1.posY + gameState->player1.movementSpeed);
-    }
-
-    if (controller.dPadLeft.endedDown) {
-        gameState->player1.posX = (gameState->player1.posX - gameState->player1.movementSpeed);
-    }
-
-    if (controller.dPadRight.endedDown) {
-        gameState->player1.posX = (gameState->player1.posX + gameState->player1.movementSpeed);
-    }
-
-    if (controller.isAnalog) {
-        if (controller.leftThumbstick.position.x) {
-            gameState->player1.posX = (gameState->player1.posX + (int32)(gameState->player1.movementSpeed * controller.leftThumbstick.position.x));
-        }
-        if (controller.leftThumbstick.position.y) {
-            gameState->player1.posY = (gameState->player1.posY - (int32)(gameState->player1.movementSpeed * controller.leftThumbstick.position.y));
-        }
-    }
-
     // Safe bounds checking
     if (gameState->player1.posY < 0) {
         gameState->player1.posY = 0;
@@ -241,11 +283,6 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
     if (gameState->player1.posX < 0) {
         gameState->player1.posX = 0;
     }
-}
-
-internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
-{
-    //writeRectangle(buffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, 0xff00ff);
 }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -292,7 +329,12 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
  * and y is concerned with the screen buffer's height.
  * 
  */
-internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, Colour colour)
+internal_func void writeRectangle(GameFrameBuffer *buffer,
+                                    int64 xOffset,
+                                    int64 yOffset,
+                                    int64 width,
+                                    int64 height,
+                                    Colour colour)
 {
     // Bounds checking
     if (xOffset >= buffer->width) {

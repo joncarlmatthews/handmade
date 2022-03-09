@@ -1,15 +1,5 @@
-#ifndef HEADER_GC_TYPES
-#define HEADER_GC_TYPES
-
-// Wide-strings.
-// Defines wchar_t
-// @see https://www.cplusplus.com/reference/cwchar/
-#include <wchar.h>
-
-// Unicode characters.
-// Defines char16_t, char32_t
-// @see https://www.cplusplus.com/reference/cuchar/
-#include <uchar.h>
+#ifndef HEADER_HH_TYPES
+#define HEADER_HH_TYPES
 
 // Global variables
 #define global_var static
@@ -35,7 +25,7 @@
  * short:                               (2)     int16  (-32,768 32,767)
  * int (aka long):                      (4)     int32  (-2.1bn to 2.1bn) 2,147,483,647 (2GiB in byte count)
  * long long:                           (8)     int64  (-9qn 9qn)
- * 
+ *
  * unsigned char:                       (1)     uint8   (0 255)
  * unsigned short:                      (2)     uint16  (0 65,536)
  * unsigned int (aka unsigned long):    (4)     uint32  (0 to 4.2bn) 4,294,967,295 (4GiB in byte count)
