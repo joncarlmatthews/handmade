@@ -112,11 +112,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
 
     // Player
-    writeRectangle(frameBuffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, { 0.0f, 0.0f, 0.4f });
+    writeRectangle(frameBuffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, { 0.0f, 0.5f, 0.4f });
 
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
-        //writeRectangle(frameBuffer, inputInstances->mouse.position.x, inputInstances->mouse.position.y, 50, 50, 0xff00ff);
+        writeRectangle(frameBuffer, inputInstances->mouse.position.x, inputInstances->mouse.position.y, 50, 50, { 0.5f, 0.0f, 0.5f });
     }
 
 #if defined(HANDMADE_DEBUG_AUDIO)

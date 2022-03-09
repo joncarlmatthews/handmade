@@ -356,6 +356,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Create the Windows frame buffer
         win32InitFrameBuffer(&thread, &win32FrameBuffer, 960, 540);
 
+        
+
         /*
          * Controllers
          */
@@ -897,6 +899,8 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         // Request to paint a portion of an application's window.
         case WM_PAINT: {
 
+        OutputDebugStringA("WM_PAINT called...\n");
+
             // Prepare the window for painting.
 
             // The PAINTSTRUCT var contains the area that needs to be repainted, 
@@ -907,6 +911,13 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
             HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
+
+            // Paint the whole screen black (stops the artifacts around the frame buffer)
+            int32 screenWidth = GetDeviceCaps(deviceHandleForWindow, HORZRES);
+            int32 screenHeight = GetDeviceCaps(deviceHandleForWindow, VERTRES);
+            if (screenWidth && screenHeight){
+                PatBlt(deviceHandleForWindow, 0, 0, screenWidth, screenHeight, BLACKNESS);
+            }
 
             win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
 
@@ -1007,17 +1018,6 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                                             uint32 width,
                                             uint32 height)
 {
-    // @TODO(JM) Do some maths to stop the buffer's height and width being
-    // skewed when the window's width and height doesn't match the aspect
-    // ratio that we want. (e.g. when someone manually resizes the window)
-    // ...
-
-    // StretchDIBits function copies the data of a rectangle of pixels to 
-    // the specified destination. The first parameter is the handle for
-    // the destination's window that we want to write the data to.
-    // Pixels are drawn to screen from the top left to the top right, then drops a row,
-    // draws from left to right and so on. Finally finishing on the bottom right pixel.
- 
     // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
     // sure we don't introduce artifacts. We can achieve this by not allowing the image
     // to stretch (by setting the destination width and height to be fixed to what the
@@ -1030,9 +1030,17 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
         height = buffer.height;
     }
 
+    uint8 offsetX = 15;
+    uint8 offsetY = 15;
+    
+    // StretchDIBits function copies the data of a rectangle of pixels to 
+    // the specified destination. The first parameter is the handle for
+    // the destination's window that we want to write the data to.
+    // Pixels are drawn to screen from the top left to the top right, then drops a row,
+    // draws from left to right and so on. Finally finishing on the bottom right pixel.
     StretchDIBits(deviceHandleForWindow,
-                    0,
-                    0,
+                    offsetX,
+                    offsetY,
                     width,
                     height,
                     0,
