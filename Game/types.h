@@ -11,14 +11,6 @@
 // This helps the compiler out by knowing that there is no external linking to be done.
 #define internal_func static
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
 // Typedefs that specify exact-width integer types for increased code portability.
 /*
  * char:                                (1)     int8   (-128 127)
@@ -45,20 +37,27 @@ typedef unsigned long long  uint64;  // 8 bytes
 typedef float               float32;  // 4 bytes
 typedef double              float64;  // 8 bytes
 
+// Boolean
+// @NOTE(JM) The type "bool" is now part of the C++ fundamental
+// types. It can have values of either "true" or "false"
+// @see https://en.cppreference.com/w/cpp/language/types
 typedef int8                bool8;
 typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
 
-// Basic types
-typedef int                 BOOL;
-typedef char                CHAR;
-typedef unsigned char       UCHAR;
-typedef short               SHORT;
-typedef unsigned short      USHORT;
-typedef int                 INT;
-typedef unsigned int        UINT;
-typedef long                LONG;
-typedef unsigned long       ULONG;
+// @NOTE(JM) Putting these here for reference.
+// The following useful types are defined in the Win32 API
+/*
+    typedef int                 BOOL;
+    typedef char                CHAR;
+    typedef unsigned char       UCHAR;
+    typedef short               SHORT;
+    typedef unsigned short      USHORT;
+    typedef int                 INT;
+    typedef unsigned int        UINT;
+    typedef long                LONG;
+    typedef unsigned long       ULONG;
+*/
 
 #endif

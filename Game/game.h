@@ -197,8 +197,8 @@ typedef struct ControllerCounts
 
 typedef struct GameControllerBtnState
 {
-    BOOL endedDown;
-    BOOL wasDown;
+    bool endedDown;
+    bool wasDown;
 } GameControllerBtnState;
 
 typedef struct GameControllerThumbstickState
@@ -246,12 +246,12 @@ typedef struct GameControllerInput
 } GameControllerInput;
 
 typedef struct GameMouseInput {
-    BOOL isConnected;
+    bool isConnected;
     GameControllerBtnState leftClick;
     GameControllerBtnState rightClick;
     struct position {
-        LONG x;
-        LONG y;
+        int32 x;
+        int32 y;
     } position;
 } GameMouseInput;
 
@@ -355,6 +355,15 @@ typedef struct GameMemory
 
 } GameMemory;
 
+#define TILEMAP_SIZE_X 16
+#define TILEMAP_SIZE_Y 9
+
+typedef struct TileMap {
+    uint32 *tiles;
+    uint16 tileHeight = 60;
+    uint16 tileWidth = 60;
+} TileMap;
+
 internal_func void writeRectangle(GameFrameBuffer* buffer,
                                     int64 xOffset,
                                     int64 yOffset,
@@ -375,7 +384,8 @@ internal_func void controllerHandlePlayer(GameState *gameState,
                                             GameFrameBuffer *frameBuffer,
                                             GameAudioBuffer *audioBuffer,
                                             GameInput gameInput,
-                                            uint8 selectedController);
+                                            uint8 selectedController,
+                                            TileMap tileMap);
 
 internal_func void audioBufferWriteSineWave(GameState *gameState,
                                             GameAudioBuffer *audioBuffer);

@@ -28,18 +28,18 @@ internal_func float32 percentageOfAnotherf(float32 a, float32 b);
  * Concatenates two wide char strings
  *
  */
-internal_func void utilConcatStringsW(wchar_t* source1, UINT source1Length, wchar_t* source2, UINT source2Length, wchar_t* dest, UINT destLength);
+internal_func void utilConcatStringsW(wchar_t* source1, uint32 source1Length, wchar_t* source2, uint32 source2Length, wchar_t* dest, uint32 destLength);
 
 /**
  * Concatenates two char strings
  *
  */
-internal_func void utilConcatStringsA(char* source1, UINT source1Length, char* source2, UINT source2Length, char* dest, UINT destLength);
+internal_func void utilConcatStringsA(char* source1, uint32 source1Length, char* source2, uint32 source2Length, char* dest, uint32 destLength);
 
 /**
  * Converts a wide char to a regular char
  *
  */
-internal_func void utilWideCharToChar(wchar_t* wideCharArr, UINT wideCharLength, char* charArr, UINT charLength);
+internal_func void utilWideCharToChar(wchar_t* wideCharArr, uint32 wideCharLength, char* charArr, uint32 charLength);
 
 #endif

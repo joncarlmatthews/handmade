@@ -36,14 +36,44 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-        gameState->player1.height = 30;
-        gameState->player1.width = 30;
+        gameState->player1.posX = 60;
+        gameState->player1.posY = 60;
+        gameState->player1.height = 60;
+        gameState->player1.width = 60;
         gameState->player1.totalJumpMovement = 15.0f;
 
         gameState->sineWave = { 0 };
 
         memory->initialised = true;
     }
+
+    // Init the tilemaps
+    TileMap tileMaps[2] = {0};
+
+    // First tilemap
+    TileMap tileMap1 = {0};
+    tileMap1.tileHeight = 60;
+    tileMap1.tileWidth = 60;
+
+    uint32 tiles[TILEMAP_SIZE_Y][TILEMAP_SIZE_X] = {
+        {1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 0, 0, 0},
+        {1, 0, 0, 0,  0, 0, 0, 1,  0, 1, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1},
+    };
+
+    tileMap1.tiles = (uint32 *)tiles;
+
+    tileMaps[0] = tileMap1;
+
+    // Set the currently active tilemap
+    TileMap *currentTileMap = &tileMaps[0];
+
 
     /**
     * Handle controller input...
@@ -63,7 +93,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Which controller has the user selected as the main controller?
     uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
 
-    controllerHandlePlayer(gameState, memory, frameBuffer, audioBuffer, inputInstances[0], userSelectedMainController);
+    controllerHandlePlayer(gameState,
+                            memory,
+                            frameBuffer,
+                            audioBuffer,
+                            inputInstances[0],
+                            userSelectedMainController,
+                            *currentTileMap);
 
     /**
      * Audio stuff...
@@ -82,32 +118,19 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Solid background
     writeRectangle(frameBuffer, 0, 0, frameBuffer->width, frameBuffer->height, { 0.8f , 0.0f, 0.8f });
 
-    // Tilemap
-    uint32 tileMap[9][16] = {
-        {1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1},
-        {1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
-        {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
-        {0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
-        {1, 0, 0, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 0, 0, 0},
-        {1, 0, 0, 0,  0, 0, 0, 1,  0, 1, 0, 0,  0, 0, 0, 1},
-        {1, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 1},
-        {1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
-        {1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1},
-    };
-
-    uint16 tileHeight = 60;
-    uint16 tileWidth = 60;
-
-    for (uint32 row = 0; row < 9; row++){
-        for (uint32 column = 0; column < 16; column++){
-            uint32 tileState = tileMap[row][column];
-            Colour tileColour = { 0.85f, 0.85f, 0.85f };
-            if (tileState) {
-                tileColour = { 0.349f, 0.349f, 0.349f };
+    for (uint32 row = 0; row < TILEMAP_SIZE_Y; row++){
+        for (uint32 column = 0; column < TILEMAP_SIZE_X; column++){
+            uint32 *tileState = (currentTileMap->tiles + ((row * TILEMAP_SIZE_X) + column));
+            if (tileState){
+                Colour tileColour = { 0.85f, 0.85f, 0.85f };
+                if (*tileState) {
+                    tileColour = { 0.349f, 0.349f, 0.349f };
+                }
+                uint32 tileXOffset = (currentTileMap->tileWidth * column);
+                uint32 tileYOffset = (currentTileMap->tileHeight * row);
+                writeRectangle(frameBuffer, tileXOffset, tileYOffset, currentTileMap->tileWidth, currentTileMap->tileHeight, tileColour);
             }
-            uint32 tileXOffset = (tileWidth * column);
-            uint32 tileYOffset = (tileHeight * row);
-            writeRectangle(frameBuffer, tileXOffset, tileYOffset, tileWidth, tileHeight, tileColour);
+            
         }
     }
 
@@ -171,53 +194,122 @@ internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffe
     }
 }
 
+/*
+internal_func inline bool canMove(Point point) {
+    return true;
+}
+*/
+
 internal_func void controllerHandlePlayer(GameState *gameState,
                                             GameMemory *memory,
                                             GameFrameBuffer
                                             *frameBuffer,
                                             GameAudioBuffer *audioBuffer,
                                             GameInput gameInput,
-                                            uint8 selectedController)
+                                            uint8 selectedController,
+                                            TileMap tileMap)
 {
     GameControllerInput controller = gameInput.controllers[selectedController];
 
+    // Tilemap collision detection
+    uint8 tileState = 0;
+    #if 0
+    int32 originalPosX = gameState->player1.posX;
+    int32 originalPosY = gameState->player1.posY;
+    #endif
+
+    typedef struct Point {
+        int32 x;
+        int32 y;
+    } Point;
+
+    Point bottomMiddle = {
+        (uint8)(((float32)gameState->player1.posX + (float32)gameState->player1.width / 2.0f) / (float32)tileMap.tileWidth),
+        (uint8)(((float32)gameState->player1.posY + (float32)gameState->player1.height) / (float32)tileMap.tileHeight)
+    };
+
+    Point topLeft = {
+        (uint8)((float32)gameState->player1.posX / (float32)tileMap.tileWidth),
+        (uint8)((float32)gameState->player1.posY / (float32)tileMap.tileHeight)
+    };
+
+    Point topRight = {
+        (uint8)(((float32)gameState->player1.posX + ((float32)gameState->player1.width - 1)) / (float32)tileMap.tileWidth),
+        (uint8)((float32)gameState->player1.posY / (float32)tileMap.tileHeight)
+    };
+
+    Point bottomLeft = {
+        (uint8)((float32)gameState->player1.posX / (float32)tileMap.tileHeight),
+        (uint8)(((float32)gameState->player1.posY + ((float32)gameState->player1.height - 1)) / (float32)tileMap.tileHeight)
+    };
+
+
+    Point bottomRight = {
+        (uint8)(((float32)gameState->player1.posX + ((float32)gameState->player1.width - 1)) / (float32)tileMap.tileWidth),
+        (uint8)(((float32)gameState->player1.posY + ((float32)gameState->player1.height - 1)) / (float32)tileMap.tileHeight)
+    };
+
+    /*
+    if ((tileMap[topLeft.y][topLeft.x])
+        || (tileMap[topRight.y][topRight.x])
+        || (tileMap[bottomLeft.y][bottomLeft.x])
+        || (tileMap[bottomRight.y][bottomRight.x])) {
+        tileState = 1;
+    }
+    */
+
+    /*
+    if (tileMap[bottomMiddle.y][bottomMiddle.x]) {
+        tileState = 1;
+    }
+    */
+
+    char buff[100] = {};
+    sprintf_s(buff, sizeof(buff), "Tile x:%i y:%i State: %i\n", bottomMiddle.x, bottomMiddle.y, tileState);
+    memory->DEBUG_platformLog(buff);
+
+    /*
+    if (1 == tileState){
+        return;
+    }
+    */
+
     // Basic player movement
-    float32 speed = 0.3f;
+    float32 speed = 0.1f;
 
     if (controller.dPadUp.endedDown) {
-        gameState->player1.posY += (INT)(gameInput.msPerFrame * (speed * -1));
+        gameState->player1.posY += (int32)(gameInput.msPerFrame * (speed * -1));
     }
 
     if (controller.dPadDown.endedDown) {
-        gameState->player1.posY += (INT)(gameInput.msPerFrame * speed);
+        gameState->player1.posY += (int32)(gameInput.msPerFrame * speed);
     }
 
     if (controller.dPadLeft.endedDown) {
-        gameState->player1.posX += (INT)(gameInput.msPerFrame * (speed * -1));
+        gameState->player1.posX += (int32)(gameInput.msPerFrame * (speed * -1));
     }
 
     if (controller.dPadRight.endedDown) {
-        gameState->player1.posX += (INT)(gameInput.msPerFrame * speed);
+        gameState->player1.posX += (int32)(gameInput.msPerFrame * speed);
     }
-
 
 
     if (controller.isAnalog) {
 
         if (controller.leftThumbstick.position.x) {
             if (controller.leftThumbstick.position.x >= 0.0f) {
-                gameState->player1.posX += (INT)(gameInput.msPerFrame * speed);
+                gameState->player1.posX += (int32)(gameInput.msPerFrame * speed);
             }else{
-                gameState->player1.posX += (INT)(gameInput.msPerFrame * (speed * -1));
+                gameState->player1.posX += (int32)(gameInput.msPerFrame * (speed * -1));
             }
         }
 
         if (controller.leftThumbstick.position.y) {
             if (controller.leftThumbstick.position.y >= 0.0f) {
-                gameState->player1.posY += (INT)(gameInput.msPerFrame * (speed * -1));
+                gameState->player1.posY += (int32)(gameInput.msPerFrame * (speed * -1));
             }
             else {
-                gameState->player1.posY += (INT)(gameInput.msPerFrame * speed);
+                gameState->player1.posY += (int32)(gameInput.msPerFrame * speed);
             }
         }
     }
@@ -269,6 +361,12 @@ internal_func void controllerHandlePlayer(GameState *gameState,
             gameState->player1.posY = gameState->player1.jumpStartPos; 
         }
     }
+
+    // Tilemap limits
+    #if 0
+    uint64 playerTileX = gameState->player1.posX;
+    uint64 playerTileY = gameState->player1.posY;
+    #endif
 
     // Safe bounds checking
     if (gameState->player1.posY < 0) {

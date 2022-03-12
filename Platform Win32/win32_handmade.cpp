@@ -899,8 +899,6 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
         // Request to paint a portion of an application's window.
         case WM_PAINT: {
 
-        OutputDebugStringA("WM_PAINT called...\n");
-
             // Prepare the window for painting.
 
             // The PAINTSTRUCT var contains the area that needs to be repainted, 
