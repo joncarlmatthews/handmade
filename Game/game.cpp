@@ -1,9 +1,29 @@
-#include <math.h> // For Sin
+// Wide-strings.
+// Defines wchar_t
+// @see https://www.cplusplus.com/reference/cwchar/
+#include <wchar.h>
+
+// Unicode characters.
+// Defines char16_t, char32_t
+// @see https://www.cplusplus.com/reference/cuchar/
+#include <uchar.h>
+
+// Common mathematical operations and transformations.
+// Defines floor, M_PI
+// @see https://www.cplusplus.com/reference/cmath/
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+// Common input/output operations.
+// Defines: sprintf_s
+// @see https://www.cplusplus.com/reference/cstdio/
+#include <stdio.h>
+
+#include "types.h"
+#include "util.h"
 #include "game.h"
 
-// Include the definitions of the utility/helper Functions that are
-// shared across the game and platform layer
-#include "..\Util\util.cpp"
+#include "util.cpp"
 
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
@@ -16,16 +36,44 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-        gameState->bgColour = 0x000066;
-        gameState->player1.height = 25;
-        gameState->player1.width = 25;
+        gameState->player1.posX = 60;
+        gameState->player1.posY = 60;
+        gameState->player1.height = 60;
+        gameState->player1.width = 60;
         gameState->player1.totalJumpMovement = 15.0f;
-        gameState->player1.movementSpeed = 20;
 
         gameState->sineWave = { 0 };
 
         memory->initialised = true;
     }
+
+    // Init the tilemaps
+    TileMap tileMaps[2] = {0};
+
+    // First tilemap
+    TileMap tileMap1 = {0};
+    tileMap1.tileHeight = 60;
+    tileMap1.tileWidth = 60;
+
+    uint32 tiles[TILEMAP_SIZE_Y][TILEMAP_SIZE_X] = {
+        {1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 0, 0, 0},
+        {1, 0, 0, 0,  0, 0, 0, 1,  0, 1, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 1},
+        {1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1},
+        {1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1},
+    };
+
+    tileMap1.tiles = (uint32 *)tiles;
+
+    tileMaps[0] = tileMap1;
+
+    // Set the currently active tilemap
+    TileMap *currentTileMap = &tileMaps[0];
+
 
     /**
     * Handle controller input...
@@ -42,6 +90,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
     */
 
+    // Which controller has the user selected as the main controller?
+    uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
+
+    controllerHandlePlayer(gameState,
+                            memory,
+                            frameBuffer,
+                            audioBuffer,
+                            inputInstances[0],
+                            userSelectedMainController,
+                            *currentTileMap);
+
     /**
      * Audio stuff...
      */
@@ -51,25 +110,36 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 #endif // HANDMADE_DEBUG_AUDIO
    
 
-    // Which controller has the user selected as the main controller?
-    uint8 userSelectedMainController = 1; // @TODO(JM) make this selectable through a UI
-
-    controllerHandlePlayer(gameState, frameBuffer, audioBuffer, inputInstances->controllers[userSelectedMainController]);
-
     /**
      * Write the frame buffer...
      * 
      */
 
     // Solid background
-    writeRectangle(frameBuffer, 0, 0, frameBuffer->width, frameBuffer->height, gameState->bgColour);
+    writeRectangle(frameBuffer, 0, 0, frameBuffer->width, frameBuffer->height, { 0.8f , 0.0f, 0.8f });
+
+    for (uint32 row = 0; row < TILEMAP_SIZE_Y; row++){
+        for (uint32 column = 0; column < TILEMAP_SIZE_X; column++){
+            uint32 *tileState = (currentTileMap->tiles + ((row * TILEMAP_SIZE_X) + column));
+            if (tileState){
+                Colour tileColour = { 0.85f, 0.85f, 0.85f };
+                if (*tileState) {
+                    tileColour = { 0.349f, 0.349f, 0.349f };
+                }
+                uint32 tileXOffset = (currentTileMap->tileWidth * column);
+                uint32 tileYOffset = (currentTileMap->tileHeight * row);
+                writeRectangle(frameBuffer, tileXOffset, tileYOffset, currentTileMap->tileWidth, currentTileMap->tileHeight, tileColour);
+            }
+            
+        }
+    }
 
     // Player
-    frameBufferWritePlayer(gameState, frameBuffer, audioBuffer);
+    writeRectangle(frameBuffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, { 0.0f, 0.5f, 0.4f });
 
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
-        writeRectangle(frameBuffer, inputInstances->mouse.position.x, inputInstances->mouse.position.y, 50, 50, 0xff00ff);
+        writeRectangle(frameBuffer, inputInstances->mouse.position.x, inputInstances->mouse.position.y, 50, 50, { 0.5f, 0.0f, 0.5f });
     }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -124,10 +194,124 @@ internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffe
     }
 }
 
-internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller)
+/*
+internal_func inline bool canMove(Point point) {
+    return true;
+}
+*/
+
+internal_func void controllerHandlePlayer(GameState *gameState,
+                                            GameMemory *memory,
+                                            GameFrameBuffer
+                                            *frameBuffer,
+                                            GameAudioBuffer *audioBuffer,
+                                            GameInput gameInput,
+                                            uint8 selectedController,
+                                            TileMap tileMap)
 {
-    if (controller.up.endedDown) {
-        gameState->bgColour = 0xffffff;
+    GameControllerInput controller = gameInput.controllers[selectedController];
+
+    // Tilemap collision detection
+    uint8 tileState = 0;
+    #if 0
+    int32 originalPosX = gameState->player1.posX;
+    int32 originalPosY = gameState->player1.posY;
+    #endif
+
+    typedef struct Point {
+        int32 x;
+        int32 y;
+    } Point;
+
+    Point bottomMiddle = {
+        (uint8)(((float32)gameState->player1.posX + (float32)gameState->player1.width / 2.0f) / (float32)tileMap.tileWidth),
+        (uint8)(((float32)gameState->player1.posY + (float32)gameState->player1.height) / (float32)tileMap.tileHeight)
+    };
+
+    Point topLeft = {
+        (uint8)((float32)gameState->player1.posX / (float32)tileMap.tileWidth),
+        (uint8)((float32)gameState->player1.posY / (float32)tileMap.tileHeight)
+    };
+
+    Point topRight = {
+        (uint8)(((float32)gameState->player1.posX + ((float32)gameState->player1.width - 1)) / (float32)tileMap.tileWidth),
+        (uint8)((float32)gameState->player1.posY / (float32)tileMap.tileHeight)
+    };
+
+    Point bottomLeft = {
+        (uint8)((float32)gameState->player1.posX / (float32)tileMap.tileHeight),
+        (uint8)(((float32)gameState->player1.posY + ((float32)gameState->player1.height - 1)) / (float32)tileMap.tileHeight)
+    };
+
+
+    Point bottomRight = {
+        (uint8)(((float32)gameState->player1.posX + ((float32)gameState->player1.width - 1)) / (float32)tileMap.tileWidth),
+        (uint8)(((float32)gameState->player1.posY + ((float32)gameState->player1.height - 1)) / (float32)tileMap.tileHeight)
+    };
+
+    /*
+    if ((tileMap[topLeft.y][topLeft.x])
+        || (tileMap[topRight.y][topRight.x])
+        || (tileMap[bottomLeft.y][bottomLeft.x])
+        || (tileMap[bottomRight.y][bottomRight.x])) {
+        tileState = 1;
+    }
+    */
+
+    /*
+    if (tileMap[bottomMiddle.y][bottomMiddle.x]) {
+        tileState = 1;
+    }
+    */
+
+    char buff[100] = {};
+    sprintf_s(buff, sizeof(buff), "Tile x:%i y:%i State: %i\n", bottomMiddle.x, bottomMiddle.y, tileState);
+    memory->DEBUG_platformLog(buff);
+
+    /*
+    if (1 == tileState){
+        return;
+    }
+    */
+
+    // Basic player movement
+    float32 speed = 0.1f;
+
+    if (controller.dPadUp.endedDown) {
+        gameState->player1.posY += (int32)(gameInput.msPerFrame * (speed * -1));
+    }
+
+    if (controller.dPadDown.endedDown) {
+        gameState->player1.posY += (int32)(gameInput.msPerFrame * speed);
+    }
+
+    if (controller.dPadLeft.endedDown) {
+        gameState->player1.posX += (int32)(gameInput.msPerFrame * (speed * -1));
+    }
+
+    if (controller.dPadRight.endedDown) {
+        gameState->player1.posX += (int32)(gameInput.msPerFrame * speed);
+    }
+
+
+    if (controller.isAnalog) {
+
+        if (controller.leftThumbstick.position.x) {
+            if (controller.leftThumbstick.position.x >= 0.0f) {
+                gameState->player1.posX += (int32)(gameInput.msPerFrame * speed);
+            }else{
+                gameState->player1.posX += (int32)(gameInput.msPerFrame * (speed * -1));
+            }
+        }
+
+        if (controller.leftThumbstick.position.y) {
+            if (controller.leftThumbstick.position.y >= 0.0f) {
+                gameState->player1.posY += (int32)(gameInput.msPerFrame * (speed * -1));
+            }
+            else {
+                gameState->player1.posY += (int32)(gameInput.msPerFrame * speed);
+            }
+        }
     }
 
     // Temp jump code
@@ -178,34 +362,13 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
         }
     }
 
-    // Basic player movement
-    if (controller.dPadUp.endedDown) {
-        gameState->player1.posY = (gameState->player1.posY - gameState->player1.movementSpeed);
-    }
-
-    if (controller.dPadDown.endedDown) {
-        gameState->player1.posY = (gameState->player1.posY + gameState->player1.movementSpeed);
-    }
-
-    if (controller.dPadLeft.endedDown) {
-        gameState->player1.posX = (gameState->player1.posX - gameState->player1.movementSpeed);
-    }
-
-    if (controller.dPadRight.endedDown) {
-        gameState->player1.posX = (gameState->player1.posX + gameState->player1.movementSpeed);
-    }
-
-    if (controller.isAnalog) {
-        if (controller.leftThumbstick.position.x) {
-            gameState->player1.posX = (gameState->player1.posX + (int32)(gameState->player1.movementSpeed * controller.leftThumbstick.position.x));
-        }
-        if (controller.leftThumbstick.position.y) {
-            gameState->player1.posY = (gameState->player1.posY - (int32)(gameState->player1.movementSpeed * controller.leftThumbstick.position.y));
-        }
-    }
+    // Tilemap limits
+    #if 0
+    uint64 playerTileX = gameState->player1.posX;
+    uint64 playerTileY = gameState->player1.posY;
+    #endif
 
     // Safe bounds checking
-#if 0
     if (gameState->player1.posY < 0) {
         gameState->player1.posY = 0;
     }
@@ -218,12 +381,6 @@ internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer 
     if (gameState->player1.posX < 0) {
         gameState->player1.posX = 0;
     }
-#endif
-}
-
-internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
-{
-    writeRectangle(buffer, gameState->player1.posX, gameState->player1.posY, gameState->player1.width, gameState->player1.height, 0xff00ff);
 }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -270,7 +427,12 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
  * and y is concerned with the screen buffer's height.
  * 
  */
-internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, uint32 hexColour)
+internal_func void writeRectangle(GameFrameBuffer *buffer,
+                                    int64 xOffset,
+                                    int64 yOffset,
+                                    int64 width,
+                                    int64 height,
+                                    Colour colour)
 {
     // Bounds checking
     if (xOffset >= buffer->width) {
@@ -319,6 +481,15 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 
         }
     }
 
+    // Set the colour
+    uint32 alpha    = ((uint32)(255.0f * colour.a) << 24);
+    uint32 red      = ((uint32)(255.0f * colour.r) << 16);
+    uint32 green    = ((uint32)(255.0f * colour.g) << 8);
+    uint32 blue     = ((uint32)(255.0f * colour.b) << 0);
+
+    uint32 hexColour = (alpha | red | green | blue);
+
+    // Write the memory
     uint32 *row = (uint32 *)buffer->memory;
 
     // Move down to starting row
@@ -327,10 +498,10 @@ internal_func void writeRectangle(GameFrameBuffer *buffer, int64 xOffset, int64 
     // Move in from left to starting position
     row = (row + xOffset);
 
-    // Down
+    // Down (rows)
     for (int64 i = 0; i < height; i++) {
 
-        // Accross
+        // Accross (columns)
         uint32 *pixel = (uint32 *)row;
         for (int64 x = 0; x < width; x++) {
             *pixel = hexColour;

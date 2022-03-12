@@ -1,13 +1,5 @@
-#ifndef HEADER_GC_TYPES
-#define HEADER_GC_TYPES
-
-// Wide-strings. Defines wchar_t
-// @see https://www.cplusplus.com/reference/cwchar/
-#include <wchar.h>
-
-// Unicode characters. Defines char16_t, char32_t
-// @see https://www.cplusplus.com/reference/cuchar/
-#include <uchar.h>
+#ifndef HEADER_HH_TYPES
+#define HEADER_HH_TYPES
 
 // Global variables
 #define global_var static
@@ -19,21 +11,13 @@
 // This helps the compiler out by knowing that there is no external linking to be done.
 #define internal_func static
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
 // Typedefs that specify exact-width integer types for increased code portability.
 /*
  * char:                                (1)     int8   (-128 127)
  * short:                               (2)     int16  (-32,768 32,767)
  * int (aka long):                      (4)     int32  (-2.1bn to 2.1bn) 2,147,483,647 (2GiB in byte count)
  * long long:                           (8)     int64  (-9qn 9qn)
- * 
+ *
  * unsigned char:                       (1)     uint8   (0 255)
  * unsigned short:                      (2)     uint16  (0 65,536)
  * unsigned int (aka unsigned long):    (4)     uint32  (0 to 4.2bn) 4,294,967,295 (4GiB in byte count)
@@ -53,20 +37,27 @@ typedef unsigned long long  uint64;  // 8 bytes
 typedef float               float32;  // 4 bytes
 typedef double              float64;  // 8 bytes
 
+// Boolean
+// @NOTE(JM) The type "bool" is now part of the C++ fundamental
+// types. It can have values of either "true" or "false"
+// @see https://en.cppreference.com/w/cpp/language/types
 typedef int8                bool8;
 typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
 
-// Basic types
-typedef int                 BOOL;
-typedef char                CHAR;
-typedef unsigned char       UCHAR;
-typedef short               SHORT;
-typedef unsigned short      USHORT;
-typedef int                 INT;
-typedef unsigned int        UINT;
-typedef long                LONG;
-typedef unsigned long       ULONG;
+// @NOTE(JM) Putting these here for reference.
+// The following useful types are defined in the Win32 API
+/*
+    typedef int                 BOOL;
+    typedef char                CHAR;
+    typedef unsigned char       UCHAR;
+    typedef short               SHORT;
+    typedef unsigned short      USHORT;
+    typedef int                 INT;
+    typedef unsigned int        UINT;
+    typedef long                LONG;
+    typedef unsigned long       ULONG;
+*/
 
 #endif

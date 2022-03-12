@@ -29,14 +29,14 @@ internal_func float32 percentageOfAnotherf(float32 a, float32 b)
 }
 
 internal_func void utilConcatStringsA(char *source1,
-                                       UINT source1Length,
+                                       uint32 source1Length,
                                        char *source2,
-                                       UINT source2Length,
+                                       uint32 source2Length,
                                        char *dest,
-                                       UINT destLength)
+                                       uint32 destLength)
 {
-    UINT runningIndex = 0;
-    for (UINT i = 0; i < source1Length; i++) {
+    uint32 runningIndex = 0;
+    for (uint32 i = 0; i < source1Length; i++) {
         if (source1[i] == '\0') {
             break;
         }
@@ -47,7 +47,7 @@ internal_func void utilConcatStringsA(char *source1,
         runningIndex++;
     }
 
-    for (UINT i = 0; i < source2Length; i++) {
+    for (uint32 i = 0; i < source2Length; i++) {
         if (source2[i] == '\0') {
             break;
         }
@@ -60,14 +60,14 @@ internal_func void utilConcatStringsA(char *source1,
 }
 
 internal_func void utilConcatStringsW(wchar_t *source1,
-                                       UINT source1Length,
+                                       uint32 source1Length,
                                        wchar_t *source2,
-                                       UINT source2Length,
+                                       uint32 source2Length,
                                        wchar_t *dest,
-                                       UINT destLength)
+                                       uint32 destLength)
 {
-    UINT runningIndex = 0;
-    for (UINT i = 0; i < source1Length; i++) {
+    uint32 runningIndex = 0;
+    for (uint32 i = 0; i < source1Length; i++) {
         if (source1[i] == '\0') {
             break;
         }
@@ -78,7 +78,7 @@ internal_func void utilConcatStringsW(wchar_t *source1,
         runningIndex++;
     }
 
-    for (UINT i = 0; i < source2Length; i++) {
+    for (uint32 i = 0; i < source2Length; i++) {
         if (source2[i] == '\0') {
             break;
         }
@@ -91,11 +91,11 @@ internal_func void utilConcatStringsW(wchar_t *source1,
 }
 
 internal_func void utilWideCharToChar(wchar_t *wideCharArr,
-                                       UINT wideCharLength,
+                                       uint32 wideCharLength,
                                        char *charArr,
-                                       UINT charLength)
+                                       uint32 charLength)
 {
-    for (UINT x = 0; x < wideCharLength; x++) {
+    for (uint32 x = 0; x < wideCharLength; x++) {
         charArr[x] = (char)wideCharArr[x];
         if ('\0' == wideCharArr[x]) {
             break;
@@ -104,4 +104,14 @@ internal_func void utilWideCharToChar(wchar_t *wideCharArr,
             break;
         }
     }
+}
+
+internal_func inline uint32 truncateU8(float32 f)
+{
+    return (uint8)f;
+}
+
+internal_func inline uint32 truncateU32(float32 f)
+{
+    return (uint32)f;
 }

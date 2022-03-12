@@ -5,13 +5,14 @@
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
 
-#include "..\Util\util.h" // Function signatures and basic types that are shared across the game and platform layer
+#include "..\Game\types.h" // Basic types
+#include "..\Game\util.h" // Function signatures and basic types that are shared across the game and platform layer
 #include "..\Game\game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
 // Include the definitions of the utility/helper Functions that are
 // shared across the game and platform layer
-#include "..\Util\util.cpp"
+#include "..\Game\util.cpp"
 
 // Whether or not the application is running/paused
 global_var bool8 running = TRUE;
@@ -69,6 +70,11 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
     XInputSetState(controllerIndex, &pVibration);
 }
 #if HANDMADE_LOCAL_BUILD
+
+    DEBUG_PLATFORM_LOG(DEBUG_platformLog)
+    {
+        OutputDebugStringA(buff);
+    }
 
     DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
     {
@@ -242,8 +248,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // Create a Win32 state object to hold persistent data for the platform layer.
     Win32State win32State = { 0 };
+
+#if HANDMADE_LOCAL_BUILD
     win32State.inputRecording = 0;
     win32State.inputPlayback = 0;
+#endif
 
     // Calculate the absolute path to this executable.
     wchar_t absPath[MAX_PATH] = { 0 };
@@ -272,6 +281,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformControllerVibrate = &platformControllerVibrate;
 
 #if HANDMADE_LOCAL_BUILD
+    memory.DEBUG_platformLog = &DEBUG_platformLog;
     memory.DEBUG_platformReadEntireFile = &DEBUG_platformReadEntireFile;
     memory.DEBUG_platformWriteEntireFile = &DEBUG_platformWriteEntireFile;
     memory.DEBUG_platformFreeFileMemory = &DEBUG_platformFreeFileMemory;
@@ -302,6 +312,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          * Framerate fixing.
          */
         Win32FixedFrameRate win32FixedFrameRate = {0};
+        win32FixedFrameRate.capMode = FRAME_RATE_CAP_MODE_SLEEP;
         win32FixedFrameRate.monitorRefreshRate = 60;
         win32FixedFrameRate.gameTargetFPS = 30;
         win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
@@ -317,8 +328,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // so that calls to the Windows Sleep() function are more
         // granular. E.g. the wake from the Sleep() will be checked
         // every 1ms, rather than the system default.
-        win32FixedFrameRate.timeOutIntervalMS = 1;
-        win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
+        if (win32FixedFrameRate.capMode == FRAME_RATE_CAP_MODE_SLEEP){
+            win32FixedFrameRate.timeOutIntervalMS = 1;
+            win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
+        }
 
         /*
          * Audio
@@ -343,6 +356,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Create the Windows frame buffer
         win32InitFrameBuffer(&thread, &win32FrameBuffer, 960, 540);
 
+        
+
         /*
          * Controllers
          */
@@ -360,12 +375,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         GameInput *gameInput        = &GameInputInstances[0];
         GameInput *gameInputOld     = &GameInputInstances[1];
 
-        // Get the number of processor clock cycles
-        uint64 runningProcessorClockCyclesCounter = __rdtsc();
-
-        // Create a variable to hold the current time (we'll use this for profiling the elapsed game loop time)
-        LARGE_INTEGER runningGameTime = win32GetTime();
-
         // Mouse support
         GameMouseInput mouse = { 0 };
 
@@ -379,6 +388,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Assign the keyboard object to the game input
         gameInput->controllers[0] = keyboard; // Assign the first game input controller as the keyboard
         controllerCounts.connectedControllers = 1; // @TODO(JM) Support for multiple controllers
+
+        // Get the number of processor clock cycles
+        uint64 runningProcessorClockCyclesCounter = __rdtsc();
+
+        // Get the current time for profiling FPS
+        LARGE_INTEGER netFrameTime = win32GetTime();
 
         /**
          * MAIN GAME LOOP
@@ -567,7 +582,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     audioLatency.samplesLatent = (writePlayDifference / win32AudioBuffer.bytesPerSample);
                     audioLatency.samplesLatentAsPercentageOfBuffer = ((((float32)audioLatency.samplesLatent * 100.0f) / ((float32)win32AudioBuffer.samplesPerSecond * (float32)win32AudioBuffer.secondsWorthOfAudio)) / 100.0f);
                     audioLatency.latencyInMS = ((1000.f * win32AudioBuffer.secondsWorthOfAudio) * audioLatency.samplesLatentAsPercentageOfBuffer);
-
                    
                     // If we're opting to *not* write the entire audio buffer, calculate how much to write here...
                     if ((!gameAudioBuffer.writeEntireBuffer) && (gameAudioBuffer.minFramesWorthOfAudio >= 1)) {
@@ -667,71 +681,156 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             gameInputOld->mouse = gameInput->mouse;
             gameInputOld->controllers[0] = gameInput->controllers[0];
 
-            // How long did this game loop (frame) take?
-            // (excluding the time it takes Windows to render the graphics)
-
-            // Performance-counter frequency for MS/frame & FPS
-            LARGE_INTEGER gameLoopTime = win32GetTime();
-
-            // Calculate milliseconds (and seconds) taken for this frame
-            float32 millisecondsElapsedForFrame     = win32GetElapsedTimeMS(runningGameTime, gameLoopTime, globalQPCFrequency);
-            float32 secondsElapsedForFrame          = win32GetElapsedTimeS(runningGameTime, gameLoopTime, globalQPCFrequency);
-
-            // Cap framerate to target FPS if we're running ahead.
-            if ((millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) && ((floor(win32FixedFrameRate.gameTargetMSPerFrame) - floor(millisecondsElapsedForFrame)) >= 1)) {
-                if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
-                    DWORD sleepMS = ((DWORD)floor(win32FixedFrameRate.gameTargetMSPerFrame) - (DWORD)floor(millisecondsElapsedForFrame));
-                    if (sleepMS > 0) {
-                        Sleep(sleepMS);
-                    }
-                    millisecondsElapsedForFrame = win32GetElapsedTimeMS(runningGameTime, win32GetTime(), globalQPCFrequency);
-                }else{
-                    while (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
-                        millisecondsElapsedForFrame = win32GetElapsedTimeMS(runningGameTime, win32GetTime(), globalQPCFrequency);
-                    }
-                }
-            } else {
-                // @TODO(JM) Missed target framerate. Log.
-            }
-
             // Display the frame buffer in Windows. AKA "flip the frame" or "page flip".
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
             win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
 
-            // Reset the running clock counter.
-            runningGameTime.QuadPart = gameLoopTime.QuadPart;
+            // How long did this game loop (frame) take? (E.g. 2ms)
+            LARGE_INTEGER gameLoopTime = win32GetTime();
+
+            float32 millisecondsElapsedForFrame = win32GetElapsedTimeMS(netFrameTime, gameLoopTime, globalQPCFrequency);
 
 #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
 
-            // Calculate how many processor clock cycles elapsed for this frame.
-            // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
-            uint64 processorClockCyclesAfterFrame = __rdtsc();
-            int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
-            float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
+            {
+                char output[100] = { 0 };
+                sprintf_s(output, sizeof(output),
+                            "Time for frame to complete: %f milliseconds\n",
+                            millisecondsElapsedForFrame);
+                OutputDebugStringA(output);
+            }
 
-            // Calculate the FPS given the speed of this current frame.
-            float32 fps = (1000.0f / (float32)millisecondsElapsedForFrame);
-
-            // Calculate the processor running speed in GHz
-            float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
-
-            // Reset the running clock cycles.
-            runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
-
-            // Console log the speed:
-            char output[100] = {0};
-            sprintf_s(output, sizeof(output),
-                        "ms/frame: %.1f s/frame %.5f, FSP: %.1f. Cycles: %.1fm (%.2f GHz).\n",
-                        millisecondsElapsedForFrame, secondsElapsedForFrame, fps, clockCycles_mega, processorSpeed);
-            OutputDebugStringA(output);
+            {
+                char output[100] = { 0 };
+                sprintf_s(output, sizeof(output),
+                            "Target time for frame to complete: %f milliseconds\n",
+                            win32FixedFrameRate.gameTargetMSPerFrame);
+                OutputDebugStringA(output);
+            }
 #endif
+                
+            // Cap frame rate to target FPS if we're running ahead.
+            if (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame){
+
+                float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - millisecondsElapsedForFrame);
+
+                #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
+                {
+                    char output[100] = { 0 };
+                    sprintf_s(output, sizeof(output),
+                                "Need to sleep for: %f milliseconds (%f)\n",
+                                needToSleepForMS, (millisecondsElapsedForFrame + needToSleepForMS));
+                    OutputDebugStringA(output);
+                }
+                #endif
+
+                // Win32 Sleep?
+                if (win32FixedFrameRate.capMode == FRAME_RATE_CAP_MODE_SLEEP) {
+
+                    INT msToSleepI = (INT)needToSleepForMS;
+
+                    #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
+                    {
+                        char output[100] = { 0 };
+                        sprintf_s(output, sizeof(output),
+                                    "Sleeping for... %i\n",
+                                    msToSleepI);
+                        OutputDebugStringA(output);
+                    }
+                    #endif
+
+                    Sleep(msToSleepI);
+
+                    // Update the MS taken for this frame
+                    millisecondsElapsedForFrame = win32GetElapsedTimeMS(gameLoopTime, win32GetTime(), globalQPCFrequency);
+
+                    // Spin lock for any fractions of time left
+                    if (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
+                        while (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
+                            millisecondsElapsedForFrame = win32GetElapsedTimeMS(gameLoopTime, win32GetTime(), globalQPCFrequency);
+                        }
+                    }
+
+                } else {
+
+                    // Spin lock for full duration of time
+                    #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
+                        OutputDebugStringA("Entering spin lock...\n");
+                    #endif
+
+                    while (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
+                        millisecondsElapsedForFrame = win32GetElapsedTimeMS(gameLoopTime, win32GetTime(), globalQPCFrequency);
+                    }
+                }
+
+            }else if((INT)millisecondsElapsedForFrame > (INT)win32FixedFrameRate.gameTargetMSPerFrame){
+
+                // @TODO(JM) Missed target framerate. Log.
+
+                #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
+                {
+                    char output[500] = { 0 };
+                    sprintf_s(output, sizeof(output),
+                                "======================================MISSED================================ (%f > %f)\n\n",
+                                millisecondsElapsedForFrame,
+                                win32FixedFrameRate.gameTargetMSPerFrame);
+                    OutputDebugStringA(output);
+                }
+                #endif
+            }
+
+            // Set net frame time (E.g. 33.33ms or 16.66ms)
+            netFrameTime = win32GetTime();
+            float32 netFrameTimeMS = win32GetElapsedTimeMS(gameLoopTime, netFrameTime, globalQPCFrequency);
+
+            // Set the ms per frame to the game input object so we can regulate movement speed
+            gameInput->msPerFrame = netFrameTimeMS;
+
+            #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
+                {
+                    char output[100] = { 0 };
+                    sprintf_s(output, sizeof(output),
+                                "Net time for frame to complete: %f milliseconds\n\n",
+                                netFrameTimeMS);
+
+                    OutputDebugStringA(output);
+                }
+            #endif
+
+            #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_CLOCKCYCLES)
+            {
+                // Calculate how many processor clock cycles elapsed for this frame.
+                // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
+                uint64 processorClockCyclesAfterFrame = __rdtsc();
+                int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
+                float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
+
+                // Calculate the FPS given the speed of this current frame.
+                float32 fps = (1000.0f / (float32)netFrameTimeMS);
+
+                // Calculate the processor running speed in GHz
+                float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
+
+                // Reset the running clock cycles.
+                runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
+
+                // Console log the speed:
+                char output[100] = { 0 };
+                sprintf_s(output, sizeof(output),
+                            "Cycles: %.1fm (%.2f GHz).\n",
+                            clockCycles_mega, processorSpeed);
+                OutputDebugStringA(output);
+            }
+            #endif
+
 
         } // game loop
 
-        if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
-            timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
+        if (win32FixedFrameRate.capMode == FRAME_RATE_CAP_MODE_SLEEP) {
+            if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
+                timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
+            }
         }
-
 
     }else{
         OutputDebugStringA("Error allocating game memory. Unable to run game\n");
@@ -810,6 +909,13 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
             HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
+
+            // Paint the whole screen black (stops the artifacts around the frame buffer)
+            int32 screenWidth = GetDeviceCaps(deviceHandleForWindow, HORZRES);
+            int32 screenHeight = GetDeviceCaps(deviceHandleForWindow, VERTRES);
+            if (screenWidth && screenHeight){
+                PatBlt(deviceHandleForWindow, 0, 0, screenWidth, screenHeight, BLACKNESS);
+            }
 
             win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
 
@@ -910,17 +1016,6 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                                             uint32 width,
                                             uint32 height)
 {
-    // @TODO(JM) Do some maths to stop the buffer's height and width being
-    // skewed when the window's width and height doesn't match the aspect
-    // ratio that we want. (e.g. when someone manually resizes the window)
-    // ...
-
-    // StretchDIBits function copies the data of a rectangle of pixels to 
-    // the specified destination. The first parameter is the handle for
-    // the destination's window that we want to write the data to.
-    // Pixels are drawn to screen from the top left to the top right, then drops a row,
-    // draws from left to right and so on. Finally finishing on the bottom right pixel.
- 
     // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
     // sure we don't introduce artifacts. We can achieve this by not allowing the image
     // to stretch (by setting the destination width and height to be fixed to what the
@@ -933,9 +1028,17 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
         height = buffer.height;
     }
 
+    uint8 offsetX = 15;
+    uint8 offsetY = 15;
+    
+    // StretchDIBits function copies the data of a rectangle of pixels to 
+    // the specified destination. The first parameter is the handle for
+    // the destination's window that we want to write the data to.
+    // Pixels are drawn to screen from the top left to the top right, then drops a row,
+    // draws from left to right and so on. Finally finishing on the bottom right pixel.
     StretchDIBits(deviceHandleForWindow,
-                    0,
-                    0,
+                    offsetX,
+                    offsetY,
                     width,
                     height,
                     0,

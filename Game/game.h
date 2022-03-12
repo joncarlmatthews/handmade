@@ -1,29 +1,23 @@
 #ifndef HEADER_HANDMADE
 #define HEADER_HANDMADE
 
-#include "..\Util\util.h"
-
 #if HANDMADE_LOCAL_BUILD
 
-    // Flags:
+// Flags:
 
-    // #define HANDMADE_DEBUG
-    // #define HANDMADE_DEBUG_FPS
-    // #define HANDMADE_DEBUG_AUDIO
+// #define HANDMADE_DEBUG
+// #define HANDMADE_DEBUG_FPS
+// #define HANDMADE_DEBUG_CLOCKCYCLES
+// #define HANDMADE_DEBUG_AUDIO
 
-    // If assertion isn't true, write to the null pointer and crash the program.
-    #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
+// If assertion isn't true, write to the null pointer and crash the program.
+#define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
 
 #else
-    #define assert(expression)
+#define assert(expression)
 #endif
 
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
-
-// Generic stuff
-#ifndef M_PI
-#define M_PI       3.14159265358979323846
-#endif     
 
 // Return the number of elements in a static array
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -75,20 +69,14 @@ typedef PLATFORM_FREE_MEMORY(PlatformFreeMemory);
 typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 
 /*
- * printf style output debugger
- *
- * @param char format Format specifier. E.g. "Var is %i\n"
- * @param optional command separated list of variables
- */
-void platformLog(char *format, ...);
-
-
-/*
  * Definitions for local builds only. E.g. helper functions/structures
  * to aid debugging. None of these calls should remain in code that
  * ships, hence no stubs for if HANDMADE_LOCAL_BUILD isn't defined.
  */
 #if HANDMADE_LOCAL_BUILD
+
+    #define DEBUG_PLATFORM_LOG(name) void name(char *buff)
+    typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
 
     typedef struct DEBUG_file
     {
@@ -209,8 +197,8 @@ typedef struct ControllerCounts
 
 typedef struct GameControllerBtnState
 {
-    BOOL endedDown;
-    BOOL wasDown;
+    bool endedDown;
+    bool wasDown;
 } GameControllerBtnState;
 
 typedef struct GameControllerThumbstickState
@@ -258,12 +246,12 @@ typedef struct GameControllerInput
 } GameControllerInput;
 
 typedef struct GameMouseInput {
-    BOOL isConnected;
+    bool isConnected;
     GameControllerBtnState leftClick;
     GameControllerBtnState rightClick;
     struct position {
-        LONG x;
-        LONG y;
+        int32 x;
+        int32 y;
     } position;
 } GameMouseInput;
 
@@ -271,6 +259,7 @@ typedef struct GameInput
 {
     GameMouseInput mouse;
     GameControllerInput controllers[MAX_CONTROLLERS];
+    float32 msPerFrame; // How many miliseconds are we taking per frame? E.g. 16.6 or 33.3
 } GameInput;
 
 typedef struct SineWave
@@ -290,10 +279,15 @@ typedef struct SineWave
 
 enum jumpDirection { JUMP_UP, JUMP_DOWN };
 
+typedef struct Colour {
+    float32 r;
+    float32 g;
+    float32 b;
+    float32 a;
+} Colour;
+
 typedef struct GameState
 {
-    uint32 bgColour;
-
     struct player1 {
         int32 posX;
         int32 posY;
@@ -353,6 +347,7 @@ typedef struct GameMemory
     PlarformControllerVibrate *platformControllerVibrate;
 
 #if HANDMADE_LOCAL_BUILD
+    DEBUGPlatformLog *DEBUG_platformLog;
     DEBUGPlatformReadEntireFile *DEBUG_platformReadEntireFile;
     DEBUGPlatformFreeFileMemory *DEBUG_platformFreeFileMemory;
     DEBUGPlatformWriteEntireFile *DEBUG_platformWriteEntireFile;
@@ -360,15 +355,40 @@ typedef struct GameMemory
 
 } GameMemory;
 
-internal_func void writeRectangle(GameFrameBuffer* buffer, int64 xOffset, int64 yOffset, int64 width, int64 height, uint32 hexColour);
+#define TILEMAP_SIZE_X 16
+#define TILEMAP_SIZE_Y 9
 
-internal_func void frameBufferWritePlayer(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
+typedef struct TileMap {
+    uint32 *tiles;
+    uint16 tileHeight = 60;
+    uint16 tileWidth = 60;
+} TileMap;
 
-internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer);
+internal_func void writeRectangle(GameFrameBuffer* buffer,
+                                    int64 xOffset,
+                                    int64 yOffset,
+                                    int64 width,
+                                    int64 height,
+                                    Colour colour);
 
-internal_func void controllerHandlePlayer(GameState *gameState, GameFrameBuffer *frameBuffer, GameAudioBuffer *audioBuffer, GameControllerInput controller);
+internal_func void frameBufferWritePlayer(GameState *gameState,
+                                            GameFrameBuffer *buffer,
+                                            GameAudioBuffer *audioBuffer);
 
-internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffer *audioBuffer);
+internal_func void frameBufferWriteAudioDebug(GameState *gameState,
+                                                GameFrameBuffer *buffer,
+                                                GameAudioBuffer *audioBuffer);
+
+internal_func void controllerHandlePlayer(GameState *gameState,
+                                            GameMemory* memory,
+                                            GameFrameBuffer *frameBuffer,
+                                            GameAudioBuffer *audioBuffer,
+                                            GameInput gameInput,
+                                            uint8 selectedController,
+                                            TileMap tileMap);
+
+internal_func void audioBufferWriteSineWave(GameState *gameState,
+                                            GameAudioBuffer *audioBuffer);
 
 //====================================================
 //====================================================
