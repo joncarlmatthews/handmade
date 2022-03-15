@@ -24,18 +24,19 @@
  * unsigned long long:                  (8)     uint64  (0 to 18qn)
  */
 
-typedef signed char         int8;   // 1 byte
-typedef signed short        int16;  // 2 bytes
-typedef signed int          int32;  // 4 bytes (aka long)
-typedef signed long long    int64;  // 8 bytes
+typedef signed char         int8;       // 1 byte
+typedef signed short        int16;      // 2 bytes
+typedef signed int          int32;      // 4 bytes (aka long)
+typedef signed long long    int64;      // 8 bytes
 
-typedef unsigned char       uint8;   // 1 byte
-typedef unsigned short      uint16;  // 2 bytes
-typedef unsigned int        uint32;  // 4 bytes (aka long)
-typedef unsigned long long  uint64;  // 8 bytes
+typedef unsigned char       uint8;      // 1 byte
+typedef unsigned short      uint16;     // 2 bytes
+typedef unsigned int        uint32;     // 4 bytes (aka long)
+typedef uint32              uint;       // Alias
+typedef unsigned long long  uint64;     // 8 bytes
 
-typedef float               float32;  // 4 bytes
-typedef double              float64;  // 8 bytes
+typedef float               float32;    // 4 bytes
+typedef double              float64;    // 8 bytes
 
 // Boolean
 // @NOTE(JM) The type "bool" is now part of the C++ fundamental

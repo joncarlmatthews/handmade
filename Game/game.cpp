@@ -118,6 +118,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Solid background
     writeRectangle(frameBuffer, 0, 0, frameBuffer->width, frameBuffer->height, { 0.8f , 0.0f, 0.8f });
 
+
     for (uint32 row = 0; row < TILEMAP_SIZE_Y; row++){
         for (uint32 column = 0; column < TILEMAP_SIZE_X; column++){
             uint32 *tileState = (currentTileMap->tiles + ((row * TILEMAP_SIZE_X) + column));
@@ -148,57 +149,21 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
 }
 
-internal_func void audioBufferWriteSineWave(GameState *gameState, GameAudioBuffer *audioBuffer)
+internal_func inline bool canMove(TileMap tileMap, Point point)
 {
-    gameState->sineWave.hertz = 100;
-    gameState->sineWave.sizeOfWave = 1000; // Volume
+    uint tilePos = (point.y * TILEMAP_SIZE_X) + point.x;
 
-    // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
-    uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
+    uint32 *tileState = (tileMap.tiles + tilePos);
 
-    // At the start of which 4 byte group index we are starting our write from?
-    // @TODO(JM) assert that this is a 4 byte boundry
-    uint32 byteGroupIndex = 0;
-
-    float32 percentageOfAngle = 0.0f;
-    float32 angle = 0.0f;
-    float32 radians = 0.0f;
-    float64 sine = 0.0f;
-
-    uint16 *audioSample = (uint16 *)audioBuffer->memory;
-
-    // Iterate over each 2 - bytes and write the same data for both...
-    for (uint32 i = 0; i < audioBuffer->noOfSamplesToWrite; i++) {
-
-        percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
-        angle = (360.0f * (percentageOfAngle / 100.0f));
-        radians = (angle * ((float32)M_PI / 180.0f));
-        sine = sin(radians);
-
-        int16 audioSampleValue = (int16)(sine * gameState->sineWave.sizeOfWave);
-
-        // Left channel (16-bits)
-        *audioSample = audioSampleValue;
-
-        // Move to the right sample (16-bits)
-        audioSample++;
-
-        // Right channel (16-bits)
-        *audioSample = audioSampleValue;
-
-        // Move cursor to the start of the next sample grouping.
-        audioSample++;
-
-        // Write another 4 to the running byte group index.
-        byteGroupIndex = (uint32)((uint64)(byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
+    if (tileState){
+        if (*tileState){
+            return false;
+        }
+        return true;
     }
-}
 
-/*
-internal_func inline bool canMove(Point point) {
     return true;
 }
-*/
 
 internal_func void controllerHandlePlayer(GameState *gameState,
                                             GameMemory *memory,
@@ -211,92 +176,37 @@ internal_func void controllerHandlePlayer(GameState *gameState,
 {
     GameControllerInput controller = gameInput.controllers[selectedController];
 
-    // Tilemap collision detection
-    uint8 tileState = 0;
-    #if 0
-    int32 originalPosX = gameState->player1.posX;
-    int32 originalPosY = gameState->player1.posY;
-    #endif
-
-    typedef struct Point {
-        int32 x;
-        int32 y;
-    } Point;
-
-    Point bottomMiddle = {
-        (uint8)(((float32)gameState->player1.posX + (float32)gameState->player1.width / 2.0f) / (float32)tileMap.tileWidth),
-        (uint8)(((float32)gameState->player1.posY + (float32)gameState->player1.height) / (float32)tileMap.tileHeight)
-    };
-
-    Point topLeft = {
-        (uint8)((float32)gameState->player1.posX / (float32)tileMap.tileWidth),
-        (uint8)((float32)gameState->player1.posY / (float32)tileMap.tileHeight)
-    };
-
-    Point topRight = {
-        (uint8)(((float32)gameState->player1.posX + ((float32)gameState->player1.width - 1)) / (float32)tileMap.tileWidth),
-        (uint8)((float32)gameState->player1.posY / (float32)tileMap.tileHeight)
-    };
-
-    Point bottomLeft = {
-        (uint8)((float32)gameState->player1.posX / (float32)tileMap.tileHeight),
-        (uint8)(((float32)gameState->player1.posY + ((float32)gameState->player1.height - 1)) / (float32)tileMap.tileHeight)
-    };
-
-
-    Point bottomRight = {
-        (uint8)(((float32)gameState->player1.posX + ((float32)gameState->player1.width - 1)) / (float32)tileMap.tileWidth),
-        (uint8)(((float32)gameState->player1.posY + ((float32)gameState->player1.height - 1)) / (float32)tileMap.tileHeight)
-    };
-
-    /*
-    if ((tileMap[topLeft.y][topLeft.x])
-        || (tileMap[topRight.y][topRight.x])
-        || (tileMap[bottomLeft.y][bottomLeft.x])
-        || (tileMap[bottomRight.y][bottomRight.x])) {
-        tileState = 1;
-    }
-    */
-
-    /*
-    if (tileMap[bottomMiddle.y][bottomMiddle.x]) {
-        tileState = 1;
-    }
-    */
-
-    char buff[100] = {};
-    sprintf_s(buff, sizeof(buff), "Tile x:%i y:%i State: %i\n", bottomMiddle.x, bottomMiddle.y, tileState);
-    memory->DEBUG_platformLog(buff);
-
-    /*
-    if (1 == tileState){
-        return;
-    }
-    */
-
     // Basic player movement
+    bool playerMoving = false;
     float32 speed = 0.1f;
 
-    if (controller.dPadUp.endedDown) {
-        gameState->player1.posY += (int32)(gameInput.msPerFrame * (speed * -1));
-    }
-
-    if (controller.dPadDown.endedDown) {
-        gameState->player1.posY += (int32)(gameInput.msPerFrame * speed);
-    }
+    int32 playerNewPosX = gameState->player1.posX;
+    int32 playerNewPosY = gameState->player1.posY;
 
     if (controller.dPadLeft.endedDown) {
-        gameState->player1.posX += (int32)(gameInput.msPerFrame * (speed * -1));
+        playerMoving = true;
+        playerNewPosX += (int32)(gameInput.msPerFrame * (speed * -1));
     }
 
     if (controller.dPadRight.endedDown) {
-        gameState->player1.posX += (int32)(gameInput.msPerFrame * speed);
+        playerMoving = true;
+        playerNewPosX += (int32)(gameInput.msPerFrame * speed);
     }
 
+    if (controller.dPadUp.endedDown) {
+        playerMoving = true;
+        playerNewPosY += (int32)(gameInput.msPerFrame * (speed * -1));
+    }
+
+    if (controller.dPadDown.endedDown) {
+        playerMoving = true;
+        playerNewPosY += (int32)(gameInput.msPerFrame * speed);
+    }
 
     if (controller.isAnalog) {
 
         if (controller.leftThumbstick.position.x) {
+            playerMoving = true;
             if (controller.leftThumbstick.position.x >= 0.0f) {
                 gameState->player1.posX += (int32)(gameInput.msPerFrame * speed);
             }else{
@@ -305,6 +215,7 @@ internal_func void controllerHandlePlayer(GameState *gameState,
         }
 
         if (controller.leftThumbstick.position.y) {
+            playerMoving = true;
             if (controller.leftThumbstick.position.y >= 0.0f) {
                 gameState->player1.posY += (int32)(gameInput.msPerFrame * (speed * -1));
             }
@@ -314,7 +225,54 @@ internal_func void controllerHandlePlayer(GameState *gameState,
         }
     }
 
+    // Tilemap collision detection
+    Point topMiddle = {
+        (uint8)(((float32)playerNewPosX + (float32)gameState->player1.width / 2.0f) / (float32)tileMap.tileWidth),
+        (uint8)((float32)playerNewPosY / (float32)tileMap.tileHeight)
+    };
+
+    Point bottomMiddle = {
+        (uint8)(((float32)playerNewPosX + (float32)gameState->player1.width / 2.0f) / (float32)tileMap.tileWidth),
+        (uint8)(((float32)playerNewPosY + (float32)gameState->player1.height) / (float32)tileMap.tileHeight)
+    };
+
+    Point topLeft = {
+        (uint8)((float32)playerNewPosX / (float32)tileMap.tileWidth),
+        (uint8)((float32)playerNewPosY / (float32)tileMap.tileHeight)
+    };
+
+    Point topRight = {
+        (uint8)(((float32)playerNewPosX + (float32)gameState->player1.width) / (float32)tileMap.tileWidth),
+        (uint8)((float32)playerNewPosY / (float32)tileMap.tileHeight),
+    };
+
+    Point bottomLeft = {
+        (uint8)((float32)playerNewPosX / (float32)tileMap.tileHeight),
+        (uint8)(((float32)playerNewPosY + (float32)gameState->player1.height) / (float32)tileMap.tileHeight)
+    };
+
+
+    Point bottomRight = {
+        (uint8)(((float32)playerNewPosX + (float32)gameState->player1.width) / (float32)tileMap.tileWidth),
+        (uint8)(((float32)playerNewPosY + (float32)gameState->player1.height) / (float32)tileMap.tileHeight)
+    };
+
+    {
+        if (playerMoving){
+            Point debugPoint = topLeft;
+            char buff[100] = {};
+            sprintf_s(buff, sizeof(buff), "Tile x:%i y:%i (%i)\n", debugPoint.x, debugPoint.y, canMove(tileMap, debugPoint));
+            memory->DEBUG_platformLog(buff);
+        }
+    }
+
+    if ( (canMove(tileMap, bottomMiddle)) ){
+        gameState->player1.posX = playerNewPosX;
+        gameState->player1.posY = playerNewPosY;
+    }
+
     // Temp jump code
+#if 0
     if ((controller.down.endedDown) && (0 == gameState->player1.jumping)) {
         gameState->player1.jumping = 1;
         gameState->player1.jumpDuration = 20.0f;
@@ -361,12 +319,7 @@ internal_func void controllerHandlePlayer(GameState *gameState,
             gameState->player1.posY = gameState->player1.jumpStartPos; 
         }
     }
-
-    // Tilemap limits
-    #if 0
-    uint64 playerTileX = gameState->player1.posX;
-    uint64 playerTileY = gameState->player1.posY;
-    #endif
+#endif
 
     // Safe bounds checking
     if (gameState->player1.posY < 0) {
@@ -417,6 +370,52 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 }
 
 #endif
+
+internal_func void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer)
+{
+    gameState->sineWave.hertz = 100;
+    gameState->sineWave.sizeOfWave = 1000; // Volume
+
+    // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
+    uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
+
+    // At the start of which 4 byte group index we are starting our write from?
+    // @TODO(JM) assert that this is a 4 byte boundry
+    uint32 byteGroupIndex = 0;
+
+    float32 percentageOfAngle = 0.0f;
+    float32 angle = 0.0f;
+    float32 radians = 0.0f;
+    float64 sine = 0.0f;
+
+    uint16* audioSample = (uint16*)audioBuffer->memory;
+
+    // Iterate over each 2 - bytes and write the same data for both...
+    for (uint32 i = 0; i < audioBuffer->noOfSamplesToWrite; i++) {
+
+        percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
+        angle = (360.0f * (percentageOfAngle / 100.0f));
+        radians = (angle * ((float32)M_PI / 180.0f));
+        sine = sin(radians);
+
+        int16 audioSampleValue = (int16)(sine * gameState->sineWave.sizeOfWave);
+
+        // Left channel (16-bits)
+        *audioSample = audioSampleValue;
+
+        // Move to the right sample (16-bits)
+        audioSample++;
+
+        // Right channel (16-bits)
+        *audioSample = audioSampleValue;
+
+        // Move cursor to the start of the next sample grouping.
+        audioSample++;
+
+        // Write another 4 to the running byte group index.
+        byteGroupIndex = (uint32)((uint64)(byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
+    }
+}
 
 /**
  * Simple pixel loop.

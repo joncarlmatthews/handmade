@@ -389,8 +389,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         gameInput->controllers[0] = keyboard; // Assign the first game input controller as the keyboard
         controllerCounts.connectedControllers = 1; // @TODO(JM) Support for multiple controllers
 
+#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_CLOCKCYCLES)
         // Get the number of processor clock cycles
         uint64 runningProcessorClockCyclesCounter = __rdtsc();
+#endif
 
         // Get the current time for profiling FPS
         LARGE_INTEGER netFrameTime = win32GetTime();
@@ -652,25 +654,38 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #endif
 
             // Create the game's audio buffer
-            gameCode.gameInitAudioBuffer(&thread,
-                                            &memory,
-                                            &gameAudioBuffer,
-                                            lockSizeInBytes,
-                                            win32AudioBuffer.bytesPerSample,
-                                            win32AudioBuffer.bufferSizeInBytes);
-
+            if (gameCode.gameInitAudioBuffer){ // C6011 NULL pointer warning
+                gameCode.gameInitAudioBuffer(&thread,
+                                                &memory,
+                                                &gameAudioBuffer,
+                                                lockSizeInBytes,
+                                                win32AudioBuffer.bytesPerSample,
+                                                win32AudioBuffer.bufferSizeInBytes);
+            }
+            
             // Create the game's frame buffer
             GameFrameBuffer gameFrameBuffer = {0};
-            gameCode.gameInitFrameBuffer(&thread,
-                                            &gameFrameBuffer,
-                                            win32FrameBuffer.height,
-                                            win32FrameBuffer.width,
-                                            win32FrameBuffer.bytesPerPixel,
-                                            win32FrameBuffer.byteWidthPerRow,
-                                            win32FrameBuffer.memory);
+            
+            if (gameCode.gameInitFrameBuffer){ // C6011 NULL pointer warning
+                gameCode.gameInitFrameBuffer(&thread,
+                                                &gameFrameBuffer,
+                                                win32FrameBuffer.height,
+                                                win32FrameBuffer.width,
+                                                win32FrameBuffer.bytesPerPixel,
+                                                win32FrameBuffer.byteWidthPerRow,
+                                                win32FrameBuffer.memory);
+            }
+            
 
             // Main game code.
-            gameCode.gameUpdate(&thread, &memory, &gameFrameBuffer, &gameAudioBuffer, GameInputInstances, &controllerCounts);
+            if (gameCode.gameUpdate){ // C6011 NULL pointer warning
+                gameCode.gameUpdate(&thread,
+                                    &memory,
+                                    &gameFrameBuffer,
+                                    &gameAudioBuffer,
+                                    GameInputInstances,
+                                    &controllerCounts);
+            }
 
             win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 
