@@ -364,6 +364,18 @@ typedef struct TileMap {
     uint16 tileWidth = 60;
 } TileMap;
 
+typedef struct Point {
+    int32 x;
+    int32 y;
+} Point;
+
+enum class MOVE_DIRECTION {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+};
+
 internal_func void writeRectangle(GameFrameBuffer* buffer,
                                     int64 xOffset,
                                     int64 yOffset,
