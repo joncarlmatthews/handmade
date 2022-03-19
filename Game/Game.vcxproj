@@ -26,7 +26,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="game.cpp" />
-    <ClCompile Include="tilemaps.cpp" />
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
