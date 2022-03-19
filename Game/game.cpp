@@ -23,8 +23,6 @@
 #include "utility.h"
 #include "game.h"
 
-// @TODO(JM) How can I not include this file but have the compiler include it instead
-
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     /**
