@@ -6,13 +6,13 @@
 #include <xinput.h>  // Xinput for receiving controller input.
 
 #include "..\Game\types.h" // Basic types
-#include "..\Game\util.h" // Function signatures and basic types that are shared across the game and platform layer
+#include "..\Game\utility.h" // Function signatures and basic types that are shared across the game and platform layer
 #include "..\Game\game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
 // Include the definitions of the utility/helper Functions that are
 // shared across the game and platform layer
-#include "..\Game\util.cpp"
+#include "..\Game\utility.cpp"
 
 // Whether or not the application is running/paused
 global_var bool8 running = TRUE;
