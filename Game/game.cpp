@@ -337,6 +337,16 @@ void controllerHandlePlayer(GameState *gameState,
 
     setCurrentTilemap(world, middle, gameState);
 
+    if (playerMoving) {
+        char buff[100] = {};
+        sprintf_s(buff, sizeof(buff),
+                    "Player middle x:%i y:%i (%i)\n",
+                    middle.x,
+                    middle.y,
+                    isWorldTileFree(*gameState, middle));
+        memory->DEBUG_platformLog(buff);
+    }
+
     // Temp jump code
 #if 0
     if ((controller.down.endedDown) && (0 == gameState->player1.jumping)) {
@@ -496,8 +506,8 @@ void getTilemapTile(TilePoint* tilePoint,
         tilePoint->y = (int8)(((float32)playerPixelPos.y + (float32)player.height - pixelInset) / (float32)world.tileMapHeight);
         break;
     case PLAYER_POINT_POS::MIDDLE:
-        tilePoint->x = (int8)(((float32)playerPixelPos.x + (float32)player.width / 2.0f) / (float32)world.tileMapWidth);
-        tilePoint->y = (int8)(((float32)playerPixelPos.y + (float32)player.height / 2.0f) / (float32)world.tileMapHeight);
+        tilePoint->x = (int8)floor(((float32)playerPixelPos.x + ((float32)player.width / 2.0f)) / (float32)world.tileMapWidth);
+        tilePoint->y = (int8) (((float32)playerPixelPos.y + ((float32)player.height / 2.0f)) / (float32)world.tileMapHeight);
         break;
     default:
         assert(!"Tile point position not yet supported");
