@@ -311,8 +311,7 @@ typedef struct posXYInt {
 } posXYInt;
 
 typedef struct Player {
-    int32 posX;
-    int32 posY;
+    posXYInt position;
     uint16 height;
     uint16 width;
     uint8 movementSpeed;
@@ -334,15 +333,20 @@ enum jumpDirection {
 //
 // World/Tilemaps
 //====================================================
+#define TILEMAP_SIZE_X 16
+#define TILEMAP_SIZE_Y 9
 
-typedef struct TileMap {
-    uint32* tiles;
-} TileMap;
+typedef struct Tilemap {
+    uint32 tiles[TILEMAP_SIZE_Y][TILEMAP_SIZE_X];
+} Tilemap;
+
+#define WORLD_TILEMAP_COUNT_X 3
+#define WORLD_TILEMAP_COUNT_Y 2
 
 typedef struct World {
-    uint16 tileMapHeight = 60;
-    uint16 tileMapWidth = 60;
-    TileMap* tileMaps;
+    uint16 tileMapHeight;
+    uint16 tileMapWidth;
+    Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
 } World;
 
 typedef struct TilePoint {
@@ -350,24 +354,37 @@ typedef struct TilePoint {
     int32 y;
 } TilePoint;
 
-enum class TILE_POINT_POS {
-    TILE_POINT_BOTTOM_MIDDLE,
-    TILE_POINT_BOTTOM_RIGHT,
-    TILE_POINT_BOTTOM_LEFT,
+enum class PLAYER_POINT_POS {
+    BOTTOM_MIDDLE,
+    BOTTOM_RIGHT,
+    BOTTOM_LEFT,
+    MIDDLE,
 };
 
+/**
+ * @brief Gets the X and Y coords of a @link playerPixelPos
+ * in relational to the onscreen tilemap
+ *
+ * @param tilePoint Pointer to the TilePoint var
+ * @param world
+ * @param player
+ * @param playerPixelPos The top-left pixel position of the player
+ * @param pointPos  Which point within the player sptite are
+ *                  we considering in relation to the tilemap?
+*/
 internal_func
-void setTilePoint(TilePoint *tilePoint,
-                    TILE_POINT_POS pointPos,
+void getTilemapTile(TilePoint* tilePoint,
                     World world,
                     Player player,
-                    posXYInt playerNewPos);
+                    posXYInt playerPixelPos,
+                    PLAYER_POINT_POS pointPos);
 
 //
 // Game state & memory
 //====================================================
 typedef struct GameState
 {
+    Tilemap *currentTilemap;
     Player player1;
     SineWave sineWave;
 
@@ -421,15 +438,22 @@ typedef struct GameMemory
 } GameMemory;
 
 //
+// World/Tilemaps (reference GameState)
+//====================================================
+internal_func
+inline bool isWorldTileFree(GameState gameState,
+                            TilePoint point);
+
+//
 // Graphics
 //====================================================
 internal_func
 void writeRectangle(GameFrameBuffer* buffer,
-                                    int64 xOffset,
-                                    int64 yOffset,
-                                    int64 width,
-                                    int64 height,
-                                    Colour colour);
+                    int64 xOffset,
+                    int64 yOffset,
+                    int64 width,
+                    int64 height,
+                    Colour colour);
 
 internal_func
 void frameBufferWritePlayer(GameState *gameState,
@@ -458,8 +482,7 @@ void controllerHandlePlayer(GameState *gameState,
                             GameAudioBuffer *audioBuffer,
                             GameInput gameInput,
                             uint8 selectedController,
-                            World *world,
-                            TileMap *tileMap);
+                            World *world);
 
 
 

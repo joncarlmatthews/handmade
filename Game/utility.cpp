@@ -29,11 +29,11 @@ float32 percentageOfAnotherf(float32 a, float32 b)
 }
 
 void utilConcatStringsA(char *source1,
-                                       uint32 source1Length,
-                                       char *source2,
-                                       uint32 source2Length,
-                                       char *dest,
-                                       uint32 destLength)
+                        uint32 source1Length,
+                        char *source2,
+                        uint32 source2Length,
+                        char *dest,
+                        uint32 destLength)
 {
     uint32 runningIndex = 0;
     for (uint32 i = 0; i < source1Length; i++) {
@@ -60,11 +60,11 @@ void utilConcatStringsA(char *source1,
 }
 
 void utilConcatStringsW(wchar_t *source1,
-                                       uint32 source1Length,
-                                       wchar_t* source2,
-                                       uint32 source2Length,
-                                       wchar_t* dest,
-                                       uint32 destLength)
+                        uint32 source1Length,
+                        wchar_t *source2,
+                        uint32 source2Length,
+                        wchar_t *dest,
+                        uint32 destLength)
 {
     uint32 runningIndex = 0;
     for (uint32 i = 0; i < source1Length; i++) {
@@ -91,9 +91,9 @@ void utilConcatStringsW(wchar_t *source1,
 }
 
 void utilWideCharToChar(wchar_t *wideCharArr,
-                                       uint32 wideCharLength,
-                                       char *charArr,
-                                       uint32 charLength)
+                        uint32 wideCharLength,
+                        char *charArr,
+                        uint32 charLength)
 {
     for (uint32 x = 0; x < wideCharLength; x++) {
         charArr[x] = (char)wideCharArr[x];
