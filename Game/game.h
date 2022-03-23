@@ -7,6 +7,7 @@
 
 // Flags:
 
+// #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
 // #define HANDMADE_DEBUG_CLOCKCYCLES
@@ -385,6 +386,7 @@ void getTilemapTile(TilePoint* tilePoint,
 typedef struct GameState
 {
     Tilemap *currentTilemap;
+    posXYInt currentTilemapIndex;
     Player player1;
     SineWave sineWave;
 
@@ -440,6 +442,11 @@ typedef struct GameMemory
 //
 // World/Tilemaps (reference GameState)
 //====================================================
+internal_func
+void setCurrentTilemap(World *world,
+                        TilePoint point,
+                        GameState *gameState);
+
 internal_func
 inline bool isWorldTileFree(GameState gameState,
                             TilePoint point);

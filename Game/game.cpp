@@ -34,8 +34,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-        gameState->player1.position.x = 816;
-        gameState->player1.position.y = 228;
+        gameState->player1.position.x = 300;
+        gameState->player1.position.y = 480;
         gameState->player1.height = 60;
         gameState->player1.width = 60;
         gameState->player1.totalJumpMovement = 15.0f;
@@ -68,6 +68,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!gameState->currentTilemap){
         gameState->currentTilemap = &world.tilemaps[0][0];
+        gameState->currentTilemapIndex = {0, 0};
     }
 
     /**
@@ -156,29 +157,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
 }
 
-
-/**
- * @brief @TODO(JM) forward declare this function and move
-*/
-internal_func
-void setCurrentTilemap(World *world, TilePoint point, GameState *gameState)
-{
-
-    if (point.x < 0) {
-        gameState->currentTilemap--;
-        gameState->player1.position.x = ((TILEMAP_SIZE_X * gameState->player1.width) - gameState->player1.width);
-    }
-
-    if (point.x >= TILEMAP_SIZE_X) {
-        gameState->currentTilemap += 1;
-        gameState->player1.position.x = 0;
-    }
-
-    if (point.y >= TILEMAP_SIZE_Y) {
-        gameState->currentTilemap += WORLD_TILEMAP_COUNT_X;
-    }
-}
-
 internal_func
 void controllerHandlePlayer(GameState *gameState,
                             GameMemory *memory,
@@ -191,7 +169,8 @@ void controllerHandlePlayer(GameState *gameState,
     GameControllerInput controller = gameInput.controllers[selectedController];
 
     // Basic player movement
-    bool playerMoving = false;
+    bool playerAttemptingMove = false;
+    bool playerHasMoved = false;
     float32 speed = 0.2f;
 
     posXYInt playerNewPos = {0};
@@ -199,29 +178,29 @@ void controllerHandlePlayer(GameState *gameState,
     playerNewPos.y = gameState->player1.position.y;
 
     if (controller.dPadLeft.endedDown) {
-        playerMoving = true;
+        playerAttemptingMove = true;
         playerNewPos.x += (int32)(gameInput.msPerFrame * (speed * -1));
     }
 
     if (controller.dPadRight.endedDown) {
-        playerMoving = true;
+        playerAttemptingMove = true;
         playerNewPos.x += (int32)(gameInput.msPerFrame * speed);
     }
 
     if (controller.dPadUp.endedDown) {
-        playerMoving = true;
+        playerAttemptingMove = true;
         playerNewPos.y += (int32)(gameInput.msPerFrame * (speed * -1));
     }
 
     if (controller.dPadDown.endedDown) {
-        playerMoving = true;
+        playerAttemptingMove = true;
         playerNewPos.y += (int32)(gameInput.msPerFrame * speed);
     }
 
     if (controller.isAnalog) {
 
         if (controller.leftThumbstick.position.x) {
-            playerMoving = true;
+            playerAttemptingMove = true;
             if (controller.leftThumbstick.position.x >= 0.0f) {
                 playerNewPos.x += (int32)(gameInput.msPerFrame * speed);
             }else{
@@ -230,7 +209,7 @@ void controllerHandlePlayer(GameState *gameState,
         }
 
         if (controller.leftThumbstick.position.y) {
-            playerMoving = true;
+            playerAttemptingMove = true;
             if (controller.leftThumbstick.position.y >= 0.0f) {
                 playerNewPos.y += (int32)(gameInput.msPerFrame * (speed * -1));
             }
@@ -240,111 +219,123 @@ void controllerHandlePlayer(GameState *gameState,
         }
     }
 
-    // Tilemap collision detection
-    TilePoint bottomMiddle = {0};
-    getTilemapTile(&bottomMiddle,
-                    *world,
-                    gameState->player1,
-                    playerNewPos,
-                    PLAYER_POINT_POS::BOTTOM_MIDDLE);
+    if (playerAttemptingMove) {
 
-    TilePoint bottomLeft = { 0 };
-    getTilemapTile(&bottomLeft,
-                    *world,
-                    gameState->player1,
-                    playerNewPos,
-                    PLAYER_POINT_POS::BOTTOM_LEFT);
+        // Tilemap collision detection
+        TilePoint bottomMiddle = {0};
+        getTilemapTile(&bottomMiddle,
+                        *world,
+                        gameState->player1,
+                        playerNewPos,
+                        PLAYER_POINT_POS::BOTTOM_MIDDLE);
 
-    TilePoint bottomRight = { 0 };
-    getTilemapTile(&bottomRight,
-                    *world,
-                    gameState->player1,
-                    playerNewPos,
-                    PLAYER_POINT_POS::BOTTOM_RIGHT);
+        TilePoint bottomLeft = { 0 };
+        getTilemapTile(&bottomLeft,
+                        *world,
+                        gameState->player1,
+                        playerNewPos,
+                        PLAYER_POINT_POS::BOTTOM_LEFT);
+
+        TilePoint bottomRight = { 0 };
+        getTilemapTile(&bottomRight,
+                        *world,
+                        gameState->player1,
+                        playerNewPos,
+                        PLAYER_POINT_POS::BOTTOM_RIGHT);
 
 #if 0
-    TilePoint bottomLeft = {
-        (uint8)((float32)playerNewPos.x / (float32)world->tileMapHeight),
-        (uint8)(((float32)playerNewPos.y + (float32)gameState->player1.height - 6.0f) / (float32)world->tileMapHeight)
-    };
+        TilePoint bottomLeft = {
+            (uint8)((float32)playerNewPos.x / (float32)world->tileMapHeight),
+            (uint8)(((float32)playerNewPos.y + (float32)gameState->player1.height - 6.0f) / (float32)world->tileMapHeight)
+        };
 
-    TilePoint bottomRight = {
-        (uint8)(((float32)playerNewPos.x + (float32)gameState->player1.width - 6.0f) / (float32)world->tileMapWidth),
-        (uint8)(((float32)playerNewPos.y + (float32)gameState->player1.height - 6.0f) / (float32)world->tileMapHeight)
-    };
+        TilePoint bottomRight = {
+            (uint8)(((float32)playerNewPos.x + (float32)gameState->player1.width - 6.0f) / (float32)world->tileMapWidth),
+            (uint8)(((float32)playerNewPos.y + (float32)gameState->player1.height - 6.0f) / (float32)world->tileMapHeight)
+        };
 
-    Point topMiddle = {
-        (uint8)(((float32)playerNewPos.x + (float32)gameState->player1.width / 2.0f) / (float32)world->tileMapWidth),
-        (uint8)((float32)playerNewPos.y / (float32)world->tileMapHeight)
-    };
+        Point topMiddle = {
+            (uint8)(((float32)playerNewPos.x + (float32)gameState->player1.width / 2.0f) / (float32)world->tileMapWidth),
+            (uint8)((float32)playerNewPos.y / (float32)world->tileMapHeight)
+        };
 
-    Point topLeft = {
-        (uint8)((float32)playerNewPos.x / (float32)world->tileMapWidth),
-        (uint8)((float32)playerNewPos.y / (float32)world->tileMapHeight)
-    };
+        Point topLeft = {
+            (uint8)((float32)playerNewPos.x / (float32)world->tileMapWidth),
+            (uint8)((float32)playerNewPos.y / (float32)world->tileMapHeight)
+        };
 
-    Point topRight = {
-        (uint8)(((float32)playerNewPos.x + (float32)gameState->player1.width) / (float32)world->tileMapWidth),
-        (uint8)((float32)playerNewPos.y / (float32)world->tileMapHeight),
-    };
+        Point topRight = {
+            (uint8)(((float32)playerNewPos.x + (float32)gameState->player1.width) / (float32)world->tileMapWidth),
+            (uint8)((float32)playerNewPos.y / (float32)world->tileMapHeight),
+        };
 #endif
 
-    TilePoint debugPoint = bottomLeft;
+        TilePoint debugPoint = bottomLeft;
 
-    // @NOTE(JM) Bug, if move is invalid no move it taken
-    if ( (isWorldTileFree(*gameState, bottomMiddle))
-            && (isWorldTileFree(*gameState, bottomLeft))
-            && (isWorldTileFree(*gameState, bottomRight))) {
-        gameState->player1.position.x = playerNewPos.x;
-        gameState->player1.position.y = playerNewPos.y;
+        // @NOTE(JM) Bug, if move is invalid no move it taken
+        if ( (isWorldTileFree(*gameState, bottomMiddle))
+                && (isWorldTileFree(*gameState, bottomLeft))
+                && (isWorldTileFree(*gameState, bottomRight))) {
 
-        if (playerMoving) {
+            if ((gameState->player1.position.x != playerNewPos.x)
+                || (gameState->player1.position.y != playerNewPos.y)){
+
+                gameState->player1.position.x = playerNewPos.x;
+                gameState->player1.position.y = playerNewPos.y;
+
+                playerHasMoved = true;
+            }
+        
             char buff[100] = {};
             sprintf_s(buff, sizeof(buff),
-                        "Tile x:%i y:%i (%i) Plr pos: %i %i. Plr new pos: %i %i\n",
+                        "Tile x:%i y:%i (%i). Plr pos: %i %i. Plr new pos: %i %i.  Tilemap: %i %i\n",
                         debugPoint.x,
                         debugPoint.y,
                         isWorldTileFree(*gameState, debugPoint),
                         gameState->player1.position.x,
                         gameState->player1.position.y,
                         playerNewPos.x,
-                        playerNewPos.y);
+                        playerNewPos.y,
+                        gameState->currentTilemapIndex.x,
+                        gameState->currentTilemapIndex.y);
             memory->DEBUG_platformLog(buff);
-        }
 
-    }else{
+        }else{
 
-        if (playerMoving) {
             char buff[100] = {};
             sprintf_s(buff, sizeof(buff),
-                        "Tile x:%i y:%i (%i) Plr new pos: %i %i (could not move)\n",
+                        "Tile x:%i y:%i (%i). Plr new pos: %i %i (could not move). Tilemap: %i %i\n",
                         debugPoint.x,
                         debugPoint.y,
                         isWorldTileFree(*gameState, debugPoint),
                         playerNewPos.x,
-                        playerNewPos.y);
+                        playerNewPos.y,
+                        gameState->currentTilemapIndex.x,
+                        gameState->currentTilemapIndex.y);
+            memory->DEBUG_platformLog(buff);
+
+        }
+
+        if (playerHasMoved){
+
+            TilePoint middle = { 0 };
+            getTilemapTile(&middle,
+                            *world,
+                            gameState->player1,
+                            gameState->player1.position,
+                            PLAYER_POINT_POS::MIDDLE);
+
+            setCurrentTilemap(world, middle, gameState);
+
+            char buff[100] = {};
+            sprintf_s(buff, sizeof(buff),
+                        "Player middle x:%i y:%i (%i)\n",
+                        middle.x,
+                        middle.y,
+                        isWorldTileFree(*gameState, middle));
             memory->DEBUG_platformLog(buff);
         }
 
-    }
-
-    TilePoint middle = { 0 };
-    getTilemapTile(&middle,
-                    *world,
-                    gameState->player1,
-                    gameState->player1.position,
-                    PLAYER_POINT_POS::MIDDLE);
-
-    setCurrentTilemap(world, middle, gameState);
-
-    if (playerMoving) {
-        char buff[100] = {};
-        sprintf_s(buff, sizeof(buff),
-                    "Player middle x:%i y:%i (%i)\n",
-                    middle.x,
-                    middle.y,
-                    isWorldTileFree(*gameState, middle));
-        memory->DEBUG_platformLog(buff);
     }
 
     // Temp jump code
@@ -450,9 +441,42 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 #endif
 
 internal_func
+void setCurrentTilemap(World *world, TilePoint point, GameState *gameState)
+{
+    // Moving left
+    if (point.x < 0) {
+        gameState->currentTilemap--;
+        gameState->currentTilemapIndex.x -= 1;
+        gameState->player1.position.x = ((TILEMAP_SIZE_X * gameState->player1.width) - gameState->player1.width);
+    }
+
+    // Moving right
+    if (point.x >= TILEMAP_SIZE_X) {
+        gameState->currentTilemap += 1;
+        gameState->currentTilemapIndex.x += 1;
+        gameState->player1.position.x = 0;
+    }
+
+    // Moving up
+    if (point.y < 0) {
+        gameState->currentTilemap -= WORLD_TILEMAP_COUNT_X;
+        gameState->currentTilemapIndex.y -= 1;
+        gameState->player1.position.y = ((TILEMAP_SIZE_Y * gameState->player1.height) - gameState->player1.height);
+    }
+
+    // Moving down
+    if (point.y >= TILEMAP_SIZE_Y) {
+        gameState->currentTilemap += WORLD_TILEMAP_COUNT_X;
+        gameState->currentTilemapIndex.y += 1;
+        gameState->player1.position.y = 0;
+    }
+}
+
+internal_func
 inline bool isWorldTileFree(GameState gameState, TilePoint point)
 {
-    Tilemap* tilemapToCheck = gameState.currentTilemap;
+    Tilemap *tilemapToCheck = gameState.currentTilemap;
+    posXYInt currentTilemapIndex = gameState.currentTilemapIndex;
 
     if (point.x < 0) {
         point.x = (TILEMAP_SIZE_X -1);
@@ -467,6 +491,11 @@ inline bool isWorldTileFree(GameState gameState, TilePoint point)
     if (point.y >= TILEMAP_SIZE_Y) {
         point.y = 0;
         tilemapToCheck += WORLD_TILEMAP_COUNT_X;
+    }
+
+    if (point.y < 0) {
+        point.y = (TILEMAP_SIZE_Y - 1);
+        tilemapToCheck -= WORLD_TILEMAP_COUNT_X;
     }
 
     uint tilePos = (point.y * TILEMAP_SIZE_X) + point.x;
@@ -507,7 +536,7 @@ void getTilemapTile(TilePoint* tilePoint,
         break;
     case PLAYER_POINT_POS::MIDDLE:
         tilePoint->x = (int8)floor(((float32)playerPixelPos.x + ((float32)player.width / 2.0f)) / (float32)world.tileMapWidth);
-        tilePoint->y = (int8) (((float32)playerPixelPos.y + ((float32)player.height / 2.0f)) / (float32)world.tileMapHeight);
+        tilePoint->y = (int8)floor(((float32)playerPixelPos.y + ((float32)player.height / 2.0f)) / (float32)world.tileMapHeight);
         break;
     default:
         assert(!"Tile point position not yet supported");
