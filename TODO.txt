@@ -1,2 +1,0 @@
- - Debug the use of floor() within getTilemapTile()
- - Use the game state's current World tile X and Y index tracking for out-of-bounds checking 

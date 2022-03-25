@@ -344,9 +344,12 @@ typedef struct Tilemap {
 #define WORLD_TILEMAP_COUNT_X 3
 #define WORLD_TILEMAP_COUNT_Y 2
 
+#define STARTING_WORLD_TILEMAP_INDEX_X 0
+#define STARTING_WORLD_TILEMAP_INDEX_Y 0
+
 typedef struct World {
-    uint16 tileMapHeight;
-    uint16 tileMapWidth;
+    uint16 tilemapTileHeight;
+    uint16 tilemapTileWidth;
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
 } World;
 
@@ -356,10 +359,11 @@ typedef struct TilePoint {
 } TilePoint;
 
 enum class PLAYER_POINT_POS {
+    TOP_MIDDLE,
+    MIDDLE,
     BOTTOM_MIDDLE,
     BOTTOM_RIGHT,
     BOTTOM_LEFT,
-    MIDDLE,
 };
 
 /**
