@@ -347,7 +347,11 @@ typedef struct Tilemap {
 #define STARTING_WORLD_TILEMAP_INDEX_X 0
 #define STARTING_WORLD_TILEMAP_INDEX_Y 0
 
+#define STARTING_TILEMAP_POS_X 1
+#define STARTING_TILEMAP_POS_Y 1
+
 typedef struct World {
+    float32 tileHeight = 1.4f;
     uint16 tilemapTileHeight;
     uint16 tilemapTileWidth;
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
@@ -357,6 +361,12 @@ typedef struct TilePoint {
     int32 x;
     int32 y;
 } TilePoint;
+
+typedef struct CurrentTilemap {
+    Tilemap *tilemap; // currentTilemap
+    posXYInt tilemapIndex; // currentTilemapIndex
+    TilePoint tile; // currentTile
+} CurrentTilemap;
 
 enum class PLAYER_POINT_POS {
     TOP_MIDDLE,
@@ -378,7 +388,7 @@ enum class PLAYER_POINT_POS {
  *                  we considering in relation to the tilemap?
 */
 internal_func
-void getTilemapTile(TilePoint* tilePoint,
+void getTilemapTile(TilePoint *tilePoint,
                     World world,
                     Player player,
                     posXYInt playerPixelPos,
@@ -389,8 +399,7 @@ void getTilemapTile(TilePoint* tilePoint,
 //====================================================
 typedef struct GameState
 {
-    Tilemap *currentTilemap;
-    posXYInt currentTilemapIndex;
+    CurrentTilemap currentTilemap;
     Player player1;
     SineWave sineWave;
 
@@ -449,7 +458,8 @@ typedef struct GameMemory
 internal_func
 void setCurrentTilemap(World *world,
                         TilePoint point,
-                        GameState *gameState);
+                        GameState *gameState,
+                        GameMemory* memory);
 
 internal_func
 inline bool isWorldTileFree(GameState gameState,
