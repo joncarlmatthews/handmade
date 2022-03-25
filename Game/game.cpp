@@ -40,6 +40,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     };
 
     World world = {
+        1.4f,
         60,
         60,
         { tileMap1, tileMap2, tileMap3,
