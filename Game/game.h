@@ -351,7 +351,7 @@ typedef struct Tilemap {
 #define STARTING_TILEMAP_POS_Y 1
 
 typedef struct World {
-    float32 tileHeight = 1.4f;
+    float32 tileHeight;
     uint16 tilemapTileHeight;
     uint16 tilemapTileWidth;
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
