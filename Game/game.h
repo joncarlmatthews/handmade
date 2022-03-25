@@ -1,10 +1,13 @@
-#ifndef HEADER_HANDMADE
-#define HEADER_HANDMADE
+#ifndef HEADER_HH_GAME
+#define HEADER_HH_GAME
+
+#include "tilemaps.h"
 
 #if HANDMADE_LOCAL_BUILD
 
 // Flags:
 
+// #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
 // #define HANDMADE_DEBUG_CLOCKCYCLES
@@ -113,6 +116,10 @@ typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 //=====================================================
 //====================================================
 
+//
+// Graphics
+//====================================================
+
 /*
  * Struct for the screen buffer
  * 
@@ -145,6 +152,10 @@ typedef struct GameFrameBuffer
     void *memory;
 
 } GameFrameBuffer;
+
+//
+// Audio
+//====================================================
 
 /**
  * Struct for the audio buffer
@@ -187,6 +198,10 @@ typedef struct GameAudioBuffer
 #endif
 
 } GameAudioBuffer;
+
+//
+// Controller/input
+//====================================================
 
 typedef struct ControllerCounts
 {
@@ -277,8 +292,9 @@ typedef struct SineWave
 
 } SineWave;
 
-enum jumpDirection { JUMP_UP, JUMP_DOWN };
-
+//
+// Pixels/colours
+//====================================================
 typedef struct Colour {
     float32 r;
     float32 g;
@@ -286,24 +302,96 @@ typedef struct Colour {
     float32 a;
 } Colour;
 
+//
+// Player/positioning
+//====================================================
+
+typedef struct posXYInt {
+    int32 x;
+    int32 y;
+} posXYInt;
+
+typedef struct Player {
+    posXYInt position;
+    uint16 height;
+    uint16 width;
+    uint8 movementSpeed;
+
+    bool8 jumping;
+    float32 jumpDuration;
+    float32 totalJumpMovement;
+    float32 jumpRunningFrameCtr;
+    float32 jumpDirection;
+    int32 jumpStartPos;
+
+} Player;
+
+enum jumpDirection {
+    JUMP_UP,
+    JUMP_DOWN
+};
+
+//
+// World/Tilemaps
+//====================================================
+#define TILEMAP_SIZE_X 16
+#define TILEMAP_SIZE_Y 9
+
+typedef struct Tilemap {
+    uint32 tiles[TILEMAP_SIZE_Y][TILEMAP_SIZE_X];
+} Tilemap;
+
+#define WORLD_TILEMAP_COUNT_X 3
+#define WORLD_TILEMAP_COUNT_Y 2
+
+#define STARTING_WORLD_TILEMAP_INDEX_X 0
+#define STARTING_WORLD_TILEMAP_INDEX_Y 0
+
+typedef struct World {
+    uint16 tilemapTileHeight;
+    uint16 tilemapTileWidth;
+    Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
+} World;
+
+typedef struct TilePoint {
+    int32 x;
+    int32 y;
+} TilePoint;
+
+enum class PLAYER_POINT_POS {
+    TOP_MIDDLE,
+    MIDDLE,
+    BOTTOM_MIDDLE,
+    BOTTOM_RIGHT,
+    BOTTOM_LEFT,
+};
+
+/**
+ * @brief Gets the X and Y coords of a @link playerPixelPos
+ * in relational to the onscreen tilemap
+ *
+ * @param tilePoint Pointer to the TilePoint var
+ * @param world
+ * @param player
+ * @param playerPixelPos The top-left pixel position of the player
+ * @param pointPos  Which point within the player sptite are
+ *                  we considering in relation to the tilemap?
+*/
+internal_func
+void getTilemapTile(TilePoint* tilePoint,
+                    World world,
+                    Player player,
+                    posXYInt playerPixelPos,
+                    PLAYER_POINT_POS pointPos);
+
+//
+// Game state & memory
+//====================================================
 typedef struct GameState
 {
-    struct player1 {
-        int32 posX;
-        int32 posY;
-        uint16 height;
-        uint16 width;
-        uint8 movementSpeed;
-
-        bool8 jumping;
-        float32 jumpDuration;
-        float32 totalJumpMovement;
-        float32 jumpRunningFrameCtr;
-        float32 jumpDirection;
-        int32 jumpStartPos;
-        
-    } player1;
-
+    Tilemap *currentTilemap;
+    posXYInt currentTilemapIndex;
+    Player player1;
     SineWave sineWave;
 
 } GameState;
@@ -355,52 +443,59 @@ typedef struct GameMemory
 
 } GameMemory;
 
-#define TILEMAP_SIZE_X 16
-#define TILEMAP_SIZE_Y 9
+//
+// World/Tilemaps (reference GameState)
+//====================================================
+internal_func
+void setCurrentTilemap(World *world,
+                        TilePoint point,
+                        GameState *gameState);
 
-typedef struct TileMap {
-    uint32 *tiles;
-    uint16 tileHeight = 60;
-    uint16 tileWidth = 60;
-} TileMap;
+internal_func
+inline bool isWorldTileFree(GameState gameState,
+                            TilePoint point);
 
-typedef struct Point {
-    int32 x;
-    int32 y;
-} Point;
+//
+// Graphics
+//====================================================
+internal_func
+void writeRectangle(GameFrameBuffer* buffer,
+                    int64 xOffset,
+                    int64 yOffset,
+                    int64 width,
+                    int64 height,
+                    Colour colour);
 
-enum class MOVE_DIRECTION {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT
-};
+internal_func
+void frameBufferWritePlayer(GameState *gameState,
+                            GameFrameBuffer *buffer,
+                            GameAudioBuffer *audioBuffer);
 
-internal_func void writeRectangle(GameFrameBuffer* buffer,
-                                    int64 xOffset,
-                                    int64 yOffset,
-                                    int64 width,
-                                    int64 height,
-                                    Colour colour);
+//
+// Audio
+//====================================================
+internal_func
+void audioBufferWriteSineWave(GameState *gameState,
+                                GameAudioBuffer *audioBuffer);
+internal_func
+void frameBufferWriteAudioDebug(GameState *gameState,
+                                GameFrameBuffer *buffer,
+                                GameAudioBuffer *audioBuffer);
 
-internal_func void frameBufferWritePlayer(GameState *gameState,
-                                            GameFrameBuffer *buffer,
-                                            GameAudioBuffer *audioBuffer);
 
-internal_func void frameBufferWriteAudioDebug(GameState *gameState,
-                                                GameFrameBuffer *buffer,
-                                                GameAudioBuffer *audioBuffer);
+//
+// Player movement handling
+//====================================================
+internal_func
+void controllerHandlePlayer(GameState *gameState,
+                            GameMemory *memory,
+                            GameFrameBuffer *frameBuffer,
+                            GameAudioBuffer *audioBuffer,
+                            GameInput gameInput,
+                            uint8 selectedController,
+                            World *world);
 
-internal_func void controllerHandlePlayer(GameState *gameState,
-                                            GameMemory* memory,
-                                            GameFrameBuffer *frameBuffer,
-                                            GameAudioBuffer *audioBuffer,
-                                            GameInput gameInput,
-                                            uint8 selectedController,
-                                            TileMap tileMap);
 
-internal_func void audioBufferWriteSineWave(GameState *gameState,
-                                            GameAudioBuffer *audioBuffer);
 
 //====================================================
 //====================================================

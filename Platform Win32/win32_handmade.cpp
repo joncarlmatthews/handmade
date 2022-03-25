@@ -6,13 +6,13 @@
 #include <xinput.h>  // Xinput for receiving controller input.
 
 #include "..\Game\types.h" // Basic types
-#include "..\Game\util.h" // Function signatures and basic types that are shared across the game and platform layer
+#include "..\Game\utility.h" // Function signatures and basic types that are shared across the game and platform layer
 #include "..\Game\game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
 // Include the definitions of the utility/helper Functions that are
 // shared across the game and platform layer
-#include "..\Game\util.cpp"
+#include "..\Game\utility.cpp"
 
 // Whether or not the application is running/paused
 global_var bool8 running = TRUE;
@@ -300,7 +300,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         win32State.gameMemorySize = memoryTotalSize;
         win32State.gameMemory = memory.permanentStorage;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LIVE_LOOP_EDITING
         memory.recordingStorageGameState   = platformAllocateMemory(&thread, (memoryStartAddress + memoryTotalSize), memoryTotalSize);
         memory.recordingStorageInput       = platformAllocateMemory(&thread, (memoryStartAddress + (memoryTotalSize * 2)), memoryTotalSize);
 
@@ -641,7 +641,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             } // Audio buffer created.
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LIVE_LOOP_EDITING
 
             // Recording/playback
             if (win32State.inputRecording) {
@@ -1404,7 +1404,7 @@ internal_func void win32ProcessMessages(HWND window,
                         gameInput->controllers[0].shoulderR1 = state;
                     } break;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LIVE_LOOP_EDITING
                     // Playback recording/looping
                     case 'L': {
                         if (keyDown) {
@@ -1718,7 +1718,7 @@ internal_func void win32GetMousePosition(HWND window, GameMouseInput *mouseInput
     }
 }
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LIVE_LOOP_EDITING
 
 internal_func void win32BeginInputRecording(Win32State *win32State)
 {

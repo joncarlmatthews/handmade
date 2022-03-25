@@ -181,7 +181,7 @@ internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
 
 internal_func void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LIVE_LOOP_EDITING
 
 internal_func void win32BeginInputRecording(Win32State *win32State);
 
