@@ -1,0 +1,1 @@
+ - move current active tile struct to within the player object (Not sure)

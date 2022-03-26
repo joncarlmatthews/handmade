@@ -303,19 +303,26 @@ typedef struct Colour {
 } Colour;
 
 //
-// Player/positioning
+// Positioning
 //====================================================
-
 typedef struct posXYInt {
     int32 x;
     int32 y;
 } posXYInt;
 
+typedef struct posXYf32 {
+    float32 x;
+    float32 y;
+} posXYf32;
+
+//
+// Player
+//====================================================
 typedef struct Player {
     posXYInt position;
-    uint16 height;
-    uint16 width;
-    uint8 movementSpeed;
+    float32 height; // Metres
+    float32 width; // Metres
+    float32 movementSpeed; // Metre's per second
 
     bool8 jumping;
     float32 jumpDuration;
@@ -351,7 +358,8 @@ typedef struct Tilemap {
 #define STARTING_TILEMAP_POS_Y 1
 
 typedef struct World {
-    float32 tileHeight;
+    uint8 pixelsPerMetre; 
+    float32 tileHeight; // Metres @NOTE(JM not yet used)
     uint16 tilemapTileHeight;
     uint16 tilemapTileWidth;
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
@@ -376,32 +384,15 @@ enum class PLAYER_POINT_POS {
     BOTTOM_LEFT,
 };
 
-/**
- * @brief Gets the X and Y coords of a @link playerPixelPos
- * in relational to the onscreen tilemap
- *
- * @param tilePoint Pointer to the TilePoint var
- * @param world
- * @param player
- * @param playerPixelPos The top-left pixel position of the player
- * @param pointPos  Which point within the player sptite are
- *                  we considering in relation to the tilemap?
-*/
-internal_func
-void getTilemapTile(TilePoint *tilePoint,
-                    World world,
-                    Player player,
-                    posXYInt playerPixelPos,
-                    PLAYER_POINT_POS pointPos);
-
 //
 // Game state & memory
 //====================================================
 typedef struct GameState
 {
-    CurrentTilemap currentTilemap;
     Player player1;
+    CurrentTilemap currentTilemap;
     SineWave sineWave;
+    posXYf32 debug_xyPoints[5];
 
 } GameState;
 
@@ -455,6 +446,25 @@ typedef struct GameMemory
 //
 // World/Tilemaps (reference GameState)
 //====================================================
+/**
+ * @brief Gets the X and Y coords of a @link playerPixelPos
+ * in relational to the onscreen tilemap
+ *
+ * @param tilePoint Pointer to the TilePoint var
+ * @param world
+ * @param player
+ * @param playerPixelPos The top-left pixel position of the player
+ * @param pointPos  Which point within the player sptite are
+ *                  we considering in relation to the tilemap?
+*/
+internal_func
+void getTilemapTile(TilePoint* tilePoint,
+                    World world,
+                    Player player,
+                    posXYInt playerPixelPos,
+                    PLAYER_POINT_POS pointPos,
+                    GameState* gameState);
+
 internal_func
 void setCurrentTilemap(World *world,
                         TilePoint point,
