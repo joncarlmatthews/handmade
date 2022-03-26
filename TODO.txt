@@ -1,1 +1,2 @@
- - move current active tile struct to within the player object (Not sure)
+ - Calculate the position of the player within the active tile
+ - move current active tile struct to within the player object (Meh, not sure actually)
