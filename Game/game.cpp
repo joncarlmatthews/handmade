@@ -171,8 +171,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Point visualisation
 #ifdef HANDMADE_DEBUG_TILE_POS
     writeRectangle(frameBuffer,
-                    (int32)gameState->debug_xyPoints[2].x,
-                    (int32)gameState->debug_xyPoints[2].y,
+                    (int32)gameState->debug_xyPoints[(uint8)PLAYER_POINT_POS::MIDDLE].x,
+                    (int32)gameState->debug_xyPoints[(uint8)PLAYER_POINT_POS::MIDDLE].y,
                     5,
                     5,
                     { 0.4f, 1.0f, 0.2f });
@@ -258,19 +258,10 @@ void controllerHandlePlayer(GameState *gameState,
     if (playerAttemptingMove) {
 
         // Tilemap collision detection
-
         TilePoint middle = { 0 };
         getTilemapTile(&middle,
                         playerNewPos,
                         PLAYER_POINT_POS::MIDDLE,
-                        gameState->player1,
-                        *world,
-                        gameState);
-
-        TilePoint topMiddle = { 0 };
-        getTilemapTile(&topMiddle,
-                        playerNewPos,
-                        PLAYER_POINT_POS::TOP_MIDDLE,
                         gameState->player1,
                         *world,
                         gameState);
@@ -283,29 +274,11 @@ void controllerHandlePlayer(GameState *gameState,
                         *world,
                         gameState);
 
-        TilePoint bottomLeft = { 0 };
-        getTilemapTile(&bottomLeft,
-                        playerNewPos,
-                        PLAYER_POINT_POS::BOTTOM_LEFT,
-                        gameState->player1,
-                        *world,
-                        gameState);
-
-        TilePoint bottomRight = { 0 };
-        getTilemapTile(&bottomRight,
-                        playerNewPos,
-                        PLAYER_POINT_POS::BOTTOM_RIGHT,
-                        gameState->player1,
-                        *world,
-                        gameState);
-
-        TilePoint debugPoint = bottomMiddle;
+        TilePoint debugPoint = middle;
 
         // @NOTE(JM) Bug, if move is invalid no move it taken
-        if ((isWorldTileFree(*gameState, topMiddle))
-                && (isWorldTileFree(*gameState, bottomMiddle))
-                && (isWorldTileFree(*gameState, bottomLeft))
-                && (isWorldTileFree(*gameState, bottomRight))) {
+        if ((isWorldTileFree(*gameState, middle))
+                && (isWorldTileFree(*gameState, bottomMiddle))) {
 
             if ((gameState->player1.position.x != playerNewPos.x)
                 || (gameState->player1.position.y != playerNewPos.y)){
@@ -494,8 +467,7 @@ void getTilemapTile(TilePoint *tilePoint,
                     World world,
                     GameState *gameState)
 {
-    uint8 debugIndex    = 0;
-    float32 pixelInset  = 6.0f;
+    float32 pixelInset  = 4.0f;
     float32 x           = 0.0f;
     float32 y           = 0.0f;
 
@@ -505,32 +477,34 @@ void getTilemapTile(TilePoint *tilePoint,
     case PLAYER_POINT_POS::TOP_LEFT:
         x = (float32)playerPixelPos.x;
         y = (float32)playerPixelPos.y;
-        debugIndex = 0;
         break;
     case PLAYER_POINT_POS::TOP_MIDDLE:
         x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) / 2.0f);
         y = (float32)playerPixelPos.y;
-        debugIndex = 0;
+        break;
+    case PLAYER_POINT_POS::MIDDLE_LEFT:
+        x = (float32)playerPixelPos.x;
+        y = ((float32)playerPixelPos.y + ((float32)metresToPixels(world, player.height) / 2.0f) - pixelInset);
         break;
     case PLAYER_POINT_POS::MIDDLE:
         x = (float32)playerPixelPos.x + ((float32)metresToPixels(world, player.width) / 2.0f);
         y = (float32)playerPixelPos.y + ((float32)metresToPixels(world, player.height) / 2.0f);
-        debugIndex = 1;
+        break;
+    case PLAYER_POINT_POS::MIDDLE_RIGHT:
+        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) - pixelInset);
+        y = ((float32)playerPixelPos.y + ((float32)metresToPixels(world, player.height) / 2.0f) - pixelInset);
         break;
     case PLAYER_POINT_POS::BOTTOM_MIDDLE:
         x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) / 2.0f);
         y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
-        debugIndex = 2;
         break;
     case PLAYER_POINT_POS::BOTTOM_RIGHT:
         x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) - pixelInset);
         y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
-        debugIndex = 3;
         break;
     case PLAYER_POINT_POS::BOTTOM_LEFT:
         x = (float32)playerPixelPos.x;
         y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
-        debugIndex = 4;
         break;
     default:
         assert(!"Tile point position not yet supported");
@@ -538,7 +512,7 @@ void getTilemapTile(TilePoint *tilePoint,
     }
 
 #ifdef HANDMADE_DEBUG_TILE_POS
-    gameState->debug_xyPoints[debugIndex] = { x, y };
+    gameState->debug_xyPoints[(uint8)pointPos] = { x, y };
 #endif
 
     tilePoint->x = (int8)floorf(x / (float32)world.tilemapTileWidth);

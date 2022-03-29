@@ -381,7 +381,9 @@ enum class PLAYER_POINT_POS {
     TOP_LEFT,
     TOP_MIDDLE,
     TOP_RIGHT,
+    MIDDLE_LEFT,
     MIDDLE,
+    MIDDLE_RIGHT,
     BOTTOM_LEFT,
     BOTTOM_MIDDLE,
     BOTTOM_RIGHT,
@@ -395,7 +397,7 @@ typedef struct GameState
     Player player1;
     CurrentTilemap currentTilemap;
     SineWave sineWave;
-    posXYf32 debug_xyPoints[5];
+    posXYf32 debug_xyPoints[10];
 
 } GameState;
 
