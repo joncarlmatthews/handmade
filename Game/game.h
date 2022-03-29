@@ -7,6 +7,7 @@
 
 // Flags:
 
+#define HANDMADE_DEBUG_TILE_POS
 // #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
@@ -377,11 +378,13 @@ typedef struct CurrentTilemap {
 } CurrentTilemap;
 
 enum class PLAYER_POINT_POS {
+    TOP_LEFT,
     TOP_MIDDLE,
+    TOP_RIGHT,
     MIDDLE,
+    BOTTOM_LEFT,
     BOTTOM_MIDDLE,
     BOTTOM_RIGHT,
-    BOTTOM_LEFT,
 };
 
 //
@@ -446,24 +449,13 @@ typedef struct GameMemory
 //
 // World/Tilemaps (reference GameState)
 //====================================================
-/**
- * @brief Gets the X and Y coords of a @link playerPixelPos
- * in relational to the onscreen tilemap
- *
- * @param tilePoint Pointer to the TilePoint var
- * @param world
- * @param player
- * @param playerPixelPos The top-left pixel position of the player
- * @param pointPos  Which point within the player sptite are
- *                  we considering in relation to the tilemap?
-*/
 internal_func
-void getTilemapTile(TilePoint* tilePoint,
-                    World world,
-                    Player player,
+void getTilemapTile(TilePoint *tilePoint,
                     posXYInt playerPixelPos,
                     PLAYER_POINT_POS pointPos,
-                    GameState* gameState);
+                    Player player,
+                    World world,
+                    GameState *gameState);
 
 internal_func
 void setCurrentTilemap(World *world,

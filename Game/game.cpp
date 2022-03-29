@@ -169,12 +169,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     { 0.301f, 0.156f, 0.0f });
 
     // Point visualisation
+#ifdef HANDMADE_DEBUG_TILE_POS
     writeRectangle(frameBuffer,
-                    (int32)gameState->debug_xyPoints[1].x,
-                    (int32)gameState->debug_xyPoints[1].y,
+                    (int32)gameState->debug_xyPoints[2].x,
+                    (int32)gameState->debug_xyPoints[2].y,
                     5,
                     5,
                     { 0.4f, 1.0f, 0.2f });
+#endif
 
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
@@ -259,45 +261,45 @@ void controllerHandlePlayer(GameState *gameState,
 
         TilePoint middle = { 0 };
         getTilemapTile(&middle,
-                        *world,
-                        gameState->player1,
                         playerNewPos,
                         PLAYER_POINT_POS::MIDDLE,
+                        gameState->player1,
+                        *world,
                         gameState);
 
         TilePoint topMiddle = { 0 };
         getTilemapTile(&topMiddle,
-                        *world,
-                        gameState->player1,
                         playerNewPos,
                         PLAYER_POINT_POS::TOP_MIDDLE,
+                        gameState->player1,
+                        *world,
                         gameState);
 
         TilePoint bottomMiddle = {0};
         getTilemapTile(&bottomMiddle,
-                        *world,
-                        gameState->player1,
                         playerNewPos,
                         PLAYER_POINT_POS::BOTTOM_MIDDLE,
+                        gameState->player1,
+                        *world,
                         gameState);
 
         TilePoint bottomLeft = { 0 };
         getTilemapTile(&bottomLeft,
-                        *world,
-                        gameState->player1,
                         playerNewPos,
                         PLAYER_POINT_POS::BOTTOM_LEFT,
+                        gameState->player1,
+                        *world,
                         gameState);
 
         TilePoint bottomRight = { 0 };
         getTilemapTile(&bottomRight,
-                        *world,
-                        gameState->player1,
                         playerNewPos,
                         PLAYER_POINT_POS::BOTTOM_RIGHT,
+                        gameState->player1,
+                        *world,
                         gameState);
 
-        TilePoint debugPoint = middle;
+        TilePoint debugPoint = bottomMiddle;
 
         // @NOTE(JM) Bug, if move is invalid no move it taken
         if ((isWorldTileFree(*gameState, topMiddle))
@@ -349,23 +351,25 @@ void controllerHandlePlayer(GameState *gameState,
         if (playerHasMoved){
 
             getTilemapTile(&gameState->currentTilemap.tile,
-                            *world,
-                            gameState->player1,
                             gameState->player1.position,
-                            PLAYER_POINT_POS::MIDDLE,
+                            PLAYER_POINT_POS::BOTTOM_MIDDLE,
+                            gameState->player1,
+                            *world,
                             gameState);
 
             setCurrentTilemap(world, gameState->currentTilemap.tile, gameState, memory);
 
-            #if 0
-            char buff[100] = {};
+            char buff[200] = {};
             sprintf_s(buff, sizeof(buff),
-                        "Player middle x:%i y:%i (%i)\n",
-                        middle.x,
-                        middle.y,
-                        isWorldTileFree(*gameState, middle));
+                        "== Active Tilemaps Index x:%i y:%i Active Tile x:%i y:%i (%i). Plr Pos x:%i y:%i. ==\n",
+                        gameState->currentTilemap.tilemapIndex.x,
+                        gameState->currentTilemap.tilemapIndex.y,
+                        debugPoint.x,
+                        debugPoint.y,
+                        isWorldTileFree(*gameState, debugPoint),
+                        gameState->player1.position.x,
+                        gameState->player1.position.y);
             memory->DEBUG_platformLog(buff);
-            #endif
         }
 
     }
@@ -472,6 +476,75 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 
 #endif
 
+/**
+ * Returns the active X and Y tile point index based off of a given pixel X and Y
+ * 
+ * @param tilePoint         The TilePoint object to write the X and Y into
+ * @param playerPixelPos    The X and Y point to base the calculation on. This is the top left point
+ * @param pointPos          The offset from the playerPixelPos X and Y to apply
+ * @param player            The player object containing the height/width etc
+ * @param world             The world object
+ * @param gameState         The game state (Debug only)
+*/
+internal_func
+void getTilemapTile(TilePoint *tilePoint,
+                    posXYInt playerPixelPos,
+                    PLAYER_POINT_POS pointPos,
+                    Player player,
+                    World world,
+                    GameState *gameState)
+{
+    uint8 debugIndex    = 0;
+    float32 pixelInset  = 6.0f;
+    float32 x           = 0.0f;
+    float32 y           = 0.0f;
+
+    // Apply the offsets...
+    switch (pointPos)
+    {
+    case PLAYER_POINT_POS::TOP_LEFT:
+        x = (float32)playerPixelPos.x;
+        y = (float32)playerPixelPos.y;
+        debugIndex = 0;
+        break;
+    case PLAYER_POINT_POS::TOP_MIDDLE:
+        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) / 2.0f);
+        y = (float32)playerPixelPos.y;
+        debugIndex = 0;
+        break;
+    case PLAYER_POINT_POS::MIDDLE:
+        x = (float32)playerPixelPos.x + ((float32)metresToPixels(world, player.width) / 2.0f);
+        y = (float32)playerPixelPos.y + ((float32)metresToPixels(world, player.height) / 2.0f);
+        debugIndex = 1;
+        break;
+    case PLAYER_POINT_POS::BOTTOM_MIDDLE:
+        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) / 2.0f);
+        y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
+        debugIndex = 2;
+        break;
+    case PLAYER_POINT_POS::BOTTOM_RIGHT:
+        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) - pixelInset);
+        y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
+        debugIndex = 3;
+        break;
+    case PLAYER_POINT_POS::BOTTOM_LEFT:
+        x = (float32)playerPixelPos.x;
+        y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
+        debugIndex = 4;
+        break;
+    default:
+        assert(!"Tile point position not yet supported");
+        break;
+    }
+
+#ifdef HANDMADE_DEBUG_TILE_POS
+    gameState->debug_xyPoints[debugIndex] = { x, y };
+#endif
+
+    tilePoint->x = (int8)floorf(x / (float32)world.tilemapTileWidth);
+    tilePoint->y = (int8)floorf(y / (float32)world.tilemapTileHeight);
+}
+
 internal_func
 void setCurrentTilemap(World *world, TilePoint point, GameState *gameState, GameMemory *memory)
 {
@@ -498,7 +571,7 @@ void setCurrentTilemap(World *world, TilePoint point, GameState *gameState, Game
         movingTilemap = true;
         gameState->currentTilemap.tilemap -= WORLD_TILEMAP_COUNT_X;
         gameState->currentTilemap.tilemapIndex.y -= 1;
-        gameState->player1.position.y = (int32)((TILEMAP_SIZE_Y * world->tilemapTileHeight) - metresToPixels(*world, gameState->player1.height) + (metresToPixels(*world, gameState->player1.height) / 2));
+        gameState->player1.position.y = (int32)(((TILEMAP_SIZE_Y-1) * world->tilemapTileHeight));
     }
 
     // Moving down
@@ -506,7 +579,14 @@ void setCurrentTilemap(World *world, TilePoint point, GameState *gameState, Game
         movingTilemap = true;
         gameState->currentTilemap.tilemap += WORLD_TILEMAP_COUNT_X;
         gameState->currentTilemap.tilemapIndex.y += 1;
-        gameState->player1.position.y = (int32)((metresToPixels(*world, gameState->player1.height) / 2) *-1);
+        gameState->player1.position.y = (int32)(metresToPixels(*world, gameState->player1.height) *-1);
+
+        getTilemapTile(&gameState->currentTilemap.tile,
+                           gameState->player1.position,
+                           PLAYER_POINT_POS::BOTTOM_MIDDLE,
+                           gameState->player1,
+                           *world,
+                           gameState);
     }
 
     if (movingTilemap){
@@ -582,55 +662,6 @@ inline bool isWorldTileFree(GameState gameState, TilePoint point)
     }
 
     return true;
-}
-
-internal_func
-void getTilemapTile(TilePoint *tilePoint,
-                    World world,
-                    Player player,
-                    posXYInt playerPixelPos,
-                    PLAYER_POINT_POS pointPos,
-                    GameState *gameState)
-{
-    float32 pixelInset = 6.0f;
-
-    float32 x = 0.0f;
-    float32 y = 0.0f;
-
-    switch (pointPos)
-    {
-    case PLAYER_POINT_POS::TOP_MIDDLE:
-        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) / 2.0f);
-        y = (float32)playerPixelPos.y;
-        gameState->debug_xyPoints[0] = {x, y};
-        break;
-    case PLAYER_POINT_POS::MIDDLE:
-        x = (float32)playerPixelPos.x + ((float32)metresToPixels(world, player.width) / 2.0f);
-        y = (float32)playerPixelPos.y + ((float32)metresToPixels(world, player.height) / 2.0f);
-        gameState->debug_xyPoints[1] = { x, y };
-        break;
-    case PLAYER_POINT_POS::BOTTOM_MIDDLE:
-        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) / 2.0f);
-        y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
-        gameState->debug_xyPoints[2] = { x, y };
-        break;
-    case PLAYER_POINT_POS::BOTTOM_RIGHT:
-        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.width) - pixelInset);
-        y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
-        gameState->debug_xyPoints[3] = { x, y };
-        break;
-    case PLAYER_POINT_POS::BOTTOM_LEFT:
-        x = (float32)playerPixelPos.x;
-        y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.height) - pixelInset);
-        gameState->debug_xyPoints[4] = { x, y };
-        break;
-    default:
-        assert(!"Tile point position not yet supported");
-        break;
-    }
-
-    tilePoint->x = (int8)floorf(x / (float32)world.tilemapTileWidth);
-    tilePoint->y = (int8)floorf(y / (float32)world.tilemapTileHeight);
 }
 
 /**
