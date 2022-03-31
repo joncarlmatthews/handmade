@@ -39,6 +39,9 @@ typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, L
 // in all places in the plarform layer.
 global_var int64 globalQPCFrequency;
 
+#define VIEWPORT_WIDTH  1280
+#define VIEWPORT_HEIGHT 720
+
 //===========================================
 // Game-required platform layer  functions
 //===========================================
@@ -354,7 +357,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Create the Windows frame buffer
-        win32InitFrameBuffer(&thread, &win32FrameBuffer, 960, 540);
+        win32InitFrameBuffer(&thread, &win32FrameBuffer, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
         
 

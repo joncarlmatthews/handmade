@@ -320,7 +320,7 @@ typedef struct posXYf32 {
 // Player
 //====================================================
 typedef struct Player {
-    posXYInt position;
+    posXYInt position; // Pixels
     float32 height; // Metres
     float32 width; // Metres
     float32 movementSpeed; // Metre's per second
@@ -359,11 +359,13 @@ typedef struct Tilemap {
 #define STARTING_TILEMAP_POS_Y 1
 
 typedef struct World {
-    uint8 pixelsPerMetre; 
-    float32 tileHeight; // Metres @NOTE(JM not yet used)
-    uint16 tilemapTileHeight;
-    uint16 tilemapTileWidth;
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
+    float32 tileHeight; // metres
+    uint8 pixelsPerMetre;
+    uint16 _tilemapTileHeight;
+    uint16 _tilemapTileWidth;
+    uint16 _tilemapHeight;
+    uint16 _tilemapWidth;
 } World;
 
 typedef struct TilePoint {
@@ -372,8 +374,8 @@ typedef struct TilePoint {
 } TilePoint;
 
 typedef struct CurrentTilemap {
-    Tilemap *tilemap; // currentTilemap
     posXYInt tilemapIndex; // currentTilemapIndex
+    Tilemap *tilemap; // currentTilemap
     TilePoint tile; // currentTile
 } CurrentTilemap;
 
@@ -452,7 +454,7 @@ typedef struct GameMemory
 // World/Tilemaps (reference GameState)
 //====================================================
 internal_func
-void getTilemapTile(TilePoint *tilePoint,
+void setTilemapTile(TilePoint *tilePoint,
                     posXYInt playerPixelPos,
                     PLAYER_POINT_POS pointPos,
                     Player player,
@@ -473,7 +475,8 @@ inline bool isWorldTileFree(GameState gameState,
 // Graphics
 //====================================================
 internal_func
-void writeRectangle(GameFrameBuffer* buffer,
+void writeRectangle(World world,
+                    GameFrameBuffer* buffer,
                     int64 xOffset,
                     int64 yOffset,
                     int64 width,

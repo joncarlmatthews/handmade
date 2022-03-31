@@ -1,2 +1,3 @@
  - Calculate the position of the player within the active tile
+ - movementSpeed of in metres per second doesnt work out. 1 tile width = 1 metre, should move slowly
  - move current active tile struct to within the player object (Meh, not sure actually)
