@@ -5,8 +5,18 @@
 
 #if HANDMADE_LOCAL_BUILD
 
+/*
+ * An unnamed game.
+
+ * - Units are in pixels unless annotated otherwise
+ * - Signature docblock comments are within the .c file
+ * - Shamone.
+ * 
+ */
+
 // Flags:
 
+// #define HANDMADE_DEBUG_TILE_POS
 // #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
@@ -303,19 +313,27 @@ typedef struct Colour {
 } Colour;
 
 //
-// Player/positioning
+// Positioning
 //====================================================
-
 typedef struct posXYInt {
     int32 x;
     int32 y;
 } posXYInt;
 
+typedef struct posXYf32 {
+    float32 x;
+    float32 y;
+} posXYf32;
+
+//
+// Player
+//====================================================
 typedef struct Player {
     posXYInt position;
-    uint16 height;
-    uint16 width;
-    uint8 movementSpeed;
+    float32 height; // Metres
+    float32 width; // Metres
+    float32 movementSpeed; // Metre's per second
+    posXYInt tileRelativePosition; // Where within the tile
 
     bool8 jumping;
     float32 jumpDuration;
@@ -351,58 +369,57 @@ typedef struct Tilemap {
 #define STARTING_TILEMAP_POS_Y 1
 
 typedef struct World {
-    float32 tileHeight;
-    uint16 tilemapTileHeight;
-    uint16 tilemapTileWidth;
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
+    float32 tileHeight; // metres
+    uint8 pixelsPerMetre;
+    uint16 _tilemapTileHeight;
+    uint16 _tilemapTileWidth;
+    uint16 _tilemapHeight;
+    uint16 _tilemapWidth;
 } World;
 
 typedef struct TilePoint {
     int32 x;
     int32 y;
+    posXYInt pointPixelPositionAbs;
+    posXYInt pointPixelPositionTileRel;
 } TilePoint;
 
 typedef struct CurrentTilemap {
-    Tilemap *tilemap; // currentTilemap
     posXYInt tilemapIndex; // currentTilemapIndex
+    Tilemap *tilemap; // currentTilemap
     TilePoint tile; // currentTile
 } CurrentTilemap;
 
 enum class PLAYER_POINT_POS {
+    TOP_LEFT,
     TOP_MIDDLE,
+    TOP_RIGHT,
+    MIDDLE_LEFT,
     MIDDLE,
+    MIDDLE_RIGHT,
+    BOTTOM_LEFT,
     BOTTOM_MIDDLE,
     BOTTOM_RIGHT,
-    BOTTOM_LEFT,
 };
 
-/**
- * @brief Gets the X and Y coords of a @link playerPixelPos
- * in relational to the onscreen tilemap
- *
- * @param tilePoint Pointer to the TilePoint var
- * @param world
- * @param player
- * @param playerPixelPos The top-left pixel position of the player
- * @param pointPos  Which point within the player sptite are
- *                  we considering in relation to the tilemap?
-*/
 internal_func
-void getTilemapTile(TilePoint *tilePoint,
-                    World world,
-                    Player player,
-                    posXYInt playerPixelPos,
-                    PLAYER_POINT_POS pointPos);
+inline int64 metresToPixels(World world, float32 metres);
+
+internal_func
+void initWorld(GameFrameBuffer frameBuffer,
+                World *world,
+                float32 tileHeight,
+                uint8 pixelsPerMetre);
 
 //
 // Game state & memory
 //====================================================
 typedef struct GameState
 {
-    CurrentTilemap currentTilemap;
     Player player1;
+    CurrentTilemap currentTilemap;
     SineWave sineWave;
-
 } GameState;
 
 typedef struct GameMemory
@@ -456,6 +473,13 @@ typedef struct GameMemory
 // World/Tilemaps (reference GameState)
 //====================================================
 internal_func
+void setTilemapTile(TilePoint *tilePoint,
+                    posXYInt playerPixelPos,
+                    PLAYER_POINT_POS pointPos,
+                    Player player,
+                    World world);
+
+internal_func
 void setCurrentTilemap(World *world,
                         TilePoint point,
                         GameState *gameState,
@@ -469,7 +493,8 @@ inline bool isWorldTileFree(GameState gameState,
 // Graphics
 //====================================================
 internal_func
-void writeRectangle(GameFrameBuffer* buffer,
+void writeRectangle(World world,
+                    GameFrameBuffer* buffer,
                     int64 xOffset,
                     int64 yOffset,
                     int64 width,

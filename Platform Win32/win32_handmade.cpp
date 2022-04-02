@@ -14,6 +14,10 @@
 // shared across the game and platform layer
 #include "..\Game\utility.cpp"
 
+#define VIEWPORT_WIDTH  1280
+#define VIEWPORT_HEIGHT 720
+#define TARGET_FPS 60
+
 // Whether or not the application is running/paused
 global_var bool8 running = TRUE;
 global_var bool8 paused = FALSE;
@@ -314,7 +318,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         Win32FixedFrameRate win32FixedFrameRate = {0};
         win32FixedFrameRate.capMode = FRAME_RATE_CAP_MODE_SLEEP;
         win32FixedFrameRate.monitorRefreshRate = 60;
-        win32FixedFrameRate.gameTargetFPS = 30;
+        win32FixedFrameRate.gameTargetFPS = TARGET_FPS;
         win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
 
         // Get the refresh rate of the monitor from the Windows API.
@@ -354,7 +358,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Create the Windows frame buffer
-        win32InitFrameBuffer(&thread, &win32FrameBuffer, 960, 540);
+        win32InitFrameBuffer(&thread, &win32FrameBuffer, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
         
 

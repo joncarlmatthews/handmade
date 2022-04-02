@@ -1,0 +1,2 @@
+ - Postfix any variant that has it's unit in metres with a 'M'
+ - move current active tile struct to within the player object (Meh, not sure actually)
