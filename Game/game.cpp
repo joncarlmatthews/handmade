@@ -534,7 +534,6 @@ void setCurrentTilemap(World *world, TilePoint point, GameState *gameState, Game
         movingTilemap = true;
         gameState->currentTilemap.tilemap--;
         gameState->currentTilemap.tilemapIndex.x -= 1;
-        //gameState->player1.position.x = (int32)((TILEMAP_SIZE_X * world->_tilemapTileWidth) - (metresToPixels(*world, gameState->player1.width) - (metresToPixels(*world, gameState->player1.width) / 2)));
         gameState->player1.position.x = (int32)((TILEMAP_SIZE_X * world->_tilemapTileWidth) - (metresToPixels(*world, gameState->player1.width)));
     }
 
@@ -543,7 +542,6 @@ void setCurrentTilemap(World *world, TilePoint point, GameState *gameState, Game
         movingTilemap = true;
         gameState->currentTilemap.tilemap += 1;
         gameState->currentTilemap.tilemapIndex.x += 1;
-        //gameState->player1.position.x = (int32)((metresToPixels(*world, gameState->player1.width) / 2) * -1);
         gameState->player1.position.x = 0;
     }
 
@@ -560,7 +558,6 @@ void setCurrentTilemap(World *world, TilePoint point, GameState *gameState, Game
         movingTilemap = true;
         gameState->currentTilemap.tilemap += WORLD_TILEMAP_COUNT_X;
         gameState->currentTilemap.tilemapIndex.y += 1;
-        //gameState->player1.position.y = (int32)((metresToPixels(*world, gameState->player1.height) / 2.0f) *-1);
         gameState->player1.position.y = 0;
     }
 
