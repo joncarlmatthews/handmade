@@ -5,6 +5,15 @@
 
 #if HANDMADE_LOCAL_BUILD
 
+/*
+ * An unnamed game.
+
+ * - Units are in pixels unless annotated otherwise
+ * - Signature docblock comments are within the .c file
+ * - Shamone.
+ * 
+ */
+
 // Flags:
 
 #define HANDMADE_DEBUG_TILE_POS
@@ -320,10 +329,11 @@ typedef struct posXYf32 {
 // Player
 //====================================================
 typedef struct Player {
-    posXYInt position; // Pixels
+    posXYInt position;
     float32 height; // Metres
     float32 width; // Metres
     float32 movementSpeed; // Metre's per second
+    posXYInt tileRelativePosition; // Where within the tile
 
     bool8 jumping;
     float32 jumpDuration;
@@ -371,6 +381,8 @@ typedef struct World {
 typedef struct TilePoint {
     int32 x;
     int32 y;
+    posXYInt pointPixelPositionAbs;
+    posXYInt pointPixelPositionTileRel;
 } TilePoint;
 
 typedef struct CurrentTilemap {
@@ -391,6 +403,15 @@ enum class PLAYER_POINT_POS {
     BOTTOM_RIGHT,
 };
 
+internal_func
+inline int64 metresToPixels(World world, float32 metres);
+
+internal_func
+void initWorld(GameFrameBuffer frameBuffer,
+                World *world,
+                float32 tileHeight,
+                uint8 pixelsPerMetre);
+
 //
 // Game state & memory
 //====================================================
@@ -399,8 +420,6 @@ typedef struct GameState
     Player player1;
     CurrentTilemap currentTilemap;
     SineWave sineWave;
-    posXYf32 debug_xyPoints[10];
-
 } GameState;
 
 typedef struct GameMemory
@@ -458,8 +477,7 @@ void setTilemapTile(TilePoint *tilePoint,
                     posXYInt playerPixelPos,
                     PLAYER_POINT_POS pointPos,
                     Player player,
-                    World world,
-                    GameState *gameState);
+                    World world);
 
 internal_func
 void setCurrentTilemap(World *world,
