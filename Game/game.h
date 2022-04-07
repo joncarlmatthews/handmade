@@ -330,9 +330,11 @@ typedef struct posXYf32 {
 //====================================================
 typedef struct Player {
     posXYInt position;
-    float32 height; // Metres
-    float32 width; // Metres
-    float32 movementSpeed; // Metre's per second
+    float32 heightM; // Metres
+    float32 widthM; // Metres
+    uint16 _height;
+    uint16 _width;
+    float32 movementSpeedMPS; // Metre's per second
     posXYInt tileRelativePosition; // Where within the tile
 
     bool8 jumping;
@@ -370,7 +372,7 @@ typedef struct Tilemap {
 
 typedef struct World {
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
-    float32 tileHeight; // metres
+    float32 tileHeightM; // metres
     uint8 pixelsPerMetre;
     uint16 _tilemapTileHeight;
     uint16 _tilemapTileWidth;
@@ -499,7 +501,8 @@ void writeRectangle(World world,
                     int64 yOffset,
                     int64 width,
                     int64 height,
-                    Colour colour);
+                    Colour colour,
+                    bool tilemapOverrunCheck);
 
 internal_func
 void frameBufferWritePlayer(GameState *gameState,

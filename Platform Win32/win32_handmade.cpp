@@ -14,10 +14,6 @@
 // shared across the game and platform layer
 #include "..\Game\utility.cpp"
 
-#define VIEWPORT_WIDTH  1280
-#define VIEWPORT_HEIGHT 720
-#define TARGET_FPS 60
-
 // Whether or not the application is running/paused
 global_var bool8 running = TRUE;
 global_var bool8 paused = FALSE;
@@ -1047,8 +1043,8 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
         height = buffer.height;
     }
 
-    uint8 offsetX = 15;
-    uint8 offsetY = 15;
+    int offsetX = 20;
+    int offsetY = -20;
     
     // StretchDIBits function copies the data of a rectangle of pixels to 
     // the specified destination. The first parameter is the handle for

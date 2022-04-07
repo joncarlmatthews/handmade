@@ -1,2 +1,3 @@
- - Postfix any variant that has it's unit in metres with a 'M'
+ - Make Y axis go up, not down
+ - Fix diagonal speed bug
  - move current active tile struct to within the player object (Meh, not sure actually)
