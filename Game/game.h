@@ -406,13 +406,13 @@ enum class PLAYER_POINT_POS {
 };
 
 internal_func
-inline int64 metresToPixels(World world, float32 metres);
-
-internal_func
 void initWorld(GameFrameBuffer frameBuffer,
                 World *world,
                 float32 tileHeight,
                 uint8 pixelsPerMetre);
+
+internal_func
+inline int64 metresToPixels(World world, float32 metres);
 
 //
 // Game state & memory
