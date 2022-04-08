@@ -23,6 +23,21 @@
 #include "utility.h"
 #include "game.h"
 
+internal_func
+CurrentTileChunk setCurrentTileChunk(World world,
+                                        int32 absolutePositionX,
+                                        int32 absolutePositionY)
+{
+    CurrentTileChunk currentTileChunk = { 0 };
+    currentTileChunk.chunkIndex.x = absolutePositionX >> world.tileChunkShift;
+    currentTileChunk.chunkIndex.y = absolutePositionY >> world.tileChunkShift;
+
+    currentTileChunk.tileIndex.x = absolutePositionX & world.tileChunkMask;
+    currentTileChunk.tileIndex.y = absolutePositionX & world.tileChunkMask;
+
+    return currentTileChunk;
+}
+
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     // Init the World
@@ -690,6 +705,11 @@ void initWorld(GameFrameBuffer frameBuffer,
     world->tilemaps[1][0] = { TILES_4 };
     world->tilemaps[1][1] = { TILES_5 };
     world->tilemaps[1][2] = { TILES_6 };
+    uint32 tileChunks[256][256] = ALL_TILES;
+    uint32 *tileChunksTemp;
+    tileChunksTemp = (uint32 *)tileChunks;
+
+    world->tileChunks = tileChunksTemp;
 
     world->tileHeightM = tileHeight;
     world->pixelsPerMetre = pixelsPerMetre;

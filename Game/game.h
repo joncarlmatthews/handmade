@@ -320,6 +320,11 @@ typedef struct posXYInt {
     int32 y;
 } posXYInt;
 
+typedef struct posXYUInt {
+    uint32 x;
+    uint32 y;
+} posXYUInt;
+
 typedef struct posXYf32 {
     float32 x;
     float32 y;
@@ -357,6 +362,10 @@ enum jumpDirection {
 #define TILEMAP_SIZE_X 16
 #define TILEMAP_SIZE_Y 9
 
+typedef struct TileChunk {
+    uint32 *tiles;
+} TileChunk;
+
 typedef struct Tilemap {
     uint32 tiles[TILEMAP_SIZE_Y][TILEMAP_SIZE_X];
 } Tilemap;
@@ -370,7 +379,16 @@ typedef struct Tilemap {
 #define STARTING_TILEMAP_POS_X 1
 #define STARTING_TILEMAP_POS_Y 1
 
+// @NOTE(JM) Get chunk position from absolute X and Y values.
+// Then get the tilemap from that chunk. The tilemap being the 256x256 tiles
+// that are in view
+
 typedef struct World {
+    uint16 tileChunkDimensions = 256; // 256 x 256 tiles per "tile chunk"
+    uint32 tileChunkMask = 0xFF;
+    uint32 tileChunkShift = 8;
+    TileChunk *tileChunks;
+
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
     float32 tileHeightM; // metres
     uint8 pixelsPerMetre;
@@ -388,10 +406,15 @@ typedef struct TilePoint {
 } TilePoint;
 
 typedef struct CurrentTilemap {
-    posXYInt tilemapIndex; // currentTilemapIndex
-    Tilemap *tilemap; // currentTilemap
-    TilePoint tile; // currentTile
+    posXYInt tilemapIndex;
+    Tilemap *tilemap;
+    TilePoint tile;
 } CurrentTilemap;
+
+typedef struct CurrentTileChunk {
+    posXYUInt chunkIndex;
+    posXYUInt tileIndex; // tile index relative to the chunk
+} CurrentTileChunk;
 
 enum class PLAYER_POINT_POS {
     TOP_LEFT,
@@ -421,6 +444,7 @@ typedef struct GameState
 {
     Player player1;
     CurrentTilemap currentTilemap;
+    CurrentTileChunk currentTileChunk; // To replace currentTilemap
     SineWave sineWave;
 } GameState;
 

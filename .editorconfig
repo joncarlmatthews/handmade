@@ -16,6 +16,7 @@ insert_final_newline = false
 end_of_line = crlf
 
 [*.{c++,cc,cpp,cppm,cxx,h,h++,hh,hpp,hxx,inl,ipp,ixx,tlh,tli}]
+guidelines = 80
 
 # Visual C++ Code Style settings
 

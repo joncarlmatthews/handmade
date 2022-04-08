@@ -99,6 +99,10 @@ HANDMADE_DEBUG_AUDIO
   - 1 debug audio
 ```
 
+## Reccommended Visual Studio Plugins
+[Editor Guidelines](https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview)
+
+
 ## Episode Notes
 
 ### Day 028 -  Drawing a Tile Map
