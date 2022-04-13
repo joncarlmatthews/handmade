@@ -24,6 +24,20 @@
 #include "game.h"
 
 internal_func
+void setWorldPosition(World world, GameState *gameState)
+{
+    // Absolute X and Y pixel coords of the player
+    float32 x = floorf((float32)(gameState->player1.position.x / world._tilemapTileWidth));
+    float32 y = floorf((float32)(gameState->player1.position.y / world._tilemapTileHeight));
+
+    gameState->worldPosition.absolutePosTileX = (uint32)x;
+    gameState->worldPosition.absolutePosTileY = (uint32)y;
+
+    // @NOTE(JM) the view of the tiles wrap
+    gameState->worldPosition.chunkTiles = (uint32 *)gameState->worldTiles;
+}
+
+internal_func
 CurrentTileChunk setCurrentTileChunk(World world,
                                         int32 absolutePositionX,
                                         int32 absolutePositionY)
@@ -53,6 +67,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
+        // @TODO(JM) procedurally generate this
+        gameState->worldTiles[256][256] = {0};
+        gameState->worldTiles[0][0] = 1;
+        gameState->worldTiles[0][1] = 1;
+        gameState->worldTiles[0][2] = 1;
+        gameState->worldTiles[0][3] = 1;
+        gameState->worldTiles[0][4] = 1;
+        gameState->worldTiles[1][0] = 1;
+        gameState->worldTiles[2][0] = 1;
+        gameState->worldTiles[3][0] = 1;
+
         gameState->player1.position.x = (STARTING_TILEMAP_POS_X * world._tilemapTileWidth);
         gameState->player1.position.y = (STARTING_TILEMAP_POS_Y * world._tilemapTileHeight);
 
@@ -81,6 +106,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         memory->initialised = true;
     }
+
+    setWorldPosition(world, gameState);
     
     /**
     * Handle controller input...
@@ -123,22 +150,22 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      */
 
     // Draw tiles
-    for (uint32 row = 0; row < TILEMAP_SIZE_Y; row++){
-        for (uint32 column = 0; column < TILEMAP_SIZE_X; column++){
+    for (uint32 row = 0; row < world.tileChunkDimensions; row++){
+        for (uint32 column = 0; column < world.tileChunkDimensions; column++){
 
             // Tile pointer
-            uint32 *tileState = ((uint32 *)gameState->currentTilemap.tilemap->tiles + ((row * TILEMAP_SIZE_X) + column));
+            uint32 *tileState = ((uint32 *)gameState->worldPosition.chunkTiles + ((row * world.tileChunkDimensions) + column));
 
             // NULL pointer check
             if (!tileState){
                 continue;
             }
 
-            Colour tileColour = { 0.85f, 0.85f, 0.85f };
+            Colour tileColour = { 1.f, 0.f, 0.f };
 
             // Wall tile?
             if (*tileState) {
-                tileColour = { 0.349f, 0.349f, 0.349f };
+                tileColour = { 0.f, 1.f, 0.f };
             }
 
             // Currently active tile?
@@ -699,24 +726,16 @@ void initWorld(GameFrameBuffer frameBuffer,
                 float32 tileHeight,
                 uint8 pixelsPerMetre)
 {
-    world->tilemaps[0][0] = { TILES_1 };
-    world->tilemaps[0][1] = { TILES_2 };
-    world->tilemaps[0][2] = { TILES_3 };
-    world->tilemaps[1][0] = { TILES_4 };
-    world->tilemaps[1][1] = { TILES_5 };
-    world->tilemaps[1][2] = { TILES_6 };
-    uint32 tileChunks[256][256] = ALL_TILES;
-    uint32 *tileChunksTemp;
-    tileChunksTemp = (uint32 *)tileChunks;
-
-    world->tileChunks = tileChunksTemp;
+    world->tileChunkDimensions = 10;
+    world->tileChunkMask = 0xFF;
+    world->tileChunkShift = 8;
 
     world->tileHeightM = tileHeight;
     world->pixelsPerMetre = pixelsPerMetre;
     world->_tilemapTileHeight = (uint16)((float32)pixelsPerMetre * tileHeight);
     world->_tilemapTileWidth = world->_tilemapTileHeight; // Tiles always square
-    world->_tilemapHeight = (world->_tilemapTileHeight * (uint16)TILEMAP_SIZE_Y);
-    world->_tilemapWidth = (world->_tilemapTileWidth * (uint16)TILEMAP_SIZE_X);
+    world->_tilemapHeight = (world->_tilemapTileHeight * world->tileChunkDimensions);
+    world->_tilemapWidth = (world->_tilemapTileWidth * world->tileChunkDimensions);
 
     if (world->_tilemapHeight > frameBuffer.height) {
         assert(!"Total tilemap pixel height > drawable screen height");

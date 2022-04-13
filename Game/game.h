@@ -384,10 +384,9 @@ typedef struct Tilemap {
 // that are in view
 
 typedef struct World {
-    uint16 tileChunkDimensions = 256; // 256 x 256 tiles per "tile chunk"
-    uint32 tileChunkMask = 0xFF;
-    uint32 tileChunkShift = 8;
-    TileChunk *tileChunks;
+    uint16 tileChunkDimensions; // 256 x 256 tiles per "tile chunk"
+    uint32 tileChunkMask;
+    uint32 tileChunkShift;
 
     Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
     float32 tileHeightM; // metres
@@ -397,6 +396,17 @@ typedef struct World {
     uint16 _tilemapHeight;
     uint16 _tilemapWidth;
 } World;
+
+typedef struct WorldPosition {
+    uint32 absolutePosTileX;
+    uint32 absolutePosTileY;
+
+    //uint32 chunkPosX;
+    //uint32 chunkPosY;
+    uint32 *chunkTiles;
+    uint16 chunkTilePosX;
+    uint16 chunkTilePosY;
+} WorldPosition;
 
 typedef struct TilePoint {
     int32 x;
@@ -446,6 +456,9 @@ typedef struct GameState
     CurrentTilemap currentTilemap;
     CurrentTileChunk currentTileChunk; // To replace currentTilemap
     SineWave sineWave;
+
+    uint32 worldTiles[256][256];
+    WorldPosition worldPosition;
 } GameState;
 
 typedef struct GameMemory

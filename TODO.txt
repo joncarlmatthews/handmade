@@ -1,3 +1,7 @@
+ - Tile relative offset needs to be in metres, not pixels
  - Convert to sparse world by using tile chunks rather than individual tilemaps
+     - absolute tile x and y
+     - which 256x256 chunk are we viewing?
+     - chunk relative tile x and y
  - Fix diagonal speed bug
  - move current active tile struct to within the player object (Meh, not sure actually)
