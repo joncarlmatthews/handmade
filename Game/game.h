@@ -496,6 +496,9 @@ inline bool isWorldTileFree(World world,
                             GameState gameState,
                             TilePosition point);
 
+internal_func
+void setWorldPosition(World world, GameState *gameState, GameMemory *memory);
+
 //
 // Graphics
 //====================================================

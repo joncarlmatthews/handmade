@@ -23,67 +23,6 @@
 #include "utility.h"
 #include "game.h"
 
-internal_func
-void setWorldPosition(World world, GameState *gameState, GameMemory *memory)
-{
-    // Make a copy of the world's current absolute tile position data
-    TilePosition originalAbsoluteTilePos = gameState->worldPosition.absoluteTile;
-
-    // Update the world's current tile position data based off of the player's
-    // absolute x and y position. This is so we can determine if the player
-    // has moved tiles.
-    setTilePositionForPlayer(&gameState->worldPosition.absoluteTile,
-                                gameState->player1.absolutePosition,
-                                PLAYER_POINT_POS::BOTTOM_MIDDLE,
-                                gameState->player1,
-                                world);
-
-    // Has the tile changed?
-    if ((gameState->worldPosition.absoluteTile.x != originalAbsoluteTilePos.x)
-            || (gameState->worldPosition.absoluteTile.y != originalAbsoluteTilePos.y)){
-
-#ifdef HANDMADE_DEBUG_TILE_POS
-        char buff[100] = {};
-        sprintf_s(buff, sizeof(buff),
-                "Player moving tile...\n");
-        memory->DEBUG_platformLog(buff);
-#endif
-
-        if (gameState->worldPosition.absoluteTile.x > originalAbsoluteTilePos.x){
-            gameState->worldPosition.chunkTiles++;
-            gameState->worldPosition.chunkOffsetX += world.tileWidth;
-        }else if (gameState->worldPosition.absoluteTile.x < originalAbsoluteTilePos.x) {
-            gameState->worldPosition.chunkTiles--;
-            gameState->worldPosition.chunkOffsetX -= world.tileWidth;
-        }
-
-        if (gameState->worldPosition.absoluteTile.y > originalAbsoluteTilePos.y) {
-            gameState->worldPosition.chunkTiles += world.tileDimensions;
-            gameState->worldPosition.chunkOffsetY += world.tileHeight;
-        }else if (gameState->worldPosition.absoluteTile.y < originalAbsoluteTilePos.y) {
-            gameState->worldPosition.chunkTiles -= world.tileDimensions;
-            gameState->worldPosition.chunkOffsetY -= world.tileHeight;
-        }
-    }
-
-    // Set the player's chunk relative position
-    gameState->player1.relativePosition.x =
-        (gameState->player1.absolutePosition.x - gameState->worldPosition.chunkOffsetX);
-
-    gameState->player1.relativePosition.y =
-        (gameState->player1.absolutePosition.y - gameState->worldPosition.chunkOffsetY);
-
-    // Finally, update the world's current chunk relative tile position, based off of
-    // the player's chunk relative x and y position. We do this because we
-    // always want the world's tile position to be relative to the viewable
-    // tile chunk.
-    setTilePositionForPlayer(&gameState->worldPosition.chunkTile,
-                                gameState->player1.relativePosition,
-                                PLAYER_POINT_POS::BOTTOM_MIDDLE,
-                                gameState->player1,
-                                world);
-}
-
 #if 0
 internal_func
 CurrentTileChunk setCurrentTileChunk(World world,
@@ -134,12 +73,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->player1.height  = (int16)metresToPixels(world, gameState->player1.heightMetres);
         gameState->player1.width   = (int16)metresToPixels(world, gameState->player1.widthMetres);
 
-        gameState->player1.movementSpeedMPS = (2.8f / 2); // Running
+        gameState->player1.movementSpeedMPS = 2.8f; // Running
         gameState->player1.totalJumpMovement = 15.0f;
 
         // Character position
-        gameState->player1.relativePosition.x = (5 * world.tileWidth);
-        gameState->player1.relativePosition.y = (5 * world.tileHeight);
+        gameState->player1.relativePosition.x = (1 * world.tileWidth);
+        gameState->player1.relativePosition.y = (1 * world.tileHeight);
 
         gameState->player1.absolutePosition.x = gameState->player1.relativePosition.x;
         gameState->player1.absolutePosition.y = gameState->player1.relativePosition.y;
@@ -657,13 +596,6 @@ inline bool isWorldTileFree(World world, GameState gameState, TilePosition point
 }
 
 internal_func
-inline int64 metresToPixels(World world, float32 metres)
-{
-    float32 pixels = (world.pixelsPerMetre * metres);
-    return (int64)pixels;
-}
-
-internal_func
 void initWorld(GameFrameBuffer frameBuffer,
                 World *world,
                 float32 tileHeight,
@@ -690,6 +622,90 @@ void initWorld(GameFrameBuffer frameBuffer,
     if (world->worldWidth > frameBuffer.width) {
         assert(!"Total tilemap pixel width > drawable screen width");
     }
+}
+
+/**
+ * Sets the current world position by moving the tile chunk pointer (if needs be).
+ *
+ * Also, sets the data for both the absolute tile position and chunk-relative
+ * tile position
+ *
+ * Finally, sets the player's chunk-relative X and Y pixel position
+ *
+ * @param world         The world
+ * @param *gameState    Game state pointer
+ * @param *memory       Game memory pointer (Debug only)
+ * @return void
+*/
+internal_func
+void setWorldPosition(World world, GameState *gameState, GameMemory *memory)
+{
+    // Make a copy of the world's current absolute tile position data
+    TilePosition originalAbsoluteTilePos = gameState->worldPosition.absoluteTile;
+
+    // Update the world's current tile position data based off of the player's
+    // absolute x and y position. This is so we can determine if the player
+    // has moved tiles.
+    setTilePositionForPlayer(&gameState->worldPosition.absoluteTile,
+                                gameState->player1.absolutePosition,
+                                PLAYER_POINT_POS::BOTTOM_MIDDLE,
+                                gameState->player1,
+                                world);
+
+    // Has the absolute tile position x or y changed? AKA, has the player moved
+    // tiles?
+    if ((gameState->worldPosition.absoluteTile.x != originalAbsoluteTilePos.x)
+            || (gameState->worldPosition.absoluteTile.y != originalAbsoluteTilePos.y)) {
+
+#ifdef HANDMADE_DEBUG_TILE_POS
+        char buff[100] = {};
+        sprintf_s(buff, sizeof(buff),
+                "Player moving tile...\n");
+        memory->DEBUG_platformLog(buff);
+#endif
+
+        if (gameState->worldPosition.absoluteTile.x > originalAbsoluteTilePos.x) {
+            gameState->worldPosition.chunkTiles++;
+            gameState->worldPosition.chunkOffsetX += world.tileWidth;
+        }
+        else if (gameState->worldPosition.absoluteTile.x < originalAbsoluteTilePos.x) {
+            gameState->worldPosition.chunkTiles--;
+            gameState->worldPosition.chunkOffsetX -= world.tileWidth;
+        }
+
+        if (gameState->worldPosition.absoluteTile.y > originalAbsoluteTilePos.y) {
+            gameState->worldPosition.chunkTiles += world.tileDimensions;
+            gameState->worldPosition.chunkOffsetY += world.tileHeight;
+        }
+        else if (gameState->worldPosition.absoluteTile.y < originalAbsoluteTilePos.y) {
+            gameState->worldPosition.chunkTiles -= world.tileDimensions;
+            gameState->worldPosition.chunkOffsetY -= world.tileHeight;
+        }
+    }
+
+    // Set the player's chunk relative position
+    gameState->player1.relativePosition.x =
+        (gameState->player1.absolutePosition.x - gameState->worldPosition.chunkOffsetX);
+
+    gameState->player1.relativePosition.y =
+        (gameState->player1.absolutePosition.y - gameState->worldPosition.chunkOffsetY);
+
+    // Finally, update the world's current chunk relative tile position, based off of
+    // the player's chunk relative x and y position. We do this because we
+    // always want the world's tile position to be relative to the viewable
+    // tile chunk.
+    setTilePositionForPlayer(&gameState->worldPosition.chunkTile,
+                                gameState->player1.relativePosition,
+                                PLAYER_POINT_POS::BOTTOM_MIDDLE,
+                                gameState->player1,
+                                world);
+}
+
+internal_func
+inline int64 metresToPixels(World world, float32 metres)
+{
+    float32 pixels = (world.pixelsPerMetre * metres);
+    return (int64)pixels;
 }
 
 /**

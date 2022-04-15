@@ -1,5 +1,7 @@
-- Access violation when moving down the Y axis
+- Add tile drawing wrapping (toroidal topology)
+- Access violation when moving down the X or Y axis. (gameState->worldPosition.chunkTiles pointer out of bounds)
 - Revisit chunk mask and chunk shift stuff to store world position data in less bytes.
+- Check tile collission detection still works
 - Tile relative offset needs to be in metres, not pixels
  - Convert to sparse world by using tile chunks rather than individual tilemaps
      - absolute tile x and y
