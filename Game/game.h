@@ -16,7 +16,7 @@
 
 // Flags:
 
-// #define HANDMADE_DEBUG_TILE_POS
+#define HANDMADE_DEBUG_TILE_POS
 // #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
@@ -334,11 +334,12 @@ typedef struct posXYf32 {
 // Player
 //====================================================
 typedef struct Player {
-    posXYInt position;
-    float32 heightM; // Metres
-    float32 widthM; // Metres
-    uint16 _height;
-    uint16 _width;
+    posXYUInt absolutePosition; // Position in relation to the world
+    posXYUInt relativePosition; // Position in relation to the tile chunk
+    float32 heightMetres; // Metres
+    float32 widthMetres; // Metres
+    uint16 height;
+    uint16 width;
     float32 movementSpeedMPS; // Metre's per second
     posXYInt tileRelativePosition; // Where within the tile
 
@@ -359,72 +360,46 @@ enum jumpDirection {
 //
 // World/Tilemaps
 //====================================================
-#define TILEMAP_SIZE_X 16
-#define TILEMAP_SIZE_Y 9
-
 typedef struct TileChunk {
     uint32 *tiles;
 } TileChunk;
 
-typedef struct Tilemap {
-    uint32 tiles[TILEMAP_SIZE_Y][TILEMAP_SIZE_X];
-} Tilemap;
 
-#define WORLD_TILEMAP_COUNT_X 3
-#define WORLD_TILEMAP_COUNT_Y 2
-
-#define STARTING_WORLD_TILEMAP_INDEX_X 0
-#define STARTING_WORLD_TILEMAP_INDEX_Y 0
-
-#define STARTING_TILEMAP_POS_X 1
-#define STARTING_TILEMAP_POS_Y 1
+#define WORLD_TOTAL_TILE_DIMENSIONS 100
+#define WORLD_TOTAL_TILE_CHUNK_DIMENSIONS 10
 
 // @NOTE(JM) Get chunk position from absolute X and Y values.
 // Then get the tilemap from that chunk. The tilemap being the 256x256 tiles
 // that are in view
 
 typedef struct World {
+    uint16 tileDimensions; // tile dimensions of the entire world
     uint16 tileChunkDimensions; // 256 x 256 tiles per "tile chunk"
     uint32 tileChunkMask;
     uint32 tileChunkShift;
 
-    Tilemap tilemaps[WORLD_TILEMAP_COUNT_Y][WORLD_TILEMAP_COUNT_X];
-    float32 tileHeightM; // metres
+    float32 tileHeightMetres;
     uint8 pixelsPerMetre;
-    uint16 _tilemapTileHeight;
-    uint16 _tilemapTileWidth;
-    uint16 _tilemapHeight;
-    uint16 _tilemapWidth;
+    uint16 tileHeight;
+    uint16 tileWidth;
+    uint16 worldHeight;
+    uint16 worldWidth;
 } World;
 
+typedef struct TilePosition {
+    uint32 x;
+    uint32 y;
+    posXYUInt pointPixelPositionAbs;
+    posXYUInt pointPixelPositionTileRel;
+} TilePosition;
+
 typedef struct WorldPosition {
-    uint32 absolutePosTileX;
-    uint32 absolutePosTileY;
-
-    //uint32 chunkPosX;
-    //uint32 chunkPosY;
-    uint32 *chunkTiles;
-    uint16 chunkTilePosX;
-    uint16 chunkTilePosY;
+    TilePosition absoluteTile; // Position data for the currently active tile relative to the entire world
+    uint32 *chunkTiles; // Pointer to the starting position of the current tile chunk
+    TilePosition chunkTile; // Position data for the currently active tile within the tile chunk
+    uint32 chunkOffsetX;
+    uint32 chunkOffsetY;
 } WorldPosition;
-
-typedef struct TilePoint {
-    int32 x;
-    int32 y;
-    posXYInt pointPixelPositionAbs;
-    posXYInt pointPixelPositionTileRel;
-} TilePoint;
-
-typedef struct CurrentTilemap {
-    posXYInt tilemapIndex;
-    Tilemap *tilemap;
-    TilePoint tile;
-} CurrentTilemap;
-
-typedef struct CurrentTileChunk {
-    posXYUInt chunkIndex;
-    posXYUInt tileIndex; // tile index relative to the chunk
-} CurrentTileChunk;
 
 enum class PLAYER_POINT_POS {
     TOP_LEFT,
@@ -453,11 +428,9 @@ inline int64 metresToPixels(World world, float32 metres);
 typedef struct GameState
 {
     Player player1;
-    CurrentTilemap currentTilemap;
-    CurrentTileChunk currentTileChunk; // To replace currentTilemap
     SineWave sineWave;
 
-    uint32 worldTiles[256][256];
+    uint32 worldTiles[WORLD_TOTAL_TILE_DIMENSIONS][WORLD_TOTAL_TILE_DIMENSIONS];
     WorldPosition worldPosition;
 } GameState;
 
@@ -512,21 +485,16 @@ typedef struct GameMemory
 // World/Tilemaps (reference GameState)
 //====================================================
 internal_func
-void setTilemapTile(TilePoint *tilePoint,
-                    posXYInt playerPixelPos,
-                    PLAYER_POINT_POS pointPos,
-                    Player player,
-                    World world);
+void setTilePositionForPlayer(TilePosition *tilePoint,
+                                posXYUInt playerPixelPos,
+                                PLAYER_POINT_POS pointPos,
+                                Player player,
+                                World world);
 
 internal_func
-void setCurrentTilemap(World *world,
-                        TilePoint point,
-                        GameState *gameState,
-                        GameMemory* memory);
-
-internal_func
-inline bool isWorldTileFree(GameState gameState,
-                            TilePoint point);
+inline bool isWorldTileFree(World world,
+                            GameState gameState,
+                            TilePosition point);
 
 //
 // Graphics

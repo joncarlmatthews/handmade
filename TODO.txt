@@ -1,4 +1,6 @@
- - Tile relative offset needs to be in metres, not pixels
+- Access violation when moving down the Y axis
+- Revisit chunk mask and chunk shift stuff to store world position data in less bytes.
+- Tile relative offset needs to be in metres, not pixels
  - Convert to sparse world by using tile chunks rather than individual tilemaps
      - absolute tile x and y
      - which 256x256 chunk are we viewing?
