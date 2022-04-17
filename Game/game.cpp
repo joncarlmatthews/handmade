@@ -59,6 +59,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // too large for the stack...
         uint8 origTiles[WORLD_TOTAL_TILE_DIMENSIONS][WORLD_TOTAL_TILE_DIMENSIONS] = ALL_TILES;
 
+        // Copy the tiles into the world tiles, making it so that the Y axis
+        // goes up
         uint32 worldY = 0;
         for (uint y = (WORLD_TOTAL_TILE_DIMENSIONS-1); y > 0; y--){
             for (uint x = 0; x < WORLD_TOTAL_TILE_DIMENSIONS; x++) {
@@ -77,16 +79,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->player1.totalJumpMovement = 15.0f;
 
         // Character position
-        gameState->player1.relativePosition.x = (1 * world.tileWidth);
-        gameState->player1.relativePosition.y = (1 * world.tileHeight);
+        gameState->player1.relativePosition.x = (5 * world.tileWidth);
+        gameState->player1.relativePosition.y = (5 * world.tileHeight);
 
         gameState->player1.absolutePosition.x = gameState->player1.relativePosition.x;
         gameState->player1.absolutePosition.y = gameState->player1.relativePosition.y;
 
-        memory->initialised = true;
-
         // Initial starting point for the chunk tiles.
-        gameState->worldPosition.chunkTiles = (uint32*)gameState->worldTiles;
+        gameState->worldPosition.chunkIndexX = 0;
+        gameState->worldPosition.chunkIndexY = 0;
+
+        gameState->worldPosition.chunkTiles
+            = &gameState->worldTiles[gameState->worldPosition.chunkIndexX][gameState->worldPosition.chunkIndexY];
 
         // Set the world's current absolute tile position data based off of the
         // player's initial absolute x and y position.
@@ -103,6 +107,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                                     PLAYER_POINT_POS::BOTTOM_MIDDLE,
                                     gameState->player1,
                                     world);
+
+        memory->initialised = true;
     }
 
     /**
@@ -333,32 +339,6 @@ void controllerHandlePlayer(GameState *gameState,
 
                 playerHasMoved = true;
 
-#ifdef HANDMADE_DEBUG_TILE_POS
-            char buff[500] = {};
-            sprintf_s(buff, sizeof(buff),
-"World Tile x:%i y:%i. \
-World Plr Pos x:%i y:%i. \
-World Plr New Pos: x:%i y:%i. \
-Chunk Plr Pos x:%i y:%i.\
-Chunk Offset x:%i y:%i.\
-Tile relative position x:%i y:%i.\
-\n",
-                        debugPoint.x,
-                        debugPoint.y,
-                        gameState->player1.absolutePosition.x,
-                        gameState->player1.absolutePosition.y,
-                        playerNewPos.x,
-                        playerNewPos.y,
-                        gameState->player1.relativePosition.x,
-                        gameState->player1.relativePosition.y,
-                        gameState->worldPosition.chunkOffsetX,
-                        gameState->worldPosition.chunkOffsetY,
-                        gameState->worldPosition.chunkTile.pointPixelPositionTileRel.x,
-                        gameState->worldPosition.chunkTile.pointPixelPositionTileRel.y
-                        );
-            memory->DEBUG_platformLog(buff);
-#endif
-
             }
 
         }else{
@@ -384,20 +364,31 @@ Tile relative position x:%i y:%i.\
             setWorldPosition(*world, gameState, memory);
 
 #ifdef HANDMADE_DEBUG_TILE_POS
-#if 0
-            char buff[200] = {};
+            char buff[500] = {};
             sprintf_s(buff, sizeof(buff),
-                        "== Active Tilemaps Index x:%i y:%i Active Tile x:%i y:%i (%i). Plr Pos x:%i y:%i. ==\n",
-                        gameState->currentTilemap.tilemapIndex.x,
-                        gameState->currentTilemap.tilemapIndex.y,
-                        gameState->currentTilemap.tile.x,
-                        gameState->currentTilemap.tile.y,
-                        isWorldTileFree(*world, *gameState, gameState->currentTilemap.tile),
-                        gameState->player1.absolutePosition.x,
-                        gameState->player1.absolutePosition.y);
+"Chunk Index x:%i y:%i. \
+World Tile x:%i y:%i. \
+Chunk Tile x:%i y:%i. \
+World Plr Pos x:%i y:%i. \
+Chunk Plr Pos x:%i y:%i. \
+Chunk Offset x:%i y:%i. \
+\n",
+                gameState->worldPosition.chunkIndexX,
+                gameState->worldPosition.chunkIndexY,
+                gameState->worldPosition.absoluteTile.x,
+                gameState->worldPosition.absoluteTile.y,
+                gameState->worldPosition.chunkTile.x,
+                gameState->worldPosition.chunkTile.y,
+                gameState->player1.absolutePosition.x,
+                gameState->player1.absolutePosition.y,
+                gameState->player1.relativePosition.x,
+                gameState->player1.relativePosition.y,
+                gameState->worldPosition.chunkOffsetX,
+                gameState->worldPosition.chunkOffsetY
+            );
             memory->DEBUG_platformLog(buff);
 #endif
-#endif
+
         }
 
     }
@@ -516,12 +507,12 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 */
 internal_func
 void setTilePositionForPlayer(TilePosition *tilePoint,
-                    posXYUInt playerPixelPos,
-                    PLAYER_POINT_POS pointPos,
-                    Player player,
-                    World world)
+                                posXYUInt playerPixelPos,
+                                PLAYER_POINT_POS pointPos,
+                                Player player,
+                                World world)
 {
-    float32 pixelInset  = 1.0f;
+    float32 pixelInset  = 0.0f;
     float32 x           = 0.0f;
     float32 y           = 0.0f;
 
@@ -624,6 +615,18 @@ void initWorld(GameFrameBuffer frameBuffer,
     }
 }
 
+internal_func
+int32 modulo(int32 dividend, uint32 divisor)
+{
+    if (dividend < 0) {
+        dividend = (divisor + dividend);
+    }
+
+    uint32 res = (dividend / divisor);
+    res = (res * divisor);
+    return (dividend - res);
+}
+
 /**
  * Sets the current world position by moving the tile chunk pointer (if needs be).
  *
@@ -664,34 +667,55 @@ void setWorldPosition(World world, GameState *gameState, GameMemory *memory)
         memory->DEBUG_platformLog(buff);
 #endif
 
+        // X axis
         if (gameState->worldPosition.absoluteTile.x > originalAbsoluteTilePos.x) {
-            gameState->worldPosition.chunkTiles++;
+            gameState->worldPosition.chunkIndexX++;
             gameState->worldPosition.chunkOffsetX += world.tileWidth;
-        }
-        else if (gameState->worldPosition.absoluteTile.x < originalAbsoluteTilePos.x) {
-            gameState->worldPosition.chunkTiles--;
+        }else if (gameState->worldPosition.absoluteTile.x < originalAbsoluteTilePos.x) {
+            gameState->worldPosition.chunkIndexX--;
             gameState->worldPosition.chunkOffsetX -= world.tileWidth;
         }
 
+        // Y axis
         if (gameState->worldPosition.absoluteTile.y > originalAbsoluteTilePos.y) {
-            gameState->worldPosition.chunkTiles += world.tileDimensions;
+            gameState->worldPosition.chunkIndexY++;
             gameState->worldPosition.chunkOffsetY += world.tileHeight;
-        }
-        else if (gameState->worldPosition.absoluteTile.y < originalAbsoluteTilePos.y) {
-            gameState->worldPosition.chunkTiles -= world.tileDimensions;
+        }else if (gameState->worldPosition.absoluteTile.y < originalAbsoluteTilePos.y) {
+            gameState->worldPosition.chunkIndexY--;
             gameState->worldPosition.chunkOffsetY -= world.tileHeight;
         }
+
+        // Advance the tile chunk pointer.
+        gameState->worldPosition.chunkIndexX = modulo(gameState->worldPosition.chunkIndexX, WORLD_TOTAL_TILE_DIMENSIONS);
+        gameState->worldPosition.chunkIndexY = modulo(gameState->worldPosition.chunkIndexY, WORLD_TOTAL_TILE_DIMENSIONS);
+        gameState->worldPosition.chunkTiles
+            = &gameState->worldTiles[gameState->worldPosition.chunkIndexY][gameState->worldPosition.chunkIndexX];
     }
 
-    // Set the player's chunk relative position
-    gameState->player1.relativePosition.x =
-        (gameState->player1.absolutePosition.x - gameState->worldPosition.chunkOffsetX);
+    // Set the player's chunk relative pixel position...
+#if 0
+    TilePosition playerBottomLeft = {0};
+    setTilePositionForPlayer(&playerBottomLeft,
+                                gameState->player1.absolutePosition,
+                                PLAYER_POINT_POS::BOTTOM_LEFT,
+                                gameState->player1,
+                                world);
 
-    gameState->player1.relativePosition.y =
-        (gameState->player1.absolutePosition.y - gameState->worldPosition.chunkOffsetY);
+    gameState->player1.relativePosition.x
+        = ((gameState->worldPosition.chunkTile.x * world.tileWidth) + playerBottomLeft.pointPixelPositionTileRel.x);
 
-    // Finally, update the world's current chunk relative tile position, based off of
-    // the player's chunk relative x and y position. We do this because we
+    gameState->player1.relativePosition.y
+        = ((gameState->worldPosition.chunkTile.y * world.tileWidth) + playerBottomLeft.pointPixelPositionTileRel.y);
+#endif
+
+    gameState->player1.relativePosition.x
+        = (gameState->player1.absolutePosition.x - gameState->worldPosition.chunkOffsetX);
+
+    gameState->player1.relativePosition.y
+        = (gameState->player1.absolutePosition.y - gameState->worldPosition.chunkOffsetY);
+
+    // Finally, update the world's current chunk relative tile position (based
+    // off of the player's chunk relative x and y position.) We do this because we
     // always want the world's tile position to be relative to the viewable
     // tile chunk.
     setTilePositionForPlayer(&gameState->worldPosition.chunkTile,

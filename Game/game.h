@@ -387,18 +387,20 @@ typedef struct World {
 } World;
 
 typedef struct TilePosition {
-    uint32 x;
-    uint32 y;
+    uint32 x; // X index
+    uint32 y; // Y index
     posXYUInt pointPixelPositionAbs;
     posXYUInt pointPixelPositionTileRel;
 } TilePosition;
 
 typedef struct WorldPosition {
     TilePosition absoluteTile; // Position data for the currently active tile relative to the entire world
+    int32 chunkIndexX; // Absolute X index of the chunk tiles relative to the world tiles
+    int32 chunkIndexY; // Absolute Y index of the chunk tiles relative to the world tiles
     uint32 *chunkTiles; // Pointer to the starting position of the current tile chunk
     TilePosition chunkTile; // Position data for the currently active tile within the tile chunk
-    uint32 chunkOffsetX;
-    uint32 chunkOffsetY;
+    int32 chunkOffsetX;
+    int32 chunkOffsetY;
 } WorldPosition;
 
 enum class PLAYER_POINT_POS {
