@@ -1,4 +1,4 @@
-- Fix bug with tile chunk wrapping where x index wrap moves y up 1???
+- Fix bug with tile chunk wrapping where index wrap moves other axis???
 - Revisit chunk mask and chunk shift stuff to store world position data in less bytes.
      - absolute tile x and y
      - which 256x256 chunk are we viewing?
