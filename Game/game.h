@@ -386,7 +386,20 @@ typedef struct World {
     uint16 worldWidth;
 } World;
 
+enum class PLAYER_POINT_POS {
+    TOP_LEFT,
+    TOP_MIDDLE,
+    TOP_RIGHT,
+    MIDDLE_LEFT,
+    MIDDLE,
+    MIDDLE_RIGHT,
+    BOTTOM_LEFT,
+    BOTTOM_MIDDLE,
+    BOTTOM_RIGHT,
+};
+
 typedef struct TilePosition {
+    PLAYER_POINT_POS pointPosition;
     uint32 x; // X index
     uint32 y; // Y index
     posXYUInt pointPixelPositionAbs;
@@ -401,19 +414,24 @@ typedef struct WorldPosition {
     TilePosition chunkTile; // Position data for the currently active tile within the tile chunk
     int32 chunkOffsetX;
     int32 chunkOffsetY;
-} WorldPosition;
 
-enum class PLAYER_POINT_POS {
-    TOP_LEFT,
-    TOP_MIDDLE,
-    TOP_RIGHT,
-    MIDDLE_LEFT,
-    MIDDLE,
-    MIDDLE_RIGHT,
-    BOTTOM_LEFT,
-    BOTTOM_MIDDLE,
-    BOTTOM_RIGHT,
-};
+    union {
+        TilePosition absoluteTile_new[2];
+        struct {
+            TilePosition absoluteTileBottomLeft;
+            TilePosition absoluteTileBottomMiddle;
+        };
+    };
+
+    union {
+        TilePosition chunkTile_new[2];
+        struct {
+            TilePosition chunkTileBottomLeft;
+            TilePosition chunkTileBottomMiddle;
+        };
+    };
+
+} WorldPosition;
 
 internal_func
 void initWorld(GameFrameBuffer frameBuffer,
