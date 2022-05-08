@@ -375,16 +375,14 @@ typedef struct TileChunk {
 
 #define WORLD_TOTAL_TILE_DIMENSIONS 100
 #define WORLD_TOTAL_TILE_CHUNK_DIMENSIONS 10
-
-// @NOTE(JM) Get chunk position from absolute X and Y values.
-// Then get the tilemap from that chunk. The tilemap being the 256x256 tiles
-// that are in view
+#define CHUNK_RELATIVE_TILE_POS_X 5
+#define CHUNK_RELATIVE_TILE_POS_Y 5
 
 typedef struct World {
     uint16 tileDimensions; // tile dimensions of the entire world
-    uint16 tileChunkDimensions; // 256 x 256 tiles per "tile chunk"
-    uint32 tileChunkMask;
-    uint32 tileChunkShift;
+    uint16 tileChunkDimensions; // 256 x 256 tiles per "tile chunk". Currently set to 10 for dev testing
+    uint32 tileChunkMask; // @TODO(JM)
+    uint32 tileChunkShift; // @TODO(JM)
 
     float32 tileHeightMetres;
     uint8 pixelsPerMetre;
@@ -415,21 +413,23 @@ typedef struct TilePosition {
 } TilePosition;
 
 typedef struct WorldPosition {
-    TilePosition absoluteTile; // Position data for the currently active tile relative to the entire world
-    int32 chunkIndexX; // Absolute X index of the chunk tiles relative to the world tiles
-    int32 chunkIndexY; // Absolute Y index of the chunk tiles relative to the world tiles
-    uint32 *chunkTiles; // Pointer to the starting position of the current tile chunk
-    TilePosition chunkTile; // Position data for the currently active tile within the tile chunk
-    int32 chunkOffsetX;
-    int32 chunkOffsetY;
+    int32 chunkIndexX; // X index of the starting position of the chunk tiles relative to the world tiles
+    int32 chunkIndexY; // Y index of the starting position of the chunk tiles relative to the world tiles
+    int32 chunkOffsetX; // @deprecated.
+    int32 chunkOffsetY; // @deprecated.
 
+     // Position data for the currently active tile relative to the entire world
     TilePosition worldTileBottomLeft;
     TilePosition worldTileBottomMiddle;
     TilePosition worldTileBottomRight;
 
+    // Position data for the currently active tile relative to the tile chunk
     TilePosition chunkTileBottomLeft;
     TilePosition chunkTileBottomMiddle;
     TilePosition chunkTileBottomRight;
+
+    uint32 chunkIndexPixelOffsetX;
+    uint32 chunkIndexPixelOffsetY;
 
 } WorldPosition;
 
