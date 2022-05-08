@@ -4,5 +4,6 @@
      - which 256x256 chunk are we viewing?
      - chunk relative tile x and y
 - Re implement tile collission detection (currently disabled)
+- Implement smooth scrolling
 - Tile relative offset needs to be in metres, not pixels (as per Casey)
 - Fix diagonal speed bug
