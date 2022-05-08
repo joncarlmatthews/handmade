@@ -336,6 +336,7 @@ typedef struct posXYf32 {
 typedef struct Player {
     posXYUInt absolutePosition; // Position in relation to the world
     posXYUInt relativePosition; // Position in relation to the tile chunk
+    uint32 lastMoveDirections; // Position in relation to the tile chunk
     float32 heightMetres; // Metres
     float32 widthMetres; // Metres
     uint16 height;
@@ -351,6 +352,13 @@ typedef struct Player {
     int32 jumpStartPos;
 
 } Player;
+
+enum class PlayerMovementDirection {
+    UP      = 1,
+    DOWN    = 2,
+    LEFT    = 4,
+    RIGHT   = 8
+};
 
 enum jumpDirection {
     JUMP_UP,
@@ -415,21 +423,13 @@ typedef struct WorldPosition {
     int32 chunkOffsetX;
     int32 chunkOffsetY;
 
-    union {
-        TilePosition absoluteTile_new[2];
-        struct {
-            TilePosition absoluteTileBottomLeft;
-            TilePosition absoluteTileBottomMiddle;
-        };
-    };
+    TilePosition worldTileBottomLeft;
+    TilePosition worldTileBottomMiddle;
+    TilePosition worldTileBottomRight;
 
-    union {
-        TilePosition chunkTile_new[2];
-        struct {
-            TilePosition chunkTileBottomLeft;
-            TilePosition chunkTileBottomMiddle;
-        };
-    };
+    TilePosition chunkTileBottomLeft;
+    TilePosition chunkTileBottomMiddle;
+    TilePosition chunkTileBottomRight;
 
 } WorldPosition;
 
