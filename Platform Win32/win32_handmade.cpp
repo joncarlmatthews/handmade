@@ -356,8 +356,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Create the Windows frame buffer
         win32InitFrameBuffer(&thread, &win32FrameBuffer, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
-        
-
         /*
          * Controllers
          */
@@ -976,7 +974,10 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param int                   height      The height of the window's viewport
  * 
  */
-internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height)
+internal_func void win32InitFrameBuffer(PlatformThreadContext *thread,
+                                        Win32FrameBuffer *buffer,
+                                        uint32 width,
+                                        int32 height)
 {
 
     // buffer->foo is a dereferencing shorthand for (*buffer).foo

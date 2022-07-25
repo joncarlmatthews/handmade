@@ -1,9 +1,12 @@
+x Implement smooth scrolling (this might fix the wrapping glitch?)
+- Stop player from moving (now that the background smooth scrolls)
+- Make world toroidal
+- Re implement tile collission detection (currently disabled)
+- Postfix pixel variables with Px (where appropiate)
 - Fix bug where world wrapping player movement glitches
 - Revisit chunk mask and chunk shift stuff to store world position data in less bytes.
      - absolute tile x and y
      - which 256x256 chunk are we viewing?
      - chunk relative tile x and y
-- Re implement tile collission detection (currently disabled)
-- Implement smooth scrolling
 - Tile relative offset needs to be in metres, not pixels (as per Casey)
 - Fix diagonal speed bug

@@ -306,10 +306,10 @@ typedef struct SineWave
 // Pixels/colours
 //====================================================
 typedef struct Colour {
-    float32 r;
-    float32 g;
-    float32 b;
-    float32 a;
+    float32 r; // Between 0.0f and 1.0f
+    float32 g; // Between 0.0f and 1.0f
+    float32 b; // Between 0.0f and 1.0f
+    float32 a; // Between 0.0f and 1.0f
 } Colour;
 
 //
@@ -336,13 +336,14 @@ typedef struct posXYf32 {
 typedef struct Player {
     posXYUInt absolutePosition; // Position in relation to the world
     posXYUInt relativePosition; // Position in relation to the tile chunk
+
     uint32 lastMoveDirections; // Position in relation to the tile chunk
+
     float32 heightMetres; // Metres
     float32 widthMetres; // Metres
     uint16 height;
     uint16 width;
     float32 movementSpeedMPS; // Metre's per second
-    posXYInt tileRelativePosition; // Where within the tile
 
     bool8 jumping;
     float32 jumpDuration;
@@ -372,24 +373,38 @@ typedef struct TileChunk {
     uint32 *tiles;
 } TileChunk;
 
+// How many total tiles does the entire World have?
+// 30x30 = 900
+#define WORLD_TOTAL_TILE_DIMENSIONS 30
 
-#define WORLD_TOTAL_TILE_DIMENSIONS 100
-#define WORLD_TOTAL_TILE_CHUNK_DIMENSIONS 10
-#define CHUNK_RELATIVE_TILE_POS_X 5
-#define CHUNK_RELATIVE_TILE_POS_Y 5
+// How many of the World's tiles will we display on screen at once? Aka "tile chunk"
+// 10x10 = 100
+#define WORLD_TILE_CHUNK_DIMENSIONS 10
+
+// Starting tile chunk position
+#define TILE_CHUNK_STARTING_TILE_INDEX_X 0
+#define TILE_CHUNK_STARTING_TILE_INDEX_Y 0
+
+// Starting position
+#define CHUNK_RELATIVE_STARTING_TILE_INDEX_X 4
+#define CHUNK_RELATIVE_STARTING_TILE_INDEX_Y 0
 
 typedef struct World {
-    uint16 tileDimensions; // tile dimensions of the entire world
-    uint16 tileChunkDimensions; // 256 x 256 tiles per "tile chunk". Currently set to 10 for dev testing
+    uint16 totalTileDimensions; // @see WORLD_TOTAL_TILE_DIMENSIONS
+    uint16 tileChunkDimensions; // @see WORLD_TILE_CHUNK_DIMENSIONS
+
     uint32 tileChunkMask; // @TODO(JM)
     uint32 tileChunkShift; // @TODO(JM)
 
-    float32 tileHeightMetres;
-    uint8 pixelsPerMetre;
-    uint16 tileHeight;
-    uint16 tileWidth;
-    uint16 worldHeight;
-    uint16 worldWidth;
+    uint8 pixelsPerMetre; // How many pixels = 1 metre in our World?
+
+    float32 tileHeightMetres; // Height in World metres of an individual tile
+
+    uint16 tileHeightPx; // Height in pixels of an individual tile 
+    uint16 tileWidthPx; // Width in pixels of an individual tile 
+
+    uint16 tileChunkHeightPx; // Height in pixels of the tile chunk 
+    uint16 tileChunkWidthPx; // Width in pixels of the tile chunk 
 } World;
 
 enum class PLAYER_POINT_POS {
@@ -415,8 +430,11 @@ typedef struct TilePosition {
 typedef struct WorldPosition {
     int32 chunkIndexX; // X index of the starting position of the chunk tiles relative to the world tiles
     int32 chunkIndexY; // Y index of the starting position of the chunk tiles relative to the world tiles
-    int32 chunkOffsetX; // @deprecated.
-    int32 chunkOffsetY; // @deprecated.
+
+    struct {
+        int32 x;
+        int32 y;
+    } tileChunkStartPixelAnchor;
 
      // Position data for the currently active tile relative to the entire world
     TilePosition worldTileBottomLeft;
@@ -436,7 +454,7 @@ typedef struct WorldPosition {
 internal_func
 void initWorld(GameFrameBuffer frameBuffer,
                 World *world,
-                float32 tileHeight,
+                float32 tileHeightPx,
                 uint8 pixelsPerMetre);
 
 internal_func
