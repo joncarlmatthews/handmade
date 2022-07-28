@@ -14,6 +14,11 @@
 // shared across the game and platform layer
 #include "..\Game\utility.cpp"
 
+// Function stubs for functions provided by external DLL
+GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
+GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) { return 0; }
+GAME_UPDATE(gameUpdateStub) { return; }
+
 // Whether or not the application is running/paused
 global_var bool8 running = TRUE;
 global_var bool8 paused = FALSE;

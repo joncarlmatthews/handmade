@@ -20,13 +20,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="tilemaps.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
+    <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="utility.cpp" />
+    <ClCompile Include="world.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="build.bat" />

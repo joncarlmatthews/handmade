@@ -330,14 +330,41 @@ typedef struct posXYf32 {
     float32 y;
 } posXYf32;
 
+typedef struct TilePosition {
+
+    // The absolute pixel coordinates (relative to the world) to base this
+    // tile position off of.
+    posXYUInt pixelCoordinates;
+
+    // x and y absolute tile index (relative to the world)
+    posXYUInt tileIndex;
+
+    // X and Y index of the currently visible tile chunk
+    struct {
+        uint32 x;
+        uint32 y;
+    } chunkIndex;
+
+    // The pixel coordinates relative to the tile chunk the pixelCoordinates are in
+    posXYUInt chunkRelativePixelCoordinates;
+
+    // The pixel coordinates relative to the tile the pixelCoordinates are in
+    posXYUInt tileRelativePixelCoordinates;
+
+} TilePosition;
+
 //
 // Player
 //====================================================
 typedef struct Player {
-    posXYUInt absolutePosition; // Position in relation to the world
-    posXYUInt relativePosition; // Position in relation to the tile chunk
+    // Position in relation to the world
+    posXYUInt absolutePosition;
 
-    uint32 lastMoveDirections; // Position in relation to the tile chunk
+    // Position in relation to screen (for background scrolling)
+    posXYUInt fixedPosition; 
+
+    // Position in relation to the tile chunk
+    uint32 lastMoveDirections;
 
     float32 heightMetres; // Metres
     float32 widthMetres; // Metres
@@ -345,6 +372,7 @@ typedef struct Player {
     uint16 width;
     float32 movementSpeedMPS; // Metre's per second
 
+    // @NOTE(JM) old, temp jump code
     bool8 jumping;
     float32 jumpDuration;
     float32 totalJumpMovement;
@@ -355,6 +383,7 @@ typedef struct Player {
 } Player;
 
 enum class PlayerMovementDirection {
+    NONE    = 0,
     UP      = 1,
     DOWN    = 2,
     LEFT    = 4,
@@ -387,24 +416,35 @@ typedef struct TileChunk {
 
 // Starting position
 #define CHUNK_RELATIVE_STARTING_TILE_INDEX_X 4
-#define CHUNK_RELATIVE_STARTING_TILE_INDEX_Y 0
+#define CHUNK_RELATIVE_STARTING_TILE_INDEX_Y 4
 
 typedef struct World {
-    uint16 totalTileDimensions; // @see WORLD_TOTAL_TILE_DIMENSIONS
-    uint16 tileChunkDimensions; // @see WORLD_TILE_CHUNK_DIMENSIONS
+
+    // @see WORLD_TOTAL_TILE_DIMENSIONS
+    uint16 totalTileDimensions;
+
+    // @see WORLD_TILE_CHUNK_DIMENSIONS
+    uint16 tileChunkDimensions; 
+
+    // Total number of tile chunks within the world
+    uint32 totalTileChunks;
 
     uint32 tileChunkMask; // @TODO(JM)
     uint32 tileChunkShift; // @TODO(JM)
 
-    uint8 pixelsPerMetre; // How many pixels = 1 metre in our World?
+    // How many pixels = 1 metre in our World?
+    uint8 pixelsPerMetre;
 
-    float32 tileHeightMetres; // Height in World metres of an individual tile
+    // Height in World metres of an individual tile
+    float32 tileHeightMetres;
 
-    uint16 tileHeightPx; // Height in pixels of an individual tile 
-    uint16 tileWidthPx; // Width in pixels of an individual tile 
+    // Height and width in pixels of an individual tile 
+    uint16 tileHeightPx; 
+    uint16 tileWidthPx;
 
-    uint16 tileChunkHeightPx; // Height in pixels of the tile chunk 
-    uint16 tileChunkWidthPx; // Width in pixels of the tile chunk 
+    // Height and width in pixels of each tile chunk 
+    uint16 tileChunkHeightPx; 
+    uint16 tileChunkWidthPx;
 } World;
 
 enum class PLAYER_POINT_POS {
@@ -419,35 +459,16 @@ enum class PLAYER_POINT_POS {
     BOTTOM_RIGHT,
 };
 
-typedef struct TilePosition {
-    PLAYER_POINT_POS pointPosition;
-    uint32 x; // X index
-    uint32 y; // Y index
-    posXYUInt pointPixelPositionAbs;
-    posXYUInt pointPixelPositionTileRel;
-} TilePosition;
-
 typedef struct WorldPosition {
-    int32 chunkIndexX; // X index of the starting position of the chunk tiles relative to the world tiles
-    int32 chunkIndexY; // Y index of the starting position of the chunk tiles relative to the world tiles
 
+    // The currently active tile based on the players absolute Position
+    TilePosition activeTile;
+
+    // X and Y coordinates of the active tile chunk's starting point (to draw from)
     struct {
-        int32 x;
-        int32 y;
-    } tileChunkStartPixelAnchor;
-
-     // Position data for the currently active tile relative to the entire world
-    TilePosition worldTileBottomLeft;
-    TilePosition worldTileBottomMiddle;
-    TilePosition worldTileBottomRight;
-
-    // Position data for the currently active tile relative to the tile chunk
-    TilePosition chunkTileBottomLeft;
-    TilePosition chunkTileBottomMiddle;
-    TilePosition chunkTileBottomRight;
-
-    uint32 chunkIndexPixelOffsetX;
-    uint32 chunkIndexPixelOffsetY;
+        uint32 x;
+        uint32 y;
+    } tileChunkStartPixelSlider;
 
 } WorldPosition;
 
@@ -456,9 +477,6 @@ void initWorld(GameFrameBuffer frameBuffer,
                 World *world,
                 float32 tileHeightPx,
                 uint8 pixelsPerMetre);
-
-internal_func
-inline int64 metresToPixels(World world, float32 metres);
 
 //
 // Game state & memory
@@ -518,24 +536,6 @@ typedef struct GameMemory
 #endif
 
 } GameMemory;
-
-//
-// World/Tilemaps (reference GameState)
-//====================================================
-internal_func
-void setTilePositionForPlayer(TilePosition *tilePoint,
-                                posXYUInt playerPixelPos,
-                                PLAYER_POINT_POS pointPos,
-                                Player player,
-                                World world);
-
-internal_func
-inline bool isWorldTileFree(World world,
-                            GameState gameState,
-                            TilePosition point);
-
-internal_func
-void setWorldPosition(World world, GameState *gameState, GameMemory *memory);
 
 //
 // Graphics
@@ -607,7 +607,6 @@ void controllerHandlePlayer(GameState *gameState,
                                     GameInput inputInstances[], \
                                     ControllerCounts *controllerCounts)
 typedef GAME_UPDATE(GameUpdate);
-GAME_UPDATE(gameUpdateStub) { return; }
 
 /**
  * @brief Initialises the game's frame buffer ready for writing.
@@ -629,7 +628,7 @@ GAME_UPDATE(gameUpdateStub) { return; }
                                                             uint32 byteWidthPerRow, \
                                                             void *memory)
 typedef GAME_INIT_FRAME_BUFFER(GameInitFrameBuffer);
-GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) { return 0; }
+
 
 /**
  * @brief Initialises the game's audio buffer ready for writing.
@@ -648,7 +647,7 @@ GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) { return 0; }
                                                             uint8 bytesPerSample, \
                                                             uint64 platformBufferSizeInBytes)
 typedef GAME_INIT_AUDIO_BUFFER(GameInitAudioBuffer);
-GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
+
 
 /**
  * Struct to assign pointers to internal game code functions
