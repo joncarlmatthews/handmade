@@ -1,10 +1,10 @@
-# Handmade
+# "Handmade Hero"
 
 Low level game programming concepts in C/C++
 
 ## Development Environment
 
-Using Windows as our development environment as it meets the following development requirements:
+Using Windows as the development environment as it meets the following development requirements:
 
 ✔ Debugger
 
@@ -33,6 +33,9 @@ To run the executable, open the .exe within the relevant `build\Win32\<arch>\<co
 To run the program from directly within Visual Studio, hit **Ctrl** + **F5**.
 
 To run the program in Visual Studio with the debugger attached, simply hit **F5**.
+
+## Reccommended Visual Studio Plugins
+[Editor Guidelines](https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview)
 
 ## Dynamically reloading the game code
 
@@ -99,11 +102,13 @@ HANDMADE_DEBUG_AUDIO
   - 1 debug audio
 ```
 
-## Reccommended Visual Studio Plugins
-[Editor Guidelines](https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview)
-
 
 ## Episode Notes
+
+### Day 033 - Virtualized Tile Maps
+
+Ripped out the tile based scrolling. Implemented smooth scrolling. Made the world toroidal. This was the toughest day yet.
+
 
 ### Day 028 -  Drawing a Tile Map
 
