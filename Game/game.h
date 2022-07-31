@@ -16,10 +16,10 @@
 
 // Flags:
 
-#define HANDMADE_DEBUG_TILE_POS
+// #define HANDMADE_DEBUG_TILE_POS
 // #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
- #define HANDMADE_DEBUG_FPS
+#define HANDMADE_DEBUG_FPS
 // #define HANDMADE_DEBUG_CLOCKCYCLES
 // #define HANDMADE_DEBUG_AUDIO
 
@@ -285,6 +285,8 @@ typedef struct GameInput
     GameMouseInput mouse;
     GameControllerInput controllers[MAX_CONTROLLERS];
     float32 msPerFrame; // How many miliseconds are we taking per frame? E.g. 16.6 or 33.3
+    uint8 targetFPS; // Our target FPS
+    float32 fps; // What is our actual FPS
 } GameInput;
 
 typedef struct SineWave
@@ -415,8 +417,8 @@ typedef struct TileChunk {
 #define TILE_CHUNK_STARTING_TILE_INDEX_Y 0
 
 // Starting position
-#define CHUNK_RELATIVE_STARTING_TILE_INDEX_X 4
-#define CHUNK_RELATIVE_STARTING_TILE_INDEX_Y 4
+#define CHUNK_RELATIVE_STARTING_TILE_INDEX_X 5
+#define CHUNK_RELATIVE_STARTING_TILE_INDEX_Y 5
 
 typedef struct World {
 

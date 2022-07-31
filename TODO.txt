@@ -4,7 +4,8 @@ x Stop player from moving (now that the background smooth scrolls)
     x Refactor Chunk Index, Chunk Tile, Chunk Plr Pos
 x Make world toroidal
 - Fix player speed/frame rate consistency? bug
-- Fix bug with point visulisation
+- Make collision detection pixel based rather than tile based?
+x Fix bug with point visulisation
 x Re implement tile collission detection (currently disabled)
 
 x Fix bug where world wrapping player movement glitches

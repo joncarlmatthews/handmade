@@ -65,6 +65,10 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
 
     positionData->pointPosition = pointPos;
 
+    // The absolute pixel position of the point (in relation to the world)
+    positionData->activeTile.pixelCoordinates.x = (uint32)x;
+    positionData->activeTile.pixelCoordinates.y = (uint32)y;
+
     // X and Y position coordinates of the tile (relative to the world)
     positionData->activeTile.tileIndex.x = (int32)floorf(x / (float32)world.tileWidthPx);
     positionData->activeTile.tileIndex.y = (int32)floorf(y / (float32)world.tileHeightPx);
@@ -72,17 +76,20 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     positionData->activeTile.tileIndex.x = (modulo(positionData->activeTile.tileIndex.x, world.totalTileDimensions));
     positionData->activeTile.tileIndex.y = (modulo(positionData->activeTile.tileIndex.y, world.totalTileDimensions));
 
-    // The absolute pixel position of the point (in relation to the world)
-    positionData->activeTile.pixelCoordinates.x = (uint32)x;
-    positionData->activeTile.pixelCoordinates.y = (uint32)y;
+    // Currently active tile chunk
+    positionData->activeTile.chunkIndex.x = (int32)floorf((float32)x / (float32)(world.tileWidthPx * world.tileChunkDimensions));
+    positionData->activeTile.chunkIndex.y = (int32)floorf((float32)y / (float32)(world.tileHeightPx * world.tileChunkDimensions));
 
     // @TODO(JM)
     positionData->activeTile.chunkRelativePixelCoordinates.x = 0;
     positionData->activeTile.chunkRelativePixelCoordinates.y = 0;
 
     // The tile relative pixel position of the point (in relation to the tile itself)
-    positionData->activeTile.tileRelativePixelCoordinates.x = (positionData->activeTile.tileRelativePixelCoordinates.x - (positionData->activeTile.tileIndex.x * world.tileWidthPx));
-    positionData->activeTile.tileRelativePixelCoordinates.y = (positionData->activeTile.tileRelativePixelCoordinates.y - (positionData->activeTile.tileIndex.y * world.tileHeightPx));
+    // @TODO(JM)
+    positionData->activeTile.tileRelativePixelCoordinates.x = 0;
+    positionData->activeTile.tileRelativePixelCoordinates.y = 0;
+    //positionData->activeTile.tileRelativePixelCoordinates.x = (positionData->activeTile.tileRelativePixelCoordinates.x - (positionData->activeTile.tileIndex.x * world.tileWidthPx));
+    //positionData->activeTile.tileRelativePixelCoordinates.y = (positionData->activeTile.tileRelativePixelCoordinates.y - (positionData->activeTile.tileIndex.y * world.tileHeightPx));
 }
 
 void getActiveTileForPlayer(TilePosition *tilePosition,

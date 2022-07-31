@@ -207,15 +207,15 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 #ifdef HANDMADE_DEBUG_TILE_POS
     PlayerPositionData pointVisulisation;
     getPositionDataForPlayer(&pointVisulisation,
-                                gameState->player1.absolutePosition,
+                                gameState->player1.fixedPosition,
                                 PLAYER_POINT_POS::BOTTOM_MIDDLE,
                                 gameState->player1,
                                 world);
 
     writeRectangle(world,
                     frameBuffer,
-                    pointVisulisation.activeTile.chunkRelativePixelCoordinates.x,
-                    pointVisulisation.activeTile.chunkRelativePixelCoordinates.y,
+                    pointVisulisation.activeTile.pixelCoordinates.x,
+                    pointVisulisation.activeTile.pixelCoordinates.y,
                     1,
                     1,
                     { 0.4f, 1.0f, 0.2f },
@@ -258,7 +258,21 @@ void controllerHandlePlayer(GameState *gameState,
 
     // Normalise pixel movement regardless of framerate
     float32 pixelsPerSecond = (world->pixelsPerMetre * gameState->player1.movementSpeedMPS);
-    float32 pixelsPerFrame = ceilf(pixelsPerSecond / (int32)ceilf((1000.0f / gameInput.msPerFrame)));
+    float32 pixelsPerFrame = (pixelsPerSecond / gameInput.fps);
+
+    {
+        char buff[400] = {};
+        sprintf_s(buff, sizeof(buff),
+    "MS per frame: %f. \
+FPS: %f. \
+Pixels per second: %f. \
+Pixels per frame: %f\n",
+gameInput.msPerFrame,
+gameInput.fps,
+pixelsPerSecond,
+pixelsPerFrame);
+        memory->DEBUG_platformLog(buff);
+    }
 
     posXYInt playerNewPosTmp = {0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
@@ -277,6 +291,15 @@ void controllerHandlePlayer(GameState *gameState,
         playerAttemptingMove = true;
         trackXMoveAmtPx = (int32)pixelsPerFrame;
         playerNewPosTmp.x += trackXMoveAmtPx;
+
+        {
+            char buff[400] = {};
+            sprintf_s(buff, sizeof(buff),
+                "trackXMoveAmtPx: %i.\n",
+                trackXMoveAmtPx);
+            memory->DEBUG_platformLog(buff);
+        }
+
     }
 
     if (controller.dPadUp.endedDown) {
@@ -704,7 +727,7 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
     float32 radians = 0.0f;
     float64 sine = 0.0f;
 
-    uint16* audioSample = (uint16*)audioBuffer->memory;
+    uint16 *audioSample = (uint16*)audioBuffer->memory;
 
     // Iterate over each 2 - bytes and write the same data for both...
     for (uint32 i = 0; i < audioBuffer->noOfSamplesToWrite; i++) {

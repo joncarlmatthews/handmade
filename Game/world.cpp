@@ -7,7 +7,7 @@
 #include "utility.h"
 
 /**
- * Update's the World Position
+ * Updates the World Position
  *
  * @param int32         xMoveAmtPx  How much movement has been made on the X axis
  * @param int32         yMoveAmtPx  How much movement has been made on the Y axis

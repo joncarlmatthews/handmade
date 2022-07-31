@@ -4,6 +4,7 @@
 #include <strsafe.h> // sprintf_s support
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
+#include <math.h>  // ceil.
 
 #include "..\Game\types.h" // Basic types
 #include "..\Game\utility.h" // Function signatures and basic types that are shared across the game and platform layer
@@ -383,6 +384,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Assign the mouse object to the game input
         gameInput->mouse = mouse;
+        gameInput->targetFPS = TARGET_FPS;
 
         // Keyboard support
         GameControllerInput keyboard = { 0 };
@@ -397,13 +399,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         uint64 runningProcessorClockCyclesCounter = __rdtsc();
 #endif
 
-        // Get the current time for profiling FPS
-        LARGE_INTEGER netFrameTime = win32GetTime();
-
         /**
          * MAIN GAME LOOP
          */
         while (running) {
+
+            // Get the current time for profiling FPS
+            LARGE_INTEGER netFrameTime = win32GetTime();
 
             // Get the position of the mouse
             win32GetMousePosition(window, &gameInput->mouse);
@@ -785,60 +787,59 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 // @TODO(JM) Missed target framerate. Log.
 
-                #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
-                {
-                    char output[500] = { 0 };
-                    sprintf_s(output, sizeof(output),
-                                "======================================MISSED================================ (%f > %f)\n\n",
-                                millisecondsElapsedForFrame,
-                                win32FixedFrameRate.gameTargetMSPerFrame);
-                    OutputDebugStringA(output);
-                }
+                #if defined(HANDMADE_DEBUG_FPS)
+                    {
+                        char output[500] = { 0 };
+                        sprintf_s(output, sizeof(output),
+                                    "======================================MISSED================================ (%f > %f)\n",
+                                    millisecondsElapsedForFrame,
+                                    win32FixedFrameRate.gameTargetMSPerFrame);
+                        OutputDebugStringA(output);
+                    }
                 #endif
             }
 
-            // Set net frame time (E.g. 33.33ms or 16.66ms)
-            netFrameTime = win32GetTime();
-            float32 netFrameTimeMS = win32GetElapsedTimeMS(gameLoopTime, netFrameTime, globalQPCFrequency);
+            // Calculate the net frame time (E.g. 33.33ms or 16.66ms)
 
             // Set the ms per frame to the game input object so we can regulate movement speed
-            gameInput->msPerFrame = netFrameTimeMS;
+            gameInput->msPerFrame = millisecondsElapsedForFrame;
+            gameInput->fps = (1000.0f / gameInput->msPerFrame);
 
-            #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
+            #if defined(HANDMADE_DEBUG_FPS)
                 {
                     char output[100] = { 0 };
                     sprintf_s(output, sizeof(output),
                                 "Net time for frame to complete: %f milliseconds\n\n",
-                                netFrameTimeMS);
+                                millisecondsElapsedForFrame);
 
                     OutputDebugStringA(output);
                 }
             #endif
 
-            #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_CLOCKCYCLES)
-            {
-                // Calculate how many processor clock cycles elapsed for this frame.
-                // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
-                uint64 processorClockCyclesAfterFrame = __rdtsc();
-                int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
-                float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
+            #if defined(HANDMADE_DEBUG_CLOCKCYCLES)
+                {
+                    // Calculate how many processor clock cycles elapsed for this frame.
+                    // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
+                    uint64 processorClockCyclesAfterFrame = __rdtsc();
+                    int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
+                    float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
 
-                // Calculate the FPS given the speed of this current frame.
-                float32 fps = (1000.0f / (float32)netFrameTimeMS);
+                    // Calculate the FPS given the speed of this current frame.
+                    float32 fps = (1000.0f / (float32)netFrameTimeMS);
 
-                // Calculate the processor running speed in GHz
-                float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
+                    // Calculate the processor running speed in GHz
+                    float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
 
-                // Reset the running clock cycles.
-                runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
+                    // Reset the running clock cycles.
+                    runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
 
-                // Console log the speed:
-                char output[100] = { 0 };
-                sprintf_s(output, sizeof(output),
-                            "Cycles: %.1fm (%.2f GHz).\n",
-                            clockCycles_mega, processorSpeed);
-                OutputDebugStringA(output);
-            }
+                    // Console log the speed:
+                    char output[100] = { 0 };
+                    sprintf_s(output, sizeof(output),
+                                "Cycles: %.1fm (%.2f GHz).\n",
+                                clockCycles_mega, processorSpeed);
+                    OutputDebugStringA(output);
+                }
             #endif
 
 
