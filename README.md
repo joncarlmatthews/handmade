@@ -4,7 +4,7 @@ Low level game programming concepts in C/C++
 
 ## Development Environment
 
-Using Windows as the development environment as it meets the following development requirements:
+Using Windows as the development environment as it meets the following developer requirements:
 
 ✔ Debugger
 
