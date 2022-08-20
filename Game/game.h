@@ -16,10 +16,10 @@
 
 // Flags:
 
-#define HANDMADE_DEBUG_TILE_POS
+// #define HANDMADE_DEBUG_TILE_POS
 // #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
-// #define HANDMADE_DEBUG_FPS
+#define HANDMADE_DEBUG_FPS
 // #define HANDMADE_DEBUG_CLOCKCYCLES
 // #define HANDMADE_DEBUG_AUDIO
 
@@ -562,8 +562,7 @@ void writeRectangle(World world,
                     int64 yOffset,
                     int64 width,
                     int64 height,
-                    Colour colour,
-                    bool tilemapOverrunCheck);
+                    Colour colour);
 
 internal_func
 void frameBufferWritePlayer(GameState *gameState,

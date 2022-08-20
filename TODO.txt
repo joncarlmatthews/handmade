@@ -1,13 +1,4 @@
-x Implement smooth scrolling (this might fix the wrapping glitch?)
-x Stop player from moving (now that the background smooth scrolls)
-    x Deprecate Plr Pixel Offset, player1.relativePosition?
-    x Refactor Chunk Index, Chunk Tile, Chunk Plr Pos
-x Make world toroidal
-x Fix weird tile collision bug
-x Fix bug with point visulisation
-x Re implement tile collission detection (currently disabled)
-
-x Fix bug where world wrapping player movement glitches
+- Re implement tilemap loop for better performance
 - Wrapping bug where tile calculation thinks the player is on a different tile to actual??
 - Revisit chunk mask and chunk shift stuff to store world position data in less bytes.
      - absolute tile x and y

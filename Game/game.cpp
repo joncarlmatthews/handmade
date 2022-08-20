@@ -127,8 +127,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     0,
                     frameBuffer->width,
                     frameBuffer->height,
-                    { 0.4f, 0.f, 0.8f },
-                    false);
+                    { 0.4f, 0.f, 0.8f });
 
      // How many tiles per screen
 
@@ -232,8 +231,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                             pixelY,
                             1,
                             1,
-                            pixelColour,
-                            false);
+                            pixelColour);
 
         }
     }
@@ -247,8 +245,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->player1.fixedPosition.y,
                     metresToPixels(world, gameState->player1.widthMetres),
                     metresToPixels(world, gameState->player1.heightMetres),
-                    { 0.301f, 0.156f, 0.0f },
-                    true);
+                    { 0.301f, 0.156f, 0.0f });
 
     // Point visualisation
 #ifdef HANDMADE_DEBUG_TILE_POS
@@ -265,8 +262,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     pointVisulisation.activeTile.pixelCoordinates.y,
                     1,
                     1,
-                    { 0.4f, 1.0f, 0.2f },
-                    true);
+                    { 0.4f, 1.0f, 0.2f });
 #endif
 
     // Mouse input testing
@@ -277,8 +273,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         inputInstances->mouse.position.y,
                         50,
                         50,
-                        { 0.5f, 0.0f, 0.5f },
-                        true);
+                        { 0.5f, 0.0f, 0.5f });
     }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -306,7 +301,7 @@ void controllerHandlePlayer(GameState *gameState,
     // @NOTE(JM) The truncated fractions cause issues with different framerates.
     // Not sure how to resolve at this point.
     float32 pixelsPerSecond = (world->pixelsPerMetre * gameState->player1.movementSpeedMPS);
-    float32 pixelsPerFrame = (pixelsPerSecond / gameInput.targetFPS);
+    float32 pixelsPerFrame = (pixelsPerSecond / gameInput.fps);
 
 
 #if 0
@@ -649,8 +644,7 @@ void writeRectangle(World world,
                     int64 yOffset,
                     int64 width,
                     int64 height,
-                    Colour colour,
-                    bool worldTileChunkOverrunCheck)
+                    Colour colour)
 {
     // Bounds checking
     if (xOffset >= buffer->width) {
@@ -722,23 +716,9 @@ void writeRectangle(World world,
     // Up (rows)
     for (int64 i = 0; i < height; i++) {
 
-        // Tilemap overrun checking
-        if (worldTileChunkOverrunCheck) {
-            if ((yOffset + i) >= world.tileChunkHeightPx) {
-                continue;
-            }
-        }
-
         // Accross (columns)
         uint32 *pixel = (uint32*)row;
         for (int64 x = 0; x < width; x++) {
-
-            // Tilemap overrun checking
-            if (worldTileChunkOverrunCheck) {
-                if ((xOffset + x) >= world.tileChunkWidthPx) {
-                    continue;
-                }
-            }
 
             *pixel = hexColour;
             pixel = (pixel + 1);
