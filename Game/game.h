@@ -16,10 +16,10 @@
 
 // Flags:
 
-// #define HANDMADE_DEBUG_TILE_POS
+#define HANDMADE_DEBUG_TILE_POS
 // #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
-#define HANDMADE_DEBUG_FPS
+// #define HANDMADE_DEBUG_FPS
 // #define HANDMADE_DEBUG_CLOCKCYCLES
 // #define HANDMADE_DEBUG_AUDIO
 
@@ -129,6 +129,9 @@ typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 //
 // Graphics
 //====================================================
+
+#define FRAME_BUFFER_WIDTH  1280
+#define FRAME_BUFFER_HEIGHT 720
 
 /*
  * Struct for the screen buffer
@@ -542,6 +545,16 @@ typedef struct GameMemory
 //
 // Graphics
 //====================================================
+
+/**
+ * Insert a rectangle into the frame buffer
+ *
+ * @param xOffset   Offset, in pixels along the x axis to start drawing from
+ * @param yOffset   Offset, in pixels along the y axis to start drawing from
+ * @param width     Width, in pixels, to draw
+ * @param height    Height, in pixels, to draw
+ * @return void
+ */
 internal_func
 void writeRectangle(World world,
                     GameFrameBuffer* buffer,

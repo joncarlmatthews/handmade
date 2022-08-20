@@ -60,7 +60,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->player1.height  = (int16)metresToPixels(world, gameState->player1.heightMetres);
         gameState->player1.width   = (int16)metresToPixels(world, gameState->player1.widthMetres);
 
-        gameState->player1.movementSpeedMPS = 2.8f; // Running
+        gameState->player1.movementSpeedMPS = 8.8f; // Running
         gameState->player1.totalJumpMovement = 15.0f;
 
         // Initial character starting position
@@ -121,8 +121,53 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      * Write the frame buffer...
      * 
      */
+    writeRectangle(world,
+                    frameBuffer,
+                    0,
+                    0,
+                    frameBuffer->width,
+                    frameBuffer->height,
+                    { 0.4f, 0.f, 0.8f },
+                    false);
+
+     // How many tiles per screen
 
     // Draw tiles
+#if 0
+    for (uint32 row = 0; row < TILEMAP_SIZE_Y; row++) {
+        for (uint32 column = 0; column < TILEMAP_SIZE_X; column++) {
+            uint32* tileState = ((uint32*)gameState->currentTilemap.tilemap->tiles + ((row * TILEMAP_SIZE_X) + column));
+
+            // NULL pointer check
+            if (!tileState) {
+                continue;
+            }
+
+            Colour tileColour = { 0.85f, 0.85f, 0.85f };
+            if (*tileState) {
+                tileColour = { 0.349f, 0.349f, 0.349f };
+            }
+
+            if ((column == (uint32)gameState->currentTilemap.tile.x)
+                && (row == (uint32)gameState->currentTilemap.tile.y)) {
+                tileColour = { 1.0f, 1.0f, 0.701f };
+            }
+
+            uint32 tileXOffset = (world._tilemapTileWidth * column);
+            uint32 tileYOffset = (world._tilemapTileHeight * row);
+            writeRectangle(world,
+                            frameBuffer,
+                            tileXOffset,
+                            tileYOffset,
+                            world._tilemapTileWidth,
+                            world._tilemapTileHeight,
+                            tileColour);
+
+        }
+    }
+#endif
+
+#if 0
     for (uint32 pixelY = 0; pixelY < world.tileChunkHeightPx; pixelY++) { // y
         for (uint32 pixelX = 0; pixelX < world.tileChunkWidthPx; pixelX++) { // x
 
@@ -188,10 +233,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                             1,
                             1,
                             pixelColour,
-                            true);
+                            false);
 
         }
     }
+#endif
+
 
     // Draw player
     writeRectangle(world,
@@ -254,12 +301,15 @@ void controllerHandlePlayer(GameState *gameState,
     // Basic player movement...
 
     bool playerAttemptingMove = false;
-    bool playerHasMoved = false;
 
     // Normalise pixel movement regardless of framerate
+    // @NOTE(JM) The truncated fractions cause issues with different framerates.
+    // Not sure how to resolve at this point.
     float32 pixelsPerSecond = (world->pixelsPerMetre * gameState->player1.movementSpeedMPS);
-    float32 pixelsPerFrame = (pixelsPerSecond / gameInput.fps);
+    float32 pixelsPerFrame = (pixelsPerSecond / gameInput.targetFPS);
 
+
+#if 0
     {
         char buff[400] = {};
         sprintf_s(buff, sizeof(buff),
@@ -273,6 +323,7 @@ pixelsPerSecond,
 pixelsPerFrame);
         memory->DEBUG_platformLog(buff);
     }
+#endif
 
     posXYInt playerNewPosTmp = {0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
@@ -292,6 +343,7 @@ pixelsPerFrame);
         trackXMoveAmtPx = (int32)pixelsPerFrame;
         playerNewPosTmp.x += trackXMoveAmtPx;
 
+#if 0
         {
             char buff[400] = {};
             sprintf_s(buff, sizeof(buff),
@@ -299,6 +351,7 @@ pixelsPerFrame);
                 trackXMoveAmtPx);
             memory->DEBUG_platformLog(buff);
         }
+#endif
 
     }
 
@@ -345,18 +398,37 @@ pixelsPerFrame);
         playerNewPos.x = modulo(playerNewPosTmp.x, (world->tileWidthPx * world->totalTileDimensions));
         playerNewPos.y = modulo(playerNewPosTmp.y, (world->tileHeightPx * world->totalTileDimensions));
 
+        // Player movement direction
         uint32 movedUp = 0;
         uint32 movedDown = 0;
         uint32 movedLeft = 0;
         uint32 movedRight = 0;
+        uint32 lastMoveDirections = 0;
+
+        if (playerNewPos.y > gameState->player1.absolutePosition.y) {
+            movedUp += (1 << 0); // UP
+        }
+        if (playerNewPos.y < gameState->player1.absolutePosition.y) {
+            movedDown += (1 << 1); // DOWN
+        }
+        if (playerNewPos.x < gameState->player1.absolutePosition.x) {
+            movedLeft += (1 << 2); // LEFT
+        }
+        if (playerNewPos.x > gameState->player1.absolutePosition.x) {
+            movedRight += (1 << 3); // RIGHT
+        }
+
+        lastMoveDirections = (movedUp | movedDown | movedLeft | movedRight);
 
         // Tilemap collision detection
+#if 0
         PlayerPositionData middle;
         getPositionDataForPlayer(&middle,
                                     playerNewPos,
                                     PLAYER_POINT_POS::MIDDLE,
                                     gameState->player1,
                                     *world);
+#endif
 
         PlayerPositionData bottomMiddle;
         getPositionDataForPlayer(&bottomMiddle,
@@ -369,80 +441,68 @@ pixelsPerFrame);
         // Visualisation
         PlayerPositionData debugPoint = bottomMiddle;
 #endif
-
-        // @NOTE(JM) Bug, if move is invalid no move it taken
-        if ((isWorldTileFree(*world, *gameState, middle))
-                && (isWorldTileFree(*world, *gameState, bottomMiddle))) {
-
-            if ((gameState->player1.absolutePosition.x != playerNewPos.x)
-                || (gameState->player1.absolutePosition.y != playerNewPos.y)){
-
-                playerHasMoved = true;
-
-                if (playerNewPos.y > gameState->player1.absolutePosition.y) {
-                    movedUp += (1 << 0); // UP
-                }
-                if (playerNewPos.y < gameState->player1.absolutePosition.y) {
-                    movedDown += (1 << 1); // DOWN
-                }
-                if (playerNewPos.x < gameState->player1.absolutePosition.x) {
-                    movedLeft += (1 << 2); // LEFT
-                }
-                if (playerNewPos.x > gameState->player1.absolutePosition.x) {
-                    movedRight += (1 << 3); // RIGHT
-                }
-
-                gameState->player1.absolutePosition.x = playerNewPos.x;
-                gameState->player1.absolutePosition.y = playerNewPos.y;
-                gameState->player1.lastMoveDirections = (movedUp | movedDown | movedLeft | movedRight);
-            }
-
-        }else{
+        
+        // Can the move to the new tile be taken?
+        // @NOTE(JM) bug where rounding means player doesnt get a close as
+        // possible to certain tiles when a move is invalid
+        if (false == (isWorldTileFree(*world, *gameState, bottomMiddle))) {
 
 #ifdef HANDMADE_DEBUG_TILE_POS
             char buff[400] = {};
             sprintf_s(buff, sizeof(buff),
-"Plr World Pos x:%i y:%i. \
+    "CANNOT MOVE. \
+Plr World Pos x:%i y:%i. \
 World Tile x:%i y:%i. \
 Plr New World Pos: x:%i y:%i. \
 Plr New World Tile: x:%i y:%i. \
-CANNOT MOVE\n",
-                        gameState->player1.absolutePosition.x,
-                        gameState->player1.absolutePosition.y,
-                        gameState->worldPosition.activeTile.tileIndex.x,
-                        gameState->worldPosition.activeTile.tileIndex.y,
-                        playerNewPos.x,
-                        playerNewPos.y,
-                        debugPoint.activeTile.tileIndex.x,
-                        debugPoint.activeTile.tileIndex.y);
+\n",
+gameState->player1.absolutePosition.x,
+gameState->player1.absolutePosition.y,
+gameState->worldPosition.activeTile.tileIndex.x,
+gameState->worldPosition.activeTile.tileIndex.y,
+playerNewPos.x,
+playerNewPos.y,
+debugPoint.activeTile.tileIndex.x,
+debugPoint.activeTile.tileIndex.y);
             memory->DEBUG_platformLog(buff);
 #endif
 
-        }
+        } else {
 
-        if (playerHasMoved){
+            // ...yes, the move to the new tile can be taken
 
-            updateWorldPosition(trackXMoveAmtPx, trackYMoveAmtPx, *world, gameState);
+            // Sense check that the player actually moved
+            if ((gameState->player1.absolutePosition.x != playerNewPos.x)
+                    || (gameState->player1.absolutePosition.y != playerNewPos.y)) {
+
+                gameState->player1.absolutePosition.x = playerNewPos.x;
+                gameState->player1.absolutePosition.y = playerNewPos.y;
+                gameState->player1.lastMoveDirections = lastMoveDirections;
+
+                updateWorldPosition(trackXMoveAmtPx, trackYMoveAmtPx, *world, gameState);
 
 #ifdef HANDMADE_DEBUG_TILE_POS
-            char buff[500] = {};
-            sprintf_s(buff, sizeof(buff),
-"Plr World Pos x:%i y:%i. \
+                char buff[500] = {};
+                sprintf_s(buff, sizeof(buff),
+    "MOVED. \
+Plr World Pos x:%i y:%i. \
 World Tile x:%i y:%i. \
 Chunk Index x:%i y:%i. \
 Chunk Index Start Pxl Slider x:%i y:%i. \
 \n",
-                gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
-                gameState->worldPosition.activeTile.tileIndex.x, gameState->worldPosition.activeTile.tileIndex.y,
-                gameState->worldPosition.activeTile.chunkIndex.x, gameState->worldPosition.activeTile.chunkIndex.y,
-                gameState->worldPosition.tileChunkStartPixelSlider.x, gameState->worldPosition.tileChunkStartPixelSlider.y
-            );
-            memory->DEBUG_platformLog(buff);
+gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
+gameState->worldPosition.activeTile.tileIndex.x, gameState->worldPosition.activeTile.tileIndex.y,
+gameState->worldPosition.activeTile.chunkIndex.x, gameState->worldPosition.activeTile.chunkIndex.y,
+gameState->worldPosition.tileChunkStartPixelSlider.x, gameState->worldPosition.tileChunkStartPixelSlider.y
+);
+                memory->DEBUG_platformLog(buff);
 #endif
+            }
 
         }
 
-    }
+
+    } // player attempting move
 
     // Temp jump code
 #if 0
@@ -494,21 +554,6 @@ Chunk Index Start Pxl Slider x:%i y:%i. \
     }
 #endif
 
-    // Safe bounds checking
-    #if 0
-    if (gameState->player1.absolutePosition.y < 0) {
-        gameState->player1.absolutePosition.y = 0;
-    }
-    if (((int64)gameState->player1.absolutePosition.y + gameState->player1.height) > frameBuffer->height) {
-        gameState->player1.absolutePosition.y = (int32)(frameBuffer->height - gameState->player1.height);
-    }
-    if (((int64)gameState->player1.absolutePosition.x + gameState->player1.width) > frameBuffer->width) {
-        gameState->player1.absolutePosition.x = (int32)(frameBuffer->width - gameState->player1.width);
-    }
-    if (gameState->player1.absolutePosition.x < 0) {
-        gameState->player1.absolutePosition.x = 0;
-    }
-    #endif
 }
 
 #if defined(HANDMADE_DEBUG_AUDIO)
@@ -595,11 +640,6 @@ void initWorld(GameFrameBuffer frameBuffer,
  *
  * Therefore x is concerned with the screen buffer's width,
  * and y is concerned with the screen buffer's height.
- *
- * @param xOffset   Offset, in pixels along the x axis to start drawing from
- * @param yOffset   Offset, in pixels along the y axis to start drawing from
- * @param width     Width, in pixels, to draw
- * @param height    Height, in pixels, to draw
  * 
  */
 internal_func
@@ -690,7 +730,7 @@ void writeRectangle(World world,
         }
 
         // Accross (columns)
-        uint32* pixel = (uint32*)row;
+        uint32 *pixel = (uint32*)row;
         for (int64 x = 0; x < width; x++) {
 
             // Tilemap overrun checking

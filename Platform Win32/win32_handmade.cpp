@@ -360,7 +360,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Create the Windows frame buffer
-        win32InitFrameBuffer(&thread, &win32FrameBuffer, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+        win32InitFrameBuffer(&thread, &win32FrameBuffer, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
         /*
          * Controllers
@@ -702,8 +702,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             gameInputOld->controllers[0] = gameInput->controllers[0];
 
             // Display the frame buffer in Windows. AKA "flip the frame" or "page flip".
+
+            // Get the window's height and width
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-            win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
+
+            // Display the buffer to the screen
+            win32DisplayFrameBuffer(deviceHandleForWindow,
+                                    win32FrameBuffer,
+                                    clientDimensions.width,
+                                    clientDimensions.height,
+                                    CLIP);
 
             // How long did this game loop (frame) take? (E.g. 2ms)
             LARGE_INTEGER gameLoopTime = win32GetTime();
@@ -927,16 +935,22 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
             PAINTSTRUCT paint; 
             HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
+            // Get the window's height and width
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
             // Paint the whole screen black (stops the artifacts around the frame buffer)
-            int32 screenWidth = GetDeviceCaps(deviceHandleForWindow, HORZRES);
-            int32 screenHeight = GetDeviceCaps(deviceHandleForWindow, VERTRES);
-            if (screenWidth && screenHeight){
-                PatBlt(deviceHandleForWindow, 0, 0, screenWidth, screenHeight, BLACKNESS);
-            }
+            PatBlt(deviceHandleForWindow,
+                    0, 0,
+                    clientDimensions.width,
+                    clientDimensions.height,
+                    BLACKNESS);
 
-            win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
+            // Display the buffer to the screen
+            win32DisplayFrameBuffer(deviceHandleForWindow,
+                                    win32FrameBuffer,
+                                    clientDimensions.width,
+                                    clientDimensions.height,
+                                    CLIP);
 
             // End the paint request and releases the device context.
             EndPaint(window, &paint);
@@ -1027,31 +1041,29 @@ internal_func void win32InitFrameBuffer(PlatformThreadContext *thread,
  * Copies a Win32FrameBuffer's memory to the actual window - which will then
  * display its contents to the screen.
  *
+ * If clientWindowWidth or clientWindowHeight are smaller than the frame buffer's
+ * width and height then the window will simply clip the graphics
  *
- * @param deviceHandleForWindow     The window handle
- * @param Win32FrameBuffer      The buffer
- * @param width                        The window's viewport width
- * @param height                    The window's viewport height
  */
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, 
                                             Win32FrameBuffer buffer,
-                                            uint32 width,
-                                            uint32 height)
+                                            uint32 clientWindowWidth,
+                                            uint32 clientWindowHeight,
+                                            StretchDIBitsMode mode)
 {
     // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
     // sure we don't introduce artifacts. We can achieve this by not allowing the image
     // to stretch (by setting the destination width and height to be fixed to what the
     // source width and height are). This will help us when it comes to learning how
     // to write our renderer.
-    bool stretch = false;
-
-    if (!stretch) {
-        width = buffer.width;
-        height = buffer.height;
+    if (CLIP == mode) {
+        clientWindowWidth = buffer.width;
+        clientWindowHeight = buffer.height;
     }
 
-    int offsetX = 20;
-    int offsetY = -20;
+    // Draw the frame with margin?
+    int offsetX = 0;
+    int offsetY = 0;
     
     // StretchDIBits function copies the data of a rectangle of pixels to 
     // the specified destination. The first parameter is the handle for
@@ -1061,8 +1073,8 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
     StretchDIBits(deviceHandleForWindow,
                     offsetX,
                     offsetY,
-                    width,
-                    height,
+                    clientWindowWidth,
+                    clientWindowHeight,
                     0,
                     0,
                     buffer.width,
@@ -1299,6 +1311,10 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
     return;
 }
 
+/**
+ * Gets the height and width of the actual window. This changes if the window is
+ * resized, maximised etc
+ */
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
 {
     RECT clientRect;

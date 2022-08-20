@@ -3,12 +3,12 @@ x Stop player from moving (now that the background smooth scrolls)
     x Deprecate Plr Pixel Offset, player1.relativePosition?
     x Refactor Chunk Index, Chunk Tile, Chunk Plr Pos
 x Make world toroidal
-- Fix player speed/frame rate consistency? bug
-- Make collision detection pixel based rather than tile based?
+x Fix weird tile collision bug
 x Fix bug with point visulisation
 x Re implement tile collission detection (currently disabled)
 
 x Fix bug where world wrapping player movement glitches
+- Wrapping bug where tile calculation thinks the player is on a different tile to actual??
 - Revisit chunk mask and chunk shift stuff to store world position data in less bytes.
      - absolute tile x and y
      - which 256x256 chunk are we viewing?
@@ -16,6 +16,9 @@ x Fix bug where world wrapping player movement glitches
 - Tile relative offset needs to be in metres, not pixels (as per Casey)
 
 Ongoing:
+- Slow frame rate (now that we're rendering pixel by pixel)
 - Fix diagonal speed bug
+- Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
+- Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
 - Move forward declarations to releveant header files (tidy up)
 - Postfix pixel variables with Px (tidy up, where appropiate)

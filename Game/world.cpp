@@ -45,7 +45,7 @@ bool isWorldTileFree(World world,
     uint32 *tileState = ((uint32*)gameState.worldTiles + tileNumber);
 
     if (tileState) {
-        if (1 != *tileState) {
+        if (*tileState == 2) {
             return false;
         }
         return true;
