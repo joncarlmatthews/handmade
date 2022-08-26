@@ -29,7 +29,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     // Init the World
     World world = { 0 };
-    initWorld(*frameBuffer, &world, 1.0f, 60);
+    initWorld(*frameBuffer,
+                &world,
+                WORLD_PIXELS_PER_METER,
+                TILE_DIMENSIONS_METERS,
+                WORLD_TOTAL_TILE_DIMENSIONS,
+                WORLD_TILE_CHUNK_DIMENSIONS);
 
     /**
      * Game state initialisation
@@ -55,23 +60,27 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         }
 
         // Character attributes
-        gameState->player1.heightMetres  = (world.tileHeightMetres * 0.7f);
-        gameState->player1.widthMetres   = ((float32)gameState->player1.heightMetres * 0.65f);
-        gameState->player1.height  = (int16)metresToPixels(world, gameState->player1.heightMetres);
-        gameState->player1.width   = (int16)metresToPixels(world, gameState->player1.widthMetres);
+        gameState->player1.heightMeters  = 0.7f; // Average child height
+        gameState->player1.widthMeters   = ((float32)gameState->player1.heightMeters * 0.65f);
+        gameState->player1.heightPx  = (int16)metresToPixels(world, gameState->player1.heightMeters);
+        gameState->player1.widthPx   = (int16)metresToPixels(world, gameState->player1.widthMeters);
 
-        gameState->player1.movementSpeedMPS = 8.8f; // Running
+        // Movement speed (assume always running)
+        // https://www.calculateme.com/speed/kilometers-per-hour/to-meters-per-second/13
+        gameState->player1.movementSpeedMPS = 10.61f;
         gameState->player1.totalJumpMovement = 15.0f;
 
-        // Initial character starting position
-        gameState->player1.absolutePosition.x   = (CHUNK_RELATIVE_STARTING_TILE_INDEX_X * world.tileWidthPx);
-        gameState->player1.absolutePosition.y   = (CHUNK_RELATIVE_STARTING_TILE_INDEX_Y * world.tileHeightPx);
-        gameState->player1.fixedPosition.x      = (CHUNK_RELATIVE_STARTING_TILE_INDEX_X * world.tileWidthPx);
-        gameState->player1.fixedPosition.y      = (CHUNK_RELATIVE_STARTING_TILE_INDEX_Y * world.tileHeightPx);
-
-        // Initial starting point for the currently active tile chunk.
-        gameState->worldPosition.tileChunkStartPixelSlider.x = (TILE_CHUNK_STARTING_TILE_INDEX_X * world.tileWidthPx);
-        gameState->worldPosition.tileChunkStartPixelSlider.y = (TILE_CHUNK_STARTING_TILE_INDEX_Y * world.tileHeightPx);
+        // Initial character starting position. Start the player in the middle
+        // of screen
+        gameState->player1.fixedPosition.x = (frameBuffer->widthPx / 2);
+        gameState->player1.fixedPosition.y = (frameBuffer->heightPx / 2);
+        gameState->player1.absolutePosition.x = gameState->player1.fixedPosition.x;
+        gameState->player1.absolutePosition.y = gameState->player1.fixedPosition.y;
+       
+        // Initial starting point for the bottom left of the camera.
+        // Camera is drawn out to dimensions of GameFrameBuffer.width/height
+        gameState->worldPosition.cameraPositionPx.x = 0;
+        gameState->worldPosition.cameraPositionPx.y = 0;
 
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data
@@ -121,133 +130,52 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      * Write the frame buffer...
      * 
      */
-    writeRectangle(world,
-                    frameBuffer,
-                    0,
-                    0,
-                    frameBuffer->width,
-                    frameBuffer->height,
-                    { 0.4f, 0.f, 0.8f });
 
-     // How many tiles per screen
+    // Draw the tile map.
+    // @NOTE(JM) Drawing this pixel by pixel, this is incapable of hitting 60fps
+    // @TODO(JM) Optimise this!
+    for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
+        for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
 
-    // Draw tiles
-#if 0
-    for (uint32 row = 0; row < TILEMAP_SIZE_Y; row++) {
-        for (uint32 column = 0; column < TILEMAP_SIZE_X; column++) {
-            uint32* tileState = ((uint32*)gameState->currentTilemap.tilemap->tiles + ((row * TILEMAP_SIZE_X) + column));
+            uint32 tilePosY = modulo(((y + gameState->worldPosition.cameraPositionPx.y) / world.tileHeightPx), world.totalTileDimensions);
+            uint32 tilePosX = modulo(((x + gameState->worldPosition.cameraPositionPx.x) / world.tileWidthPx), world.totalTileDimensions);
 
-            // NULL pointer check
-            if (!tileState) {
+            uint32 *tileValue = ((uint32*)gameState->worldTiles + ((tilePosY * world.totalTileDimensions) + tilePosX));
+
+            // Null pointer check
+            if (!tileValue) {
                 continue;
             }
 
-            Colour tileColour = { 0.85f, 0.85f, 0.85f };
-            if (*tileState) {
-                tileColour = { 0.349f, 0.349f, 0.349f };
-            }
-
-            if ((column == (uint32)gameState->currentTilemap.tile.x)
-                && (row == (uint32)gameState->currentTilemap.tile.y)) {
-                tileColour = { 1.0f, 1.0f, 0.701f };
-            }
-
-            uint32 tileXOffset = (world._tilemapTileWidth * column);
-            uint32 tileYOffset = (world._tilemapTileHeight * row);
-            writeRectangle(world,
-                            frameBuffer,
-                            tileXOffset,
-                            tileYOffset,
-                            world._tilemapTileWidth,
-                            world._tilemapTileHeight,
-                            tileColour);
-
-        }
-    }
-#endif
-
-#if 0
-    for (uint32 pixelY = 0; pixelY < world.tileChunkHeightPx; pixelY++) { // y
-        for (uint32 pixelX = 0; pixelX < world.tileChunkWidthPx; pixelX++) { // x
-
-            uint32 pixelPosX = modulo((pixelX + gameState->worldPosition.tileChunkStartPixelSlider.x), (world.tileWidthPx * world.totalTileDimensions));
-            uint32 pixelPosY = modulo((pixelY + gameState->worldPosition.tileChunkStartPixelSlider.y), (world.tileHeightPx * world.totalTileDimensions));
-
-            uint32 tilePosX = (uint32)(pixelPosX / world.tileWidthPx);
-            uint32 tilePosY = (uint32)(pixelPosY / world.tileHeightPx);
-
-            uint maxTileIndex = (WORLD_TOTAL_TILE_DIMENSIONS -1);
-
-            if (tilePosX < 0){
-                tilePosX = 0;
-            }else if(tilePosX > maxTileIndex){
-                tilePosX = maxTileIndex;
-            }
-
-            if (tilePosY < 0) {
-                tilePosY = 0;
-            }else if (tilePosY > maxTileIndex) {
-                tilePosY = maxTileIndex;
-            }
-
             Colour pixelColour = {};
+            setTileColour(&pixelColour, *tileValue);
 
-            uint32 tileValue = gameState->worldTiles[tilePosY][tilePosX];
-
-            switch(tileValue){
-                default:
-                    pixelColour = { 0.94f, 0.94f, 0.94f };
-                break;
-
-                case 1:
-                    pixelColour = { 0.96f, 0.15f, 0.56f };
-                    break;
-
-                case 2:
-                    pixelColour = { 0.15f, 0.18f, 0.96f };
-                    break;
-
-                case 3:
-                    pixelColour = { 39.0f, 0.96f, 0.16f };
-                    break;
-
-                case 4:
-                    pixelColour = { 0.96f, 0.76f, 0.019f };
-                    break;
-
-                case 5:
-                    pixelColour = { 0.96f, 0.15f, 0.15f };
-                    break;
-
-                case 6:
-                    pixelColour = { 0.25f, 1.0f, 0.0f };
-                    break;
-            }
-
-            // Write the pixel
-            writeRectangle(world,
-                            frameBuffer,
-                            pixelX,
-                            pixelY,
-                            1,
-                            1,
-                            pixelColour);
-
+            writeRectangle(world, frameBuffer, x, y, 1, 1, pixelColour);
         }
     }
-#endif
-
 
     // Draw player
     writeRectangle(world,
                     frameBuffer,
                     gameState->player1.fixedPosition.x,
                     gameState->player1.fixedPosition.y,
-                    metresToPixels(world, gameState->player1.widthMetres),
-                    metresToPixels(world, gameState->player1.heightMetres),
+                    metresToPixels(world, gameState->player1.widthMeters),
+                    metresToPixels(world, gameState->player1.heightMeters),
                     { 0.301f, 0.156f, 0.0f });
 
     // Point visualisation
+
+#ifdef HANDMADE_DEBUG_TILE_POS
+
+    writeRectangle(world,
+                    frameBuffer,
+                    gameState->player1.absolutePosition.x,
+                    gameState->player1.absolutePosition.y,
+                    1,
+                    1,
+                    { 0.4f, 1.0f, 0.2f });
+#endif
+
 #ifdef HANDMADE_DEBUG_TILE_POS
     PlayerPositionData pointVisulisation;
     getPositionDataForPlayer(&pointVisulisation,
@@ -303,6 +231,9 @@ void controllerHandlePlayer(GameState *gameState,
     float32 pixelsPerSecond = (world->pixelsPerMetre * gameState->player1.movementSpeedMPS);
     float32 pixelsPerFrame = (pixelsPerSecond / gameInput.fps);
 
+    if (pixelsPerFrame < 1.0f){
+        pixelsPerFrame = 1.0f;
+    }
 
 #if 0
     {
@@ -446,15 +377,9 @@ pixelsPerFrame);
             char buff[400] = {};
             sprintf_s(buff, sizeof(buff),
     "CANNOT MOVE. \
-Plr World Pos x:%i y:%i. \
-World Tile x:%i y:%i. \
-Plr New World Pos: x:%i y:%i. \
-Plr New World Tile: x:%i y:%i. \
+Plr Proposed World Pos: x:%i y:%i. \
+Plr Proposed World Tile: x:%i y:%i. \
 \n",
-gameState->player1.absolutePosition.x,
-gameState->player1.absolutePosition.y,
-gameState->worldPosition.activeTile.tileIndex.x,
-gameState->worldPosition.activeTile.tileIndex.y,
 playerNewPos.x,
 playerNewPos.y,
 debugPoint.activeTile.tileIndex.x,
@@ -467,8 +392,6 @@ debugPoint.activeTile.tileIndex.y);
             // ...yes, the move to the new tile can be taken
 
             // Sense check that the player actually moved
-            if ((gameState->player1.absolutePosition.x != playerNewPos.x)
-                    || (gameState->player1.absolutePosition.y != playerNewPos.y)) {
 
                 gameState->player1.absolutePosition.x = playerNewPos.x;
                 gameState->player1.absolutePosition.y = playerNewPos.y;
@@ -488,11 +411,10 @@ Chunk Index Start Pxl Slider x:%i y:%i. \
 gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
 gameState->worldPosition.activeTile.tileIndex.x, gameState->worldPosition.activeTile.tileIndex.y,
 gameState->worldPosition.activeTile.chunkIndex.x, gameState->worldPosition.activeTile.chunkIndex.y,
-gameState->worldPosition.tileChunkStartPixelSlider.x, gameState->worldPosition.tileChunkStartPixelSlider.y
+gameState->worldPosition.cameraPositionPx.x, gameState->worldPosition.cameraPositionPx.y
 );
                 memory->DEBUG_platformLog(buff);
 #endif
-            }
 
         }
 
@@ -555,7 +477,7 @@ gameState->worldPosition.tileChunkStartPixelSlider.x, gameState->worldPosition.t
 
 internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
 {
-    float32 coefficient = ((float32)buffer->width / (float32)audioBuffer->platformBufferSizeInBytes);
+    float32 coefficient = ((float32)buffer->widthPx / (float32)audioBuffer->platformBufferSizeInBytes);
 
     // Audio buffer box
     {
@@ -589,43 +511,26 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 internal_func
 void initWorld(GameFrameBuffer frameBuffer,
                 World *world,
-                float32 tileHeightPx,
-                uint8 pixelsPerMetre)
+                uint16 pixelsPerMetre,
+                float32 tileDimensionsMeters,
+                uint16 totalTileDimensions,
+                uint16 tileChunkDimensions)
 {
-    world->totalTileDimensions = WORLD_TOTAL_TILE_DIMENSIONS;
-    world->tileChunkDimensions = WORLD_TILE_CHUNK_DIMENSIONS;
+    world->totalTileDimensions = totalTileDimensions;
+    world->tileChunkDimensions = tileChunkDimensions;
     world->totalTileChunks = ((world->totalTileDimensions / world->tileChunkDimensions) * 2);
 
     // @TODO(JM)
     //world->tileChunkMask = 0xFF;
     //world->tileChunkShift = 8;
 
-    world->tileHeightMetres = tileHeightPx;
     world->pixelsPerMetre = pixelsPerMetre;
 
     // @NOTE(JM) tiles and tile chunks are always square
-    world->tileHeightPx = (uint16)((float32)pixelsPerMetre * tileHeightPx);
+    world->tileHeightPx = (uint16)(world->pixelsPerMetre * tileDimensionsMeters);
     world->tileWidthPx = world->tileHeightPx; 
     world->tileChunkHeightPx = (world->tileHeightPx * world->tileChunkDimensions);
     world->tileChunkWidthPx = (world->tileWidthPx * world->tileChunkDimensions);
-
-    if (CHUNK_RELATIVE_STARTING_TILE_INDEX_X > (world->totalTileDimensions - 1)
-        || (CHUNK_RELATIVE_STARTING_TILE_INDEX_X < 0)) {
-        assert(!"X starting position cannot be outside of tile chunk");
-    }
-
-    if (CHUNK_RELATIVE_STARTING_TILE_INDEX_Y > (world->totalTileDimensions - 1)
-        || (CHUNK_RELATIVE_STARTING_TILE_INDEX_Y < 0)) {
-        assert(!"Y starting position cannot be outside of tile chunk");
-    }
-
-    if (world->tileChunkHeightPx > frameBuffer.height) {
-        assert(!"Total tilemap pixel height > drawable screen height");
-    }
-
-    if (world->tileChunkWidthPx > frameBuffer.width) {
-        assert(!"Total tilemap pixel width > drawable screen width");
-    }
 }
 
 /**
@@ -647,11 +552,11 @@ void writeRectangle(World world,
                     Colour colour)
 {
     // Bounds checking
-    if (xOffset >= buffer->width) {
+    if (xOffset >= buffer->widthPx) {
         return;
     }
 
-    if (yOffset >= buffer->height) {
+    if (yOffset >= buffer->heightPx) {
         return;
     }
 
@@ -676,8 +581,8 @@ void writeRectangle(World world,
     // Max x
     int64 maxX = (xOffset + width);
 
-    if (maxX > buffer->width) {
-        maxX = (buffer->width - xOffset);
+    if (maxX > buffer->widthPx) {
+        maxX = (buffer->widthPx - xOffset);
         if (width > maxX) {
             width = maxX;
         }
@@ -686,8 +591,8 @@ void writeRectangle(World world,
     // Max y
     int64 maxY = (yOffset + height);
 
-    if (maxY > buffer->height) {
-        maxY = (buffer->height - yOffset);
+    if (maxY > buffer->heightPx) {
+        maxY = (buffer->heightPx - yOffset);
         if (height > maxY) {
             height = maxY;
         }
@@ -705,10 +610,10 @@ void writeRectangle(World world,
     uint32 *row = (uint32*)buffer->memory;
 
     // Move to last row as starting position (bottom left of axis)
-    row = (row + ((buffer->width * buffer->height) - buffer->width));
+    row = (row + ((buffer->widthPx * buffer->heightPx) - buffer->widthPx));
 
     // Move up to starting row
-    row = (row - (buffer->width * yOffset));
+    row = (row - (buffer->widthPx * yOffset));
 
     // Move in from left to starting absolutePosition
     row = (row + xOffset);
@@ -725,7 +630,7 @@ void writeRectangle(World world,
         }
 
         // Move up one entire row
-        row = (row - buffer->width);
+        row = (row - buffer->widthPx);
     }
 }
 
@@ -778,8 +683,8 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
 
 EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
 {
-    frameBuffer->height = height;
-    frameBuffer->width = width;
+    frameBuffer->heightPx = height;
+    frameBuffer->widthPx = width;
     frameBuffer->bytesPerPixel = bytesPerPixel;
     frameBuffer->byteWidthPerRow = byteWidthPerRow;
     frameBuffer->memory = memory;

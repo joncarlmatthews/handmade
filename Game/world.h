@@ -20,4 +20,6 @@ bool isWorldTileFree(World world,
 
 int64 metresToPixels(World world, float32 metres);
 
+void setTileColour(Colour *tileColour, uint32 tileValue);
+
 #endif

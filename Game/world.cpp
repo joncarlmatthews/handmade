@@ -22,11 +22,11 @@ void updateWorldPosition(int32 xMoveAmtPx,
                             GameState *gameState)
 {
     // Update the X and Y movement tracking
-    uint32 tileChunkStartPixelSliderX = modulo((gameState->worldPosition.tileChunkStartPixelSlider.x += xMoveAmtPx), (world.tileWidthPx * world.totalTileDimensions));
-    uint32 tileChunkStartPixelSliderY = modulo((gameState->worldPosition.tileChunkStartPixelSlider.y += yMoveAmtPx), (world.tileHeightPx * world.totalTileDimensions));
+    uint32 tileChunkStartPixelSliderX = modulo((gameState->worldPosition.cameraPositionPx.x += xMoveAmtPx), (world.tileWidthPx * world.totalTileDimensions));
+    uint32 tileChunkStartPixelSliderY = modulo((gameState->worldPosition.cameraPositionPx.y += yMoveAmtPx), (world.tileHeightPx * world.totalTileDimensions));
 
-    gameState->worldPosition.tileChunkStartPixelSlider.x = tileChunkStartPixelSliderX;
-    gameState->worldPosition.tileChunkStartPixelSlider.y = tileChunkStartPixelSliderY;
+    gameState->worldPosition.cameraPositionPx.x = tileChunkStartPixelSliderX;
+    gameState->worldPosition.cameraPositionPx.y = tileChunkStartPixelSliderY;
 
     // Calculate the currently active tile based on player1's position and
     // write it to the world position
@@ -39,7 +39,6 @@ bool isWorldTileFree(World world,
                         GameState gameState,
                         PlayerPositionData playerPositionData)
 {
-
     uint32 tileNumber = (playerPositionData.activeTile.tileIndex.y * world.totalTileDimensions) + playerPositionData.activeTile.tileIndex.x;
 
     uint32 *tileState = ((uint32*)gameState.worldTiles + tileNumber);
@@ -48,7 +47,6 @@ bool isWorldTileFree(World world,
         if (*tileState == 2) {
             return false;
         }
-        return true;
     }
 
     return true;
@@ -58,4 +56,37 @@ int64 metresToPixels(World world, float32 metres)
 {
     float32 pixels = (world.pixelsPerMetre * metres);
     return (int64)pixels;
+}
+
+void setTileColour(Colour *tileColour, uint32 tileValue)
+{
+    switch (tileValue) {
+        default:
+            *tileColour = { 0.94f, 0.94f, 0.94f };
+            break;
+
+        case 1:
+            *tileColour = { 0.96f, 0.15f, 0.56f };
+            break;
+
+        case 2:
+            *tileColour = { 0.15f, 0.18f, 0.96f };
+            break;
+
+        case 3:
+            *tileColour = { 39.0f, 0.96f, 0.16f };
+            break;
+
+        case 4:
+            *tileColour = { 0.96f, 0.76f, 0.019f };
+            break;
+
+        case 5:
+            *tileColour = { 0.96f, 0.15f, 0.15f };
+            break;
+
+        case 6:
+            *tileColour = { 0.25f, 1.0f, 0.0f };
+            break;
+    }
 }

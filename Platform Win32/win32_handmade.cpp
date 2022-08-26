@@ -360,7 +360,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Create the Windows frame buffer
-        win32InitFrameBuffer(&thread, &win32FrameBuffer, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+        win32InitFrameBuffer(&thread,
+                                &win32FrameBuffer,
+                                FRAME_BUFFER_PIXEL_WIDTH,
+                                FRAME_BUFFER_PIXEL_HEIGHT);
 
         /*
          * Controllers

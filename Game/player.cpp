@@ -26,32 +26,36 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     // Apply point the offsets...
     switch (pointPos)
     {
+    case PLAYER_POINT_POS::RAW:
+        x = (float32)playerPixelPos.x;
+        y = (float32)playerPixelPos.y;
+        break;
     case PLAYER_POINT_POS::TOP_LEFT:
         x = (float32)playerPixelPos.x;
         y = (float32)playerPixelPos.y;
         break;
     case PLAYER_POINT_POS::TOP_MIDDLE:
-        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.widthMetres) / 2.0f);
-        y = ((float32)playerPixelPos.y + (float32)metresToPixels(world, player.heightMetres) - pixelInset);
+        x = ((float32)playerPixelPos.x + (float32)player.widthPx / 2.0f);
+        y = ((float32)playerPixelPos.y + (float32)player.heightPx - pixelInset);
         break;
     case PLAYER_POINT_POS::MIDDLE_LEFT:
         x = (float32)playerPixelPos.x;
-        y = ((float32)playerPixelPos.y + ((float32)metresToPixels(world, player.heightMetres) / 2.0f) - pixelInset);
+        y = ((float32)playerPixelPos.y + ((float32)player.heightPx / 2.0f) - pixelInset);
         break;
     case PLAYER_POINT_POS::MIDDLE:
-        x = (float32)playerPixelPos.x + ((float32)metresToPixels(world, player.widthMetres) / 2.0f);
-        y = (float32)playerPixelPos.y + ((float32)metresToPixels(world, player.heightMetres) / 2.0f);
+        x = (float32)playerPixelPos.x + ((float32)player.widthPx / 2.0f);
+        y = (float32)playerPixelPos.y + ((float32)player.heightPx / 2.0f);
         break;
     case PLAYER_POINT_POS::MIDDLE_RIGHT:
-        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.widthMetres) - pixelInset);
-        y = ((float32)playerPixelPos.y + ((float32)metresToPixels(world, player.heightMetres) / 2.0f) - pixelInset);
+        x = ((float32)playerPixelPos.x + (float32)player.widthPx - pixelInset);
+        y = ((float32)playerPixelPos.y + ((float32)player.heightPx / 2.0f) - pixelInset);
         break;
     case PLAYER_POINT_POS::BOTTOM_MIDDLE:
-        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.widthMetres) / 2.0f);
+        x = ((float32)playerPixelPos.x + (float32)player.widthPx / 2.0f);
         y = ((float32)playerPixelPos.y + pixelInset);
         break;
     case PLAYER_POINT_POS::BOTTOM_RIGHT:
-        x = ((float32)playerPixelPos.x + (float32)metresToPixels(world, player.widthMetres) - pixelInset);
+        x = ((float32)playerPixelPos.x + (float32)player.widthPx - pixelInset);
         y = ((float32)playerPixelPos.y + pixelInset);
         break;
     case PLAYER_POINT_POS::BOTTOM_LEFT:
@@ -98,7 +102,7 @@ void getActiveTileForPlayer(TilePosition *tilePosition,
 {
     // Active tile is based off of the bottom middle position of the player
     float32 yPixelInset = 0.0f;
-    float32 x = ((float32)player.absolutePosition.x + (float32)metresToPixels(world, player.widthMetres) / 2.0f);
+    float32 x = ((float32)player.absolutePosition.x + (float32)player.widthPx / 2.0f);
     float32 y = ((float32)player.absolutePosition.y + yPixelInset);
 
     tilePosition->pixelCoordinates.x = (int32)floorf(x);

@@ -16,10 +16,10 @@
 
 // Flags:
 
-// #define HANDMADE_DEBUG_TILE_POS
+#define HANDMADE_DEBUG_TILE_POS
 // #define HANDMADE_LIVE_LOOP_EDITING
 // #define HANDMADE_DEBUG
-#define HANDMADE_DEBUG_FPS
+// #define HANDMADE_DEBUG_FPS
 // #define HANDMADE_DEBUG_CLOCKCYCLES
 // #define HANDMADE_DEBUG_AUDIO
 
@@ -130,8 +130,8 @@ typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 // Graphics
 //====================================================
 
-#define FRAME_BUFFER_WIDTH  1280
-#define FRAME_BUFFER_HEIGHT 720
+#define FRAME_BUFFER_PIXEL_WIDTH  1280
+#define FRAME_BUFFER_PIXEL_HEIGHT 720
 
 /*
  * Struct for the screen buffer
@@ -148,10 +148,10 @@ typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 typedef struct GameFrameBuffer
 {
     // The width in pixels of the buffer.
-    uint32 width;
+    uint32 widthPx;
 
     // The height in pixels of the buffer.
-    uint32 height;
+    uint32 heightPx;
 
     // 1 byte each for R, G & B and 1 byte for padding to match byte boundries (4)
     // Therefore our pixels are always 32-bits wide and are in Little Endian 
@@ -371,10 +371,10 @@ typedef struct Player {
     // Position in relation to the tile chunk
     uint32 lastMoveDirections;
 
-    float32 heightMetres; // Metres
-    float32 widthMetres; // Metres
-    uint16 height;
-    uint16 width;
+    float32 heightMeters;
+    float32 widthMeters;
+    uint16 heightPx;
+    uint16 widthPx;
     float32 movementSpeedMPS; // Metre's per second
 
     // @NOTE(JM) old, temp jump code
@@ -407,21 +407,20 @@ typedef struct TileChunk {
     uint32 *tiles;
 } TileChunk;
 
-// How many total tiles does the entire World have?
+// How many tiles does one side of the entire World have?
 // 30x30 = 900
 #define WORLD_TOTAL_TILE_DIMENSIONS 30
 
-// How many of the World's tiles will we display on screen at once? Aka "tile chunk"
+// How many tiles does one side of a "tile chunk" have?
 // 10x10 = 100
-#define WORLD_TILE_CHUNK_DIMENSIONS 10
+#define WORLD_TILE_CHUNK_DIMENSIONS 15
 
-// Starting tile chunk position
-#define TILE_CHUNK_STARTING_TILE_INDEX_X 0
-#define TILE_CHUNK_STARTING_TILE_INDEX_Y 0
+// How many meters does one side of a tile have?
+// 2x2 = 4
+#define TILE_DIMENSIONS_METERS 2.0f
 
-// Starting position
-#define CHUNK_RELATIVE_STARTING_TILE_INDEX_X 5
-#define CHUNK_RELATIVE_STARTING_TILE_INDEX_Y 5
+// How many pixels to represent 1 meter?
+#define WORLD_PIXELS_PER_METER 50
 
 typedef struct World {
 
@@ -437,12 +436,6 @@ typedef struct World {
     uint32 tileChunkMask; // @TODO(JM)
     uint32 tileChunkShift; // @TODO(JM)
 
-    // How many pixels = 1 metre in our World?
-    uint8 pixelsPerMetre;
-
-    // Height in World metres of an individual tile
-    float32 tileHeightMetres;
-
     // Height and width in pixels of an individual tile 
     uint16 tileHeightPx; 
     uint16 tileWidthPx;
@@ -450,6 +443,9 @@ typedef struct World {
     // Height and width in pixels of each tile chunk 
     uint16 tileChunkHeightPx; 
     uint16 tileChunkWidthPx;
+
+    // How many pixels = 1 metre in our World?
+    uint16 pixelsPerMetre;
 } World;
 
 enum class PLAYER_POINT_POS {
@@ -462,6 +458,7 @@ enum class PLAYER_POINT_POS {
     BOTTOM_LEFT,
     BOTTOM_MIDDLE,
     BOTTOM_RIGHT,
+    RAW,
 };
 
 typedef struct WorldPosition {
@@ -473,15 +470,17 @@ typedef struct WorldPosition {
     struct {
         uint32 x;
         uint32 y;
-    } tileChunkStartPixelSlider;
+    } cameraPositionPx;
 
 } WorldPosition;
 
 internal_func
 void initWorld(GameFrameBuffer frameBuffer,
                 World *world,
-                float32 tileHeightPx,
-                uint8 pixelsPerMetre);
+                uint16 pixelsPerMetre,
+                float32 tileDimensionsMeters,
+                uint16 totalTileDimensions,
+                uint16 tileChunkDimensions);
 
 //
 // Game state & memory
