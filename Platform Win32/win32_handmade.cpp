@@ -4,6 +4,7 @@
 #include <strsafe.h> // sprintf_s support
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
+#include <math.h>  // ceil.
 
 #include "..\Game\types.h" // Basic types
 #include "..\Game\utility.h" // Function signatures and basic types that are shared across the game and platform layer
@@ -14,9 +15,10 @@
 // shared across the game and platform layer
 #include "..\Game\utility.cpp"
 
-#define VIEWPORT_WIDTH  1280
-#define VIEWPORT_HEIGHT 720
-#define TARGET_FPS 60
+// Function stubs for functions provided by external DLL
+GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
+GAME_INIT_FRAME_BUFFER(gameInitFrameBufferStub) { return 0; }
+GAME_UPDATE(gameUpdateStub) { return; }
 
 // Whether or not the application is running/paused
 global_var bool8 running = TRUE;
@@ -358,9 +360,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          */
 
         // Create the Windows frame buffer
-        win32InitFrameBuffer(&thread, &win32FrameBuffer, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-
-        
+        win32InitFrameBuffer(&thread,
+                                &win32FrameBuffer,
+                                FRAME_BUFFER_PIXEL_WIDTH,
+                                FRAME_BUFFER_PIXEL_HEIGHT);
 
         /*
          * Controllers
@@ -384,6 +387,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Assign the mouse object to the game input
         gameInput->mouse = mouse;
+        gameInput->targetFPS = TARGET_FPS;
 
         // Keyboard support
         GameControllerInput keyboard = { 0 };
@@ -398,13 +402,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         uint64 runningProcessorClockCyclesCounter = __rdtsc();
 #endif
 
-        // Get the current time for profiling FPS
-        LARGE_INTEGER netFrameTime = win32GetTime();
-
         /**
          * MAIN GAME LOOP
          */
         while (running) {
+
+            // Get the current time for profiling FPS
+            LARGE_INTEGER netFrameTime = win32GetTime();
 
             // Get the position of the mouse
             win32GetMousePosition(window, &gameInput->mouse);
@@ -701,8 +705,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             gameInputOld->controllers[0] = gameInput->controllers[0];
 
             // Display the frame buffer in Windows. AKA "flip the frame" or "page flip".
+
+            // Get the window's height and width
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-            win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
+
+            // Display the buffer to the screen
+            win32DisplayFrameBuffer(deviceHandleForWindow,
+                                    win32FrameBuffer,
+                                    clientDimensions.width,
+                                    clientDimensions.height,
+                                    CLIP);
 
             // How long did this game loop (frame) take? (E.g. 2ms)
             LARGE_INTEGER gameLoopTime = win32GetTime();
@@ -786,60 +798,59 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 // @TODO(JM) Missed target framerate. Log.
 
-                #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
-                {
-                    char output[500] = { 0 };
-                    sprintf_s(output, sizeof(output),
-                                "======================================MISSED================================ (%f > %f)\n\n",
-                                millisecondsElapsedForFrame,
-                                win32FixedFrameRate.gameTargetMSPerFrame);
-                    OutputDebugStringA(output);
-                }
+                #if defined(HANDMADE_DEBUG_FPS)
+                    {
+                        char output[500] = { 0 };
+                        sprintf_s(output, sizeof(output),
+                                    "======================================MISSED================================ (%f > %f)\n",
+                                    millisecondsElapsedForFrame,
+                                    win32FixedFrameRate.gameTargetMSPerFrame);
+                        OutputDebugStringA(output);
+                    }
                 #endif
             }
 
-            // Set net frame time (E.g. 33.33ms or 16.66ms)
-            netFrameTime = win32GetTime();
-            float32 netFrameTimeMS = win32GetElapsedTimeMS(gameLoopTime, netFrameTime, globalQPCFrequency);
+            // Calculate the net frame time (E.g. 33.33ms or 16.66ms)
 
             // Set the ms per frame to the game input object so we can regulate movement speed
-            gameInput->msPerFrame = netFrameTimeMS;
+            gameInput->msPerFrame = millisecondsElapsedForFrame;
+            gameInput->fps = (1000.0f / gameInput->msPerFrame);
 
-            #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
+            #if defined(HANDMADE_DEBUG_FPS)
                 {
                     char output[100] = { 0 };
                     sprintf_s(output, sizeof(output),
                                 "Net time for frame to complete: %f milliseconds\n\n",
-                                netFrameTimeMS);
+                                millisecondsElapsedForFrame);
 
                     OutputDebugStringA(output);
                 }
             #endif
 
-            #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_CLOCKCYCLES)
-            {
-                // Calculate how many processor clock cycles elapsed for this frame.
-                // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
-                uint64 processorClockCyclesAfterFrame = __rdtsc();
-                int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
-                float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
+            #if defined(HANDMADE_DEBUG_CLOCKCYCLES)
+                {
+                    // Calculate how many processor clock cycles elapsed for this frame.
+                    // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
+                    uint64 processorClockCyclesAfterFrame = __rdtsc();
+                    int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
+                    float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
 
-                // Calculate the FPS given the speed of this current frame.
-                float32 fps = (1000.0f / (float32)netFrameTimeMS);
+                    // Calculate the FPS given the speed of this current frame.
+                    float32 fps = (1000.0f / (float32)netFrameTimeMS);
 
-                // Calculate the processor running speed in GHz
-                float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
+                    // Calculate the processor running speed in GHz
+                    float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
 
-                // Reset the running clock cycles.
-                runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
+                    // Reset the running clock cycles.
+                    runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
 
-                // Console log the speed:
-                char output[100] = { 0 };
-                sprintf_s(output, sizeof(output),
-                            "Cycles: %.1fm (%.2f GHz).\n",
-                            clockCycles_mega, processorSpeed);
-                OutputDebugStringA(output);
-            }
+                    // Console log the speed:
+                    char output[100] = { 0 };
+                    sprintf_s(output, sizeof(output),
+                                "Cycles: %.1fm (%.2f GHz).\n",
+                                clockCycles_mega, processorSpeed);
+                    OutputDebugStringA(output);
+                }
             #endif
 
 
@@ -927,16 +938,22 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
             PAINTSTRUCT paint; 
             HDC deviceHandleForWindow = BeginPaint(window, &paint);
 
+            // Get the window's height and width
             win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
             // Paint the whole screen black (stops the artifacts around the frame buffer)
-            int32 screenWidth = GetDeviceCaps(deviceHandleForWindow, HORZRES);
-            int32 screenHeight = GetDeviceCaps(deviceHandleForWindow, VERTRES);
-            if (screenWidth && screenHeight){
-                PatBlt(deviceHandleForWindow, 0, 0, screenWidth, screenHeight, BLACKNESS);
-            }
+            PatBlt(deviceHandleForWindow,
+                    0, 0,
+                    clientDimensions.width,
+                    clientDimensions.height,
+                    BLACKNESS);
 
-            win32DisplayFrameBuffer(deviceHandleForWindow, win32FrameBuffer, clientDimensions.width, clientDimensions.height);
+            // Display the buffer to the screen
+            win32DisplayFrameBuffer(deviceHandleForWindow,
+                                    win32FrameBuffer,
+                                    clientDimensions.width,
+                                    clientDimensions.height,
+                                    CLIP);
 
             // End the paint request and releases the device context.
             EndPaint(window, &paint);
@@ -980,7 +997,10 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param int                   height      The height of the window's viewport
  * 
  */
-internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height)
+internal_func void win32InitFrameBuffer(PlatformThreadContext *thread,
+                                        Win32FrameBuffer *buffer,
+                                        uint32 width,
+                                        int32 height)
 {
 
     // buffer->foo is a dereferencing shorthand for (*buffer).foo
@@ -1024,31 +1044,29 @@ internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32Fram
  * Copies a Win32FrameBuffer's memory to the actual window - which will then
  * display its contents to the screen.
  *
+ * If clientWindowWidth or clientWindowHeight are smaller than the frame buffer's
+ * width and height then the window will simply clip the graphics
  *
- * @param deviceHandleForWindow     The window handle
- * @param Win32FrameBuffer      The buffer
- * @param width                        The window's viewport width
- * @param height                    The window's viewport height
  */
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, 
                                             Win32FrameBuffer buffer,
-                                            uint32 width,
-                                            uint32 height)
+                                            uint32 clientWindowWidth,
+                                            uint32 clientWindowHeight,
+                                            StretchDIBitsMode mode)
 {
     // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
     // sure we don't introduce artifacts. We can achieve this by not allowing the image
     // to stretch (by setting the destination width and height to be fixed to what the
     // source width and height are). This will help us when it comes to learning how
     // to write our renderer.
-    bool stretch = false;
-
-    if (!stretch) {
-        width = buffer.width;
-        height = buffer.height;
+    if (CLIP == mode) {
+        clientWindowWidth = buffer.width;
+        clientWindowHeight = buffer.height;
     }
 
-    uint8 offsetX = 15;
-    uint8 offsetY = 15;
+    // Draw the frame with margin?
+    int offsetX = 0;
+    int offsetY = 0;
     
     // StretchDIBits function copies the data of a rectangle of pixels to 
     // the specified destination. The first parameter is the handle for
@@ -1058,8 +1076,8 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
     StretchDIBits(deviceHandleForWindow,
                     offsetX,
                     offsetY,
-                    width,
-                    height,
+                    clientWindowWidth,
+                    clientWindowHeight,
                     0,
                     0,
                     buffer.width,
@@ -1296,6 +1314,10 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
     return;
 }
 
+/**
+ * Gets the height and width of the actual window. This changes if the window is
+ * resized, maximised etc
+ */
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
 {
     RECT clientRect;

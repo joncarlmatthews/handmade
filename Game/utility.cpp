@@ -115,3 +115,14 @@ inline uint32 truncateU32(float32 f)
 {
     return (uint32)f;
 }
+
+int32 modulo(int32 dividend, uint32 divisor)
+{
+    if (dividend < 0) {
+        dividend = (divisor + dividend);
+    }
+
+    uint32 res = (dividend / divisor);
+    res = (res * divisor);
+    return (dividend - res);
+}

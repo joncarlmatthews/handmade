@@ -55,4 +55,6 @@ void utilWideCharToChar(wchar_t *wideCharArr,
                         char *charArr,
                         uint32 charLength);
 
+int32 modulo(int32 dividend, uint32 divisor);
+
 #endif

@@ -42,6 +42,7 @@ typedef double              float64;    // 8 bytes
 // @NOTE(JM) The type "bool" is now part of the C++ fundamental
 // types. It can have values of either "true" or "false"
 // @see https://en.cppreference.com/w/cpp/language/types
+#include <stdbool.h>
 typedef int8                bool8;
 typedef int16               bool16;
 typedef int32               bool32;

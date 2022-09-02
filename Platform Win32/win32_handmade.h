@@ -1,6 +1,8 @@
 #ifndef HEADER_WIN32
 #define HEADER_WIN32
 
+#define TARGET_FPS 60
+
 #define FRAME_RATE_CAP_MODE_SPIN_LOCK   0x1
 #define FRAME_RATE_CAP_MODE_SLEEP       0x2
 
@@ -38,6 +40,12 @@ typedef struct win32ClientDimensions
     uint32 width;
     uint32 height;
 } win32ClientDimensions;
+
+typedef enum
+{
+    CLIP,
+    STRETCH,
+} StretchDIBitsMode;
 
 /**
  * Struct for the Win32 secondary sound buffer.
@@ -142,7 +150,18 @@ internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, con
 
 internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height);
 
-internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, Win32FrameBuffer buffer, uint32 width, uint32 height);
+/*
+ * @param deviceHandleForWindow     The window handle
+ * @param Win32FrameBuffer          The game's filled frame buffer
+ * @param clientWindowWidth         The window's width
+ * @param clientWindowHeight        The window's height
+ */
+internal_func
+void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
+                                Win32FrameBuffer buffer,
+                                uint32 clientWindowWidth,
+                                uint32 clientWindowHeight,
+                                StretchDIBitsMode mode);
 
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window);
 

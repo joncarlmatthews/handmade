@@ -1,2 +1,14 @@
- - Postfix any variant that has it's unit in metres with a 'M'
- - move current active tile struct to within the player object (Meh, not sure actually)
+- Move tile map to memory
+- Implement sparse world storeage
+     - absolute tile x and y
+     - which 256x256 chunk are we viewing?
+     - chunk relative tile x and y
+- Tile relative offset needs to be in metres, not pixels? (as per Casey)
+
+Ongoing:
+- Slow frame rate (now that we're rendering pixel by pixel)
+- Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
+- Fix diagonal speed bug (will fix when implement vectors)
+- Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
+- Move forward declarations to releveant header files (tidy up)
+- Postfix pixel variables with Px (tidy up, where appropiate)
