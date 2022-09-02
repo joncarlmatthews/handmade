@@ -1,4 +1,3 @@
-- Bug where when camera shifts the calculated tile index is wrong and screen jumps
 - Move tile map to memory
 - Implement sparse world storeage
      - absolute tile x and y

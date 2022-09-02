@@ -590,7 +590,8 @@ void controllerHandlePlayer(GameState *gameState,
                             GameAudioBuffer *audioBuffer,
                             GameInput gameInput,
                             uint8 selectedController,
-                            World *world);
+                            World *world,
+                            uint playerPosDebug[2]);
 
 
 

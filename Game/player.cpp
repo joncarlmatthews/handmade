@@ -100,7 +100,9 @@ void getActiveTileForPlayer(TilePosition *tilePosition,
                                 Player player,
                                 World world)
 {
-    // Active tile is based off of the bottom middle position of the player
+    // Active tile is based off of the bottom middle position of the player.
+
+    // Get the pixel coordinates of the bottom middle of the player.
     float32 yPixelInset = 0.0f;
     float32 x = ((float32)player.absolutePosition.x + (float32)player.widthPx / 2.0f);
     float32 y = ((float32)player.absolutePosition.y + yPixelInset);
@@ -108,14 +110,14 @@ void getActiveTileForPlayer(TilePosition *tilePosition,
     tilePosition->pixelCoordinates.x = (int32)floorf(x);
     tilePosition->pixelCoordinates.y = (int32)floorf(y);
 
-    // x and y absolute tile index (relative to the world)
-    tilePosition->tileIndex.x = (int32)floorf((float32)x / (float32)world.tileWidthPx);
-    tilePosition->tileIndex.y = (int32)floorf((float32)y / (float32)world.tileHeightPx);
+    // Calculate the absolute x and y tile index relative to the World
+    uint32 tileIndexX = (int32)floorf((float32)x / (float32)world.tileWidthPx);
+    uint32 tileIndexY = (int32)floorf((float32)y / (float32)world.tileHeightPx);
 
-    tilePosition->tileIndex.x = (modulo(tilePosition->tileIndex.x, world.totalTileDimensions));
-    tilePosition->tileIndex.y = (modulo(tilePosition->tileIndex.y, world.totalTileDimensions));
+    tilePosition->tileIndex.x = (modulo(tileIndexX, world.totalTileDimensions));
+    tilePosition->tileIndex.y = (modulo(tileIndexY, world.totalTileDimensions));
 
-    // Currently active tile chunk
+    // Calculate the x and y tile chunk index relative to the world
     tilePosition->chunkIndex.x = (int32)floorf((float32)x / (float32)(world.tileWidthPx * world.tileChunkDimensions));
     tilePosition->chunkIndex.y = (int32)floorf((float32)y / (float32)(world.tileHeightPx * world.tileChunkDimensions));
 

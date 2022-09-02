@@ -67,7 +67,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Movement speed (assume always running)
         // https://www.calculateme.com/speed/kilometers-per-hour/to-meters-per-second/13
-        gameState->player1.movementSpeedMPS = 10.61f;
+        gameState->player1.movementSpeedMPS = 3.61f;
         gameState->player1.totalJumpMovement = 15.0f;
 
         // Initial character starting position. Start the player in the middle
@@ -109,13 +109,16 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Which controller has the user selected as the main controller?
     uint8 userSelectedMainController = 0; // @TODO(JM) make this selectable through a UI
 
+    uint ctrlDebug[2] = {0};
+
     controllerHandlePlayer(gameState,
                             memory,
                             frameBuffer,
                             audioBuffer,
                             inputInstances[0],
                             userSelectedMainController,
-                            &world);
+                            &world,
+                            ctrlDebug);
 
     /**
      * Audio stuff...
@@ -159,39 +162,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     frameBuffer,
                     gameState->player1.fixedPosition.x,
                     gameState->player1.fixedPosition.y,
-                    metresToPixels(world, gameState->player1.widthMeters),
-                    metresToPixels(world, gameState->player1.heightMeters),
+                    gameState->player1.widthPx,
+                    gameState->player1.heightPx,
                     { 0.301f, 0.156f, 0.0f });
-
-    // Point visualisation
-
-#ifdef HANDMADE_DEBUG_TILE_POS
-
-    writeRectangle(world,
-                    frameBuffer,
-                    gameState->player1.absolutePosition.x,
-                    gameState->player1.absolutePosition.y,
-                    1,
-                    1,
-                    { 0.4f, 1.0f, 0.2f });
-#endif
-
-#ifdef HANDMADE_DEBUG_TILE_POS
-    PlayerPositionData pointVisulisation;
-    getPositionDataForPlayer(&pointVisulisation,
-                                gameState->player1.fixedPosition,
-                                PLAYER_POINT_POS::BOTTOM_MIDDLE,
-                                gameState->player1,
-                                world);
-
-    writeRectangle(world,
-                    frameBuffer,
-                    pointVisulisation.activeTile.pixelCoordinates.x,
-                    pointVisulisation.activeTile.pixelCoordinates.y,
-                    1,
-                    1,
-                    { 0.4f, 1.0f, 0.2f });
-#endif
 
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
@@ -217,7 +190,8 @@ void controllerHandlePlayer(GameState *gameState,
                             GameAudioBuffer *audioBuffer,
                             GameInput gameInput,
                             uint8 selectedController,
-                            World *world)
+                            World *world,
+                            uint playerPosDebug[2])
 {
     GameControllerInput controller = gameInput.controllers[selectedController];
 
@@ -231,6 +205,7 @@ void controllerHandlePlayer(GameState *gameState,
     float32 pixelsPerSecond = (world->pixelsPerMetre * gameState->player1.movementSpeedMPS);
     float32 pixelsPerFrame = (pixelsPerSecond / gameInput.fps);
 
+    // Ensure the player can at least move!
     if (pixelsPerFrame < 1.0f){
         pixelsPerFrame = 1.0f;
     }
@@ -262,32 +237,15 @@ pixelsPerFrame);
         playerAttemptingMove = true;
         trackXMoveAmtPx = (int32)(pixelsPerFrame * -1.0f);
         playerNewPosTmp.x += trackXMoveAmtPx;
-    }
-
-    if (controller.dPadRight.endedDown) {
+    }else if (controller.dPadRight.endedDown) {
         playerAttemptingMove = true;
         trackXMoveAmtPx = (int32)pixelsPerFrame;
         playerNewPosTmp.x += trackXMoveAmtPx;
-
-#if 0
-        {
-            char buff[400] = {};
-            sprintf_s(buff, sizeof(buff),
-                "trackXMoveAmtPx: %i.\n",
-                trackXMoveAmtPx);
-            memory->DEBUG_platformLog(buff);
-        }
-#endif
-
-    }
-
-    if (controller.dPadUp.endedDown) {
+    }else if (controller.dPadUp.endedDown) {
         playerAttemptingMove = true;
         trackYMoveAmtPx = (int32)pixelsPerFrame;
         playerNewPosTmp.y += trackYMoveAmtPx;
-    }
-
-    if (controller.dPadDown.endedDown) {
+    }else if (controller.dPadDown.endedDown) {
         playerAttemptingMove = true;
         trackYMoveAmtPx = (int32)(pixelsPerFrame * -1.0f);
         playerNewPosTmp.y += trackYMoveAmtPx;
@@ -303,9 +261,7 @@ pixelsPerFrame);
                 trackXMoveAmtPx = (int32)(pixelsPerFrame * -1.0f);
             }
             playerNewPosTmp.x += trackXMoveAmtPx;
-        }
-
-        if (controller.leftThumbstick.position.y) {
+        }else if (controller.leftThumbstick.position.y) {
             playerAttemptingMove = true;
             if (controller.leftThumbstick.position.y >= 0.0f) {
                 trackYMoveAmtPx = (int32)(pixelsPerFrame * -1.0f);
@@ -319,6 +275,7 @@ pixelsPerFrame);
     }
 
     if (playerAttemptingMove) {
+
 
         posXYUInt playerNewPos = { 0 };
         playerNewPos.x = modulo(playerNewPosTmp.x, (world->tileWidthPx * world->totalTileDimensions));
@@ -347,44 +304,55 @@ pixelsPerFrame);
         lastMoveDirections = (movedUp | movedDown | movedLeft | movedRight);
 
         // Tilemap collision detection
-#if 0
         PlayerPositionData middle;
         getPositionDataForPlayer(&middle,
                                     playerNewPos,
                                     PLAYER_POINT_POS::MIDDLE,
                                     gameState->player1,
                                     *world);
-#endif
 
-        PlayerPositionData bottomMiddle;
-        getPositionDataForPlayer(&bottomMiddle,
+        PlayerPositionData bottomLeft;
+        getPositionDataForPlayer(&bottomLeft,
                                     playerNewPos,
-                                    PLAYER_POINT_POS::BOTTOM_MIDDLE,
+                                    PLAYER_POINT_POS::BOTTOM_LEFT,
+                                    gameState->player1,
+                                    *world);
+
+        PlayerPositionData bottomRight;
+        getPositionDataForPlayer(&bottomRight,
+                                    playerNewPos,
+                                    PLAYER_POINT_POS::BOTTOM_RIGHT,
                                     gameState->player1,
                                     *world);
 
 #ifdef HANDMADE_DEBUG_TILE_POS
         // Visualisation
-        PlayerPositionData debugPoint = bottomMiddle;
+        PlayerPositionData debugPoint = middle;
 #endif
         
         // Can the move to the new tile be taken?
         // @NOTE(JM) bug where rounding means player doesnt get a close as
         // possible to certain tiles when a move is invalid
-        if (false == (isWorldTileFree(*world, *gameState, bottomMiddle))) {
+        if ((false == (isWorldTileFree(*world, *gameState, middle)))
+                || (false == (isWorldTileFree(*world, *gameState, bottomLeft)))
+                || (false == (isWorldTileFree(*world, *gameState, bottomRight)))) {
 
+#if 0
 #ifdef HANDMADE_DEBUG_TILE_POS
             char buff[400] = {};
             sprintf_s(buff, sizeof(buff),
     "CANNOT MOVE. \
 Plr Proposed World Pos: x:%i y:%i. \
 Plr Proposed World Tile: x:%i y:%i. \
-\n",
+Plr Actual World Pos: x:%i y:%i. \
 playerNewPos.x,
 playerNewPos.y,
 debugPoint.activeTile.tileIndex.x,
-debugPoint.activeTile.tileIndex.y);
+debugPoint.activeTile.tileIndex.y,
+gameState->player1.absolutePosition.x,
+gameState->player1.absolutePosition.y);
             memory->DEBUG_platformLog(buff);
+#endif
 #endif
 
         } else {
@@ -392,6 +360,8 @@ debugPoint.activeTile.tileIndex.y);
             // ...yes, the move to the new tile can be taken
 
             // Sense check that the player actually moved
+            if ( (gameState->player1.absolutePosition.x != playerNewPos.x)
+                    || (gameState->player1.absolutePosition.y != playerNewPos.y) ){
 
                 gameState->player1.absolutePosition.x = playerNewPos.x;
                 gameState->player1.absolutePosition.y = playerNewPos.y;
@@ -406,7 +376,7 @@ debugPoint.activeTile.tileIndex.y);
 Plr World Pos x:%i y:%i. \
 World Tile x:%i y:%i. \
 Chunk Index x:%i y:%i. \
-Chunk Index Start Pxl Slider x:%i y:%i. \
+Camera pos x:%i y:%i. \
 \n",
 gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
 gameState->worldPosition.activeTile.tileIndex.x, gameState->worldPosition.activeTile.tileIndex.y,
@@ -415,9 +385,9 @@ gameState->worldPosition.cameraPositionPx.x, gameState->worldPosition.cameraPosi
 );
                 memory->DEBUG_platformLog(buff);
 #endif
+            }
 
         }
-
 
     } // player attempting move
 
