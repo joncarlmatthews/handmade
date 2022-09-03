@@ -1,5 +1,5 @@
 - Move tile map to memory
-- Implement sparse world storeage
+- Implement sparse world storage
      - absolute tile x and y
      - which 256x256 chunk are we viewing?
      - chunk relative tile x and y
@@ -8,7 +8,6 @@
 Ongoing:
 - Slow frame rate (now that we're rendering pixel by pixel)
 - Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
-- Fix diagonal speed bug (will fix when implement vectors)
+- Diagonal speed bug (will fix when implement vectors)
 - Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
-- Move forward declarations to releveant header files (tidy up)
 - Postfix pixel variables with Px (tidy up, where appropiate)
