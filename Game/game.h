@@ -1,33 +1,19 @@
 #ifndef HEADER_HH_GAME
 #define HEADER_HH_GAME
 
+#include "tilemap.h"
 #include "tilemaps.h"
+#include "player.h"
 
 #if HANDMADE_LOCAL_BUILD
 
-/*
- * An unnamed game.
-
- * - Units are in pixels unless annotated otherwise
- * - Signature docblock comments are within the .c file
- * - Shamone.
- * 
- */
-
-// Flags:
-
-#define HANDMADE_DEBUG_TILE_POS
-// #define HANDMADE_LIVE_LOOP_EDITING
-// #define HANDMADE_DEBUG
-// #define HANDMADE_DEBUG_FPS
-// #define HANDMADE_DEBUG_CLOCKCYCLES
-// #define HANDMADE_DEBUG_AUDIO
-
-// If assertion isn't true, write to the null pointer and crash the program.
-#define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
-
-#else
-#define assert(expression)
+    // Flags:
+    #define HANDMADE_DEBUG_TILE_POS
+    // #define HANDMADE_LIVE_LOOP_EDITING
+    // #define HANDMADE_DEBUG
+    // #define HANDMADE_DEBUG_FPS
+    // #define HANDMADE_DEBUG_CLOCKCYCLES
+    // #define HANDMADE_DEBUG_AUDIO
 #endif
 
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
@@ -308,181 +294,6 @@ typedef struct SineWave
 } SineWave;
 
 //
-// Pixels/colours
-//====================================================
-typedef struct Colour {
-    float32 r; // Between 0.0f and 1.0f
-    float32 g; // Between 0.0f and 1.0f
-    float32 b; // Between 0.0f and 1.0f
-    float32 a; // Between 0.0f and 1.0f
-} Colour;
-
-//
-// Positioning
-//====================================================
-typedef struct posXYInt {
-    int32 x;
-    int32 y;
-} posXYInt;
-
-typedef struct posXYUInt {
-    uint32 x;
-    uint32 y;
-} posXYUInt;
-
-typedef struct posXYf32 {
-    float32 x;
-    float32 y;
-} posXYf32;
-
-typedef struct TilePosition {
-
-    // The absolute pixel coordinates (relative to the world) to base this
-    // tile position off of.
-    posXYUInt pixelCoordinates;
-
-    // x and y absolute tile index (relative to the world)
-    posXYUInt tileIndex;
-
-    // X and Y index of the currently visible tile chunk
-    struct {
-        uint32 x;
-        uint32 y;
-    } chunkIndex;
-
-    // The pixel coordinates relative to the tile chunk the pixelCoordinates are in
-    posXYUInt chunkRelativePixelCoordinates;
-
-    // The pixel coordinates relative to the tile the pixelCoordinates are in
-    posXYUInt tileRelativePixelCoordinates;
-
-} TilePosition;
-
-//
-// Player
-//====================================================
-typedef struct Player {
-    // Position in relation to the world
-    posXYUInt absolutePosition;
-
-    // Position in relation to screen (for background scrolling)
-    posXYUInt fixedPosition; 
-
-    // Position in relation to the tile chunk
-    uint32 lastMoveDirections;
-
-    float32 heightMeters;
-    float32 widthMeters;
-    uint16 heightPx;
-    uint16 widthPx;
-    float32 movementSpeedMPS; // Metre's per second
-
-    // @NOTE(JM) old, temp jump code
-    bool8 jumping;
-    float32 jumpDuration;
-    float32 totalJumpMovement;
-    float32 jumpRunningFrameCtr;
-    float32 jumpDirection;
-    int32 jumpStartPos;
-
-} Player;
-
-enum class PlayerMovementDirection {
-    NONE    = 0,
-    UP      = 1,
-    DOWN    = 2,
-    LEFT    = 4,
-    RIGHT   = 8
-};
-
-enum jumpDirection {
-    JUMP_UP,
-    JUMP_DOWN
-};
-
-//
-// World/Tilemaps
-//====================================================
-typedef struct TileChunk {
-    uint32 *tiles;
-} TileChunk;
-
-// How many tiles does one side of the entire World have?
-// 30x30 = 900
-#define WORLD_TOTAL_TILE_DIMENSIONS 30
-
-// How many tiles does one side of a "tile chunk" have?
-// 10x10 = 100
-#define WORLD_TILE_CHUNK_DIMENSIONS 15
-
-// How many meters does one side of a tile have?
-// 2x2 = 4
-#define TILE_DIMENSIONS_METERS 2.0f
-
-// How many pixels to represent 1 meter?
-#define WORLD_PIXELS_PER_METER 50
-
-typedef struct World {
-
-    // @see WORLD_TOTAL_TILE_DIMENSIONS
-    uint16 totalTileDimensions;
-
-    // @see WORLD_TILE_CHUNK_DIMENSIONS
-    uint16 tileChunkDimensions; 
-
-    // Total number of tile chunks within the world
-    uint32 totalTileChunks;
-
-    uint32 tileChunkMask; // @TODO(JM)
-    uint32 tileChunkShift; // @TODO(JM)
-
-    // Height and width in pixels of an individual tile 
-    uint16 tileHeightPx; 
-    uint16 tileWidthPx;
-
-    // Height and width in pixels of each tile chunk 
-    uint16 tileChunkHeightPx; 
-    uint16 tileChunkWidthPx;
-
-    // How many pixels = 1 metre in our World?
-    uint16 pixelsPerMetre;
-} World;
-
-enum class PLAYER_POINT_POS {
-    TOP_LEFT,
-    TOP_MIDDLE,
-    TOP_RIGHT,
-    MIDDLE_LEFT,
-    MIDDLE,
-    MIDDLE_RIGHT,
-    BOTTOM_LEFT,
-    BOTTOM_MIDDLE,
-    BOTTOM_RIGHT,
-    RAW,
-};
-
-typedef struct WorldPosition {
-
-    // The currently active tile based on the players absolute Position
-    TilePosition activeTile;
-
-    // X and Y coordinates of the active tile chunk's starting point (to draw from)
-    struct {
-        uint32 x;
-        uint32 y;
-    } cameraPositionPx;
-
-} WorldPosition;
-
-internal_func
-void initWorld(GameFrameBuffer frameBuffer,
-                World *world,
-                uint16 pixelsPerMetre,
-                float32 tileDimensionsMeters,
-                uint16 totalTileDimensions,
-                uint16 tileChunkDimensions);
-
-//
 // Game state & memory
 //====================================================
 typedef struct GameState
@@ -491,7 +302,13 @@ typedef struct GameState
     SineWave sineWave;
 
     uint32 worldTiles[WORLD_TOTAL_TILE_DIMENSIONS][WORLD_TOTAL_TILE_DIMENSIONS];
-    WorldPosition worldPosition;
+
+    // The currently active world position based off of the player's absolute position
+    WorldCoordinates worldPosition;
+
+    // X and Y pixel coordinates for the camera's starting position (to start drawing from)
+    // Camera is drawn out to dimensions of GameFrameBuffer.width/height
+    xyuint cameraPositionPx;
 } GameState;
 
 typedef struct GameMemory
@@ -563,11 +380,6 @@ void writeRectangle(World world,
                     int64 height,
                     Colour colour);
 
-internal_func
-void frameBufferWritePlayer(GameState *gameState,
-                            GameFrameBuffer *buffer,
-                            GameAudioBuffer *audioBuffer);
-
 //
 // Audio
 //====================================================
@@ -578,20 +390,6 @@ internal_func
 void frameBufferWriteAudioDebug(GameState *gameState,
                                 GameFrameBuffer *buffer,
                                 GameAudioBuffer *audioBuffer);
-
-
-//
-// Player movement handling
-//====================================================
-internal_func
-void controllerHandlePlayer(GameState *gameState,
-                            GameMemory *memory,
-                            GameFrameBuffer *frameBuffer,
-                            GameAudioBuffer *audioBuffer,
-                            GameInput gameInput,
-                            uint8 selectedController,
-                            World *world,
-                            uint playerPosDebug[2]);
 
 
 

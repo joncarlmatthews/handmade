@@ -1,5 +1,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include "game.h"
 #include "player.h"
 #include "world.h"
 #include "utility.h"
@@ -8,13 +9,13 @@
  * Gets the X and Y pixel coordinates of a certain part of the player
  *
  * @param PlayerPositionData    positionData        The PlayerPositionData object to write the position data into
- * @param posXYUInt             playerPixelPos      The X and Y pixel coords to base the calculation on. This is the top left point
+ * @param xyuint             playerPixelPos      The X and Y pixel coords to base the calculation on. This is the top left point
  * @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
  * @param Player                player              The player object containing the height/width etc
  * @param World                 world               The world object
 */
 void getPositionDataForPlayer(PlayerPositionData *positionData,
-                                posXYUInt playerPixelPos,
+                                xyuint playerPixelPos,
                                 PLAYER_POINT_POS pointPos,
                                 Player player,
                                 World world)
@@ -94,38 +95,4 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     positionData->activeTile.tileRelativePixelCoordinates.y = 0;
     //positionData->activeTile.tileRelativePixelCoordinates.x = (positionData->activeTile.tileRelativePixelCoordinates.x - (positionData->activeTile.tileIndex.x * world.tileWidthPx));
     //positionData->activeTile.tileRelativePixelCoordinates.y = (positionData->activeTile.tileRelativePixelCoordinates.y - (positionData->activeTile.tileIndex.y * world.tileHeightPx));
-}
-
-void getActiveTileForPlayer(TilePosition *tilePosition,
-                                Player player,
-                                World world)
-{
-    // Active tile is based off of the bottom middle position of the player.
-
-    // Get the pixel coordinates of the bottom middle of the player.
-    float32 yPixelInset = 0.0f;
-    float32 x = ((float32)player.absolutePosition.x + (float32)player.widthPx / 2.0f);
-    float32 y = ((float32)player.absolutePosition.y + yPixelInset);
-
-    tilePosition->pixelCoordinates.x = (int32)floorf(x);
-    tilePosition->pixelCoordinates.y = (int32)floorf(y);
-
-    // Calculate the absolute x and y tile index relative to the World
-    uint32 tileIndexX = (int32)floorf((float32)x / (float32)world.tileWidthPx);
-    uint32 tileIndexY = (int32)floorf((float32)y / (float32)world.tileHeightPx);
-
-    tilePosition->tileIndex.x = (modulo(tileIndexX, world.totalTileDimensions));
-    tilePosition->tileIndex.y = (modulo(tileIndexY, world.totalTileDimensions));
-
-    // Calculate the x and y tile chunk index relative to the world
-    tilePosition->chunkIndex.x = (int32)floorf((float32)x / (float32)(world.tileWidthPx * world.tileChunkDimensions));
-    tilePosition->chunkIndex.y = (int32)floorf((float32)y / (float32)(world.tileHeightPx * world.tileChunkDimensions));
-
-    // @TODO(JM)
-    tilePosition->chunkRelativePixelCoordinates.x = 0;
-    tilePosition->chunkRelativePixelCoordinates.y = 0;
-
-    // @TODO(JM)
-    tilePosition->tileRelativePixelCoordinates.x = 0;
-    tilePosition->tileRelativePixelCoordinates.y = 0;
 }
