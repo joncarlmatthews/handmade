@@ -59,14 +59,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         }
 
         // Character attributes
-        gameState->player1.heightMeters  = 0.7f; // Average child height
+        gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
         gameState->player1.widthMeters   = ((float32)gameState->player1.heightMeters * 0.65f);
         gameState->player1.heightPx  = (int16)metersToPixels(world, gameState->player1.heightMeters);
         gameState->player1.widthPx   = (int16)metersToPixels(world, gameState->player1.widthMeters);
 
         // Movement speed (assume always running)
         // https://www.calculateme.com/speed/kilometers-per-hour/to-meters-per-second/13
-        gameState->player1.movementSpeedMPS = 3.61f;
+        gameState->player1.movementSpeedMPS = PLAYER_SPEED;
         gameState->player1.totalJumpMovement = 15.0f;
 
         // Initial character starting position. Start the player in the middle
@@ -144,6 +144,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
             Colour pixelColour = {};
             setTileColour(&pixelColour, *tileValue);
+
+            if ( tilePosX == gameState->worldPosition.tileIndex.x
+                && tilePosY == gameState->worldPosition.tileIndex.y ){
+                pixelColour.r = 0.0f;
+                pixelColour.g = 0.6f;
+                pixelColour.b = 0.2f;
+            }
 
             writeRectangle(world, frameBuffer, x, y, 1, 1, pixelColour);
         }

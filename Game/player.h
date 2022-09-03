@@ -8,6 +8,13 @@
 // Player
 //====================================================
 
+// Average male height
+#define PLAYER_HEIGHT_METERS 1.7f
+
+// Average male running speed
+// https://www.calculateme.com/speed/miles-per-hour/to-meters-per-second/19.52
+#define PLAYER_SPEED 8.7262208f
+
 typedef struct Player {
     // Position in relation to the world
     xyuint absolutePosition;

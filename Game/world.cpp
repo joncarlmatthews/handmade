@@ -28,6 +28,9 @@ void initWorld(World *world,
     world->tileWidthPx = world->tileHeightPx;
     world->tileChunkHeightPx = (world->tileHeightPx * world->tileChunkDimensions);
     world->tileChunkWidthPx = (world->tileWidthPx * world->tileChunkDimensions);
+
+    world->worldHeightPx = (world->tileHeightPx * world->totalTileDimensions);
+    world->worldWidthPx = (world->tileWidthPx * world->totalTileDimensions);
 }
 
 void setWorldPosition(GameState *gameState, World world, GameFrameBuffer *frameBuffer)

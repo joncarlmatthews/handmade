@@ -4,7 +4,7 @@
 #include "types.h"
 
 // How many pixels to represent 1 meter?
-#define WORLD_PIXELS_PER_METER 50
+#define WORLD_PIXELS_PER_METER 25
 
 typedef struct World {
 
@@ -27,6 +27,10 @@ typedef struct World {
     // Height and width in pixels of each tile chunk 
     uint16 tileChunkHeightPx;
     uint16 tileChunkWidthPx;
+
+    // Height and width in pixels of the entire world 
+    uint16 worldHeightPx;
+    uint16 worldWidthPx;
 
     // How many pixels = 1 metre in our World?
     uint16 pixelsPerMetre;
