@@ -2,21 +2,87 @@
 #define HEADER_HH_PLAYER
 
 #include "types.h"
-#include "game.h"
+#include "world.h"
+
+//
+// Player
+//====================================================
+
+typedef struct Player {
+    // Position in relation to the world
+    xyuint absolutePosition;
+
+    // Position in relation to screen (for background scrolling)
+    xyuint fixedPosition;
+
+    // Position in relation to the tile chunk
+    uint32 lastMoveDirections;
+
+    float32 heightMeters;
+    float32 widthMeters;
+    uint16 heightPx;
+    uint16 widthPx;
+    float32 movementSpeedMPS; // Metre's per second
+
+    // @NOTE(JM) old, temp jump code
+    bool8 jumping;
+    float32 jumpDuration;
+    float32 totalJumpMovement;
+    float32 jumpRunningFrameCtr;
+    float32 jumpDirection;
+    int32 jumpStartPos;
+
+} Player;
+
+enum class PLAYER_POINT_POS {
+    TOP_LEFT,
+    TOP_MIDDLE,
+    TOP_RIGHT,
+    MIDDLE_LEFT,
+    MIDDLE,
+    MIDDLE_RIGHT,
+    BOTTOM_LEFT,
+    BOTTOM_MIDDLE,
+    BOTTOM_RIGHT,
+    RAW,
+};
+
+enum class PlayerMovementDirection {
+    NONE = 0,
+    UP = 1,
+    DOWN = 2,
+    LEFT = 4,
+    RIGHT = 8
+};
+
+enum jumpDirection {
+    JUMP_UP,
+    JUMP_DOWN
+};
 
 typedef struct PlayerPositionData {
     PLAYER_POINT_POS pointPosition;
-    TilePosition activeTile;
+    WorldCoordinates activeTile;
 } PlayerPositionData;
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
-                                posXYUInt playerPixelPos,
+                                xyuint playerPixelPos,
                                 PLAYER_POINT_POS pointPos,
                                 Player player,
                                 World world);
 
-void getActiveTileForPlayer(TilePosition *tilePosition,
-                                Player player,
-                                World world);
+
+typedef struct GameState GameState;
+typedef struct GameMemory GameMemory;
+typedef struct GameFrameBuffer GameFrameBuffer;
+typedef struct GameAudioBuffer GameAudioBuffer;
+typedef struct GameInput GameInput;
+void playerHandleMovement(GameState *gameState,
+                            GameMemory *memory,
+                            GameFrameBuffer *frameBuffer,
+                            GameAudioBuffer *audioBuffer,
+                            GameInput *gameInput,
+                            uint8 selectedController,
+                            World *world);
 
 #endif

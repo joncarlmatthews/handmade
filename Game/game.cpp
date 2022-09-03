@@ -29,8 +29,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     // Init the World
     World world = { 0 };
-    initWorld(*frameBuffer,
-                &world,
+    initWorld(&world,
                 WORLD_PIXELS_PER_METER,
                 TILE_DIMENSIONS_METERS,
                 WORLD_TOTAL_TILE_DIMENSIONS,
@@ -62,8 +61,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // Character attributes
         gameState->player1.heightMeters  = 0.7f; // Average child height
         gameState->player1.widthMeters   = ((float32)gameState->player1.heightMeters * 0.65f);
-        gameState->player1.heightPx  = (int16)metresToPixels(world, gameState->player1.heightMeters);
-        gameState->player1.widthPx   = (int16)metresToPixels(world, gameState->player1.widthMeters);
+        gameState->player1.heightPx  = (int16)metersToPixels(world, gameState->player1.heightMeters);
+        gameState->player1.widthPx   = (int16)metersToPixels(world, gameState->player1.widthMeters);
 
         // Movement speed (assume always running)
         // https://www.calculateme.com/speed/kilometers-per-hour/to-meters-per-second/13
@@ -77,16 +76,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->player1.absolutePosition.x = gameState->player1.fixedPosition.x;
         gameState->player1.absolutePosition.y = gameState->player1.fixedPosition.y;
        
-        // Initial starting point for the bottom left of the camera.
-        // Camera is drawn out to dimensions of GameFrameBuffer.width/height
-        gameState->worldPosition.cameraPositionPx.x = 0;
-        gameState->worldPosition.cameraPositionPx.y = 0;
-
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data
-        getActiveTileForPlayer(&gameState->worldPosition.activeTile,
-                                    gameState->player1,
-                                    world);
+        setWorldPosition(gameState, world, frameBuffer);
+
+        //gameState->cameraPositionPx.x = 0;
+        //gameState->cameraPositionPx.y = 0;
 
         memory->initialised = true;
     }
@@ -109,16 +104,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Which controller has the user selected as the main controller?
     uint8 userSelectedMainController = 0; // @TODO(JM) make this selectable through a UI
 
-    uint ctrlDebug[2] = {0};
-
-    controllerHandlePlayer(gameState,
+    playerHandleMovement(gameState,
                             memory,
                             frameBuffer,
                             audioBuffer,
-                            inputInstances[0],
+                            &inputInstances[0],
                             userSelectedMainController,
-                            &world,
-                            ctrlDebug);
+                            &world);
 
     /**
      * Audio stuff...
@@ -140,8 +132,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
 
-            uint32 tilePosY = modulo(((y + gameState->worldPosition.cameraPositionPx.y) / world.tileHeightPx), world.totalTileDimensions);
-            uint32 tilePosX = modulo(((x + gameState->worldPosition.cameraPositionPx.x) / world.tileWidthPx), world.totalTileDimensions);
+            uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / world.tileHeightPx), world.totalTileDimensions);
+            uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / world.tileWidthPx), world.totalTileDimensions);
 
             uint32 *tileValue = ((uint32*)gameState->worldTiles + ((tilePosY * world.totalTileDimensions) + tilePosX));
 
@@ -183,17 +175,15 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
 }
 
-internal_func
-void controllerHandlePlayer(GameState *gameState,
+void playerHandleMovement(GameState *gameState,
                             GameMemory *memory,
                             GameFrameBuffer *frameBuffer,
                             GameAudioBuffer *audioBuffer,
-                            GameInput gameInput,
+                            GameInput *gameInput,
                             uint8 selectedController,
-                            World *world,
-                            uint playerPosDebug[2])
+                            World *world)
 {
-    GameControllerInput controller = gameInput.controllers[selectedController];
+    GameControllerInput controller = gameInput->controllers[selectedController];
 
     // Basic player movement...
 
@@ -203,7 +193,7 @@ void controllerHandlePlayer(GameState *gameState,
     // @NOTE(JM) The truncated fractions cause issues with different framerates.
     // Not sure how to resolve at this point.
     float32 pixelsPerSecond = (world->pixelsPerMetre * gameState->player1.movementSpeedMPS);
-    float32 pixelsPerFrame = (pixelsPerSecond / gameInput.fps);
+    float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
 
     // Ensure the player can at least move!
     if (pixelsPerFrame < 1.0f){
@@ -218,37 +208,31 @@ void controllerHandlePlayer(GameState *gameState,
 FPS: %f. \
 Pixels per second: %f. \
 Pixels per frame: %f\n",
-gameInput.msPerFrame,
-gameInput.fps,
+gameInput->msPerFrame,
+gameInput->fps,
 pixelsPerSecond,
 pixelsPerFrame);
         memory->DEBUG_platformLog(buff);
     }
 #endif
 
-    posXYInt playerNewPosTmp = {0};
+    xyint playerNewPosTmp = {0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
     playerNewPosTmp.y = gameState->player1.absolutePosition.y;
 
-    int32 trackXMoveAmtPx = 0;
-    int32 trackYMoveAmtPx = 0;
 
     if (controller.dPadLeft.endedDown) {
         playerAttemptingMove = true;
-        trackXMoveAmtPx = (int32)(pixelsPerFrame * -1.0f);
-        playerNewPosTmp.x += trackXMoveAmtPx;
+        playerNewPosTmp.x += (int32)(pixelsPerFrame * -1.0f);
     }else if (controller.dPadRight.endedDown) {
         playerAttemptingMove = true;
-        trackXMoveAmtPx = (int32)pixelsPerFrame;
-        playerNewPosTmp.x += trackXMoveAmtPx;
+        playerNewPosTmp.x += (int32)pixelsPerFrame;
     }else if (controller.dPadUp.endedDown) {
         playerAttemptingMove = true;
-        trackYMoveAmtPx = (int32)pixelsPerFrame;
-        playerNewPosTmp.y += trackYMoveAmtPx;
+        playerNewPosTmp.y += (int32)pixelsPerFrame;
     }else if (controller.dPadDown.endedDown) {
         playerAttemptingMove = true;
-        trackYMoveAmtPx = (int32)(pixelsPerFrame * -1.0f);
-        playerNewPosTmp.y += trackYMoveAmtPx;
+        playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
     }
 
     if (controller.isAnalog) {
@@ -256,28 +240,24 @@ pixelsPerFrame);
         if (controller.leftThumbstick.position.x) {
             playerAttemptingMove = true;
             if (controller.leftThumbstick.position.x >= 0.0f) {
-                trackXMoveAmtPx = (int32)pixelsPerFrame;
+                playerNewPosTmp.x += (int32)pixelsPerFrame;
             }else{
-                trackXMoveAmtPx = (int32)(pixelsPerFrame * -1.0f);
+                playerNewPosTmp.x += (int32)(pixelsPerFrame * -1.0f);
             }
-            playerNewPosTmp.x += trackXMoveAmtPx;
         }else if (controller.leftThumbstick.position.y) {
             playerAttemptingMove = true;
             if (controller.leftThumbstick.position.y >= 0.0f) {
-                trackYMoveAmtPx = (int32)(pixelsPerFrame * -1.0f);
+                playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
             }
             else {
-                trackYMoveAmtPx = (int32)pixelsPerFrame;
+                playerNewPosTmp.y += (int32)pixelsPerFrame;
             }
-
-            playerNewPosTmp.y += trackYMoveAmtPx;
         }
     }
 
     if (playerAttemptingMove) {
 
-
-        posXYUInt playerNewPos = { 0 };
+        xyuint playerNewPos = { 0 };
         playerNewPos.x = modulo(playerNewPosTmp.x, (world->tileWidthPx * world->totalTileDimensions));
         playerNewPos.y = modulo(playerNewPosTmp.y, (world->tileHeightPx * world->totalTileDimensions));
 
@@ -333,9 +313,9 @@ pixelsPerFrame);
         // Can the move to the new tile be taken?
         // @NOTE(JM) bug where rounding means player doesnt get a close as
         // possible to certain tiles when a move is invalid
-        if ((false == (isWorldTileFree(*world, *gameState, middle)))
-                || (false == (isWorldTileFree(*world, *gameState, bottomLeft)))
-                || (false == (isWorldTileFree(*world, *gameState, bottomRight)))) {
+        if ((false == (isWorldTileFree(*world, gameState, &middle)))
+                || (false == (isWorldTileFree(*world, gameState, &bottomLeft)))
+                || (false == (isWorldTileFree(*world, gameState, &bottomRight)))) {
 
 #if 0
 #ifdef HANDMADE_DEBUG_TILE_POS
@@ -367,7 +347,7 @@ gameState->player1.absolutePosition.y);
                 gameState->player1.absolutePosition.y = playerNewPos.y;
                 gameState->player1.lastMoveDirections = lastMoveDirections;
 
-                updateWorldPosition(trackXMoveAmtPx, trackYMoveAmtPx, *world, gameState);
+                setWorldPosition(gameState, *world, frameBuffer);
 
 #ifdef HANDMADE_DEBUG_TILE_POS
                 char buff[500] = {};
@@ -379,9 +359,9 @@ Chunk Index x:%i y:%i. \
 Camera pos x:%i y:%i. \
 \n",
 gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
-gameState->worldPosition.activeTile.tileIndex.x, gameState->worldPosition.activeTile.tileIndex.y,
-gameState->worldPosition.activeTile.chunkIndex.x, gameState->worldPosition.activeTile.chunkIndex.y,
-gameState->worldPosition.cameraPositionPx.x, gameState->worldPosition.cameraPositionPx.y
+gameState->worldPosition.tileIndex.x, gameState->worldPosition.tileIndex.y,
+gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
+gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
 );
                 memory->DEBUG_platformLog(buff);
 #endif
@@ -477,31 +457,6 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 }
 
 #endif
-
-internal_func
-void initWorld(GameFrameBuffer frameBuffer,
-                World *world,
-                uint16 pixelsPerMetre,
-                float32 tileDimensionsMeters,
-                uint16 totalTileDimensions,
-                uint16 tileChunkDimensions)
-{
-    world->totalTileDimensions = totalTileDimensions;
-    world->tileChunkDimensions = tileChunkDimensions;
-    world->totalTileChunks = ((world->totalTileDimensions / world->tileChunkDimensions) * 2);
-
-    // @TODO(JM)
-    //world->tileChunkMask = 0xFF;
-    //world->tileChunkShift = 8;
-
-    world->pixelsPerMetre = pixelsPerMetre;
-
-    // @NOTE(JM) tiles and tile chunks are always square
-    world->tileHeightPx = (uint16)(world->pixelsPerMetre * tileDimensionsMeters);
-    world->tileWidthPx = world->tileHeightPx; 
-    world->tileChunkHeightPx = (world->tileHeightPx * world->tileChunkDimensions);
-    world->tileChunkWidthPx = (world->tileWidthPx * world->tileChunkDimensions);
-}
 
 /**
  * Simple pixel loop.

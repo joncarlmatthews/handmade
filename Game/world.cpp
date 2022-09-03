@@ -1,47 +1,78 @@
 #pragma once
 
+#include <math.h>
 #include "types.h"
 #include "game.h"
 #include "world.h"
 #include "player.h"
 #include "utility.h"
 
-/**
- * Updates the World Position
- *
- * @param int32         xMoveAmtPx  How much movement has been made on the X axis
- * @param int32         yMoveAmtPx  How much movement has been made on the Y axis
- * @param World         world       The world
- * @param GameState     *gameState  Game state pointer
- * 
- * @return void
-*/
-void updateWorldPosition(int32 xMoveAmtPx,
-                            int32 yMoveAmtPx,
-                            World world,
-                            GameState *gameState)
+void initWorld(World *world,
+                uint16 pixelsPerMetre,
+                float32 tileDimensionsMeters,
+                uint16 totalTileDimensions,
+                uint16 tileChunkDimensions)
 {
-    // Update the X and Y movement tracking
-    uint32 tileChunkStartPixelSliderX = modulo((gameState->worldPosition.cameraPositionPx.x += xMoveAmtPx), (world.tileWidthPx * world.totalTileDimensions));
-    uint32 tileChunkStartPixelSliderY = modulo((gameState->worldPosition.cameraPositionPx.y += yMoveAmtPx), (world.tileHeightPx * world.totalTileDimensions));
+    world->totalTileDimensions = totalTileDimensions;
+    world->tileChunkDimensions = tileChunkDimensions;
+    world->totalTileChunks = ((world->totalTileDimensions / world->tileChunkDimensions) * 2);
 
-    gameState->worldPosition.cameraPositionPx.x = tileChunkStartPixelSliderX;
-    gameState->worldPosition.cameraPositionPx.y = tileChunkStartPixelSliderY;
+    // @TODO(JM)
+    //world->tileChunkMask = 0xFF;
+    //world->tileChunkShift = 8;
 
-    // Calculate the currently active tile based on player1's position and
-    // write it to the world position
-    getActiveTileForPlayer(&gameState->worldPosition.activeTile,
-                            gameState->player1,
-                            world);
+    world->pixelsPerMetre = pixelsPerMetre;
+
+    // @NOTE(JM) tiles and tile chunks are always square
+    world->tileHeightPx = (uint16)(world->pixelsPerMetre * tileDimensionsMeters);
+    world->tileWidthPx = world->tileHeightPx;
+    world->tileChunkHeightPx = (world->tileHeightPx * world->tileChunkDimensions);
+    world->tileChunkWidthPx = (world->tileWidthPx * world->tileChunkDimensions);
+}
+
+void setWorldPosition(GameState *gameState, World world, GameFrameBuffer *frameBuffer)
+{
+    // Active tile is based off of the bottom middle position of the player.
+
+    // Get the pixel coordinates of the bottom middle of the player.
+    float32 yPixelInset = 0.0f;
+    float32 x = ((float32)gameState->player1.absolutePosition.x + (float32)gameState->player1.widthPx / 2.0f);
+    float32 y = ((float32)gameState->player1.absolutePosition.y + yPixelInset);
+
+    gameState->worldPosition.pixelCoordinates.x = (int32)floorf(x);
+    gameState->worldPosition.pixelCoordinates.y = (int32)floorf(y);
+
+    // Calculate the absolute x and y tile index relative to the World
+    uint32 tileIndexX = (int32)floorf((float32)x / (float32)world.tileWidthPx);
+    uint32 tileIndexY = (int32)floorf((float32)y / (float32)world.tileHeightPx);
+
+    gameState->worldPosition.tileIndex.x = (modulo(tileIndexX, world.totalTileDimensions));
+    gameState->worldPosition.tileIndex.y = (modulo(tileIndexY, world.totalTileDimensions));
+
+    // Calculate the x and y tile chunk index relative to the world
+    gameState->worldPosition.chunkIndex.x = (int32)floorf((float32)x / (float32)(world.tileWidthPx * world.tileChunkDimensions));
+    gameState->worldPosition.chunkIndex.y = (int32)floorf((float32)y / (float32)(world.tileHeightPx * world.tileChunkDimensions));
+
+    // @TODO(JM)
+    gameState->worldPosition.chunkRelativePixelCoordinates.x = 0;
+    gameState->worldPosition.chunkRelativePixelCoordinates.y = 0;
+
+    // @TODO(JM)
+    gameState->worldPosition.tileRelativePixelCoordinates.x = 0;
+    gameState->worldPosition.tileRelativePixelCoordinates.y = 0;
+
+    // Update the camera position
+    gameState->cameraPositionPx.x = modulo((gameState->player1.absolutePosition.x - (frameBuffer->widthPx / 2)), (world.tileWidthPx * world.totalTileDimensions));
+    gameState->cameraPositionPx.y = modulo((gameState->player1.absolutePosition.y - (frameBuffer->heightPx / 2)), (world.tileHeightPx * world.totalTileDimensions));
 }
 
 bool isWorldTileFree(World world,
-                        GameState gameState,
-                        PlayerPositionData playerPositionData)
+                        GameState *gameState,
+                        PlayerPositionData *playerPositionData)
 {
-    uint32 tileNumber = (playerPositionData.activeTile.tileIndex.y * world.totalTileDimensions) + playerPositionData.activeTile.tileIndex.x;
+    uint32 tileNumber = (playerPositionData->activeTile.tileIndex.y * world.totalTileDimensions) + playerPositionData->activeTile.tileIndex.x;
 
-    uint32 *tileState = ((uint32*)gameState.worldTiles + tileNumber);
+    uint32 *tileState = ((uint32*)gameState->worldTiles + tileNumber);
 
     if (tileState) {
         if (*tileState == 2) {
@@ -52,7 +83,7 @@ bool isWorldTileFree(World world,
     return true;
 }
 
-int64 metresToPixels(World world, float32 metres)
+int64 metersToPixels(World world, float32 metres)
 {
     float32 pixels = (world.pixelsPerMetre * metres);
     return (int64)pixels;

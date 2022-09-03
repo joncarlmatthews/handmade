@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="game.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="tilemap.h" />
     <ClInclude Include="tilemaps.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
