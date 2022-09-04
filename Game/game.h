@@ -301,10 +301,10 @@ typedef struct GameState
     Player player1;
     SineWave sineWave;
 
-    uint32 worldTiles[WORLD_TOTAL_TILE_DIMENSIONS][WORLD_TOTAL_TILE_DIMENSIONS];
+    World world;
 
     // The currently active world position based off of the player's absolute position
-    WorldCoordinates worldPosition;
+    TilemapCoordinates worldPosition;
 
     // X and Y pixel coordinates for the camera's starting position (to start drawing from)
     // Camera is drawn out to dimensions of GameFrameBuffer.width/height
@@ -372,8 +372,7 @@ typedef struct GameMemory
  * @return void
  */
 internal_func
-void writeRectangle(World world,
-                    GameFrameBuffer* buffer,
+void writeRectangle(GameFrameBuffer* buffer,
                     int64 xOffset,
                     int64 yOffset,
                     int64 width,

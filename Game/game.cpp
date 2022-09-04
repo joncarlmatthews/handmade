@@ -23,18 +23,11 @@
 #include "utility.h"
 #include "game.h"
 #include "world.h"
+#include "tilemap.h"
 #include "player.h"
 
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
-    // Init the World
-    World world = { 0 };
-    initWorld(&world,
-                WORLD_PIXELS_PER_METER,
-                TILE_DIMENSIONS_METERS,
-                WORLD_TOTAL_TILE_DIMENSIONS,
-                WORLD_TILE_CHUNK_DIMENSIONS);
-
     /**
      * Game state initialisation
      */
@@ -42,21 +35,21 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     GameState *gameState = (GameState *)memory->permanentStorage;
 
-    if (!memory->initialised) {       
+    if (!memory->initialised) {
 
-        // @NOTE(JM) not sure how to allocate this on the heap, as this array is
-        // too large for the stack...
-        uint8 origTiles[WORLD_TOTAL_TILE_DIMENSIONS][WORLD_TOTAL_TILE_DIMENSIONS] = ALL_TILES;
+        // Init the Tilemap
+        Tilemap tilemap = { 0 };
+        initTilemap(&tilemap,
+                    WORLD_PIXELS_PER_METER,
+                    TILE_DIMENSIONS_METERS,
+                    TOTAL_TILE_DIMENSIONS,
+                    TILE_CHUNK_DIMENSIONS);
 
-        // Copy the tiles into the world tiles, making it so that the Y axis
-        // goes up
-        uint32 worldY = 0;
-        for (int32 y = (WORLD_TOTAL_TILE_DIMENSIONS-1); y >= 0; y--){
-            for (uint x = 0; x < WORLD_TOTAL_TILE_DIMENSIONS; x++) {
-                gameState->worldTiles[worldY][x] = (uint32)origTiles[y][x];
-            }
-            worldY++;
-        }
+        // Init the World
+        World world = { 0 };
+        initWorld(&world, tilemap, WORLD_PIXELS_PER_METER);
+
+        gameState->world = world;
 
         // Character attributes
         gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
@@ -78,10 +71,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
        
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data
-        setWorldPosition(gameState, world, frameBuffer);
-
-        //gameState->cameraPositionPx.x = 0;
-        //gameState->cameraPositionPx.y = 0;
+        setWorldPosition(gameState, frameBuffer);
 
         memory->initialised = true;
     }
@@ -109,8 +99,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                             frameBuffer,
                             audioBuffer,
                             &inputInstances[0],
-                            userSelectedMainController,
-                            &world);
+                            userSelectedMainController);
 
     /**
      * Audio stuff...
@@ -126,16 +115,19 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      * 
      */
 
+    
+
+
     // Draw the tile map.
     // @NOTE(JM) Drawing this pixel by pixel, this is incapable of hitting 60fps
     // @TODO(JM) Optimise this!
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
 
-            uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / world.tileHeightPx), world.totalTileDimensions);
-            uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / world.tileWidthPx), world.totalTileDimensions);
+            uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / gameState->world.tilemap.tileHeightPx), gameState->world.tilemap.totalTileDimensions);
+            uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / gameState->world.tilemap.tileWidthPx), gameState->world.tilemap.totalTileDimensions);
 
-            uint32 *tileValue = ((uint32*)gameState->worldTiles + ((tilePosY * world.totalTileDimensions) + tilePosX));
+            uint32 *tileValue = ((uint32*)gameState->world.tilemap.tiles + ((tilePosY * gameState->world.tilemap.totalTileDimensions) + tilePosX));
 
             // Null pointer check
             if (!tileValue) {
@@ -152,13 +144,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 pixelColour.b = 0.2f;
             }
 
-            writeRectangle(world, frameBuffer, x, y, 1, 1, pixelColour);
+            writeRectangle(frameBuffer, x, y, 1, 1, pixelColour);
         }
     }
 
     // Draw player
-    writeRectangle(world,
-                    frameBuffer,
+    writeRectangle(frameBuffer,
                     gameState->player1.fixedPosition.x,
                     gameState->player1.fixedPosition.y,
                     gameState->player1.widthPx,
@@ -167,8 +158,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
-        writeRectangle(world,
-                        frameBuffer,
+        writeRectangle(frameBuffer,
                         inputInstances->mouse.position.x,
                         inputInstances->mouse.position.y,
                         50,
@@ -187,8 +177,7 @@ void playerHandleMovement(GameState *gameState,
                             GameFrameBuffer *frameBuffer,
                             GameAudioBuffer *audioBuffer,
                             GameInput *gameInput,
-                            uint8 selectedController,
-                            World *world)
+                            uint8 selectedController)
 {
     GameControllerInput controller = gameInput->controllers[selectedController];
 
@@ -199,7 +188,7 @@ void playerHandleMovement(GameState *gameState,
     // Normalise pixel movement regardless of framerate
     // @NOTE(JM) The truncated fractions cause issues with different framerates.
     // Not sure how to resolve at this point.
-    float32 pixelsPerSecond = (world->pixelsPerMetre * gameState->player1.movementSpeedMPS);
+    float32 pixelsPerSecond = (gameState->world.pixelsPerMetre * gameState->player1.movementSpeedMPS);
     float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
 
     // Ensure the player can at least move!
@@ -265,8 +254,8 @@ pixelsPerFrame);
     if (playerAttemptingMove) {
 
         xyuint playerNewPos = { 0 };
-        playerNewPos.x = modulo(playerNewPosTmp.x, (world->tileWidthPx * world->totalTileDimensions));
-        playerNewPos.y = modulo(playerNewPosTmp.y, (world->tileHeightPx * world->totalTileDimensions));
+        playerNewPos.x = modulo(playerNewPosTmp.x, gameState->world.worldWidthPx);
+        playerNewPos.y = modulo(playerNewPosTmp.y, gameState->world.worldHeightPx);
 
         // Player movement direction
         uint32 movedUp = 0;
@@ -295,22 +284,19 @@ pixelsPerFrame);
         getPositionDataForPlayer(&middle,
                                     playerNewPos,
                                     PLAYER_POINT_POS::MIDDLE,
-                                    gameState->player1,
-                                    *world);
+                                    gameState);
 
         PlayerPositionData bottomLeft;
         getPositionDataForPlayer(&bottomLeft,
                                     playerNewPos,
                                     PLAYER_POINT_POS::BOTTOM_LEFT,
-                                    gameState->player1,
-                                    *world);
+                                    gameState);
 
         PlayerPositionData bottomRight;
         getPositionDataForPlayer(&bottomRight,
                                     playerNewPos,
                                     PLAYER_POINT_POS::BOTTOM_RIGHT,
-                                    gameState->player1,
-                                    *world);
+                                    gameState);
 
 #ifdef HANDMADE_DEBUG_TILE_POS
         // Visualisation
@@ -320,9 +306,9 @@ pixelsPerFrame);
         // Can the move to the new tile be taken?
         // @NOTE(JM) bug where rounding means player doesnt get a close as
         // possible to certain tiles when a move is invalid
-        if ((false == (isWorldTileFree(*world, gameState, &middle)))
-                || (false == (isWorldTileFree(*world, gameState, &bottomLeft)))
-                || (false == (isWorldTileFree(*world, gameState, &bottomRight)))) {
+        if ((false == (isWorldTileFree(gameState, &middle)))
+                || (false == (isWorldTileFree(gameState, &bottomLeft)))
+                || (false == (isWorldTileFree(gameState, &bottomRight)))) {
 
 #if 0
 #ifdef HANDMADE_DEBUG_TILE_POS
@@ -354,7 +340,7 @@ gameState->player1.absolutePosition.y);
                 gameState->player1.absolutePosition.y = playerNewPos.y;
                 gameState->player1.lastMoveDirections = lastMoveDirections;
 
-                setWorldPosition(gameState, *world, frameBuffer);
+                setWorldPosition(gameState, frameBuffer);
 
 #ifdef HANDMADE_DEBUG_TILE_POS
                 char buff[500] = {};
@@ -475,8 +461,7 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
  * 
  */
 internal_func
-void writeRectangle(World world,
-                    GameFrameBuffer *buffer,
+void writeRectangle(GameFrameBuffer *buffer,
                     int64 xOffset,
                     int64 yOffset,
                     int64 width,
