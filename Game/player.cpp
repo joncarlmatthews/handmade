@@ -1,3 +1,4 @@
+#include <stdio.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include "game.h"
@@ -94,4 +95,248 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     positionData->activeTile.tileRelativePixelCoordinates.y = 0;
     //positionData->activeTile.tileRelativePixelCoordinates.x = (positionData->activeTile.tileRelativePixelCoordinates.x - (positionData->activeTile.tileIndex.x * gameState->world.tilemap.tileWidthPx));
     //positionData->activeTile.tileRelativePixelCoordinates.y = (positionData->activeTile.tileRelativePixelCoordinates.y - (positionData->activeTile.tileIndex.y * gameState->world.tilemap.tileHeightPx));
+}
+
+void playerHandleMovement(GameState *gameState,
+    GameMemory *memory,
+    GameFrameBuffer *frameBuffer,
+    GameAudioBuffer *audioBuffer,
+    GameInput *gameInput,
+    uint8 selectedController)
+{
+    GameControllerInput controller = gameInput->controllers[selectedController];
+
+    // Basic player movement...
+
+    bool playerAttemptingMove = false;
+
+    // Normalise pixel movement regardless of framerate
+    // @NOTE(JM) The truncated fractions cause issues with different framerates.
+    // Not sure how to resolve at this point.
+    float32 pixelsPerSecond = (gameState->world.pixelsPerMetre * gameState->player1.movementSpeedMPS);
+    float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
+
+    // Ensure the player can at least move!
+    if (pixelsPerFrame < 1.0f){
+        pixelsPerFrame = 1.0f;
+    }
+
+#if 0
+    {
+        char buff[400] = {};
+        sprintf_s(buff, sizeof(buff),
+            "MS per frame: %f. \
+FPS: %f. \
+Pixels per second: %f. \
+Pixels per frame: %f\n",
+gameInput->msPerFrame,
+gameInput->fps,
+pixelsPerSecond,
+pixelsPerFrame);
+        memory->DEBUG_platformLog(buff);
+    }
+#endif
+
+    xyint playerNewPosTmp = {0};
+    playerNewPosTmp.x = gameState->player1.absolutePosition.x;
+    playerNewPosTmp.y = gameState->player1.absolutePosition.y;
+
+
+    if (controller.dPadLeft.endedDown) {
+        playerAttemptingMove = true;
+        playerNewPosTmp.x += (int32)(pixelsPerFrame * -1.0f);
+    }else if (controller.dPadRight.endedDown) {
+        playerAttemptingMove = true;
+        playerNewPosTmp.x += (int32)pixelsPerFrame;
+    }else if (controller.dPadUp.endedDown) {
+        playerAttemptingMove = true;
+        playerNewPosTmp.y += (int32)pixelsPerFrame;
+    }else if (controller.dPadDown.endedDown) {
+        playerAttemptingMove = true;
+        playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
+    }
+
+    if (controller.isAnalog) {
+
+        if (controller.leftThumbstick.position.x) {
+            playerAttemptingMove = true;
+            if (controller.leftThumbstick.position.x >= 0.0f) {
+                playerNewPosTmp.x += (int32)pixelsPerFrame;
+            }else{
+                playerNewPosTmp.x += (int32)(pixelsPerFrame * -1.0f);
+            }
+        }else if (controller.leftThumbstick.position.y) {
+            playerAttemptingMove = true;
+            if (controller.leftThumbstick.position.y >= 0.0f) {
+                playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
+            }
+            else {
+                playerNewPosTmp.y += (int32)pixelsPerFrame;
+            }
+        }
+    }
+
+    if (playerAttemptingMove) {
+
+        xyuint playerNewPos = { 0 };
+        playerNewPos.x = modulo(playerNewPosTmp.x, gameState->world.worldWidthPx);
+        playerNewPos.y = modulo(playerNewPosTmp.y, gameState->world.worldHeightPx);
+
+        // Player movement direction
+        uint32 movedUp = 0;
+        uint32 movedDown = 0;
+        uint32 movedLeft = 0;
+        uint32 movedRight = 0;
+        uint32 lastMoveDirections = 0;
+
+        if (playerNewPos.y > gameState->player1.absolutePosition.y) {
+            movedUp += (1 << 0); // UP
+        }
+        if (playerNewPos.y < gameState->player1.absolutePosition.y) {
+            movedDown += (1 << 1); // DOWN
+        }
+        if (playerNewPos.x < gameState->player1.absolutePosition.x) {
+            movedLeft += (1 << 2); // LEFT
+        }
+        if (playerNewPos.x > gameState->player1.absolutePosition.x) {
+            movedRight += (1 << 3); // RIGHT
+        }
+
+        lastMoveDirections = (movedUp | movedDown | movedLeft | movedRight);
+
+        // Tilemap collision detection
+        PlayerPositionData middle;
+        getPositionDataForPlayer(&middle,
+            playerNewPos,
+            PLAYER_POINT_POS::MIDDLE,
+            gameState);
+
+        PlayerPositionData bottomLeft;
+        getPositionDataForPlayer(&bottomLeft,
+            playerNewPos,
+            PLAYER_POINT_POS::BOTTOM_LEFT,
+            gameState);
+
+        PlayerPositionData bottomRight;
+        getPositionDataForPlayer(&bottomRight,
+            playerNewPos,
+            PLAYER_POINT_POS::BOTTOM_RIGHT,
+            gameState);
+
+#ifdef HANDMADE_DEBUG_TILE_POS
+        // Visualisation
+        PlayerPositionData debugPoint = middle;
+#endif
+
+        // Can the move to the new tile be taken?
+        // @NOTE(JM) bug where rounding means player doesnt get a close as
+        // possible to certain tiles when a move is invalid
+        if ((false == (isTilemapTileFree(gameState->world.tilemap, &middle)))
+            || (false == (isTilemapTileFree(gameState->world.tilemap, &bottomLeft)))
+            || (false == (isTilemapTileFree(gameState->world.tilemap, &bottomRight)))) {
+
+#if 0
+#ifdef HANDMADE_DEBUG_TILE_POS
+            char buff[400] = {};
+            sprintf_s(buff, sizeof(buff),
+                "CANNOT MOVE. \
+Plr Proposed World Pos: x:%i y:%i. \
+Plr Proposed World Tile: x:%i y:%i. \
+Plr Actual World Pos: x:%i y:%i. \
+playerNewPos.x,
+playerNewPos.y,
+debugPoint.activeTile.tileIndex.x,
+debugPoint.activeTile.tileIndex.y,
+gameState->player1.absolutePosition.x,
+gameState->player1.absolutePosition.y);
+            memory->DEBUG_platformLog(buff);
+#endif
+#endif
+
+        } else {
+
+            // ...yes, the move to the new tile can be taken
+
+            // Sense check that the player actually moved
+            if ( (gameState->player1.absolutePosition.x != playerNewPos.x)
+                || (gameState->player1.absolutePosition.y != playerNewPos.y) ){
+
+                gameState->player1.absolutePosition.x = playerNewPos.x;
+                gameState->player1.absolutePosition.y = playerNewPos.y;
+                gameState->player1.lastMoveDirections = lastMoveDirections;
+
+                setWorldPosition(gameState, frameBuffer);
+
+#ifdef HANDMADE_DEBUG_TILE_POS
+                char buff[500] = {};
+                sprintf_s(buff, sizeof(buff),
+                    "MOVED. \
+Plr World Pos x:%i y:%i. \
+World Tile x:%i y:%i. \
+Chunk Index x:%i y:%i. \
+Camera pos x:%i y:%i. \
+\n",
+gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
+gameState->worldPosition.tileIndex.x, gameState->worldPosition.tileIndex.y,
+gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
+gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
+);
+                memory->DEBUG_platformLog(buff);
+#endif
+            }
+
+        }
+
+    } // player attempting move
+
+      // Temp jump code
+#if 0
+    if ((controller.down.endedDown) && (0 == gameState->player1.jumping)) {
+        gameState->player1.jumping = 1;
+        gameState->player1.jumpDuration = 20.0f;
+        gameState->player1.jumpRunningFrameCtr = 0.0f;
+        gameState->player1.jumpStartPos = gameState->player1.absolutePosition.y;
+    }
+
+    if (gameState->player1.jumping) {
+
+        float32 jumpPercentageOfAngle = 0.0f;
+        float32 jumpAngle = 0.0f;
+        float32 jumpRadians = 0.0f;
+        float32 jumpSine = 0.0f;
+
+        gameState->player1.jumpRunningFrameCtr++;
+
+        jumpPercentageOfAngle = percentageOfAnotherf(gameState->player1.jumpRunningFrameCtr, gameState->player1.jumpDuration);
+        jumpAngle = (360.0f * (jumpPercentageOfAngle / 100.0f));
+        jumpRadians = (jumpAngle * ((float32)M_PI / 180.0f));
+        jumpSine = sinf(jumpRadians);
+
+        if (jumpAngle >= 0.0f && jumpAngle <= 180.0f) {
+            gameState->player1.jumpDirection = JUMP_UP;
+        } else {
+            gameState->player1.jumpDirection = JUMP_DOWN;
+        }
+
+        float32 amtToMove   = (gameState->player1.totalJumpMovement * jumpSine);
+        int32 newPos        = (int32)(gameState->player1.absolutePosition.y - amtToMove);
+
+        // Have we hit the top?
+        if (newPos < 0) {
+            gameState->player1.absolutePosition.y = 0;
+            gameState->player1.jumpDuration = (gameState->player1.jumpRunningFrameCtr / 2);
+        } else {
+            gameState->player1.absolutePosition.y = newPos;
+        }
+
+        // Jump finished?
+        if (jumpAngle >= 360.0f) {
+            gameState->player1.jumping = 0;
+            // Force reset the absolutePosition.
+            // @NOTE(JM) This is a bug if you land on a new level.
+            gameState->player1.absolutePosition.y = gameState->player1.jumpStartPos; 
+        }
+    }
+#endif
+
 }

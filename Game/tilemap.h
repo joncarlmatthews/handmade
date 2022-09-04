@@ -72,4 +72,7 @@ void initTilemap(Tilemap *tilemap,
                     uint16 totalTileDimensions,
                     uint16 tileChunkDimensions);
 
+typedef struct PlayerPositionData PlayerPositionData;
+bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData);
+
 #endif

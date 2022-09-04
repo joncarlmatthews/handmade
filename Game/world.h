@@ -26,9 +26,6 @@ typedef struct GameFrameBuffer GameFrameBuffer;
 
 void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer);
 
-typedef struct PlayerPositionData PlayerPositionData;
-bool isWorldTileFree(GameState *gameState, PlayerPositionData *playerPositionData);
-
 int64 metersToPixels(World world, float32 metres);
 
 void setTileColour(Colour *tileColour, uint32 tileValue);

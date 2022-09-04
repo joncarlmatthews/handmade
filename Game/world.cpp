@@ -1,5 +1,3 @@
-#pragma once
-
 #include <math.h>
 #include "types.h"
 #include "game.h"
@@ -7,42 +5,6 @@
 #include "tilemap.h"
 #include "player.h"
 #include "utility.h"
-
-// @TODO(JM) move this to tilemap.cpp
-void initTilemap(Tilemap *tilemap,
-                    uint16 pixelsPerMetre,
-                    float32 tileDimensionsMeters,
-                    uint16 totalTileDimensions,
-                    uint16 tileChunkDimensions)
-{
-    tilemap->totalTileDimensions = totalTileDimensions;
-    tilemap->tileChunkDimensions = tileChunkDimensions;
-    tilemap->totalTileChunks = ((tilemap->totalTileDimensions / tilemap->tileChunkDimensions) * 2);
-
-    // @TODO(JM)
-    //tilemap->tileChunkMask = 0xFF;
-    //tilemap->tileChunkShift = 8;
-
-    // @NOTE(JM) tiles and tile chunks are always square
-    tilemap->tileHeightPx = (uint16)(pixelsPerMetre * tileDimensionsMeters);
-    tilemap->tileWidthPx = tilemap->tileHeightPx;
-    tilemap->tileChunkHeightPx = (tilemap->tileHeightPx * tilemap->tileChunkDimensions);
-    tilemap->tileChunkWidthPx = tilemap->tileChunkHeightPx;
-
-    // @NOTE(JM) not sure how to allocate this on the heap, as this array is
-    // too large for the stack...
-    uint8 origTiles[TOTAL_TILE_DIMENSIONS][TOTAL_TILE_DIMENSIONS] = ALL_TILES;
-
-    // Copy the tiles into the world tiles, making it so that the Y axis
-    // goes up
-    uint32 worldY = 0;
-    for (int32 y = (TOTAL_TILE_DIMENSIONS-1); y >= 0; y--){
-        for (uint x = 0; x < TOTAL_TILE_DIMENSIONS; x++) {
-            tilemap->tiles[worldY][x] = (uint32)origTiles[y][x];
-        }
-        worldY++;
-    }
-}
 
 void initWorld(World *world,
                 Tilemap tilemap,
@@ -90,23 +52,6 @@ void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
     // Update the camera position
     gameState->cameraPositionPx.x = modulo((gameState->player1.absolutePosition.x - (frameBuffer->widthPx / 2)), gameState->world.worldWidthPx);
     gameState->cameraPositionPx.y = modulo((gameState->player1.absolutePosition.y - (frameBuffer->heightPx / 2)), gameState->world.worldHeightPx);
-}
-
-// @TODO(JM) move to tilemap.cpp
-bool isWorldTileFree(GameState *gameState,
-                        PlayerPositionData *playerPositionData)
-{
-    uint32 tileNumber = (playerPositionData->activeTile.tileIndex.y * gameState->world.tilemap.totalTileDimensions) + playerPositionData->activeTile.tileIndex.x;
-
-    uint32 *tileState = ((uint32*)gameState->world.tilemap.tiles + tileNumber);
-
-    if (tileState) {
-        if (*tileState == 2) {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 int64 metersToPixels(World world, float32 metres)
