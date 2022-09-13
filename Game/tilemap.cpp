@@ -1,10 +1,9 @@
 #include "types.h"
 #include "tilemap.h"
-#include "tilemaps.h"
 #include "player.h"
 
 void initTilemap(Tilemap *tilemap,
-                    uint16 pixelsPerMetre,
+                    uint16 pixelsPerMeter,
                     float32 tileDimensionsMeters,
                     uint16 totalTileDimensions,
                     uint16 tileChunkDimensions)
@@ -18,13 +17,14 @@ void initTilemap(Tilemap *tilemap,
     //tilemap->tileChunkShift = 8;
 
     // @NOTE(JM) tiles and tile chunks are always square
-    tilemap->tileHeightPx = (uint16)(pixelsPerMetre * tileDimensionsMeters);
+    tilemap->tileHeightPx = (uint16)(pixelsPerMeter * tileDimensionsMeters);
     tilemap->tileWidthPx = tilemap->tileHeightPx;
     tilemap->tileChunkHeightPx = (tilemap->tileHeightPx * tilemap->tileChunkDimensions);
     tilemap->tileChunkWidthPx = tilemap->tileChunkHeightPx;
 
     // @NOTE(JM) not sure how to allocate this on the heap, as this array is
     // too large for the stack...
+    #if 0
     uint8 origTiles[TOTAL_TILE_DIMENSIONS][TOTAL_TILE_DIMENSIONS] = ALL_TILES;
 
     // Copy the tiles into the world tiles, making it so that the Y axis
@@ -36,13 +36,14 @@ void initTilemap(Tilemap *tilemap,
         }
         worldY++;
     }
+    #endif
 }
 
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData)
 {
     uint32 tileNumber = (playerPositionData->activeTile.tileIndex.y * tilemap.totalTileDimensions) + playerPositionData->activeTile.tileIndex.x;
 
-    uint32 *tileState = ((uint32*)tilemap.tiles + tileNumber);
+    uint32 *tileState = (tilemap.tiles + tileNumber);
 
     if (tileState) {
         if (*tileState == 2) {

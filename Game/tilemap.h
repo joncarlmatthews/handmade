@@ -20,6 +20,12 @@
 // 2x2 = 4
 #define TILE_DIMENSIONS_METERS 2.0f
 
+typedef struct TileChunk {
+
+    uint32 *tiles;
+
+} TileChunk;
+
 typedef struct Tilemap {
 
     // @see TOTAL_TILE_DIMENSIONS
@@ -43,7 +49,7 @@ typedef struct Tilemap {
     uint16 tileChunkWidthPx;
 
     // Tile data
-    uint32 tiles[TOTAL_TILE_DIMENSIONS][TOTAL_TILE_DIMENSIONS];
+    uint32 *tiles;
 
 } Tilemap;
 
@@ -67,7 +73,7 @@ typedef struct TilemapCoordinates {
 } TilemapCoordinates;
 
 void initTilemap(Tilemap *tilemap,
-                    uint16 pixelsPerMetre,
+                    uint16 pixelsPerMeter,
                     float32 tileDimensionsMeters,
                     uint16 totalTileDimensions,
                     uint16 tileChunkDimensions);

@@ -26,6 +26,32 @@
 #include "tilemap.h"
 #include "player.h"
 
+internal_func
+void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
+                            uint8 *startingAddress,
+                            sizet maximumSizeInBytes)
+{
+    memoryBlock->startingAddress    = startingAddress;
+    memoryBlock->totalSizeInBytes   = maximumSizeInBytes;
+    memoryBlock->bytesUsed          = 0;
+}
+
+internal_func
+void *GameMemoryBlockPushStruct(GameMemoryBlock *memoryBlock, sizet structSize)
+{
+    void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
+    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + structSize);
+    return startingAddress;
+}
+internal_func
+void *GameMemoryBlockPushArray(GameMemoryBlock *memoryBlock, sizet typeSize, sizet noOfElements)
+{
+    void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
+    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + (typeSize * noOfElements));
+    return startingAddress;
+}
+
+
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     /**
@@ -46,16 +72,48 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     TILE_CHUNK_DIMENSIONS);
 
         // Init the World
-        World world = { 0 };
-        initWorld(&world, tilemap, WORLD_PIXELS_PER_METER);
+        initGameMemoryBlock(&gameState->worldMemoryBlock,
+                            (uint8 *)(gameState + 1),
+                            (sizet)(memory->permanentStorageSizeInBytes - sizeof(GameState)));
 
-        gameState->world = world;
+        gameState->world = (World *)GameMemoryBlockPushStruct(&gameState->worldMemoryBlock, sizeof(World));
+        initWorld(gameState->world, tilemap, WORLD_PIXELS_PER_METER);
+
+        // Tilemap 2
+        gameState->world->tilemap.tiles = (uint32 *)GameMemoryBlockPushArray(&gameState->worldMemoryBlock,
+                                                                                sizeof(uint8),
+                                                                                gameState->world->tilemap.totalTileDimensions * gameState->world->tilemap.totalTileDimensions);
+
+        uint32 *singleTile = gameState->world->tilemap.tiles;
+        for (size_t y = 0; y < gameState->world->tilemap.totalTileDimensions; y++) {
+            for (size_t x = 0; x < gameState->world->tilemap.totalTileDimensions; x++) {
+                uint32 tileValue = 0;
+                if (0 == y
+                        || 0 == x
+                        || x == (gameState->world->tilemap.totalTileDimensions -1)
+                        || y == (gameState->world->tilemap.totalTileDimensions -1) ){
+                    tileValue = 2; 
+                } else {
+                    if ((x == y) && (y % 2)){
+                        tileValue = 2;
+                    }else{
+                        tileValue = 0;
+                    }
+                }
+                *singleTile = tileValue;
+                singleTile += 1;
+            }
+        }
 
         // Character attributes
         gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
         gameState->player1.widthMeters   = ((float32)gameState->player1.heightMeters * 0.65f);
-        gameState->player1.heightPx  = (int16)metersToPixels(world, gameState->player1.heightMeters);
-        gameState->player1.widthPx   = (int16)metersToPixels(world, gameState->player1.widthMeters);
+        gameState->player1.heightPx  = (int16)metersToPixels((*gameState->world), gameState->player1.heightMeters);
+        gameState->player1.widthPx   = (int16)metersToPixels((*gameState->world), gameState->player1.widthMeters);
+
+        // Tiles should be bigger than the player.
+        assert(gameState->world->tilemap.tileHeightPx > gameState->player1.heightPx);
+        assert(gameState->world->tilemap.tileWidthPx > gameState->player1.widthPx);
 
         // Movement speed (assume always running)
         // https://www.calculateme.com/speed/kilometers-per-hour/to-meters-per-second/13
@@ -119,13 +177,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Draw the tile map.
     // @NOTE(JM) Drawing this pixel by pixel, this is incapable of hitting 60fps
     // @TODO(JM) Optimise this!
+    Tilemap tilemap = (*gameState->world).tilemap;
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
 
-            uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / gameState->world.tilemap.tileHeightPx), gameState->world.tilemap.totalTileDimensions);
-            uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / gameState->world.tilemap.tileWidthPx), gameState->world.tilemap.totalTileDimensions);
+            uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx), tilemap.totalTileDimensions);
+            uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx), tilemap.totalTileDimensions);
 
-            uint32 *tileValue = ((uint32*)gameState->world.tilemap.tiles + ((tilePosY * gameState->world.tilemap.totalTileDimensions) + tilePosX));
+            uint32 *tileValue = (tilemap.tiles + ((tilePosY * tilemap.totalTileDimensions) + tilePosX));
 
             // Null pointer check
             if (!tileValue) {

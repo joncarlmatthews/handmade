@@ -75,15 +75,15 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     positionData->activeTile.pixelCoordinates.y = (uint32)y;
 
     // X and Y position coordinates of the tile (relative to the world)
-    positionData->activeTile.tileIndex.x = (int32)floorf(x / (float32)gameState->world.tilemap.tileWidthPx);
-    positionData->activeTile.tileIndex.y = (int32)floorf(y / (float32)gameState->world.tilemap.tileHeightPx);
+    positionData->activeTile.tileIndex.x = (int32)floorf(x / (float32)(*gameState->world).tilemap.tileWidthPx);
+    positionData->activeTile.tileIndex.y = (int32)floorf(y / (float32)(*gameState->world).tilemap.tileHeightPx);
 
-    positionData->activeTile.tileIndex.x = (modulo(positionData->activeTile.tileIndex.x, gameState->world.tilemap.totalTileDimensions));
-    positionData->activeTile.tileIndex.y = (modulo(positionData->activeTile.tileIndex.y, gameState->world.tilemap.totalTileDimensions));
+    positionData->activeTile.tileIndex.x = (modulo(positionData->activeTile.tileIndex.x, (*gameState->world).tilemap.totalTileDimensions));
+    positionData->activeTile.tileIndex.y = (modulo(positionData->activeTile.tileIndex.y, (*gameState->world).tilemap.totalTileDimensions));
 
     // Currently active tile chunk
-    positionData->activeTile.chunkIndex.x = (int32)floorf((float32)x / (float32)(gameState->world.worldWidthPx));
-    positionData->activeTile.chunkIndex.y = (int32)floorf((float32)y / (float32)(gameState->world.worldHeightPx));
+    positionData->activeTile.chunkIndex.x = (int32)floorf((float32)x / (float32)((*gameState->world).worldWidthPx));
+    positionData->activeTile.chunkIndex.y = (int32)floorf((float32)y / (float32)((*gameState->world).worldHeightPx));
 
     // @TODO(JM)
     positionData->activeTile.chunkRelativePixelCoordinates.x = 0;
@@ -93,16 +93,16 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     // @TODO(JM)
     positionData->activeTile.tileRelativePixelCoordinates.x = 0;
     positionData->activeTile.tileRelativePixelCoordinates.y = 0;
-    //positionData->activeTile.tileRelativePixelCoordinates.x = (positionData->activeTile.tileRelativePixelCoordinates.x - (positionData->activeTile.tileIndex.x * gameState->world.tilemap.tileWidthPx));
-    //positionData->activeTile.tileRelativePixelCoordinates.y = (positionData->activeTile.tileRelativePixelCoordinates.y - (positionData->activeTile.tileIndex.y * gameState->world.tilemap.tileHeightPx));
+    //positionData->activeTile.tileRelativePixelCoordinates.x = (positionData->activeTile.tileRelativePixelCoordinates.x - (positionData->activeTile.tileIndex.x * (*gameState->world).tilemap.tileWidthPx));
+    //positionData->activeTile.tileRelativePixelCoordinates.y = (positionData->activeTile.tileRelativePixelCoordinates.y - (positionData->activeTile.tileIndex.y * (*gameState->world).tilemap.tileHeightPx));
 }
 
 void playerHandleMovement(GameState *gameState,
-    GameMemory *memory,
-    GameFrameBuffer *frameBuffer,
-    GameAudioBuffer *audioBuffer,
-    GameInput *gameInput,
-    uint8 selectedController)
+                            GameMemory *memory,
+                            GameFrameBuffer *frameBuffer,
+                            GameAudioBuffer *audioBuffer,
+                            GameInput *gameInput,
+                            uint8 selectedController)
 {
     GameControllerInput controller = gameInput->controllers[selectedController];
 
@@ -113,7 +113,7 @@ void playerHandleMovement(GameState *gameState,
     // Normalise pixel movement regardless of framerate
     // @NOTE(JM) The truncated fractions cause issues with different framerates.
     // Not sure how to resolve at this point.
-    float32 pixelsPerSecond = (gameState->world.pixelsPerMetre * gameState->player1.movementSpeedMPS);
+    float32 pixelsPerSecond = ((*gameState->world).pixelsPerMeter * gameState->player1.movementSpeedMPS);
     float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
 
     // Ensure the player can at least move!
@@ -179,8 +179,8 @@ pixelsPerFrame);
     if (playerAttemptingMove) {
 
         xyuint playerNewPos = { 0 };
-        playerNewPos.x = modulo(playerNewPosTmp.x, gameState->world.worldWidthPx);
-        playerNewPos.y = modulo(playerNewPosTmp.y, gameState->world.worldHeightPx);
+        playerNewPos.x = modulo(playerNewPosTmp.x, (*gameState->world).worldWidthPx);
+        playerNewPos.y = modulo(playerNewPosTmp.y, (*gameState->world).worldHeightPx);
 
         // Player movement direction
         uint32 movedUp = 0;
@@ -231,9 +231,9 @@ pixelsPerFrame);
         // Can the move to the new tile be taken?
         // @NOTE(JM) bug where rounding means player doesnt get a close as
         // possible to certain tiles when a move is invalid
-        if ((false == (isTilemapTileFree(gameState->world.tilemap, &middle)))
-            || (false == (isTilemapTileFree(gameState->world.tilemap, &bottomLeft)))
-            || (false == (isTilemapTileFree(gameState->world.tilemap, &bottomRight)))) {
+        if ((false == (isTilemapTileFree((*gameState->world).tilemap, &middle)))
+            || (false == (isTilemapTileFree((*gameState->world).tilemap, &bottomLeft)))
+            || (false == (isTilemapTileFree((*gameState->world).tilemap, &bottomRight)))) {
 
 #if 0
 #ifdef HANDMADE_DEBUG_TILE_POS

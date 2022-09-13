@@ -1,14 +1,14 @@
 #ifndef HEADER_HH_GAME
 #define HEADER_HH_GAME
 
+#include "types.h"
 #include "tilemap.h"
-#include "tilemaps.h"
 #include "player.h"
 
 #if HANDMADE_LOCAL_BUILD
 
     // Flags:
-    #define HANDMADE_DEBUG_TILE_POS
+    //#define HANDMADE_DEBUG_TILE_POS
     // #define HANDMADE_LIVE_LOOP_EDITING
     // #define HANDMADE_DEBUG
     // #define HANDMADE_DEBUG_FPS
@@ -296,12 +296,19 @@ typedef struct SineWave
 //
 // Game state & memory
 //====================================================
+typedef struct GameMemoryBlock
+{
+    uint8 *startingAddress; // 8 or 4 bytes in size. uint8 to step 1 byte at a time
+    sizet totalSizeInBytes;
+    sizet bytesUsed;
+} GameMemoryBlock;
+
 typedef struct GameState
 {
     Player player1;
-    SineWave sineWave;
 
-    World world;
+    GameMemoryBlock worldMemoryBlock;
+    World *world;
 
     // The currently active world position based off of the player's absolute position
     TilemapCoordinates worldPosition;
@@ -309,6 +316,8 @@ typedef struct GameState
     // X and Y pixel coordinates for the camera's starting position (to start drawing from)
     // Camera is drawn out to dimensions of GameFrameBuffer.width/height
     xyuint cameraPositionPx;
+
+    SineWave sineWave;
 } GameState;
 
 typedef struct GameMemory

@@ -10,16 +10,16 @@
 typedef struct World {
 
     // Height and width in pixels of the entire World 
-    uint16 worldHeightPx;
-    uint16 worldWidthPx;
+    uint32 worldHeightPx;
+    uint32 worldWidthPx;
 
     // How many pixels = 1 meter in our World?
-    uint16 pixelsPerMetre;
+    uint16 pixelsPerMeter;
 
     Tilemap tilemap;
 } World;
 
-void initWorld(World *world, Tilemap tilemap, uint32 pixelsPerMetre);
+void initWorld(World *world, Tilemap tilemap, uint32 pixelsPerMeter);
 
 typedef struct GameState GameState;
 typedef struct GameFrameBuffer GameFrameBuffer;

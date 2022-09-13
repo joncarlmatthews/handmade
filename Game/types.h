@@ -38,6 +38,8 @@ typedef unsigned long long  uint64;     // 8 bytes
 typedef float               float32;    // 4 bytes
 typedef double              float64;    // 8 bytes
 
+typedef size_t              sizet;      // To represent the size or count of something
+
 // Boolean
 // @NOTE(JM) The type "bool" is now part of the C++ fundamental
 // types. It can have values of either "true" or "false"

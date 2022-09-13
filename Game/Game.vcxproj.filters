@@ -21,9 +21,6 @@
     <ClInclude Include="types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tilemaps.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>

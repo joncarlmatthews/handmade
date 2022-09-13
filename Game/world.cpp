@@ -8,9 +8,9 @@
 
 void initWorld(World *world,
                 Tilemap tilemap,
-                uint32 pixelsPerMetre)
+                uint32 pixelsPerMeter)
 {
-    world->pixelsPerMetre = (uint16)pixelsPerMetre;
+    world->pixelsPerMeter = (uint16)pixelsPerMeter;
 
     world->worldHeightPx = (tilemap.tileHeightPx * tilemap.totalTileDimensions);
     world->worldWidthPx = (tilemap.tileWidthPx * tilemap.totalTileDimensions);
@@ -31,15 +31,15 @@ void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
     gameState->worldPosition.pixelCoordinates.y = (int32)floorf(y);
 
     // Calculate the absolute x and y tile index relative to the World
-    uint32 tileIndexX = (int32)floorf((float32)x / (float32)gameState->world.tilemap.tileWidthPx);
-    uint32 tileIndexY = (int32)floorf((float32)y / (float32)gameState->world.tilemap.tileHeightPx);
+    uint32 tileIndexX = (int32)floorf((float32)x / (float32)(*gameState->world).tilemap.tileWidthPx);
+    uint32 tileIndexY = (int32)floorf((float32)y / (float32)(*gameState->world).tilemap.tileHeightPx);
 
-    gameState->worldPosition.tileIndex.x = (modulo(tileIndexX, gameState->world.tilemap.totalTileDimensions));
-    gameState->worldPosition.tileIndex.y = (modulo(tileIndexY, gameState->world.tilemap.totalTileDimensions));
+    gameState->worldPosition.tileIndex.x = (modulo(tileIndexX, (*gameState->world).tilemap.totalTileDimensions));
+    gameState->worldPosition.tileIndex.y = (modulo(tileIndexY, (*gameState->world).tilemap.totalTileDimensions));
 
     // Calculate the x and y tile chunk index relative to the world
-    gameState->worldPosition.chunkIndex.x = (int32)floorf((float32)x / (float32)(gameState->world.tilemap.tileWidthPx * gameState->world.tilemap.tileChunkDimensions));
-    gameState->worldPosition.chunkIndex.y = (int32)floorf((float32)y / (float32)(gameState->world.tilemap.tileHeightPx * gameState->world.tilemap.tileChunkDimensions));
+    gameState->worldPosition.chunkIndex.x = (int32)floorf((float32)x / (float32)((*gameState->world).tilemap.tileWidthPx * (*gameState->world).tilemap.tileChunkDimensions));
+    gameState->worldPosition.chunkIndex.y = (int32)floorf((float32)y / (float32)((*gameState->world).tilemap.tileHeightPx * (*gameState->world).tilemap.tileChunkDimensions));
 
     // @TODO(JM)
     gameState->worldPosition.chunkRelativePixelCoordinates.x = 0;
@@ -50,13 +50,13 @@ void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
     gameState->worldPosition.tileRelativePixelCoordinates.y = 0;
 
     // Update the camera position
-    gameState->cameraPositionPx.x = modulo((gameState->player1.absolutePosition.x - (frameBuffer->widthPx / 2)), gameState->world.worldWidthPx);
-    gameState->cameraPositionPx.y = modulo((gameState->player1.absolutePosition.y - (frameBuffer->heightPx / 2)), gameState->world.worldHeightPx);
+    gameState->cameraPositionPx.x = modulo((gameState->player1.absolutePosition.x - (frameBuffer->widthPx / 2)), (*gameState->world).worldWidthPx);
+    gameState->cameraPositionPx.y = modulo((gameState->player1.absolutePosition.y - (frameBuffer->heightPx / 2)), (*gameState->world).worldHeightPx);
 }
 
 int64 metersToPixels(World world, float32 metres)
 {
-    float32 pixels = (world.pixelsPerMetre * metres);
+    float32 pixels = (world.pixelsPerMeter * metres);
     return (int64)pixels;
 }
 
