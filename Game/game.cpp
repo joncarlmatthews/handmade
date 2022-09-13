@@ -26,32 +26,6 @@
 #include "tilemap.h"
 #include "player.h"
 
-internal_func
-void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
-                            uint8 *startingAddress,
-                            sizet maximumSizeInBytes)
-{
-    memoryBlock->startingAddress    = startingAddress;
-    memoryBlock->totalSizeInBytes   = maximumSizeInBytes;
-    memoryBlock->bytesUsed          = 0;
-}
-
-internal_func
-void *GameMemoryBlockPushStruct(GameMemoryBlock *memoryBlock, sizet structSize)
-{
-    void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
-    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + structSize);
-    return startingAddress;
-}
-internal_func
-void *GameMemoryBlockPushArray(GameMemoryBlock *memoryBlock, sizet typeSize, sizet noOfElements)
-{
-    void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
-    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + (typeSize * noOfElements));
-    return startingAddress;
-}
-
-
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     /**
@@ -409,6 +383,31 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
         // Write another 4 to the running byte group index.
         byteGroupIndex = (uint32)((uint64)(byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
     }
+}
+
+internal_func
+void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
+                            uint8 *startingAddress,
+                            sizet maximumSizeInBytes)
+{
+    memoryBlock->startingAddress    = startingAddress;
+    memoryBlock->totalSizeInBytes   = maximumSizeInBytes;
+    memoryBlock->bytesUsed          = 0;
+}
+
+internal_func
+void *GameMemoryBlockPushStruct(GameMemoryBlock *memoryBlock, sizet structSize)
+{
+    void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
+    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + structSize);
+    return startingAddress;
+}
+internal_func
+void *GameMemoryBlockPushArray(GameMemoryBlock *memoryBlock, sizet typeSize, sizet noOfElements)
+{
+    void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
+    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + (typeSize * noOfElements));
+    return startingAddress;
 }
 
 EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)

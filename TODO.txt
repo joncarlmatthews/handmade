@@ -4,7 +4,7 @@
     - Tilemap has a number of tile chunks. Each tile chunk has n number of tiles
     - absolute tile x and y
     - which 256x256 chunk are we viewing?
-    - chunk relative tile x and y
+    - chunk relative tile x and ys
 
 Ongoing:
 - Slow frame rate (now that we're rendering pixel by pixel)
