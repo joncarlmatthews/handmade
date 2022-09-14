@@ -6,36 +6,24 @@
 #include "player.h"
 #include "utility.h"
 
+/**
+ * @brief Sets the tilemap pixel coordinates for the World's active tile.
+ * Active tile is based off of the bottom middle position of the player.
+ * 
+ * @param gameState 
+ * @param frameBuffer 
+*/
 void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
 {
-    // Active tile is based off of the bottom middle position of the player.
-
     // Get the pixel coordinates of the bottom middle of the player.
     float32 yPixelInset = 0.0f;
     float32 x = ((float32)gameState->player1.absolutePosition.x + (float32)gameState->player1.widthPx / 2.0f);
     float32 y = ((float32)gameState->player1.absolutePosition.y + yPixelInset);
 
-    gameState->worldPosition.pixelCoordinates.x = (int32)floorf(x);
-    gameState->worldPosition.pixelCoordinates.y = (int32)floorf(y);
+    x = floorf(x);
+    y = floorf(y);
 
-    // Calculate the absolute x and y tile index relative to the World
-    uint32 tileIndexX = (int32)floorf((float32)x / (float32)(*gameState->world).tilemap.tileWidthPx);
-    uint32 tileIndexY = (int32)floorf((float32)y / (float32)(*gameState->world).tilemap.tileHeightPx);
-
-    gameState->worldPosition.tileIndex.x = (modulo(tileIndexX, (*gameState->world).tilemap.tileDimensions));
-    gameState->worldPosition.tileIndex.y = (modulo(tileIndexY, (*gameState->world).tilemap.tileDimensions));
-
-    // Calculate the x and y tile chunk index relative to the world
-    gameState->worldPosition.chunkIndex.x = (int32)floorf((float32)x / (float32)((*gameState->world).tilemap.tileWidthPx * (*gameState->world).tilemap.tileChunkTileDimensions));
-    gameState->worldPosition.chunkIndex.y = (int32)floorf((float32)y / (float32)((*gameState->world).tilemap.tileHeightPx * (*gameState->world).tilemap.tileChunkTileDimensions));
-
-    // @TODO(JM)
-    gameState->worldPosition.chunkRelativePixelCoordinates.x = 0;
-    gameState->worldPosition.chunkRelativePixelCoordinates.y = 0;
-
-    // @TODO(JM)
-    gameState->worldPosition.tileRelativePixelCoordinates.x = 0;
-    gameState->worldPosition.tileRelativePixelCoordinates.y = 0;
+    setCoordinateData(&gameState->worldPosition, (uint32)x, (uint32)y, gameState->world->tilemap);
 
     // Update the camera position
     gameState->cameraPositionPx.x = modulo((gameState->player1.absolutePosition.x - (frameBuffer->widthPx / 2)), (*gameState->world).worldWidthPx);

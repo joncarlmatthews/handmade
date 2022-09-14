@@ -43,7 +43,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                             (sizet)(memory->permanentStorageSizeInBytes - sizeof(GameState)));
 
         gameState->world = (World *)GameMemoryBlockReserveStruct(&gameState->worldMemoryBlock, sizeof(World));
-        //initWorld(gameState->world, tilemap, WORLD_PIXELS_PER_METER);
 
         // Init the Tilemap
         initTilemap(&gameState->worldMemoryBlock,
@@ -96,7 +95,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert(gameState->world->tilemap.tileWidthPx > gameState->player1.widthPx);
 
         // Movement speed (assume always running)
-        // https://www.calculateme.com/speed/kilometers-per-hour/to-meters-per-second/13
         gameState->player1.movementSpeedMPS = PLAYER_SPEED;
         gameState->player1.totalJumpMovement = 15.0f;
 

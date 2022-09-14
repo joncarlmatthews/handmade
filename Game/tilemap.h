@@ -46,9 +46,6 @@ typedef struct Tilemap
     // Total number of tiles within all of the tile chunks
     uint32 totalTiles;
 
-    uint32 tileChunkMask; // @TODO(JM)
-    uint32 tileChunkShift; // @TODO(JM)
-
     // Height and width in pixels of an individual tile 
     uint16 tileHeightPx;
     uint16 tileWidthPx;
@@ -64,7 +61,6 @@ typedef struct Tilemap
 
 typedef struct TilemapCoordinates
 {
-
     // The absolute pixel coordinates (relative to the entire tilemap)
     xyuint pixelCoordinates;
 
@@ -73,6 +69,9 @@ typedef struct TilemapCoordinates
 
     // X and Y index of the current tile chunk
     xyuint chunkIndex;
+
+    // X and Y tile index relative to the tile chunk
+    xyuint chunkRelativeTileIndex;
 
     // The pixel coordinates relative to the tile chunk the pixelCoordinates are in
     xyuint chunkRelativePixelCoordinates;
@@ -90,6 +89,11 @@ void initTilemap(GameMemoryBlock *memoryBlock,
                     uint16 tileChunkDimensions,
                     uint16 tileChunkTileDimensions,
                     float32 tileDimensionsMeters);
+
+void setCoordinateData(TilemapCoordinates *coordinates,
+                        uint32 pixelX,
+                        uint32 pixelY,
+                        Tilemap tilemap);
 
 typedef struct PlayerPositionData PlayerPositionData;
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData);

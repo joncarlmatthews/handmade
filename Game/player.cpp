@@ -70,31 +70,7 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
 
     positionData->pointPosition = pointPos;
 
-    // The absolute pixel position of the point (in relation to the world)
-    positionData->activeTile.pixelCoordinates.x = (uint32)x;
-    positionData->activeTile.pixelCoordinates.y = (uint32)y;
-
-    // X and Y position coordinates of the tile (relative to the world)
-    positionData->activeTile.tileIndex.x = (int32)floorf(x / (float32)(*gameState->world).tilemap.tileWidthPx);
-    positionData->activeTile.tileIndex.y = (int32)floorf(y / (float32)(*gameState->world).tilemap.tileHeightPx);
-
-    positionData->activeTile.tileIndex.x = (modulo(positionData->activeTile.tileIndex.x, (*gameState->world).tilemap.tileDimensions));
-    positionData->activeTile.tileIndex.y = (modulo(positionData->activeTile.tileIndex.y, (*gameState->world).tilemap.tileDimensions));
-
-    // Currently active tile chunk
-    positionData->activeTile.chunkIndex.x = (int32)floorf((float32)x / (float32)((*gameState->world).worldWidthPx));
-    positionData->activeTile.chunkIndex.y = (int32)floorf((float32)y / (float32)((*gameState->world).worldHeightPx));
-
-    // @TODO(JM)
-    positionData->activeTile.chunkRelativePixelCoordinates.x = 0;
-    positionData->activeTile.chunkRelativePixelCoordinates.y = 0;
-
-    // The tile relative pixel position of the point (in relation to the tile itself)
-    // @TODO(JM)
-    positionData->activeTile.tileRelativePixelCoordinates.x = 0;
-    positionData->activeTile.tileRelativePixelCoordinates.y = 0;
-    //positionData->activeTile.tileRelativePixelCoordinates.x = (positionData->activeTile.tileRelativePixelCoordinates.x - (positionData->activeTile.tileIndex.x * (*gameState->world).tilemap.tileWidthPx));
-    //positionData->activeTile.tileRelativePixelCoordinates.y = (positionData->activeTile.tileRelativePixelCoordinates.y - (positionData->activeTile.tileIndex.y * (*gameState->world).tilemap.tileHeightPx));
+    setCoordinateData(&positionData->activeTile, (uint32)x, (uint32)y, gameState->world->tilemap);
 }
 
 void playerHandleMovement(GameState *gameState,
@@ -274,11 +250,13 @@ gameState->player1.absolutePosition.y);
 Plr World Pos x:%i y:%i. \
 World Tile x:%i y:%i. \
 Chunk Index x:%i y:%i. \
+Chunk Tile x:%i y:%i. \
 Camera pos x:%i y:%i. \
 \n",
 gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
 gameState->worldPosition.tileIndex.x, gameState->worldPosition.tileIndex.y,
 gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
+gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chunkRelativeTileIndex.y,
 gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
 );
                 memory->DEBUG_platformLog(buff);

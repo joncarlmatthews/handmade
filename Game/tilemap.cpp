@@ -1,8 +1,9 @@
+#include <math.h>
 #include "types.h"
 #include "tilemap.h"
 #include "game.h"
 #include "player.h"
-#include <math.h>
+#include "utility.h"
 
 void initTilemap(GameMemoryBlock *memoryBlock,
                     World *world,
@@ -41,6 +42,35 @@ void initTilemap(GameMemoryBlock *memoryBlock,
                                                                                                                                                     (world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions));
         }
     }
+}
+
+void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
+{
+    coordinates->pixelCoordinates.x = pixelX;
+    coordinates->pixelCoordinates.y = pixelY;
+
+    // Calculate the absolute x and y tile index relative to the entire tilemap
+    uint32 tileIndexX = (int32)floorf((float32)pixelX / (float32)tilemap.tileWidthPx);
+    uint32 tileIndexY = (int32)floorf((float32)pixelY / (float32)tilemap.tileHeightPx);
+
+    coordinates->tileIndex.x = (modulo(tileIndexX, tilemap.tileDimensions));
+    coordinates->tileIndex.y = (modulo(tileIndexY, tilemap.tileDimensions));
+
+    // Calculate the x and y tile chunk index relative to the entire tilemap
+    coordinates->chunkIndex.x = (int32)floorf((float32)pixelX / (float32)(tilemap.tileWidthPx * tilemap.tileChunkTileDimensions));
+    coordinates->chunkIndex.y = (int32)floorf((float32)pixelY / (float32)(tilemap.tileHeightPx * tilemap.tileChunkTileDimensions));
+
+    // @TODO(JM)
+    coordinates->chunkRelativeTileIndex.x = modulo(coordinates->tileIndex.x, tilemap.tileChunkTileDimensions);
+    coordinates->chunkRelativeTileIndex.y = modulo(coordinates->tileIndex.y, tilemap.tileChunkTileDimensions);
+
+    // @TODO(JM)
+    coordinates->chunkRelativePixelCoordinates.x = 0;
+    coordinates->chunkRelativePixelCoordinates.y = 0;
+
+    // @TODO(JM)
+    coordinates->tileRelativePixelCoordinates.x = 0;
+    coordinates->tileRelativePixelCoordinates.y = 0;
 }
 
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData)
