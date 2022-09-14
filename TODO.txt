@@ -1,14 +1,10 @@
 -/ Move tilemap to memory
--x Implement tileChunks
+-/ Implement tileChunks
 -x Implement chunk mask & shift
-    - Tilemap has a number of tile chunks. Each tile chunk has n number of tiles
-    - absolute tile x and y
-    - which 256x256 chunk are we viewing?
-    - chunk relative tile x and ys
 
 Ongoing:
-- Slow frame rate (now that we're rendering pixel by pixel)
-- Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
-- Diagonal speed bug (will fix when implement vectors)
-- Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
-- Postfix pixel variables with Px (tidy up, where appropiate)
+-x Slow frame rate (now that we're rendering pixel by pixel)
+-x Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
+-x Diagonal speed bug (will fix when implement vectors)
+-x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
+-x Postfix pixel variables with Px (tidy up, where appropiate)

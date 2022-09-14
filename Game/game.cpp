@@ -37,35 +37,41 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-        // Init the Tilemap
-        Tilemap tilemap = { 0 };
-        initTilemap(&tilemap,
-                    WORLD_PIXELS_PER_METER,
-                    TILE_DIMENSIONS_METERS,
-                    TOTAL_TILE_DIMENSIONS,
-                    TILE_CHUNK_DIMENSIONS);
-
         // Init the World
         initGameMemoryBlock(&gameState->worldMemoryBlock,
                             (uint8 *)(gameState + 1),
                             (sizet)(memory->permanentStorageSizeInBytes - sizeof(GameState)));
 
-        gameState->world = (World *)GameMemoryBlockPushStruct(&gameState->worldMemoryBlock, sizeof(World));
-        initWorld(gameState->world, tilemap, WORLD_PIXELS_PER_METER);
+        gameState->world = (World *)GameMemoryBlockReserveStruct(&gameState->worldMemoryBlock, sizeof(World));
+        //initWorld(gameState->world, tilemap, WORLD_PIXELS_PER_METER);
 
-        // Tilemap 2
-        gameState->world->tilemap.tiles = (uint32 *)GameMemoryBlockPushArray(&gameState->worldMemoryBlock,
-                                                                                sizeof(uint8),
-                                                                                gameState->world->tilemap.totalTileDimensions * gameState->world->tilemap.totalTileDimensions);
+        // Init the Tilemap
+        initTilemap(&gameState->worldMemoryBlock,
+                    gameState->world,
+                    WORLD_PIXELS_PER_METER,
+                    TILE_CHUNK_DIMENSIONS,
+                    TILE_CHUNK_TILE_DIMENSIONS,
+                    TILE_DIMENSIONS_METERS);
 
-        uint32 *singleTile = gameState->world->tilemap.tiles;
-        for (size_t y = 0; y < gameState->world->tilemap.totalTileDimensions; y++) {
-            for (size_t x = 0; x < gameState->world->tilemap.totalTileDimensions; x++) {
+        (*gameState->world).pixelsPerMeter  = (uint16)WORLD_PIXELS_PER_METER;
+        (*gameState->world).worldHeightPx   = (((*gameState->world).tilemap.tileHeightPx * (*gameState->world).tilemap.tileChunkTileDimensions) * (*gameState->world).tilemap.tileChunkDimensions);
+        (*gameState->world).worldWidthPx    = (*gameState->world).worldHeightPx;
+
+        // The total pixel size of the world should be at least as big as one screen size
+        assert((*gameState->world).worldHeightPx > frameBuffer->heightPx);
+        assert((*gameState->world).worldWidthPx > frameBuffer->widthPx);
+
+        // Write the tilemap values
+        World world = *gameState->world;
+        Tilemap tilemap = world.tilemap;
+        uint32 *singleTile = tilemap.tileChunks->tiles;
+        for (size_t y = 0; y < gameState->world->tilemap.tileDimensions; y++) {
+            for (size_t x = 0; x < gameState->world->tilemap.tileDimensions; x++) {
                 uint32 tileValue = 0;
                 if (0 == y
                         || 0 == x
-                        || x == (gameState->world->tilemap.totalTileDimensions -1)
-                        || y == (gameState->world->tilemap.totalTileDimensions -1) ){
+                        || x == (gameState->world->tilemap.tileDimensions -1)
+                        || y == (gameState->world->tilemap.tileDimensions -1) ){
                     tileValue = 2; 
                 } else {
                     if ((x == y) && (y % 2)){
@@ -155,10 +161,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
 
-            uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx), tilemap.totalTileDimensions);
-            uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx), tilemap.totalTileDimensions);
+            uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx), tilemap.tileDimensions);
+            uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx), tilemap.tileDimensions);
 
-            uint32 *tileValue = (tilemap.tiles + ((tilePosY * tilemap.totalTileDimensions) + tilePosX));
+            uint32 *tileValue = (tilemap.tileChunks->tiles + ((tilePosY * tilemap.tileDimensions) + tilePosX));
 
             // Null pointer check
             if (!tileValue) {
@@ -385,7 +391,6 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
     }
 }
 
-internal_func
 void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
                             uint8 *startingAddress,
                             sizet maximumSizeInBytes)
@@ -395,15 +400,13 @@ void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
     memoryBlock->bytesUsed          = 0;
 }
 
-internal_func
-void *GameMemoryBlockPushStruct(GameMemoryBlock *memoryBlock, sizet structSize)
+void *GameMemoryBlockReserveStruct(GameMemoryBlock *memoryBlock, sizet structSize)
 {
     void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
     memoryBlock->bytesUsed = (memoryBlock->bytesUsed + structSize);
     return startingAddress;
 }
-internal_func
-void *GameMemoryBlockPushArray(GameMemoryBlock *memoryBlock, sizet typeSize, sizet noOfElements)
+void *GameMemoryBlockReserveArray(GameMemoryBlock *memoryBlock, sizet typeSize, sizet noOfElements)
 {
     void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
     memoryBlock->bytesUsed = (memoryBlock->bytesUsed + (typeSize * noOfElements));

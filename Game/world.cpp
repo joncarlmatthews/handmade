@@ -6,18 +6,6 @@
 #include "player.h"
 #include "utility.h"
 
-void initWorld(World *world,
-                Tilemap tilemap,
-                uint32 pixelsPerMeter)
-{
-    world->pixelsPerMeter = (uint16)pixelsPerMeter;
-
-    world->worldHeightPx = (tilemap.tileHeightPx * tilemap.totalTileDimensions);
-    world->worldWidthPx = (tilemap.tileWidthPx * tilemap.totalTileDimensions);
-
-    world->tilemap = tilemap;
-}
-
 void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
 {
     // Active tile is based off of the bottom middle position of the player.
@@ -34,12 +22,12 @@ void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
     uint32 tileIndexX = (int32)floorf((float32)x / (float32)(*gameState->world).tilemap.tileWidthPx);
     uint32 tileIndexY = (int32)floorf((float32)y / (float32)(*gameState->world).tilemap.tileHeightPx);
 
-    gameState->worldPosition.tileIndex.x = (modulo(tileIndexX, (*gameState->world).tilemap.totalTileDimensions));
-    gameState->worldPosition.tileIndex.y = (modulo(tileIndexY, (*gameState->world).tilemap.totalTileDimensions));
+    gameState->worldPosition.tileIndex.x = (modulo(tileIndexX, (*gameState->world).tilemap.tileDimensions));
+    gameState->worldPosition.tileIndex.y = (modulo(tileIndexY, (*gameState->world).tilemap.tileDimensions));
 
     // Calculate the x and y tile chunk index relative to the world
-    gameState->worldPosition.chunkIndex.x = (int32)floorf((float32)x / (float32)((*gameState->world).tilemap.tileWidthPx * (*gameState->world).tilemap.tileChunkDimensions));
-    gameState->worldPosition.chunkIndex.y = (int32)floorf((float32)y / (float32)((*gameState->world).tilemap.tileHeightPx * (*gameState->world).tilemap.tileChunkDimensions));
+    gameState->worldPosition.chunkIndex.x = (int32)floorf((float32)x / (float32)((*gameState->world).tilemap.tileWidthPx * (*gameState->world).tilemap.tileChunkTileDimensions));
+    gameState->worldPosition.chunkIndex.y = (int32)floorf((float32)y / (float32)((*gameState->world).tilemap.tileHeightPx * (*gameState->world).tilemap.tileChunkTileDimensions));
 
     // @TODO(JM)
     gameState->worldPosition.chunkRelativePixelCoordinates.x = 0;

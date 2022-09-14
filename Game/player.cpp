@@ -78,8 +78,8 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     positionData->activeTile.tileIndex.x = (int32)floorf(x / (float32)(*gameState->world).tilemap.tileWidthPx);
     positionData->activeTile.tileIndex.y = (int32)floorf(y / (float32)(*gameState->world).tilemap.tileHeightPx);
 
-    positionData->activeTile.tileIndex.x = (modulo(positionData->activeTile.tileIndex.x, (*gameState->world).tilemap.totalTileDimensions));
-    positionData->activeTile.tileIndex.y = (modulo(positionData->activeTile.tileIndex.y, (*gameState->world).tilemap.totalTileDimensions));
+    positionData->activeTile.tileIndex.x = (modulo(positionData->activeTile.tileIndex.x, (*gameState->world).tilemap.tileDimensions));
+    positionData->activeTile.tileIndex.y = (modulo(positionData->activeTile.tileIndex.y, (*gameState->world).tilemap.tileDimensions));
 
     // Currently active tile chunk
     positionData->activeTile.chunkIndex.x = (int32)floorf((float32)x / (float32)((*gameState->world).worldWidthPx));

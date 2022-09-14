@@ -1,49 +1,53 @@
 #include "types.h"
 #include "tilemap.h"
+#include "game.h"
 #include "player.h"
+#include <math.h>
 
-void initTilemap(Tilemap *tilemap,
+void initTilemap(GameMemoryBlock *memoryBlock,
+                    World *world,
                     uint16 pixelsPerMeter,
-                    float32 tileDimensionsMeters,
-                    uint16 totalTileDimensions,
-                    uint16 tileChunkDimensions)
+                    uint16 tileChunkDimensions,
+                    uint16 tileChunkTileDimensions,
+                    float32 tileDimensionsMeters)
 {
-    tilemap->totalTileDimensions = totalTileDimensions;
-    tilemap->tileChunkDimensions = tileChunkDimensions;
-    tilemap->totalTileChunks = ((tilemap->totalTileDimensions / tilemap->tileChunkDimensions) * 2);
+    world->tilemap.tileChunkDimensions = tileChunkDimensions;
+    world->tilemap.totalTileChunks = (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkDimensions);
+    world->tilemap.tileChunkTileDimensions = tileChunkTileDimensions;
+    world->tilemap.tileDimensions = (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkTileDimensions);
+    world->tilemap.totalTiles = (world->tilemap.totalTileChunks * (world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions));
 
     // @TODO(JM)
-    //tilemap->tileChunkMask = 0xFF;
-    //tilemap->tileChunkShift = 8;
+    //world->tilemap.tileChunkMask = 0xFF;
+    //world->tilemap.tileChunkShift = 8;
 
     // @NOTE(JM) tiles and tile chunks are always square
-    tilemap->tileHeightPx = (uint16)(pixelsPerMeter * tileDimensionsMeters);
-    tilemap->tileWidthPx = tilemap->tileHeightPx;
-    tilemap->tileChunkHeightPx = (tilemap->tileHeightPx * tilemap->tileChunkDimensions);
-    tilemap->tileChunkWidthPx = tilemap->tileChunkHeightPx;
+    world->tilemap.tileHeightPx = (uint16)(pixelsPerMeter * tileDimensionsMeters);
+    world->tilemap.tileWidthPx = world->tilemap.tileHeightPx;
+    world->tilemap.tileChunkHeightPx = (world->tilemap.tileHeightPx * world->tilemap.tileChunkTileDimensions);
+    world->tilemap.tileChunkWidthPx = world->tilemap.tileChunkHeightPx;
 
-    // @NOTE(JM) not sure how to allocate this on the heap, as this array is
-    // too large for the stack...
-    #if 0
-    uint8 origTiles[TOTAL_TILE_DIMENSIONS][TOTAL_TILE_DIMENSIONS] = ALL_TILES;
+    // Reserve the tile chunk arrays from the memory block
+    world->tilemap.tileChunks = (TileChunk *)GameMemoryBlockReserveArray(memoryBlock,
+                                                                        sizeof(TileChunk),
+                                                                        world->tilemap.totalTileChunks);
 
-    // Copy the tiles into the world tiles, making it so that the Y axis
-    // goes up
-    uint32 worldY = 0;
-    for (int32 y = (TOTAL_TILE_DIMENSIONS-1); y >= 0; y--){
-        for (uint x = 0; x < TOTAL_TILE_DIMENSIONS; x++) {
-            tilemap->tiles[worldY][x] = (uint32)origTiles[y][x];
+
+    // Reserve the tiles within each tile chunk from the memory block
+    for (size_t tileChunkY = 0; tileChunkY < world->tilemap.tileChunkDimensions; tileChunkY++) {
+        for (size_t tileChunkX = 0; tileChunkX < world->tilemap.tileChunkDimensions; tileChunkX++) {
+            world->tilemap.tileChunks[(tileChunkY * world->tilemap.tileChunkDimensions) + tileChunkX].tiles = (uint32 *)GameMemoryBlockReserveArray(memoryBlock,
+                                                                                                                                                    sizeof(uint32),
+                                                                                                                                                    (world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions));
         }
-        worldY++;
     }
-    #endif
 }
 
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData)
 {
-    uint32 tileNumber = (playerPositionData->activeTile.tileIndex.y * tilemap.totalTileDimensions) + playerPositionData->activeTile.tileIndex.x;
+    uint32 tileNumber = (playerPositionData->activeTile.tileIndex.y * tilemap.tileDimensions) + playerPositionData->activeTile.tileIndex.x;
 
-    uint32 *tileState = (tilemap.tiles + tileNumber);
+    uint32 *tileState = (tilemap.tileChunks->tiles + tileNumber);
 
     if (tileState) {
         if (*tileState == 2) {

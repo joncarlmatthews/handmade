@@ -8,7 +8,7 @@
 #if HANDMADE_LOCAL_BUILD
 
     // Flags:
-    //#define HANDMADE_DEBUG_TILE_POS
+    #define HANDMADE_DEBUG_TILE_POS
     // #define HANDMADE_LIVE_LOOP_EDITING
     // #define HANDMADE_DEBUG
     // #define HANDMADE_DEBUG_FPS
@@ -375,25 +375,26 @@ typedef struct GameState
  * @param startingAddress 
  * @param maximumSizeInBytes 
 */
-internal_func
 void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
                             uint8 *startingAddress,
                             sizet maximumSizeInBytes);
 
 /**
- * @brief Fills part of the memory block with enough space for a given struct.
- * Returns the starting memory address of the struct
+ * @brief "Reserves" part of the memory block with enough space for a given struct.
+ * by keeping track of the starting address and size of the data type within
+ * the GameMemoryBlock. Doesnt write to any data.
+ * Returns the starting memory address of the struct.
  * 
  * @param memoryBlock 
  * @param structSize    Size in bytes of the struct
  * @return void*        memory address
 */
-internal_func
-void* GameMemoryBlockPushStruct(GameMemoryBlock *memoryBlock, sizet structSize);
+void* GameMemoryBlockReserveStruct(GameMemoryBlock *memoryBlock, sizet structSize);
 
-internal_func
 /**
- * @brief Fills part of the memory block with enough space for a given array.
+ * @brief "Reserves" part of the memory block with enough space for a given array.
+ * by keeping track of the starting address and size of the data type within
+ * the GameMemoryBlock. Doesnt write to any data.
  * Returns the starting memory address of the array
  * 
  * @param memoryBlock 
@@ -401,9 +402,9 @@ internal_func
  * @param noOfElements  How many elements in the array
  * @return void*       memory address
 */
-void* GameMemoryBlockPushArray(GameMemoryBlock *memoryBlock,
-                                sizet typeSize,
-                                sizet noOfElements);
+void* GameMemoryBlockReserveArray(GameMemoryBlock *memoryBlock,
+                                    sizet typeSize,
+                                    sizet noOfElements);
 
 //
 // Graphics

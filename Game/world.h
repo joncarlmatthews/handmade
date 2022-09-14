@@ -19,8 +19,6 @@ typedef struct World {
     Tilemap tilemap;
 } World;
 
-void initWorld(World *world, Tilemap tilemap, uint32 pixelsPerMeter);
-
 typedef struct GameState GameState;
 typedef struct GameFrameBuffer GameFrameBuffer;
 
