@@ -40,7 +40,7 @@ void initTilemap(GameMemoryBlock *memoryBlock,
         for (size_t tileChunkX = 0; tileChunkX < world->tilemap.tileChunkDimensions; tileChunkX++) {
             world->tilemap.tileChunks[(tileChunkY * world->tilemap.tileChunkDimensions) + tileChunkX].tiles = (uint32 *)GameMemoryBlockReserveArray(memoryBlock,
                                                                                                                                                     sizeof(uint32),
-                                                                                                                                                    (world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions));
+                                                                                                                                                    (sizet)(world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions));
         }
     }
 }
