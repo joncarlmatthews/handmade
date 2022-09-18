@@ -1570,14 +1570,15 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 
         BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
 
-#if defined(HANDMADE_DEBUG)
         if (!res) {
-            wchar_t buff[500] = { 0 };
-            swprintf_s(buff, 500, L"Game_temp.dll doesnt exist, but could not copy: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
-            OutputDebugString(buff);
-            assert(!"Game code can not be loaded");
+            #if defined(HANDMADE_DEBUG)
+                wchar_t buff[500] = { 0 };
+                swprintf_s(buff, 500, L"Game_temp.dll doesnt exist, but could not copy: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
+                OutputDebugString(buff);
+                assert(!"Game code can not be loaded");
+            #endif
+
         }
-#endif
 
         loadGameCode = true;
 
@@ -1597,25 +1598,26 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
             if (gameCode->dllHandle != 0x0) {
                 BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
 
-#if defined(HANDMADE_DEBUG)
                 if (!res) {
-                    wchar_t buff[500] = { 0 };
-                    swprintf_s(buff, 500, L"Could not free DLL handle: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
-                    OutputDebugString(buff);
+                    #if defined(HANDMADE_DEBUG)
+                        wchar_t buff[500] = { 0 };
+                        swprintf_s(buff, 500, L"Could not free DLL handle: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
+                        OutputDebugString(buff);
+                    #endif
                 }
-#endif
 
             }
 
             BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
 
-#if defined(HANDMADE_DEBUG)
+
             if (!res) {
-                wchar_t buff[500] = { 0 };
-                swprintf_s(buff, 500, L"DLL copy failed: 0x%X\n", GetLastError()); // 0x20 = The process cannot access the file because it is being used by another process.
-                OutputDebugString(buff);
+                #if defined(HANDMADE_DEBUG)
+                    wchar_t buff[500] = { 0 };
+                    swprintf_s(buff, 500, L"DLL copy failed: 0x%X\n", GetLastError()); // 0x20 = The process cannot access the file because it is being used by another process.
+                    OutputDebugString(buff);
+                #endif
             }
-#endif
 
             loadGameCode = true;
         } else {
