@@ -8,18 +8,14 @@
 //====================================================
 // Our tilemap is our entire game world
 
-// How many tiles does one side of the entire tilemap have?
-// 30x30 = 900
-//#define TOTAL_TILE_DIMENSIONS 30
+// How many "tile chunks" does one side of the enire tilemap have?
+// @NOTE(JM) temp as tilemap storage will be sparse
+#define TILE_CHUNK_DIMENSIONS 30
 
-// How many chunks does one side of the enire tilemap" have?
-#define TILE_CHUNK_DIMENSIONS 3
+// How many bits do we want to allocate to the tile chunk's tile dimensions?
+#define TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT 7
 
-// How many tiles does one side of a "tile chunk" have?
-// (Tile chunks are always square)
-#define TILE_CHUNK_TILE_DIMENSIONS 10
-
-// How many meters does one side of a tile have? (Tiles are always square)
+// How many meters does one side of an individual tile have? (Tiles are always square)
 #define TILE_DIMENSIONS_METERS 2.0f
 
 typedef struct TileChunk
@@ -32,27 +28,32 @@ typedef struct TileChunk
 typedef struct Tilemap
 {
     // Total number of tile chunks per one side of a tilemap
-    uint16 tileChunkDimensions;
+    uint32 tileChunkDimensions;
 
     // Total number of tile chunks within the tilemap
-    uint16 totalTileChunks;
+    // @NOTE(JM) temp as tilemap storage will be sparse
+    uint32 totalTileChunks;
 
     // Total number of tiles per one side of a tile chunk
-    uint16 tileChunkTileDimensions;
+    // (Tile chunks are always square)
+    uint32 tileChunkTileDimensionsBitShift;
+    uint32 tileChunkTileDimensionsBitMask;
+    uint32 tileChunkTileDimensions;
 
     // Total number of tiles across 1 whole side of the tilemap
     uint32 tileDimensions;
 
     // Total number of tiles within all of the tile chunks
-    uint32 totalTiles;
+    // @NOTE(JM) temp as tilemap storage will be sparse
+    uint64 totalTiles;
 
     // Height and width in pixels of an individual tile 
-    uint16 tileHeightPx;
-    uint16 tileWidthPx;
+    uint32 tileHeightPx;
+    uint32 tileWidthPx;
 
     // Height and width in pixels of each tile chunk 
-    uint16 tileChunkHeightPx;
-    uint16 tileChunkWidthPx;
+    uint32 tileChunkHeightPx;
+    uint32 tileChunkWidthPx;
 
     // Pointer to all of the tile chunks
     TileChunk *tileChunks;
@@ -86,8 +87,8 @@ typedef struct World World;
 void initTilemap(GameMemoryBlock *memoryBlock,
                     World *world,
                     uint16 pixelsPerMeter,
-                    uint16 tileChunkDimensions,
-                    uint16 tileChunkTileDimensions,
+                    uint32 tileChunkDimensions,
+                    uint32 tileChunkTileDimensionsShift,
                     float32 tileDimensionsMeters);
 
 void setCoordinateData(TilemapCoordinates *coordinates,

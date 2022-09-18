@@ -1,13 +1,14 @@
 Day 034:
 -/ Move tilemap to memory
 -/ Implement tileChunks
--x Implement chunk mask & shift
+-/ Implement chunk mask & shift
     - 32 bit integer.
     - Assuming 256x256 tile chunks:
         - bottom 8 bits would tell you which tile within the chunk
         - upper 24 bits would tell you which tile chunk
 
 Day 035:
+ -x Change how I draw the world so that wraps based on total possible tiles
  -x Implement sparse tilemap storage
 
 Ongoing:

@@ -8,27 +8,28 @@
 void initTilemap(GameMemoryBlock *memoryBlock,
                     World *world,
                     uint16 pixelsPerMeter,
-                    uint16 tileChunkDimensions,
-                    uint16 tileChunkTileDimensions,
+                    uint32 tileChunkDimensions,
+                    uint32 tileChunkTileDimensionsShift,
                     float32 tileDimensionsMeters)
 {
-    world->tilemap.tileChunkDimensions = tileChunkDimensions;
-    world->tilemap.totalTileChunks = (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkDimensions);
-    world->tilemap.tileChunkTileDimensions = tileChunkTileDimensions;
-    world->tilemap.tileDimensions = (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkTileDimensions);
-    world->tilemap.totalTiles = (world->tilemap.totalTileChunks * (world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions));
+    world->tilemap.tileChunkDimensions  = tileChunkDimensions;
+    world->tilemap.totalTileChunks      = (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkDimensions);
 
-    // @TODO(JM)
-    //world->tilemap.tileChunkMask = 0xFF;
-    //world->tilemap.tileChunkShift = 8;
+    world->tilemap.tileChunkTileDimensionsBitShift  = tileChunkTileDimensionsShift;
+    world->tilemap.tileChunkTileDimensionsBitMask   = ((1 << tileChunkTileDimensionsShift) - 1);
+    world->tilemap.tileChunkTileDimensions          = (1 << tileChunkTileDimensionsShift);
+
+    world->tilemap.tileDimensions = (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkTileDimensions);
+    world->tilemap.totalTiles = (uint64)((uint64)world->tilemap.totalTileChunks * (uint64)((uint64)world->tilemap.tileChunkTileDimensions * (uint64)world->tilemap.tileChunkTileDimensions));
 
     // @NOTE(JM) tiles and tile chunks are always square
-    world->tilemap.tileHeightPx = (uint16)(pixelsPerMeter * tileDimensionsMeters);
+    world->tilemap.tileHeightPx = (uint32)((uint32)pixelsPerMeter * tileDimensionsMeters);
     world->tilemap.tileWidthPx = world->tilemap.tileHeightPx;
     world->tilemap.tileChunkHeightPx = (world->tilemap.tileHeightPx * world->tilemap.tileChunkTileDimensions);
     world->tilemap.tileChunkWidthPx = world->tilemap.tileChunkHeightPx;
 
     // Reserve the tile chunk arrays from the memory block
+    // @TODO(JM) only reserve the memory if a tile exists within the chunk
     world->tilemap.tileChunks = (TileChunk *)GameMemoryBlockReserveArray(memoryBlock,
                                                                         sizeof(TileChunk),
                                                                         world->tilemap.totalTileChunks);

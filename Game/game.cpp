@@ -49,18 +49,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->world,
                     WORLD_PIXELS_PER_METER,
                     TILE_CHUNK_DIMENSIONS,
-                    TILE_CHUNK_TILE_DIMENSIONS,
+                    TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT,
                     TILE_DIMENSIONS_METERS);
 
         (*gameState->world).pixelsPerMeter  = (uint16)WORLD_PIXELS_PER_METER;
-        (*gameState->world).worldHeightPx   = (((*gameState->world).tilemap.tileHeightPx * (*gameState->world).tilemap.tileChunkTileDimensions) * (*gameState->world).tilemap.tileChunkDimensions);
+        (*gameState->world).worldHeightPx   = ((*gameState->world).tilemap.tileHeightPx * (*gameState->world).tilemap.tileDimensions);
         (*gameState->world).worldWidthPx    = (*gameState->world).worldHeightPx;
 
         // The total pixel size of the world should be at least as big as one screen size
         assert((*gameState->world).worldHeightPx > frameBuffer->heightPx);
         assert((*gameState->world).worldWidthPx > frameBuffer->widthPx);
 
-        // Write the tilemap values
+        // Spam some tile values into the tilemap
         World world = *gameState->world;
         Tilemap tilemap = world.tilemap;
         uint32 *singleTile = tilemap.tileChunks->tiles;
@@ -154,7 +154,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     // Draw the tile map.
     // @NOTE(JM) Drawing this pixel by pixel, this is incapable of hitting 60fps
-    // @TODO(JM) Optimise this!
+    // @TODO(JM) Optimise this!!!
     Tilemap tilemap = (*gameState->world).tilemap;
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
@@ -402,12 +402,14 @@ void *GameMemoryBlockReserveStruct(GameMemoryBlock *memoryBlock, sizet structSiz
 {
     void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
     memoryBlock->bytesUsed = (memoryBlock->bytesUsed + structSize);
+    assert(memoryBlock->bytesUsed <= memoryBlock->totalSizeInBytes);
     return startingAddress;
 }
 void *GameMemoryBlockReserveArray(GameMemoryBlock *memoryBlock, sizet typeSize, sizet noOfElements)
 {
     void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
     memoryBlock->bytesUsed = (memoryBlock->bytesUsed + (typeSize * noOfElements));
+    assert(memoryBlock->bytesUsed <= memoryBlock->totalSizeInBytes);
     return startingAddress;
 }
 
