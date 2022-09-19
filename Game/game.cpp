@@ -48,7 +48,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         initTilemap(&gameState->worldMemoryBlock,
                     gameState->world,
                     WORLD_PIXELS_PER_METER,
-                    TILE_CHUNK_DIMENSIONS,
+                    TILE_DIMENSIONS_BIT_SHIFT,
+                    TILE_CHUNK_DIMENSIONS_BIT_SHIFT,
                     TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT,
                     TILE_DIMENSIONS_METERS);
 
@@ -61,26 +62,28 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert((*gameState->world).worldWidthPx > frameBuffer->widthPx);
 
         // Spam some tile values into the tilemap
-        World world = *gameState->world;
-        Tilemap tilemap = world.tilemap;
-        uint32 *singleTile = tilemap.tileChunks->tiles;
-        for (size_t y = 0; y < gameState->world->tilemap.tileDimensions; y++) {
-            for (size_t x = 0; x < gameState->world->tilemap.tileDimensions; x++) {
-                uint32 tileValue = 0;
-                if (0 == y
-                        || 0 == x
-                        || x == (gameState->world->tilemap.tileDimensions -1)
-                        || y == (gameState->world->tilemap.tileDimensions -1) ){
-                    tileValue = 2; 
-                } else {
-                    if ((x == y) && (y % 2)){
-                        tileValue = 2;
+        World world         = *gameState->world;
+        Tilemap tilemap     = world.tilemap;
+        uint32 *singleTile  = tilemap.tileChunks->tiles;
+
+        uint32 rooms = 5;
+        uint32 roomTileDims = 10;
+
+        for (size_t i = 0; i < rooms; i++){
+            for (size_t y = 0; y < roomTileDims; y++) {
+                for (size_t x = 0; x < roomTileDims; x++) {
+                    if (0 == x || y == 0 || x == (roomTileDims -1)) {
+                        if (x == (roomTileDims / 2)) {
+                            *singleTile = 1;
+                        }else {
+                            *singleTile = 2;
+                        }
                     }else{
-                        tileValue = 0;
+                        *singleTile = 1;
                     }
+                    singleTile += 1;
                 }
-                *singleTile = tileValue;
-                singleTile += 1;
+                singleTile += (tilemap.tileDimensions - roomTileDims);
             }
         }
 

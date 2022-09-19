@@ -26,6 +26,4 @@ void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer);
 
 int64 metersToPixels(World world, float32 metres);
 
-void setTileColour(Colour *tileColour, uint32 tileValue);
-
 #endif
