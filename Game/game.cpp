@@ -61,29 +61,41 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert((*gameState->world).worldHeightPx > frameBuffer->heightPx);
         assert((*gameState->world).worldWidthPx > frameBuffer->widthPx);
 
-        // Spam some tile values into the tilemap
+        // Spam some tile values into the tilemap...
         World world         = *gameState->world;
         Tilemap tilemap     = world.tilemap;
-        uint32 *singleTile  = tilemap.tileChunks->tiles;
+        uint32 *startTile  = tilemap.tileChunks->tiles;
 
-        uint32 rooms = 5;
+        uint32 absTileX = 0;
+        uint32 absTileY = 0;
+
+        uint32 rooms = 10;
         uint32 roomTileDims = 10;
 
-        for (size_t i = 0; i < rooms; i++){
+        for (size_t room = 0; room < rooms; room++){
+
+            uint32 *roomTile = startTile + (((absTileY * roomTileDims) * (tilemap.tileDimensions)) + (absTileX * roomTileDims));
+
             for (size_t y = 0; y < roomTileDims; y++) {
                 for (size_t x = 0; x < roomTileDims; x++) {
-                    if (0 == x || y == 0 || x == (roomTileDims -1)) {
-                        if (x == (roomTileDims / 2)) {
-                            *singleTile = 1;
+                    if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
+                        if ( (x == (roomTileDims / 2)) || (y == (roomTileDims / 2)) ) {
+                            *roomTile = 3;
                         }else {
-                            *singleTile = 2;
+                            *roomTile = 2;
                         }
                     }else{
-                        *singleTile = 1;
+                        *roomTile = 1;
                     }
-                    singleTile += 1;
+                    roomTile += 1;
                 }
-                singleTile += (tilemap.tileDimensions - roomTileDims);
+                roomTile += (tilemap.tileDimensions - roomTileDims);
+            }
+            if (room == 3){
+                absTileY += 1;
+            }else {
+                absTileX += 1;
+
             }
         }
 

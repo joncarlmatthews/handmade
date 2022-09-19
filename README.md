@@ -2,6 +2,10 @@
 
 Low level game programming concepts in C/C++
 
+## Current Progress
+
+![Current progress](/current_state.png?raw=true "Current progress")
+
 ## Development Environment
 
 Using Windows as the development environment as it meets the following developer requirements:

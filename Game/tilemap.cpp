@@ -98,7 +98,7 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
         break;
 
     case 3:
-        *tileColour = { 39.0f, 0.96f, 0.16f };
+        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f) }; //passageway
         break;
 
     case 4:
