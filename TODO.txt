@@ -8,7 +8,7 @@ Day 034:
         - upper 24 bits would tell you which tile chunk
 
 Day 035:
- -x Change how I draw the world so that wraps based on total possible tiles
+ -/ Change how I draw the world so that wraps based on total possible tiles
  -x Implement sparse tilemap storage
 
 Ongoing:

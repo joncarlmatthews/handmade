@@ -64,13 +64,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // Spam some tile values into the tilemap...
         World world         = *gameState->world;
         Tilemap tilemap     = world.tilemap;
-        uint32 *startTile  = tilemap.tileChunks->tiles;
-
-        uint32 absTileX = 0;
-        uint32 absTileY = 0;
+        uint32 *startTile   = tilemap.tileChunks->tiles;
 
         uint32 rooms = 10;
         uint32 roomTileDims = 10;
+
+        uint32 absTileX = 0;
+        uint32 absTileY = 0;
 
         for (size_t room = 0; room < rooms; room++){
 
@@ -91,7 +91,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 }
                 roomTile += (tilemap.tileDimensions - roomTileDims);
             }
-            if (room == 3){
+            if (0 == (room % 3)){
                 absTileY += 1;
             }else {
                 absTileX += 1;
@@ -181,6 +181,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
             // Null pointer check
             if (!tileValue) {
+                char buff[400] = {};
+                sprintf_s(buff, sizeof(buff), "Tile null pointer");
+                memory->DEBUG_platformLog(buff);
                 continue;
             }
 
@@ -411,20 +414,37 @@ void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
     memoryBlock->startingAddress    = startingAddress;
     memoryBlock->totalSizeInBytes   = maximumSizeInBytes;
     memoryBlock->bytesUsed          = 0;
+    memoryBlock->bytesFree          = maximumSizeInBytes;
 }
 
 void *GameMemoryBlockReserveStruct(GameMemoryBlock *memoryBlock, sizet structSize)
 {
     void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
+
+    sizet bytesToReserve = structSize;
+
+    assert(bytesToReserve <= memoryBlock->bytesFree);
+
     memoryBlock->bytesUsed = (memoryBlock->bytesUsed + structSize);
+    memoryBlock->bytesFree = (memoryBlock->bytesFree - structSize);
+
     assert(memoryBlock->bytesUsed <= memoryBlock->totalSizeInBytes);
+
     return startingAddress;
 }
 void *GameMemoryBlockReserveArray(GameMemoryBlock *memoryBlock, sizet typeSize, sizet noOfElements)
 {
     void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
-    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + (typeSize * noOfElements));
+
+    sizet bytesToReserve = (typeSize * noOfElements);
+
+    assert(bytesToReserve <= memoryBlock->bytesFree);
+
+    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + bytesToReserve);
+    memoryBlock->bytesFree = (memoryBlock->bytesFree - bytesToReserve);
+
     assert(memoryBlock->bytesUsed <= memoryBlock->totalSizeInBytes);
+
     return startingAddress;
 }
 

@@ -5,6 +5,9 @@
 #include "player.h"
 #include "utility.h"
 
+/**
+ * @NOTE(JM) the tilemap, tile chunks and individual tiles are always square
+*/
 void initTilemap(GameMemoryBlock *memoryBlock,
                     World *world,
                     uint16 pixelsPerMeter,
@@ -29,27 +32,36 @@ void initTilemap(GameMemoryBlock *memoryBlock,
     // big enough to hold the number of tile chunks and tile chunk tile dimensions
     assert(world->tilemap.tileDimensions >= (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkTileDimensions))
 
-    // @NOTE(JM) tiles and tile chunks are always square
     world->tilemap.tileHeightPx = (uint32)((uint32)pixelsPerMeter * tileDimensionsMeters);
     world->tilemap.tileWidthPx = world->tilemap.tileHeightPx;
     world->tilemap.tileChunkHeightPx = (world->tilemap.tileHeightPx * world->tilemap.tileChunkTileDimensions);
     world->tilemap.tileChunkWidthPx = world->tilemap.tileChunkHeightPx;
 
     // Reserve the tile chunk arrays from the memory block
-    // @TODO(JM) only reserve the memory if a tile exists within the chunk
     world->tilemap.tileChunks = (TileChunk *)GameMemoryBlockReserveArray(memoryBlock,
                                                                         sizeof(TileChunk),
                                                                         (sizet)((sizet)world->tilemap.tileChunkDimensions * (sizet)world->tilemap.tileChunkDimensions));
 
 
     // Reserve the tiles within each tile chunk from the memory block
+    sizet tilesStored = 0;
     for (size_t tileChunkY = 0; tileChunkY < world->tilemap.tileChunkDimensions; tileChunkY++) {
         for (size_t tileChunkX = 0; tileChunkX < world->tilemap.tileChunkDimensions; tileChunkX++) {
             world->tilemap.tileChunks[(tileChunkY * world->tilemap.tileChunkDimensions) + tileChunkX].tiles = (uint32 *)GameMemoryBlockReserveArray(memoryBlock,
                                                                                                                                                     sizeof(uint32),
                                                                                                                                                     (sizet)((sizet)world->tilemap.tileChunkTileDimensions * (sizet)world->tilemap.tileChunkTileDimensions));
+            tilesStored += (world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions);
         }
     }
+
+    // Reserve up to the maximum possible tile storage quantity as we read up
+    // to this when rendering our tilemap.
+    sizet paddingRequired = (((sizet)world->tilemap.tileDimensions * (sizet)world->tilemap.tileDimensions) - tilesStored);
+
+    GameMemoryBlockReserveArray(memoryBlock,
+                                sizeof(uint32),
+                                paddingRequired);
+
 }
 
 void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
@@ -111,6 +123,10 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
 
     case 6:
         *tileColour = { 0.25f, 1.0f, 0.0f };
+        break;
+
+    case 10:
+        *tileColour = { (230.0f/255.0f), 0.f, 0.f };
         break;
     }
 }

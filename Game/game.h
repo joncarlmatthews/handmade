@@ -348,6 +348,7 @@ typedef struct GameMemoryBlock
     uint8 *startingAddress; // 8 or 4 bytes in size (x64/x86). uint8 to step 1 byte at a time
     sizet totalSizeInBytes;
     sizet bytesUsed;
+    sizet bytesFree;
 } GameMemoryBlock;
 
 typedef struct GameState
