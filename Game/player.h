@@ -14,7 +14,7 @@
 // Average male running speed
 // https://www.calculateme.com/speed/miles-per-hour/to-meters-per-second/8
 //#define PLAYER_SPEED 3.57632f
-#define PLAYER_SPEED 30.0f
+#define PLAYER_SPEED 30.57632f
 
 typedef struct Player {
     // Position in relation to the world

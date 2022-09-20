@@ -5,44 +5,63 @@
 #include "player.h"
 #include "utility.h"
 
+/**
+ * @NOTE(JM) the tilemap, tile chunks and individual tiles are always square
+*/
 void initTilemap(GameMemoryBlock *memoryBlock,
                     World *world,
                     uint16 pixelsPerMeter,
-                    uint32 tileChunkDimensions,
-                    uint32 tileChunkTileDimensionsShift,
+                    uint32 tileDimensionsBitShift,
+                    uint32 tileChunkDimensionsBitShift,
+                    uint32 tileChunkTileDimensionsBitShift,
                     float32 tileDimensionsMeters)
 {
-    world->tilemap.tileChunkDimensions  = tileChunkDimensions;
-    world->tilemap.totalTileChunks      = (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkDimensions);
+    world->tilemap.tileDimensionsBitShift  = tileDimensionsBitShift;
+    world->tilemap.tileDimensionsBitMask   = ((1 << tileDimensionsBitShift) - 1);
+    world->tilemap.tileDimensions          = (1 << tileDimensionsBitShift);
 
-    world->tilemap.tileChunkTileDimensionsBitShift  = tileChunkTileDimensionsShift;
-    world->tilemap.tileChunkTileDimensionsBitMask   = ((1 << tileChunkTileDimensionsShift) - 1);
-    world->tilemap.tileChunkTileDimensions          = (1 << tileChunkTileDimensionsShift);
+    world->tilemap.tileChunkDimensionsBitShift  = tileChunkDimensionsBitShift;
+    world->tilemap.tileChunkDimensionsBitMask   = ((1 << tileChunkDimensionsBitShift) - 1);
+    world->tilemap.tileChunkDimensions          = (1 << tileChunkDimensionsBitShift);
 
-    world->tilemap.tileDimensions = (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkTileDimensions);
-    world->tilemap.totalTiles = (uint64)((uint64)world->tilemap.totalTileChunks * (uint64)((uint64)world->tilemap.tileChunkTileDimensions * (uint64)world->tilemap.tileChunkTileDimensions));
+    world->tilemap.tileChunkTileDimensionsBitShift  = tileChunkTileDimensionsBitShift;
+    world->tilemap.tileChunkTileDimensionsBitMask   = ((1 << tileChunkTileDimensionsBitShift) - 1);
+    world->tilemap.tileChunkTileDimensions          = (1 << tileChunkTileDimensionsBitShift);
 
-    // @NOTE(JM) tiles and tile chunks are always square
+    // Check that the tilemap's total possible tile dimensions are at least
+    // big enough to hold the number of tile chunks and tile chunk tile dimensions
+    assert(world->tilemap.tileDimensions >= (world->tilemap.tileChunkDimensions * world->tilemap.tileChunkTileDimensions))
+
     world->tilemap.tileHeightPx = (uint32)((uint32)pixelsPerMeter * tileDimensionsMeters);
     world->tilemap.tileWidthPx = world->tilemap.tileHeightPx;
     world->tilemap.tileChunkHeightPx = (world->tilemap.tileHeightPx * world->tilemap.tileChunkTileDimensions);
     world->tilemap.tileChunkWidthPx = world->tilemap.tileChunkHeightPx;
 
     // Reserve the tile chunk arrays from the memory block
-    // @TODO(JM) only reserve the memory if a tile exists within the chunk
     world->tilemap.tileChunks = (TileChunk *)GameMemoryBlockReserveArray(memoryBlock,
                                                                         sizeof(TileChunk),
-                                                                        world->tilemap.totalTileChunks);
+                                                                        (sizet)((sizet)world->tilemap.tileChunkDimensions * (sizet)world->tilemap.tileChunkDimensions));
 
 
     // Reserve the tiles within each tile chunk from the memory block
+    sizet tilesStored = 0;
     for (size_t tileChunkY = 0; tileChunkY < world->tilemap.tileChunkDimensions; tileChunkY++) {
         for (size_t tileChunkX = 0; tileChunkX < world->tilemap.tileChunkDimensions; tileChunkX++) {
             world->tilemap.tileChunks[(tileChunkY * world->tilemap.tileChunkDimensions) + tileChunkX].tiles = (uint32 *)GameMemoryBlockReserveArray(memoryBlock,
                                                                                                                                                     sizeof(uint32),
-                                                                                                                                                    (sizet)(world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions));
+                                                                                                                                                    (sizet)((sizet)world->tilemap.tileChunkTileDimensions * (sizet)world->tilemap.tileChunkTileDimensions));
+            tilesStored += (world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions);
         }
     }
+
+    // Reserve up to the maximum possible tile storage quantity as we read up
+    // to this when rendering our tilemap.
+    sizet paddingRequired = (((sizet)world->tilemap.tileDimensions * (sizet)world->tilemap.tileDimensions) - tilesStored);
+
+    GameMemoryBlockReserveArray(memoryBlock,
+                                sizeof(uint32),
+                                paddingRequired);
+
 }
 
 void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
@@ -72,6 +91,44 @@ void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pi
     // @TODO(JM)
     coordinates->tileRelativePixelCoordinates.x = 0;
     coordinates->tileRelativePixelCoordinates.y = 0;
+}
+
+void setTileColour(Colour *tileColour, uint32 tileValue)
+{
+    switch (tileValue) {
+    default: // no value set...
+        //*tileColour = { 0.94f, 0.94f, 0.94f };
+        *tileColour = { 0.26f, 0.26f, 0.13f }; // earth/grass
+        break;
+
+    case 1: 
+        *tileColour = { (89.0f/255.0f), (89.0f/255.0f), (89.0f/255.0f) }; // stone floor
+        break;
+
+    case 2:
+        *tileColour = { (38.0f/255.0f), (38.0f/255.0f), (38.0f/255.0f) }; // stone wall
+        break;
+
+    case 3:
+        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f) }; //passageway
+        break;
+
+    case 4:
+        *tileColour = { 0.96f, 0.76f, 0.019f };
+        break;
+
+    case 5:
+        *tileColour = { 0.96f, 0.15f, 0.15f };
+        break;
+
+    case 6:
+        *tileColour = { 0.25f, 1.0f, 0.0f };
+        break;
+
+    case 10:
+        *tileColour = { (230.0f/255.0f), 0.f, 0.f };
+        break;
+    }
 }
 
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData)

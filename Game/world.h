@@ -5,7 +5,7 @@
 #include "tilemap.h"
 
 // How many pixels to represent 1 meter?
-#define WORLD_PIXELS_PER_METER 25
+#define WORLD_PIXELS_PER_METER 5
 
 typedef struct World {
 
@@ -25,7 +25,5 @@ typedef struct GameFrameBuffer GameFrameBuffer;
 void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer);
 
 int64 metersToPixels(World world, float32 metres);
-
-void setTileColour(Colour *tileColour, uint32 tileValue);
 
 #endif

@@ -35,36 +35,3 @@ int64 metersToPixels(World world, float32 metres)
     float32 pixels = (world.pixelsPerMeter * metres);
     return (int64)pixels;
 }
-
-void setTileColour(Colour *tileColour, uint32 tileValue)
-{
-    switch (tileValue) {
-        default:
-            *tileColour = { 0.94f, 0.94f, 0.94f };
-            break;
-
-        case 1:
-            *tileColour = { 0.96f, 0.15f, 0.56f };
-            break;
-
-        case 2:
-            *tileColour = { 0.15f, 0.18f, 0.96f };
-            break;
-
-        case 3:
-            *tileColour = { 39.0f, 0.96f, 0.16f };
-            break;
-
-        case 4:
-            *tileColour = { 0.96f, 0.76f, 0.019f };
-            break;
-
-        case 5:
-            *tileColour = { 0.96f, 0.15f, 0.15f };
-            break;
-
-        case 6:
-            *tileColour = { 0.25f, 1.0f, 0.0f };
-            break;
-    }
-}
