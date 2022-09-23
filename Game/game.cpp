@@ -80,12 +80,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 for (size_t x = 0; x < roomTileDims; x++) {
                     if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
                         if ( (x == (roomTileDims / 2)) || (y == (roomTileDims / 2)) ) {
-                            *roomTile = 3;
+                            setTileValue(&tilemap, roomTile, 3);
                         }else {
-                            *roomTile = 2;
+                            setTileValue(&tilemap, roomTile, 2);
                         }
                     }else{
-                        *roomTile = 1;
+                        setTileValue(&tilemap, roomTile, 1);
                     }
                     roomTile += 1;
                 }
@@ -177,13 +177,16 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx), tilemap.tileDimensions);
             uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx), tilemap.tileDimensions);
 
+            // Out of sparse storage memory bounds?
+            if ((tilePosX > tilemap.tilesStoredDimensions) || (tilePosY > tilemap.tilesStoredDimensions)) {
+                writeRectangle(frameBuffer, x, y, 1, 1, { (230.0f/255.0f), 0.f, 0.f });
+                continue;
+            }
+
             uint32 *tileValue = (tilemap.tileChunks->tiles + ((tilePosY * tilemap.tileDimensions) + tilePosX));
 
             // Null pointer check
             if (!tileValue) {
-                char buff[400] = {};
-                sprintf_s(buff, sizeof(buff), "Tile null pointer");
-                memory->DEBUG_platformLog(buff);
                 continue;
             }
 

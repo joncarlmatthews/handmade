@@ -8,14 +8,16 @@
 //====================================================
 // Tilemap is the entire game world
 
-// How many bits of a 32-bit integer do we want to allocate to the tilemap's total tile dimensions?
+// How many bits of a 32-bit integer do we want to allocate to the tilemap's
+// total tile dimensions*? (along one side)
 #define TILE_DIMENSIONS_BIT_SHIFT 10
 
-// How many "tile chunks" does one side of the enire tilemap have?
-// @NOTE(JM) temp as tilemap storage will be sparse
-#define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 2
+// How many bits of a 32-bit integer do we want to allocate to the total number
+// of "tile chunks" dimensions*? (*along one side)
+#define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 1
 
-// How many bits of a 32-bit integer do we want to allocate to the tile chunk's tile dimensions?
+// How many bits of a 32-bit integer do we want to allocate to the tile chunk's
+// tile dimensions*? (*along one side)
 #define TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT 4
 
 // How many meters does one side of an individual tile have? (Tiles are always square)
@@ -41,22 +43,22 @@ typedef struct Tilemap
     uint32 tileChunkDimensionsBitMask;
     uint32 tileChunkDimensions;
 
-    // Total number of tiles across one side of a tile chunk
+    // Total number of tiles across one side of an individual tile chunk
     // (Tile chunks are always square)
     uint32 tileChunkTileDimensionsBitShift;
     uint32 tileChunkTileDimensionsBitMask;
     uint32 tileChunkTileDimensions;
 
-    // Height and width in pixels of an individual tile 
+    // Height and width in pixels of an individual tile
+    // @TODO(JM) move these to renderer when we have one, tilemap shouldnt care
+    // about pixels. See day 35 @45:00
     uint32 tileHeightPx;
     uint32 tileWidthPx;
 
-    // Height and width in pixels of each tile chunk 
-    uint32 tileChunkHeightPx;
-    uint32 tileChunkWidthPx;
-
     // Pointer to all of the tile chunks
     TileChunk *tileChunks;
+
+    sizet tilesStoredDimensions;
 
 } Tilemap;
 
@@ -98,6 +100,8 @@ void setCoordinateData(TilemapCoordinates *coordinates,
                         Tilemap tilemap);
 
 void setTileColour(Colour *tileColour, uint32 tileValue);
+
+void setTileValue(Tilemap *tilemap, uint32 *tile, uint32 value);
 
 typedef struct PlayerPositionData PlayerPositionData;
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData);

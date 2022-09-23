@@ -1,19 +1,11 @@
-Day 034:
--/ Move tilemap to memory
--/ Implement tileChunks
--/ Implement chunk mask & shift
-    - 32 bit integer.
-    - Assuming 256x256 tile chunks:
-        - bottom 8 bits would tell you which tile within the chunk
-        - upper 24 bits would tell you which tile chunk
-
 Day 035:
- -/ Change how I draw the world so that wraps based on total possible tiles
- -x Implement sparse tilemap storage
+ -x Implement sparse tilemap storage.
+ -x Randomness
+ -x Doors left/right/top/bottom
 
 Ongoing:
--x Slow frame rate (now that we're rendering pixel by pixel)
--x Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
--x Diagonal speed bug (will fix when implement vectors)
--x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
--x Postfix pixel variables with Px (tidy up, where appropiate)
+ -x Slow frame rate (now that we're rendering pixel by pixel)
+ -x Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
+ -x Diagonal speed bug (will fix when implement vectors)
+ -x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
+ -x Postfix pixel variables with Px (tidy up, where appropiate)

@@ -34,8 +34,6 @@ void initTilemap(GameMemoryBlock *memoryBlock,
 
     world->tilemap.tileHeightPx = (uint32)((uint32)pixelsPerMeter * tileDimensionsMeters);
     world->tilemap.tileWidthPx = world->tilemap.tileHeightPx;
-    world->tilemap.tileChunkHeightPx = (world->tilemap.tileHeightPx * world->tilemap.tileChunkTileDimensions);
-    world->tilemap.tileChunkWidthPx = world->tilemap.tileChunkHeightPx;
 
     // Reserve the tile chunk arrays from the memory block
     world->tilemap.tileChunks = (TileChunk *)GameMemoryBlockReserveArray(memoryBlock,
@@ -54,14 +52,7 @@ void initTilemap(GameMemoryBlock *memoryBlock,
         }
     }
 
-    // Reserve up to the maximum possible tile storage quantity as we read up
-    // to this when rendering our tilemap.
-    sizet paddingRequired = (((sizet)world->tilemap.tileDimensions * (sizet)world->tilemap.tileDimensions) - tilesStored);
-
-    GameMemoryBlockReserveArray(memoryBlock,
-                                sizeof(uint32),
-                                paddingRequired);
-
+    world->tilemap.tilesStoredDimensions = (tilesStored / 2);
 }
 
 void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
@@ -131,8 +122,19 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
     }
 }
 
+void setTileValue(Tilemap *tilemap, uint32 *tile, uint32 value)
+{
+    *tile = value;
+}
+
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData)
 {
+    // Out of sparse storage memory bounds?
+    if ((playerPositionData->activeTile.tileIndex.y > tilemap.tilesStoredDimensions)
+        || (playerPositionData->activeTile.tileIndex.x > tilemap.tilesStoredDimensions) ) {
+        return false;
+    }
+
     uint32 tileNumber = (playerPositionData->activeTile.tileIndex.y * tilemap.tileDimensions) + playerPositionData->activeTile.tileIndex.x;
 
     uint32 *tileState = (tilemap.tileChunks->tiles + tileNumber);
