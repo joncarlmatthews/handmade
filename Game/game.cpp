@@ -22,6 +22,7 @@
 #include "types.h"
 #include "utility.h"
 #include "game.h"
+#include "memory.h"
 #include "world.h"
 #include "tilemap.h"
 #include "player.h"
@@ -42,7 +43,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                             (uint8 *)(gameState + 1),
                             (sizet)(memory->permanentStorageSizeInBytes - sizeof(GameState)));
 
-        gameState->world = (World *)GameMemoryBlockReserveStruct(&gameState->worldMemoryBlock, sizeof(World));
+        gameState->world = gameMemoryBlockReserveStruct(&gameState->worldMemoryBlock, World);
 
         // Init the Tilemap
         initTilemap(&gameState->worldMemoryBlock,
@@ -62,9 +63,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert((*gameState->world).worldWidthPx > frameBuffer->widthPx);
 
         // Spam some tile values into the tilemap...
+        setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, 0, 0, 3);
+        //setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, 1, 0, 3);
+#if 0
+        uint32 spamTiles = 10;
+        for (uint32 absTileY = 0; absTileY < spamTiles; absTileY++){
+            setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, 0, absTileY, 3);
+        }
+
+        
         World world         = *gameState->world;
         Tilemap tilemap     = world.tilemap;
-        uint32 *startTile   = tilemap.tileChunks->tiles;
+        //uint32 *startTile   = tilemap.tileChunks->tiles;
 
         uint32 rooms = 10;
         uint32 roomTileDims = 10;
@@ -72,24 +82,24 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         uint32 absTileX = 0;
         uint32 absTileY = 0;
 
-        for (size_t room = 0; room < rooms; room++){
+        uint32 addrIndex = 0;
 
-            uint32 *roomTile = startTile + (((absTileY * roomTileDims) * (tilemap.tileDimensions)) + (absTileX * roomTileDims));
+        for (size_t room = 0; room < rooms; room++){
 
             for (size_t y = 0; y < roomTileDims; y++) {
                 for (size_t x = 0; x < roomTileDims; x++) {
                     if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
                         if ( (x == (roomTileDims / 2)) || (y == (roomTileDims / 2)) ) {
-                            setTileValue(&tilemap, roomTile, 3);
+                            setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, absTileX, absTileY, addrIndex, 3);
                         }else {
-                            setTileValue(&tilemap, roomTile, 2);
+                            setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, absTileX, absTileY, addrIndex, 2);
                         }
                     }else{
-                        setTileValue(&tilemap, roomTile, 1);
+                        setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, absTileX, absTileY, addrIndex, 1);
                     }
-                    roomTile += 1;
+                    addrIndex += 1;
                 }
-                roomTile += (tilemap.tileDimensions - roomTileDims);
+                addrIndex += (tilemap.tileDimensions - roomTileDims);
             }
             if (0 == (room % 3)){
                 absTileY += 1;
@@ -98,6 +108,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
             }
         }
+        #endif
 
         // Character attributes
         gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
@@ -127,6 +138,102 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         memory->initialised = true;
     }
 
+    #if 0
+    uint32 *ptr = gameMemoryBlockReserveArray(&gameState->worldMemoryBlock,
+                                                        uint32,
+                                                        (sizet)((sizet)10 * (sizet)10));
+
+    for (size_t i = 0; i < 20; i++){
+        *ptr = 4294967295;
+        ptr +=1;
+    }
+
+    setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, 0, 0, 3);
+
+    {
+        World *world = gameState->world;
+        Tilemap *tilemap = &world->tilemap;
+        TileChunk *tileChunks = tilemap->tileChunks;
+
+        // Tilemap 1
+        if (!tileChunks->tiles) {
+            {
+                char buff[400] = {};
+                sprintf_s(buff, sizeof(buff),
+                    "Tilemap tiles NULL\n");
+                memory->DEBUG_platformLog(buff);
+            }
+        }
+
+        tileChunks +=1;
+        // Tilemap 2
+        if (!tileChunks->tiles) {
+            {
+                char buff[400] = {};
+                sprintf_s(buff, sizeof(buff),
+                    "Tilemap tiles NULL\n");
+                memory->DEBUG_platformLog(buff);
+            }
+        }
+
+        tileChunks +=1;
+        // Tilemap 3
+        if (!tileChunks->tiles) {
+            {
+                char buff[400] = {};
+                sprintf_s(buff, sizeof(buff),
+                    "Tilemap tiles NULL\n");
+                memory->DEBUG_platformLog(buff);
+            }
+        }
+
+        tileChunks +=1;
+        // Tilemap 4
+        if (!tileChunks->tiles) {
+            {
+                char buff[400] = {};
+                sprintf_s(buff, sizeof(buff),
+                    "Tilemap tiles NULL\n");
+                memory->DEBUG_platformLog(buff);
+            }
+        }
+
+        tileChunks +=1;
+        // Invalid Tilemap 1
+        if (!tileChunks->tiles) {
+            {
+                char buff[400] = {};
+                sprintf_s(buff, sizeof(buff),
+                    "Tilemap tiles NULL\n");
+                memory->DEBUG_platformLog(buff);
+            }
+
+        }
+        tileChunks +=1;
+        // Invalid Tilemap 2
+        if (!tileChunks->tiles) {
+            {
+                char buff[400] = {};
+                sprintf_s(buff, sizeof(buff),
+                    "Tilemap tiles NULL\n");
+                memory->DEBUG_platformLog(buff);
+            }
+        }
+
+        tileChunks +=1;
+        // Invalid Tilemap 3
+        if (!tileChunks->tiles) {
+            {
+                char buff[400] = {};
+                sprintf_s(buff, sizeof(buff),
+                    "Tilemap tiles NULL\n");
+                memory->DEBUG_platformLog(buff);
+            }
+
+        }
+    }
+    #endif
+    
     /**
     * Handle controller input...
     */
@@ -178,7 +285,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx), tilemap.tileDimensions);
 
             // Out of sparse storage memory bounds?
-            if ((tilePosX > tilemap.tilesStoredDimensions) || (tilePosY > tilemap.tilesStoredDimensions)) {
+            if ((tilePosX > (tilemap.tilesStoredDimensions -1)) || (tilePosY > (tilemap.tilesStoredDimensions -1))) {
                 writeRectangle(frameBuffer, x, y, 1, 1, { (230.0f/255.0f), 0.f, 0.f });
                 continue;
             }
@@ -408,47 +515,6 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
         // Write another 4 to the running byte group index.
         byteGroupIndex = (uint32)((uint64)(byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
     }
-}
-
-void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
-                            uint8 *startingAddress,
-                            sizet maximumSizeInBytes)
-{
-    memoryBlock->startingAddress    = startingAddress;
-    memoryBlock->totalSizeInBytes   = maximumSizeInBytes;
-    memoryBlock->bytesUsed          = 0;
-    memoryBlock->bytesFree          = maximumSizeInBytes;
-}
-
-void *GameMemoryBlockReserveStruct(GameMemoryBlock *memoryBlock, sizet structSize)
-{
-    void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
-
-    sizet bytesToReserve = structSize;
-
-    assert(bytesToReserve <= memoryBlock->bytesFree);
-
-    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + structSize);
-    memoryBlock->bytesFree = (memoryBlock->bytesFree - structSize);
-
-    assert(memoryBlock->bytesUsed <= memoryBlock->totalSizeInBytes);
-
-    return startingAddress;
-}
-void *GameMemoryBlockReserveArray(GameMemoryBlock *memoryBlock, sizet typeSize, sizet noOfElements)
-{
-    void *startingAddress = memoryBlock->startingAddress + memoryBlock->bytesUsed;
-
-    sizet bytesToReserve = (typeSize * noOfElements);
-
-    assert(bytesToReserve <= memoryBlock->bytesFree);
-
-    memoryBlock->bytesUsed = (memoryBlock->bytesUsed + bytesToReserve);
-    memoryBlock->bytesFree = (memoryBlock->bytesFree - bytesToReserve);
-
-    assert(memoryBlock->bytesUsed <= memoryBlock->totalSizeInBytes);
-
-    return startingAddress;
 }
 
 EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)

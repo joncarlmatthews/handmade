@@ -2,6 +2,7 @@
 #define HEADER_HH_GAME
 
 #include "types.h"
+#include "memory.h"
 #include "tilemap.h"
 #include "player.h"
 
@@ -343,14 +344,6 @@ typedef struct GameMemory
 
 } GameMemory;
 
-typedef struct GameMemoryBlock
-{
-    uint8 *startingAddress; // 8 or 4 bytes in size (x64/x86). uint8 to step 1 byte at a time
-    sizet totalSizeInBytes;
-    sizet bytesUsed;
-    sizet bytesFree;
-} GameMemoryBlock;
-
 typedef struct GameState
 {
     Player player1;
@@ -367,45 +360,6 @@ typedef struct GameState
 
     SineWave sineWave;
 } GameState;
-
-/**
- * @brief Initialises a game memory block with a starting address and the
- * maximum number of bytes that the bock can fill up to
- * 
- * @param memoryBlock 
- * @param startingAddress 
- * @param maximumSizeInBytes 
-*/
-void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
-                            uint8 *startingAddress,
-                            sizet maximumSizeInBytes);
-
-/**
- * @brief "Reserves" part of the memory block with enough space for a given struct.
- * by keeping track of the starting address and size of the data type within
- * the GameMemoryBlock. Doesnt write to any data.
- * Returns the starting memory address of the struct.
- * 
- * @param memoryBlock 
- * @param structSize    Size in bytes of the struct
- * @return void*        memory address
-*/
-void* GameMemoryBlockReserveStruct(GameMemoryBlock *memoryBlock, sizet structSize);
-
-/**
- * @brief "Reserves" part of the memory block with enough space for a given array.
- * by keeping track of the starting address and size of the data type within
- * the GameMemoryBlock. Doesnt write to any data.
- * Returns the starting memory address of the array
- * 
- * @param memoryBlock 
- * @param typeSize      Size in bytes of the data type that the array holds
- * @param noOfElements  How many elements in the array
- * @return void*       memory address
-*/
-void* GameMemoryBlockReserveArray(GameMemoryBlock *memoryBlock,
-                                    sizet typeSize,
-                                    sizet noOfElements);
 
 //
 // Graphics

@@ -36,12 +36,13 @@ void initTilemap(GameMemoryBlock *memoryBlock,
     world->tilemap.tileWidthPx = world->tilemap.tileHeightPx;
 
     // Reserve the tile chunk arrays from the memory block
-    world->tilemap.tileChunks = (TileChunk *)GameMemoryBlockReserveArray(memoryBlock,
-                                                                        sizeof(TileChunk),
-                                                                        (sizet)((sizet)world->tilemap.tileChunkDimensions * (sizet)world->tilemap.tileChunkDimensions));
+    world->tilemap.tileChunks = gameMemoryBlockReserveArray(memoryBlock,
+                                                            TileChunk,
+                                                            (sizet)((sizet)world->tilemap.tileChunkDimensions * (sizet)world->tilemap.tileChunkDimensions));
 
 
     // Reserve the tiles within each tile chunk from the memory block
+    #if 0
     sizet tilesStored = 0;
     for (size_t tileChunkY = 0; tileChunkY < world->tilemap.tileChunkDimensions; tileChunkY++) {
         for (size_t tileChunkX = 0; tileChunkX < world->tilemap.tileChunkDimensions; tileChunkX++) {
@@ -53,6 +54,7 @@ void initTilemap(GameMemoryBlock *memoryBlock,
     }
 
     world->tilemap.tilesStoredDimensions = (tilesStored / 2);
+    #endif
 }
 
 void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
@@ -87,9 +89,8 @@ void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pi
 void setTileColour(Colour *tileColour, uint32 tileValue)
 {
     switch (tileValue) {
-    default: // no value set...
-        //*tileColour = { 0.94f, 0.94f, 0.94f };
-        *tileColour = { 0.26f, 0.26f, 0.13f }; // earth/grass
+    default: // no tile value set...
+        *tileColour = { (105.0f/255.0f), (153.0f/255.0f), 0.0f };
         break;
 
     case 1: 
@@ -105,7 +106,7 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
         break;
 
     case 4:
-        *tileColour = { 0.96f, 0.76f, 0.019f };
+        *tileColour = { 0.26f, 0.26f, 0.13f }; // earth/grass
         break;
 
     case 5:
@@ -122,16 +123,40 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
     }
 }
 
-void setTileValue(Tilemap *tilemap, uint32 *tile, uint32 value)
+void setTileValue(GameMemoryBlock *memoryBlock, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value)
 {
+    uint32 tileChunkX = (absTileX / tilemap->tileChunkTileDimensions);
+    uint32 tileChunkY = (absTileY / tilemap->tileChunkTileDimensions);
+
+    if (!tilemap->tileChunks[(tileChunkY * tilemap->tileChunkDimensions) + tileChunkX].tiles){
+        tilemap->tileChunks[(tileChunkY * tilemap->tileChunkDimensions) + tileChunkX].tiles =
+            gameMemoryBlockReserveArray(memoryBlock,
+                                        uint32,
+                                        (sizet)((sizet)tilemap->tileChunkTileDimensions * (sizet)tilemap->tileChunkTileDimensions));
+
+        tilemap->tilesStoredDimensions = tilemap->tileChunkTileDimensions;
+    }
+
+    uint32 *tile = tilemap->tileChunks[(tileChunkY * tilemap->tileChunkDimensions) + tileChunkX].tiles;
+    tile += (absTileY * tilemap->tileDimensions) + absTileX;
     *tile = value;
+
+    #if 0
+    uint32 *tile = tilemap->tileChunks[(tileChunkY * tilemap->tileChunkDimensions) + tileChunkX].tiles;
+    for (size_t y = 0; y < tilemap->tileChunkTileDimensions; y++){
+        for (size_t x = 0; x < tilemap->tileChunkTileDimensions; x++){
+            //*tile = 1;
+            tile +=1;
+        }
+    }
+    #endif
 }
 
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData)
 {
     // Out of sparse storage memory bounds?
-    if ((playerPositionData->activeTile.tileIndex.y > tilemap.tilesStoredDimensions)
-        || (playerPositionData->activeTile.tileIndex.x > tilemap.tilesStoredDimensions) ) {
+    if ((playerPositionData->activeTile.tileIndex.y > (tilemap.tilesStoredDimensions -1))
+        || (playerPositionData->activeTile.tileIndex.x > (tilemap.tilesStoredDimensions -1)) ) {
         return false;
     }
 

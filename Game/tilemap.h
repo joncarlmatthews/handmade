@@ -101,7 +101,7 @@ void setCoordinateData(TilemapCoordinates *coordinates,
 
 void setTileColour(Colour *tileColour, uint32 tileValue);
 
-void setTileValue(Tilemap *tilemap, uint32 *tile, uint32 value);
+void setTileValue(GameMemoryBlock *memoryBlock, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value);
 
 typedef struct PlayerPositionData PlayerPositionData;
 bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData);
