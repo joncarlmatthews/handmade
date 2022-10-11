@@ -2,6 +2,7 @@ Day 035:
  -x Implement sparse tilemap storage.
  -x Randomness
  -x Doors left/right/top/bottom
+ -x Deprecate modulo function??
 
 Ongoing:
  -x Slow frame rate (now that we're rendering pixel by pixel)

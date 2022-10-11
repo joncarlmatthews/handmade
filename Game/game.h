@@ -349,6 +349,8 @@ typedef struct GameState
     Player player1;
 
     GameMemoryBlock worldMemoryBlock;
+    GameMemoryBlock tileChunkMemoryBlock;
+    GameMemoryBlock tilesMemoryBlock;
     World *world;
 
     // The currently active world position based off of the player's absolute position

@@ -35,26 +35,10 @@ void initTilemap(GameMemoryBlock *memoryBlock,
     world->tilemap.tileHeightPx = (uint32)((uint32)pixelsPerMeter * tileDimensionsMeters);
     world->tilemap.tileWidthPx = world->tilemap.tileHeightPx;
 
-    // Reserve the tile chunk arrays from the memory block
+    // Reserve the tile chunk arrays from within the memory block
     world->tilemap.tileChunks = gameMemoryBlockReserveArray(memoryBlock,
                                                             TileChunk,
                                                             (sizet)((sizet)world->tilemap.tileChunkDimensions * (sizet)world->tilemap.tileChunkDimensions));
-
-
-    // Reserve the tiles within each tile chunk from the memory block
-    #if 0
-    sizet tilesStored = 0;
-    for (size_t tileChunkY = 0; tileChunkY < world->tilemap.tileChunkDimensions; tileChunkY++) {
-        for (size_t tileChunkX = 0; tileChunkX < world->tilemap.tileChunkDimensions; tileChunkX++) {
-            world->tilemap.tileChunks[(tileChunkY * world->tilemap.tileChunkDimensions) + tileChunkX].tiles = (uint32 *)GameMemoryBlockReserveArray(memoryBlock,
-                                                                                                                                                    sizeof(uint32),
-                                                                                                                                                    (sizet)((sizet)world->tilemap.tileChunkTileDimensions * (sizet)world->tilemap.tileChunkTileDimensions));
-            tilesStored += (world->tilemap.tileChunkTileDimensions * world->tilemap.tileChunkTileDimensions);
-        }
-    }
-
-    world->tilemap.tilesStoredDimensions = (tilesStored / 2);
-    #endif
 }
 
 void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
@@ -86,58 +70,42 @@ void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pi
     coordinates->tileRelativePixelCoordinates.y = 0;
 }
 
-void setTileColour(Colour *tileColour, uint32 tileValue)
+xyuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap)
 {
-    switch (tileValue) {
-    default: // no tile value set...
-        *tileColour = { (105.0f/255.0f), (153.0f/255.0f), 0.0f };
-        break;
+    xyuint tileChunkIndex = { 0 };
 
-    case 1: 
-        *tileColour = { (89.0f/255.0f), (89.0f/255.0f), (89.0f/255.0f) }; // stone floor
-        break;
+    tileChunkIndex.x = (absTileX / tilemap.tileChunkTileDimensions);
+    tileChunkIndex.y = (absTileY / tilemap.tileChunkTileDimensions);
 
-    case 2:
-        *tileColour = { (38.0f/255.0f), (38.0f/255.0f), (38.0f/255.0f) }; // stone wall
-        break;
-
-    case 3:
-        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f) }; //passageway
-        break;
-
-    case 4:
-        *tileColour = { 0.26f, 0.26f, 0.13f }; // earth/grass
-        break;
-
-    case 5:
-        *tileColour = { 0.96f, 0.15f, 0.15f };
-        break;
-
-    case 6:
-        *tileColour = { 0.25f, 1.0f, 0.0f };
-        break;
-
-    case 10:
-        *tileColour = { (230.0f/255.0f), 0.f, 0.f };
-        break;
-    }
+    return tileChunkIndex;
 }
 
-void setTileValue(GameMemoryBlock *memoryBlock, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value)
+TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap)
 {
-    uint32 tileChunkX = (absTileX / tilemap->tileChunkTileDimensions);
-    uint32 tileChunkY = (absTileY / tilemap->tileChunkTileDimensions);
+    xyuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileX, absTileY, tilemap);
+    TileChunk *tileChunk = tilemap.tileChunks;
+    tileChunk = (tileChunk + (tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x);
+    return tileChunk;
+}
 
-    if (!tilemap->tileChunks[(tileChunkY * tilemap->tileChunkDimensions) + tileChunkX].tiles){
-        tilemap->tileChunks[(tileChunkY * tilemap->tileChunkDimensions) + tileChunkX].tiles =
-            gameMemoryBlockReserveArray(memoryBlock,
-                                        uint32,
-                                        (sizet)((sizet)tilemap->tileChunkTileDimensions * (sizet)tilemap->tileChunkTileDimensions));
+void setTileValue(GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value)
+{
+    TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, *tilemap);
 
-        tilemap->tilesStoredDimensions = tilemap->tileChunkTileDimensions;
+    // Is this tile chunk out of the sparse storage memory bounds?
+    if ((uint8 *)tileChunk > gameState->tileChunkMemoryBlock.lastAddressReserved
+        || (uint8 *)tileChunk < gameState->tileChunkMemoryBlock.startingAddress){
+        assert(!"Cannot set tile value for an absolute tile that sits outside of the available tile chunks")
     }
 
-    uint32 *tile = tilemap->tileChunks[(tileChunkY * tilemap->tileChunkDimensions) + tileChunkX].tiles;
+    if (!tileChunk->tiles){
+        tileChunk->tiles = gameMemoryBlockReserveArray(&gameState->tilesMemoryBlock,
+                                                        uint32,
+                                                        (sizet)((sizet)tilemap->tileChunkTileDimensions * (sizet)tilemap->tileChunkTileDimensions));
+
+    }
+
+    uint32 *tile = tileChunk->tiles;
     tile += (absTileY * tilemap->tileDimensions) + absTileX;
     *tile = value;
 
@@ -152,15 +120,34 @@ void setTileValue(GameMemoryBlock *memoryBlock, Tilemap *tilemap, uint32 absTile
     #endif
 }
 
-bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData)
+bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData *playerPositionData)
 {
-    // Out of sparse storage memory bounds?
-    if ((playerPositionData->activeTile.tileIndex.y > (tilemap.tilesStoredDimensions -1))
-        || (playerPositionData->activeTile.tileIndex.x > (tilemap.tilesStoredDimensions -1)) ) {
+    uint32 tilePosX = playerPositionData->activeTile.tileIndex.x;
+    uint32 tilePosY = playerPositionData->activeTile.tileIndex.y;
+
+    // Get the tile chunk based off of the absolute tile index
+    TileChunk *tileChunk = getTileChunkForAbsTile(tilePosX, tilePosY, tilemap);
+
+    // Is this tile chunk out of the sparse storage memory bounds?
+    if ((uint8 *)tileChunk > gameState->tileChunkMemoryBlock.lastAddressReserved
+        || (uint8 *)tileChunk < gameState->tileChunkMemoryBlock.startingAddress){
+#if HANDMADE_LOCAL_BUILD
+        return true;
+#else
         return false;
+#endif
     }
 
-    uint32 tileNumber = (playerPositionData->activeTile.tileIndex.y * tilemap.tileDimensions) + playerPositionData->activeTile.tileIndex.x;
+    // Have the tiles within this tile chunk been initialised?
+    if (!tileChunk->tiles) {
+#if HANDMADE_LOCAL_BUILD
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    uint32 tileNumber = (tilePosY * tilemap.tileDimensions) + tilePosX;
 
     uint32 *tileState = (tilemap.tileChunks->tiles + tileNumber);
 
@@ -171,4 +158,39 @@ bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData)
     }
 
     return true;
+}
+
+void setTileColour(Colour *tileColour, uint32 tileValue)
+{
+    switch (tileValue) {
+    default:
+        *tileColour =  { (255.0f/255.0f), (255.0f/255.0f), (0.0f/255.0f) }; // Default tile value
+        break;
+
+    case 1: 
+        *tileColour = { (89.0f/255.0f), (89.0f/255.0f), (89.0f/255.0f) }; // stone floor
+        break;
+
+    case 2:
+        *tileColour = { (38.0f/255.0f), (38.0f/255.0f), (38.0f/255.0f) }; // stone wall
+        break;
+
+    case 3:
+        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f) }; // passageway
+        break;
+
+    case 4:
+        *tileColour = { (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f) }; // earth/grass
+        break;
+    }
+}
+
+Colour getOutOfMemoryBoundsColour()
+{
+    return { (204.0f/255.0f), (51.0f/255.0f), 0.0f }; // red
+}
+
+Colour getUninitialisedTileChunkTilesColour()
+{
+    return { 0.0f, (102.0f/255.0f), (255.0f/255.0f) }; // blue
 }

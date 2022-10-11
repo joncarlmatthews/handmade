@@ -207,9 +207,9 @@ pixelsPerFrame);
         // Can the move to the new tile be taken?
         // @NOTE(JM) bug where rounding means player doesnt get a close as
         // possible to certain tiles when a move is invalid
-        if ((false == (isTilemapTileFree((*gameState->world).tilemap, &middle)))
-            || (false == (isTilemapTileFree((*gameState->world).tilemap, &bottomLeft)))
-            || (false == (isTilemapTileFree((*gameState->world).tilemap, &bottomRight)))) {
+        if ((false == (isTilemapTileFree(gameState, (*gameState->world).tilemap, &middle)))
+            || (false == (isTilemapTileFree(gameState, (*gameState->world).tilemap, &bottomLeft)))
+            || (false == (isTilemapTileFree(gameState, (*gameState->world).tilemap, &bottomRight)))) {
 
 #if 0
 #ifdef HANDMADE_DEBUG_TILE_POS

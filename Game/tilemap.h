@@ -58,8 +58,6 @@ typedef struct Tilemap
     // Pointer to all of the tile chunks
     TileChunk *tileChunks;
 
-    sizet tilesStoredDimensions;
-
 } Tilemap;
 
 typedef struct TilemapCoordinates
@@ -101,9 +99,18 @@ void setCoordinateData(TilemapCoordinates *coordinates,
 
 void setTileColour(Colour *tileColour, uint32 tileValue);
 
-void setTileValue(GameMemoryBlock *memoryBlock, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value);
+typedef struct GameState GameState;
+void setTileValue(GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value);
 
 typedef struct PlayerPositionData PlayerPositionData;
-bool isTilemapTileFree(Tilemap tilemap, PlayerPositionData *playerPositionData);
+typedef struct GameState GameState;
+bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData *playerPositionData);
+
+xyuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
+
+TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
+
+Colour getOutOfMemoryBoundsColour();
+Colour getUninitialisedTileChunkTilesColour();
 
 #endif
