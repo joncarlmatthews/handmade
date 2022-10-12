@@ -88,6 +88,16 @@ TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tile
     return tileChunk;
 }
 
+xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilemap)
+{
+    xyuint index = { 0 };
+
+    index.x = (absTileX % tilemap.tileChunkTileDimensions);
+    index.y = (absTileY % tilemap.tileChunkTileDimensions);
+
+    return index;
+}
+
 void setTileValue(GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value)
 {
     TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, *tilemap);
@@ -105,8 +115,10 @@ void setTileValue(GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint3
 
     }
 
+    xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileX, absTileY, *tilemap);
+
     uint32 *tile = tileChunk->tiles;
-    tile += (absTileY * tilemap->tileChunkTileDimensions) + absTileX;
+    tile += (chunkRelTileIndex.y * tilemap->tileChunkTileDimensions) + chunkRelTileIndex.x;
     *tile = value;
 }
 

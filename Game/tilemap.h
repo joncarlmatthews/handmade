@@ -110,6 +110,8 @@ xyuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap til
 
 TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
 
+xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
+
 Colour getOutOfMemoryBoundsColour();
 Colour getUninitialisedTileChunkTilesColour();
 

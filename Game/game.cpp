@@ -72,26 +72,29 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert((*gameState->world).worldHeightPx > frameBuffer->heightPx);
         assert((*gameState->world).worldWidthPx > frameBuffer->widthPx);
 
-        // Spam some tile values into the tilemap...
-        setTileValue(gameState, &gameState->world->tilemap, 0, 0, 4);
-        setTileValue(gameState, &gameState->world->tilemap, 16, 0, 4);
-#if 0
-        uint32 spamTiles = 10;
-        for (uint32 absTileY = 0; absTileY < spamTiles; absTileY++){
-            setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, 0, absTileY, 3);
-        }
-
-        
+        // Spam some tile values into the tilemap...      
         World world         = *gameState->world;
         Tilemap tilemap     = world.tilemap;
         //uint32 *startTile   = tilemap.tileChunks->tiles;
 
-        uint32 rooms = 10;
-        uint32 roomTileDims = 10;
+        uint32 rooms = 1;
+        uint32 roomTileDims = 2;
 
         uint32 absTileX = 0;
         uint32 absTileY = 0;
 
+        for (size_t room = 0; room < rooms; room++){
+
+            for (size_t y = 0; y < roomTileDims; y++) {
+                for (size_t x = 0; x < roomTileDims; x++) {
+                    setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, 1);
+                    absTileX++;
+                }
+                absTileY++;
+            }
+        }
+
+        #if 0
         uint32 addrIndex = 0;
 
         for (size_t room = 0; room < rooms; room++){
@@ -100,12 +103,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 for (size_t x = 0; x < roomTileDims; x++) {
                     if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
                         if ( (x == (roomTileDims / 2)) || (y == (roomTileDims / 2)) ) {
-                            setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, absTileX, absTileY, addrIndex, 3);
+                            //setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, 3);
                         }else {
-                            setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, absTileX, absTileY, addrIndex, 2);
+                            //setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, 2);
                         }
                     }else{
-                        setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, absTileX, absTileY, addrIndex, 1);
+                        //setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, 1);
                     }
                     addrIndex += 1;
                 }
@@ -115,7 +118,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 absTileY += 1;
             }else {
                 absTileX += 1;
-
             }
         }
         #endif
@@ -146,7 +148,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         setWorldPosition(gameState, frameBuffer);
 
         memory->initialised = true;
-    }
+    } // initialisation
     
     /**
     * Handle controller input...
@@ -196,22 +198,27 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
 
             // Calculate the x and y absolute tile index for this pixel
-            uint32 tilePosX = modulo(((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx), tilemap.tileDimensions);
-            uint32 tilePosY = modulo(((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx), tilemap.tileDimensions);
+            uint32 absTileIndexX = modulo(((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx), tilemap.tileDimensions);
+            uint32 absTileIndexY = modulo(((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx), tilemap.tileDimensions);
 
             // Get the tile chunk index based off of the absolute tile indexes
-            xyuint tileChunkIndex = getTileChunkIndexForAbsTile(tilePosX, tilePosY, tilemap);
+            xyuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileIndexX, absTileIndexY, tilemap);
 
             // Is this tile chunk out of the sparse storage memory bounds?
-            if ( (tileChunkIndex.x > tilemap.tileChunkDimensions)
-                || (tileChunkIndex.y > tilemap.tileChunkDimensions)){
+            if ( (tileChunkIndex.x > (tilemap.tileChunkDimensions -1))
+                || (tileChunkIndex.y > (tilemap.tileChunkDimensions -1))){
                 writeRectangle(frameBuffer, x, y, 1, 1, getOutOfMemoryBoundsColour()); // red
                 continue;
             }
 
+            // Get the relevant tile chunk
             TileChunk *tileChunk = (tilemap.tileChunks + ((tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x));
 
-            uint32 *tileValue = (tileChunk->tiles + ((tilePosY * tilemap.tileChunkTileDimensions) + tilePosX));
+            // Calculate the tile chunk relative tile indexes
+            xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndexX, absTileIndexY, tilemap);
+
+            // Get the individual tile
+            uint32 *tileValue = (tileChunk->tiles + ((chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
 
             // Is this tile out of the sparse storage memory bounds?
             if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||
@@ -229,8 +236,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             Colour pixelColour = {};
             setTileColour(&pixelColour, *tileValue);
 
-            if ( tilePosX == gameState->worldPosition.tileIndex.x
-                && tilePosY == gameState->worldPosition.tileIndex.y ){
+            if ( absTileIndexX == gameState->worldPosition.tileIndex.x
+                && absTileIndexY == gameState->worldPosition.tileIndex.y ){
                 pixelColour.r = 0.0f;
                 pixelColour.g = 1.0f;
                 pixelColour.b = 0.0f;

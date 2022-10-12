@@ -23,7 +23,7 @@ void *gameMemoryBlockReserveType_(GameMemoryBlock *memoryBlock, sizet typeSize, 
     uint8 *reservedStartingAddress;
 
     if (memoryBlock->lastAddressReserved) {
-        reservedStartingAddress = (memoryBlock->lastAddressReserved + 1);
+        reservedStartingAddress = (memoryBlock->lastAddressReserved + typeSize);
     } else {
         // First time weve allocated within this block...
         reservedStartingAddress = memoryBlock->startingAddress;
