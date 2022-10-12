@@ -5,7 +5,7 @@ void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
                             sizet maximumSizeInBytes)
 {
     memoryBlock->startingAddress        = startingAddress;
-    memoryBlock->lastAddressReserved    = startingAddress;
+    memoryBlock->lastAddressReserved    = 0;
     memoryBlock->totalSizeInBytes       = maximumSizeInBytes;
     memoryBlock->bytesUsed              = 0;
     memoryBlock->bytesFree              = maximumSizeInBytes;
@@ -20,18 +20,25 @@ void *gameMemoryBlockReserveType_(GameMemoryBlock *memoryBlock, sizet typeSize, 
     assert(bytesToReserve <= memoryBlock->bytesFree);
 
     // What's the reserved starting address within the memory block?
-    void *reservedStartingAddress = (memoryBlock->lastAddressReserved + 1);
+    uint8 *reservedStartingAddress;
+
+    if (memoryBlock->lastAddressReserved) {
+        reservedStartingAddress = (memoryBlock->lastAddressReserved + 1);
+    } else {
+        // First time weve allocated within this block...
+        reservedStartingAddress = memoryBlock->startingAddress;
+    }
 
     // Update the bytes used/free
     memoryBlock->bytesUsed = (memoryBlock->bytesUsed + bytesToReserve);
     memoryBlock->bytesFree = (memoryBlock->bytesFree - bytesToReserve);
 
     // Update the memory block's last reserved address
-    memoryBlock->lastAddressReserved = (memoryBlock->lastAddressReserved + bytesToReserve);
+    memoryBlock->lastAddressReserved = (reservedStartingAddress + bytesToReserve);
 
     // Check that the total bytes now used within this memory block don't overrun
     // the total available.
     assert(memoryBlock->bytesUsed <= memoryBlock->totalSizeInBytes);
 
-    return reservedStartingAddress;
+    return (void *)reservedStartingAddress;
 }

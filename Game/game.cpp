@@ -74,6 +74,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Spam some tile values into the tilemap...
         setTileValue(gameState, &gameState->world->tilemap, 0, 0, 4);
+        setTileValue(gameState, &gameState->world->tilemap, 16, 0, 4);
 #if 0
         uint32 spamTiles = 10;
         for (uint32 absTileY = 0; absTileY < spamTiles; absTileY++){
@@ -146,102 +147,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         memory->initialised = true;
     }
-
-    #if 0
-    uint32 *ptr = gameMemoryBlockReserveArray(&gameState->worldMemoryBlock,
-                                                        uint32,
-                                                        (sizet)((sizet)10 * (sizet)10));
-
-    for (size_t i = 0; i < 20; i++){
-        *ptr = 4294967295;
-        ptr +=1;
-    }
-
-    setTileValue(&gameState->worldMemoryBlock, &gameState->world->tilemap, 0, 0, 3);
-
-    {
-        World *world = gameState->world;
-        Tilemap *tilemap = &world->tilemap;
-        TileChunk *tileChunks = tilemap->tileChunks;
-
-        // Tilemap 1
-        if (!tileChunks->tiles) {
-            {
-                char buff[400] = {};
-                sprintf_s(buff, sizeof(buff),
-                    "Tilemap tiles NULL\n");
-                memory->DEBUG_platformLog(buff);
-            }
-        }
-
-        tileChunks +=1;
-        // Tilemap 2
-        if (!tileChunks->tiles) {
-            {
-                char buff[400] = {};
-                sprintf_s(buff, sizeof(buff),
-                    "Tilemap tiles NULL\n");
-                memory->DEBUG_platformLog(buff);
-            }
-        }
-
-        tileChunks +=1;
-        // Tilemap 3
-        if (!tileChunks->tiles) {
-            {
-                char buff[400] = {};
-                sprintf_s(buff, sizeof(buff),
-                    "Tilemap tiles NULL\n");
-                memory->DEBUG_platformLog(buff);
-            }
-        }
-
-        tileChunks +=1;
-        // Tilemap 4
-        if (!tileChunks->tiles) {
-            {
-                char buff[400] = {};
-                sprintf_s(buff, sizeof(buff),
-                    "Tilemap tiles NULL\n");
-                memory->DEBUG_platformLog(buff);
-            }
-        }
-
-        tileChunks +=1;
-        // Invalid Tilemap 1
-        if (!tileChunks->tiles) {
-            {
-                char buff[400] = {};
-                sprintf_s(buff, sizeof(buff),
-                    "Tilemap tiles NULL\n");
-                memory->DEBUG_platformLog(buff);
-            }
-
-        }
-        tileChunks +=1;
-        // Invalid Tilemap 2
-        if (!tileChunks->tiles) {
-            {
-                char buff[400] = {};
-                sprintf_s(buff, sizeof(buff),
-                    "Tilemap tiles NULL\n");
-                memory->DEBUG_platformLog(buff);
-            }
-        }
-
-        tileChunks +=1;
-        // Invalid Tilemap 3
-        if (!tileChunks->tiles) {
-            {
-                char buff[400] = {};
-                sprintf_s(buff, sizeof(buff),
-                    "Tilemap tiles NULL\n");
-                memory->DEBUG_platformLog(buff);
-            }
-
-        }
-    }
-    #endif
     
     /**
     * Handle controller input...
@@ -287,7 +192,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // @NOTE(JM) Drawing this pixel by pixel, this is incapable of hitting 60fps
     // @TODO(JM) Optimise this!!!
     Tilemap tilemap = (*gameState->world).tilemap;
-    uint32 *tile = tilemap.tileChunks->tiles;
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
 
@@ -305,7 +209,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 continue;
             }
 
-            uint32 *tileValue = (tile + ((tilePosY * tilemap.tileDimensions) + tilePosX));
+            TileChunk *tileChunk = (tilemap.tileChunks + ((tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x));
+
+            uint32 *tileValue = (tileChunk->tiles + ((tilePosY * tilemap.tileChunkTileDimensions) + tilePosX));
 
             // Is this tile out of the sparse storage memory bounds?
             if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||

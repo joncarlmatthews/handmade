@@ -106,18 +106,8 @@ void setTileValue(GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint3
     }
 
     uint32 *tile = tileChunk->tiles;
-    tile += (absTileY * tilemap->tileDimensions) + absTileX;
+    tile += (absTileY * tilemap->tileChunkTileDimensions) + absTileX;
     *tile = value;
-
-    #if 0
-    uint32 *tile = tilemap->tileChunks[(tileChunkY * tilemap->tileChunkDimensions) + tileChunkX].tiles;
-    for (size_t y = 0; y < tilemap->tileChunkTileDimensions; y++){
-        for (size_t x = 0; x < tilemap->tileChunkTileDimensions; x++){
-            //*tile = 1;
-            tile +=1;
-        }
-    }
-    #endif
 }
 
 bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData *playerPositionData)

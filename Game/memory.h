@@ -6,11 +6,11 @@
 typedef struct GameMemoryBlock
 {
     // The starting address for the memory block
-    // 8 or 4 bytes in size (x64/x86). uint8 to step 1 byte at a time
+    // 8 or 4 bytes in size (x64/x86). uint8 to step 1 address at a time
     uint8 *startingAddress;
 
     // The last address that was resrved to within the memory block.
-    // 8 or 4 bytes in size (x64/x86). uint8 to step 1 byte at a time
+    // 8 or 4 bytes in size (x64/x86). uint8 to step 1 address at a time
     uint8 *lastAddressReserved;
 
     // The total size in bytes that the memory block can allocate
