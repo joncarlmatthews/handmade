@@ -1,5 +1,5 @@
 Day 035:
- -x Implement sparse tilemap storage.
+ -^ Implement sparse tilemap storage.
  -x Randomness
  -x Doors left/right/top/bottom
  -x Deprecate modulo function??

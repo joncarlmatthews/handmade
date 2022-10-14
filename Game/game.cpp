@@ -77,50 +77,90 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         Tilemap tilemap     = world.tilemap;
         //uint32 *startTile   = tilemap.tileChunks->tiles;
 
-        uint32 rooms = 1;
-        uint32 roomTileDims = 2;
+        uint32 rooms = 6;
+        uint32 roomTileDims = 16;
 
         uint32 absTileX = 0;
         uint32 absTileY = 0;
 
-        for (size_t room = 0; room < rooms; room++){
+        uint32 roomStartTileX = 0;
+        uint32 roomStartTileY = 0;
 
-            for (size_t y = 0; y < roomTileDims; y++) {
-                for (size_t x = 0; x < roomTileDims; x++) {
-                    setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, 1);
+        bool shiftUp        = false;
+        bool shiftDown      = false;
+        bool shiftLeft      = false;
+        bool shiftRight     = false;
+
+        for (uint32 room = 0; room < rooms; room++){
+
+            switch (room)
+            {
+            default:
+                break;
+            case 1:
+                shiftRight = true;
+                break;
+            case 2:
+                shiftRight = true;
+                break;
+            case 3:
+                shiftUp = true;
+                break;
+            case 4:
+                shiftUp = true;
+                break;
+            case 5:
+                shiftLeft = true;
+                break;
+            }
+
+            // Where should the starting X and Y be for this room?
+            if (shiftRight) {
+                roomStartTileX = roomStartTileX + tilemap.tileChunkTileDimensions;
+            }else if(shiftLeft){
+                roomStartTileX = roomStartTileX - tilemap.tileChunkTileDimensions;
+            }
+
+            if (shiftUp) {
+                roomStartTileY = roomStartTileY + tilemap.tileChunkTileDimensions;
+            }else if(shiftDown){
+                roomStartTileY = roomStartTileY - tilemap.tileChunkTileDimensions;
+            }
+            
+            absTileX = roomStartTileX;
+            absTileY = roomStartTileY;
+
+            for (uint32 y = 0; y < roomTileDims; y++) {
+                for (uint32 x = 0; x < roomTileDims; x++) {
+
+                    // Floor
+                    uint32 tileValue = 1;
+
+                    // Edge?
+                    if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
+
+                        // Center edge?
+                        if ( (x == (roomTileDims / 2)) || (y == (roomTileDims / 2)) ) {
+                            // Passageway
+                            tileValue = 3;
+                        }else{
+                            // Wall
+                            tileValue = 2;
+                        }
+                    }
+
+                    setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, tileValue);
                     absTileX++;
                 }
+                absTileX = roomStartTileX;
                 absTileY++;
             }
+
+            shiftUp     = false;
+            shiftDown   = false;
+            shiftLeft   = false;
+            shiftRight  = false;
         }
-
-        #if 0
-        uint32 addrIndex = 0;
-
-        for (size_t room = 0; room < rooms; room++){
-
-            for (size_t y = 0; y < roomTileDims; y++) {
-                for (size_t x = 0; x < roomTileDims; x++) {
-                    if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
-                        if ( (x == (roomTileDims / 2)) || (y == (roomTileDims / 2)) ) {
-                            //setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, 3);
-                        }else {
-                            //setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, 2);
-                        }
-                    }else{
-                        //setTileValue(gameState, &gameState->world->tilemap, absTileX, absTileY, 1);
-                    }
-                    addrIndex += 1;
-                }
-                addrIndex += (tilemap.tileDimensions - roomTileDims);
-            }
-            if (0 == (room % 3)){
-                absTileY += 1;
-            }else {
-                absTileX += 1;
-            }
-        }
-        #endif
 
         // Character attributes
         gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;

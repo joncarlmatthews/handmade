@@ -14,7 +14,7 @@
 
 // How many bits of a 32-bit integer do we want to allocate to the total number
 // of "tile chunks" dimensions*? (*along one side)
-#define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 1
+#define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 2
 
 // How many bits of a 32-bit integer do we want to allocate to the tile chunk's
 // tile dimensions*? (*along one side)

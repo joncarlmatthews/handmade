@@ -5,7 +5,7 @@
 #include "tilemap.h"
 
 // How many pixels to represent 1 meter?
-#define WORLD_PIXELS_PER_METER 5
+#define WORLD_PIXELS_PER_METER 30
 
 typedef struct World {
 
