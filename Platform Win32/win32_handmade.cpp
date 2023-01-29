@@ -282,7 +282,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #endif
 
     // Allocate all required memory for the game from within our platform layer
-    sizet permanentStorageSizeInBytes = utilGibibytesToBytes(1);
+    //sizet permanentStorageSizeInBytes = utilGibibytesToBytes(1);
+    sizet permanentStorageSizeInBytes = utilMebibytesToBytes(5);
     sizet transientStorageSizeInBytes = utilMebibytesToBytes(64);
 
     sizet memoryTotalSize = (permanentStorageSizeInBytes + transientStorageSizeInBytes);

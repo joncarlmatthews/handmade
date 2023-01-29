@@ -19,6 +19,9 @@ void *gameMemoryBlockReserveType_(GameMemoryRegion *memoryRegion,
                                     sizet typeSize,
                                     sizet noOfTypes)
 {
+    assert(noOfTypes > 0);
+    assert(typeSize > 0);
+
     // How many bytes are we reserving?
     sizet bytesToReserve = (typeSize * noOfTypes);
 
@@ -30,7 +33,7 @@ void *gameMemoryBlockReserveType_(GameMemoryRegion *memoryRegion,
     uint8 *reservedStartingAddress;
 
     if (memoryBlock->lastAddressReserved) {
-        reservedStartingAddress = (memoryBlock->lastAddressReserved + typeSize); // @TODO(JM) Should we not just be stepping 1 byte?
+        reservedStartingAddress = (memoryBlock->lastAddressReserved + 1);
     } else {
         // First time weve allocated within this memory block...
         reservedStartingAddress = memoryBlock->startingAddress;
@@ -41,7 +44,7 @@ void *gameMemoryBlockReserveType_(GameMemoryRegion *memoryRegion,
     memoryBlock->bytesFree = (memoryBlock->bytesFree - bytesToReserve);
 
     // Update the memory block's last reserved address
-    memoryBlock->lastAddressReserved = (reservedStartingAddress + bytesToReserve);
+    memoryBlock->lastAddressReserved = (reservedStartingAddress + (bytesToReserve -1));
 
     // Check that the total bytes now used within this memory block don't overrun
     // the total available.

@@ -45,10 +45,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         initGameMemoryBlock(memory->permanentStorage,
                             &gameState->tileChunkMemoryBlock,
                             (uint8 *)(gameState + 1),
-                             (sizet)utilMebibytesToBytes(5));
+                             (sizet)utilMebibytesToBytes(4));
 
         // Init the World's Tilemap
-        initTilemap(memory->permanentStorage,
+        initTilemap(&memory->permanentStorage,
                     gameState,
                     &gameState->tileChunkMemoryBlock,
                     WORLD_PIXELS_PER_METER,

@@ -8,7 +8,7 @@
 /**
  * @NOTE(JM) the tilemap, tile chunks and individual tiles are always square
 */
-void initTilemap(GameMemoryRegion memoryRegion,
+void initTilemap(GameMemoryRegion *memoryRegion,
                     GameState *gameState,
                     GameMemoryBlock *memoryBlock,
                     uint16 pixelsPerMeter,
@@ -37,7 +37,7 @@ void initTilemap(GameMemoryRegion memoryRegion,
     gameState->world.tilemap.tileWidthPx = gameState->world.tilemap.tileHeightPx;
 
     // Reserve the tile chunk arrays from within the memory block
-    gameState->world.tilemap.tileChunks = gameMemoryBlockReserveArray(&memoryRegion,
+    gameState->world.tilemap.tileChunks = gameMemoryBlockReserveArray(memoryRegion,
                                                                         memoryBlock,
                                                                         TileChunk,
                                                                         (sizet)((sizet)gameState->world.tilemap.tileChunkDimensions * (sizet)gameState->world.tilemap.tileChunkDimensions));

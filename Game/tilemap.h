@@ -85,7 +85,7 @@ typedef struct TilemapCoordinates
 
 typedef struct World World;
 typedef struct GameState GameState;
-void initTilemap(GameMemoryRegion memoryRegion,
+void initTilemap(GameMemoryRegion *memoryRegion,
                     GameState *gameState,
                     GameMemoryBlock *memoryBlock,
                     uint16 pixelsPerMeter,
