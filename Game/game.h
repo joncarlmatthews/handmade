@@ -296,28 +296,12 @@ typedef struct SineWave
 
 //
 // Game state & memory
+// @NOTE(JM) Move this to memory.h
 //====================================================
 typedef struct GameMemory
 {
-    /*
-     * Memory address of data we want to store permanently throughout the game.
-     */
-    void *permanentStorage;
-
-    /*
-     * Size, in bytes of the permanent memory storage.
-     */
-    uint64 permanentStorageSizeInBytes;
-
-    /*
-     * Memory address of data we want to store temporarily throughout the game.
-     */
-    void *transientStorage;
-
-    /*
-     * Size, in bytes of the temporary memory storage.
-     */
-    uint64 transientStorageSizeInBytes;
+    GameMemoryRegion permanentStorage;
+    GameMemoryRegion transientStorage;
 
 #if HANDMADE_LOCAL_BUILD
     void *recordingStorageGameState;
@@ -344,17 +328,20 @@ typedef struct GameMemory
 
 } GameMemory;
 
+/**
+ * The GameState essentially sits inside (overlays) the memory's permanent storage
+ * region's bytes
+*/
 typedef struct GameState
 {
     Player player1;
-
-    GameMemoryBlock worldMemoryBlock;
-    GameMemoryBlock tileChunkMemoryBlock;
-    GameMemoryBlock tilesMemoryBlock;
-    World *world;
+    World world;
 
     // The currently active world position based off of the player's absolute position
     TilemapCoordinates worldPosition;
+
+    GameMemoryBlock tileChunkMemoryBlock;
+    GameMemoryBlock tilesMemoryBlock;
 
     // X and Y pixel coordinates for the camera's starting position (to start drawing from)
     // Camera is drawn out to dimensions of GameFrameBuffer.width/height

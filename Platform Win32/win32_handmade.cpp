@@ -281,7 +281,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     uint64 memoryStartAddress = 0;
 #endif
 
+    // Allocate all required memory for the game from within our platform layer
+    sizet permanentStorageSizeInBytes = utilGibibytesToBytes(1);
+    sizet transientStorageSizeInBytes = utilMebibytesToBytes(64);
+
+    sizet memoryTotalSize = (permanentStorageSizeInBytes + transientStorageSizeInBytes);
+
+    void *platformMemory = platformAllocateMemory(&thread, memoryStartAddress, memoryTotalSize);
+
+    // Init game memory
     GameMemory memory = {0};
+
+    memory.permanentStorage.bytes = platformMemory;
+    memory.permanentStorage.sizeInBytes = permanentStorageSizeInBytes;
+    memory.permanentStorage.bytesUsed = 0;
+    memory.permanentStorage.bytesFree = permanentStorageSizeInBytes;
+
+    memory.transientStorage.bytes = ((uint8 *)platformMemory + permanentStorageSizeInBytes);
+    memory.transientStorage.sizeInBytes = transientStorageSizeInBytes;
+    memory.transientStorage.bytesUsed = 0;
+    memory.transientStorage.bytesFree = transientStorageSizeInBytes;
+
     memory.platformAllocateMemory = &platformAllocateMemory;
     memory.platformFreeMemory = &platformFreeMemory;
     memory.platformControllerVibrate = &platformControllerVibrate;
@@ -293,18 +313,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.DEBUG_platformFreeFileMemory = &DEBUG_platformFreeFileMemory;
 #endif
 
-    memory.permanentStorageSizeInBytes = utilMebibytesToBytes(64);
-    memory.transientStorageSizeInBytes = utilGibibytesToBytes(1);
-
-    uint64 memoryTotalSize = (memory.permanentStorageSizeInBytes + memory.transientStorageSizeInBytes);
-
-    memory.permanentStorage = platformAllocateMemory(&thread, memoryStartAddress, memoryTotalSize);
-    memory.transientStorage = (((uint8 *)memory.permanentStorage) + memory.permanentStorageSizeInBytes);
-
-    if (memory.permanentStorage && memory.transientStorage) {
+    if (memory.permanentStorage.bytes && memory.transientStorage.bytes) {
 
         win32State.gameMemorySize = memoryTotalSize;
-        win32State.gameMemory = memory.permanentStorage;
+        win32State.gameMemory = memory.permanentStorage.bytes;
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
         memory.recordingStorageGameState   = platformAllocateMemory(&thread, (memoryStartAddress + memoryTotalSize), memoryTotalSize);

@@ -70,7 +70,7 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
 
     positionData->pointPosition = pointPos;
 
-    setCoordinateData(&positionData->activeTile, (uint32)x, (uint32)y, gameState->world->tilemap);
+    setCoordinateData(&positionData->activeTile, (uint32)x, (uint32)y, gameState->world.tilemap);
 }
 
 void playerHandleMovement(GameState *gameState,
@@ -89,7 +89,7 @@ void playerHandleMovement(GameState *gameState,
     // Normalise pixel movement regardless of framerate
     // @NOTE(JM) The truncated fractions cause issues with different framerates.
     // Not sure how to resolve at this point.
-    float32 pixelsPerSecond = ((*gameState->world).pixelsPerMeter * gameState->player1.movementSpeedMPS);
+    float32 pixelsPerSecond = (gameState->world.pixelsPerMeter * gameState->player1.movementSpeedMPS);
     float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
 
     // Ensure the player can at least move!
@@ -155,8 +155,8 @@ pixelsPerFrame);
     if (playerAttemptingMove) {
 
         xyuint playerNewPos = { 0 };
-        playerNewPos.x = modulo(playerNewPosTmp.x, (*gameState->world).worldWidthPx);
-        playerNewPos.y = modulo(playerNewPosTmp.y, (*gameState->world).worldHeightPx);
+        playerNewPos.x = modulo(playerNewPosTmp.x, gameState->world.worldWidthPx);
+        playerNewPos.y = modulo(playerNewPosTmp.y, gameState->world.worldHeightPx);
 
         // Player movement direction
         uint32 movedUp = 0;
@@ -207,9 +207,9 @@ pixelsPerFrame);
         // Can the move to the new tile be taken?
         // @NOTE(JM) bug where rounding means player doesnt get a close as
         // possible to certain tiles when a move is invalid
-        if ((false == (isTilemapTileFree(gameState, (*gameState->world).tilemap, &middle)))
-            || (false == (isTilemapTileFree(gameState, (*gameState->world).tilemap, &bottomLeft)))
-            || (false == (isTilemapTileFree(gameState, (*gameState->world).tilemap, &bottomRight)))) {
+        if ((false == (isTilemapTileFree(gameState, gameState->world.tilemap, &middle)))
+            || (false == (isTilemapTileFree(gameState, gameState->world.tilemap, &bottomLeft)))
+            || (false == (isTilemapTileFree(gameState, gameState->world.tilemap, &bottomRight)))) {
 
 #if 0
 #ifdef HANDMADE_DEBUG_TILE_POS

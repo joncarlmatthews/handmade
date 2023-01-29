@@ -2,6 +2,7 @@
 #define HEADER_HH_TILEMAP
 
 #include "types.h"
+#include "memory.h"
 
 //
 // Tilemap
@@ -82,10 +83,11 @@ typedef struct TilemapCoordinates
 
 } TilemapCoordinates;
 
-typedef struct GameMemoryBlock GameMemoryBlock;
 typedef struct World World;
-void initTilemap(GameMemoryBlock *memoryBlock,
-                    World *world,
+typedef struct GameState GameState;
+void initTilemap(GameMemoryRegion memoryRegion,
+                    GameState *gameState,
+                    GameMemoryBlock *memoryBlock,
                     uint16 pixelsPerMeter,
                     uint32 tileDimensionsBitShift,
                     uint32 tileChunkDimensionsBitShift,
@@ -100,7 +102,7 @@ void setCoordinateData(TilemapCoordinates *coordinates,
 void setTileColour(Colour *tileColour, uint32 tileValue);
 
 typedef struct GameState GameState;
-void setTileValue(GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value);
+void setTileValue(GameMemoryRegion memoryRegion, GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value);
 
 typedef struct PlayerPositionData PlayerPositionData;
 typedef struct GameState GameState;
