@@ -42,10 +42,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
 
         // Init the game memory block for the tile chunks
-        initGameMemoryBlock(memory->permanentStorage,
-                            &gameState->tileChunkMemoryBlock,
-                            (uint8 *)(gameState + 1),
-                             (sizet)utilMebibytesToBytes(4));
+        memoryRegionReserveBlock(memory->permanentStorage,
+                                    &gameState->tileChunkMemoryBlock,
+                                    (uint8 *)(gameState + 1),
+                                     (sizet)utilMebibytesToBytes(4));
 
         // Init the World's Tilemap
         initTilemap(&memory->permanentStorage,
@@ -58,10 +58,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     TILE_DIMENSIONS_METERS);
 
         // Init the game memory block for the tiles (used within the tile chunks)
-        initGameMemoryBlock(memory->permanentStorage,
-                            &gameState->tilesMemoryBlock,
-                            (gameState->tileChunkMemoryBlock.lastAddressReserved +1),
-                            (sizet)utilMebibytesToBytes(10));
+        memoryRegionReserveBlock(memory->permanentStorage,
+                                    &gameState->tilesMemoryBlock,
+                                    (gameState->tileChunkMemoryBlock.endingAddress +1),
+                                    (sizet)utilMebibytesToBytes(10));
 
         // Init the World
         gameState->world.pixelsPerMeter  = (uint16)WORLD_PIXELS_PER_METER;

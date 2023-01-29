@@ -3,7 +3,16 @@
 
 #include "types.h"
 
-typedef struct GameMemoryRegion
+/**
+ * @NOTE(JM)
+ * Allocated memory contains Memory Regions. Memory Regions contain Memory Blocks
+ */
+
+/**
+ * Memory Regions are high-level logical sections of the platform layer's memory.
+ * E.g. "permanent storage" or "transient storage"
+*/
+typedef struct MemoryRegion
 {
     // Address
     void *bytes;
@@ -15,15 +24,27 @@ typedef struct GameMemoryRegion
     sizet bytesUsed;
     sizet bytesFree;
 
-} GameMemoryRegion;
+} MemoryRegion;
 
-typedef struct GameMemoryBlock
+/**
+ * Memory Blocks are used to reserve sections of a Memory Region for a particular
+ * use. E.g. use 1MB of this Memory Region for enemies. Or, use 5MB of this Memory
+ * Region for tile data. Etc etc.
+ *
+ * Using blocks of memory allows you to carve up the Memory Region into sections
+ * and keeps track of the starting and ending address.
+*/
+typedef struct MemoryBlock
 {
     // The starting address for the memory block
     // 8 or 4 bytes in size (x64/x86). uint8 to step 1 address at a time
     uint8 *startingAddress;
 
-    // The last address that was resrved to within the memory block.
+    // The last possible address for the memory block
+    // 8 or 4 bytes in size (x64/x86). uint8 to step 1 address at a time
+    uint8 *endingAddress;
+
+    // The last address that was reserved to within the memory block.
     // 8 or 4 bytes in size (x64/x86). uint8 to step 1 address at a time
     uint8 *lastAddressReserved;
 
@@ -33,25 +54,25 @@ typedef struct GameMemoryBlock
     // How many bytes used and how many are left free?
     sizet bytesUsed;
     sizet bytesFree;
-} GameMemoryBlock;
+} MemoryBlock;
 
 /**
 * Initialises a game memory block with a starting address and the
-* maximum number of bytes that the bock can fill up to
+* maximum number of bytes that the block can fill up to
 * 
 * @param *memoryBlock           Address of memory block to write to
 * @param *startingAddress       Address of the first piece of memory that can be written to
 * @param maximumSizeInBytes     Maximum size in bytes that the memory block can take up
 */
-void initGameMemoryBlock(GameMemoryRegion memoryRegion,
-                            GameMemoryBlock *memoryBlock,
-                            uint8 *startingAddress,
-                            sizet maximumSizeInBytes);
+void memoryRegionReserveBlock(MemoryRegion memoryRegion,
+                                MemoryBlock *memoryBlock,
+                                uint8 *startingAddress,
+                                sizet maximumSizeInBytes);
 
 /**
- * "Reserves" a region of the GameMemoryBlock with enough space for a given type
+ * "Reserves" a region of the MemoryBlock with enough space for a given type
  * by keeping track of the starting address and size of the data type within
- * the GameMemoryBlock. Doesn't write to any data. Returns the starting memory
+ * the MemoryBlock. Doesn't write to any data. Returns the starting memory
  * address of the reserved region.
  *
  */
@@ -64,7 +85,7 @@ void initGameMemoryBlock(GameMemoryRegion memoryRegion,
  * @return void*            The starting memory address of the reserved region.
  *
  */
-#define gameMemoryBlockReserveStruct(memoryRegion, memoryBlockPtr, type) (type *)gameMemoryBlockReserveType_(memoryRegion, memoryBlockPtr, sizeof(type), 1)
+#define memoryBlockReserveStruct(memoryRegion, memoryBlockPtr, type) (type *)memoryBlockReserveType_(memoryRegion, memoryBlockPtr, sizeof(type), 1)
 
 /* 
  * Reserves a region for an array with n number of elements
@@ -75,7 +96,7 @@ void initGameMemoryBlock(GameMemoryRegion memoryRegion,
  * @return void*            The starting memory address of the reserved region.
  *
  */
-#define gameMemoryBlockReserveArray(memoryRegion, memoryBlockPtr, type, noOfElements) (type *)gameMemoryBlockReserveType_(memoryRegion, memoryBlockPtr, sizeof(type), noOfElements)
+#define memoryBlockReserveArray(memoryRegion, memoryBlockPtr, type, noOfElements) (type *)memoryBlockReserveType_(memoryRegion, memoryBlockPtr, sizeof(type), noOfElements)
 
 /*
  * Macros so we can reserve regions for different data types
@@ -85,9 +106,9 @@ void initGameMemoryBlock(GameMemoryRegion memoryRegion,
  * @param noOfTypes     How many of the types to reserve
  * @return void*        The starting memory address of the reserved region.
 */
-void *gameMemoryBlockReserveType_(GameMemoryRegion *memoryRegion,
-                                    GameMemoryBlock *memoryBlock,
-                                    sizet typeSize,
-                                    sizet noOfTypes);
+void *memoryBlockReserveType_(MemoryRegion *memoryRegion,
+                                MemoryBlock *memoryBlock,
+                                sizet typeSize,
+                                sizet noOfTypes);
 
 #endif

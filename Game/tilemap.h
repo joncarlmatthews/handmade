@@ -85,9 +85,9 @@ typedef struct TilemapCoordinates
 
 typedef struct World World;
 typedef struct GameState GameState;
-void initTilemap(GameMemoryRegion *memoryRegion,
+void initTilemap(MemoryRegion *memoryRegion,
                     GameState *gameState,
-                    GameMemoryBlock *memoryBlock,
+                    MemoryBlock *memoryBlock,
                     uint16 pixelsPerMeter,
                     uint32 tileDimensionsBitShift,
                     uint32 tileChunkDimensionsBitShift,
@@ -102,7 +102,7 @@ void setCoordinateData(TilemapCoordinates *coordinates,
 void setTileColour(Colour *tileColour, uint32 tileValue);
 
 typedef struct GameState GameState;
-void setTileValue(GameMemoryRegion memoryRegion, GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value);
+void setTileValue(MemoryRegion memoryRegion, GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value);
 
 typedef struct PlayerPositionData PlayerPositionData;
 typedef struct GameState GameState;

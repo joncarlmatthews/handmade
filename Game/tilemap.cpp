@@ -8,9 +8,9 @@
 /**
  * @NOTE(JM) the tilemap, tile chunks and individual tiles are always square
 */
-void initTilemap(GameMemoryRegion *memoryRegion,
+void initTilemap(MemoryRegion *memoryRegion,
                     GameState *gameState,
-                    GameMemoryBlock *memoryBlock,
+                    MemoryBlock *memoryBlock,
                     uint16 pixelsPerMeter,
                     uint32 tileDimensionsBitShift,
                     uint32 tileChunkDimensionsBitShift,
@@ -37,10 +37,10 @@ void initTilemap(GameMemoryRegion *memoryRegion,
     gameState->world.tilemap.tileWidthPx = gameState->world.tilemap.tileHeightPx;
 
     // Reserve the tile chunk arrays from within the memory block
-    gameState->world.tilemap.tileChunks = gameMemoryBlockReserveArray(memoryRegion,
-                                                                        memoryBlock,
-                                                                        TileChunk,
-                                                                        (sizet)((sizet)gameState->world.tilemap.tileChunkDimensions * (sizet)gameState->world.tilemap.tileChunkDimensions));
+    gameState->world.tilemap.tileChunks = memoryBlockReserveArray(memoryRegion,
+                                                                    memoryBlock,
+                                                                    TileChunk,
+                                                                    (sizet)(gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions));
 }
 
 void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
@@ -100,7 +100,7 @@ xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilem
     return index;
 }
 
-void setTileValue(GameMemoryRegion memoryRegion, GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value)
+void setTileValue(MemoryRegion memoryRegion, GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value)
 {
     TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, *tilemap);
 
@@ -111,7 +111,7 @@ void setTileValue(GameMemoryRegion memoryRegion, GameState *gameState, Tilemap *
     }
 
     if (!tileChunk->tiles){
-        tileChunk->tiles = gameMemoryBlockReserveArray(&memoryRegion,
+        tileChunk->tiles = memoryBlockReserveArray(&memoryRegion,
                                                         &gameState->tilesMemoryBlock,
                                                         uint32,
                                                         (sizet)((sizet)tilemap->tileChunkTileDimensions * (sizet)tilemap->tileChunkTileDimensions));

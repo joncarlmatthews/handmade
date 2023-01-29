@@ -300,8 +300,8 @@ typedef struct SineWave
 //====================================================
 typedef struct GameMemory
 {
-    GameMemoryRegion permanentStorage;
-    GameMemoryRegion transientStorage;
+    MemoryRegion permanentStorage;
+    MemoryRegion transientStorage;
 
 #if HANDMADE_LOCAL_BUILD
     void *recordingStorageGameState;
@@ -337,11 +337,13 @@ typedef struct GameState
     Player player1;
     World world;
 
+    MemoryBlock tileChunkMemoryBlock;
+    MemoryBlock tilesMemoryBlock;
+
     // The currently active world position based off of the player's absolute position
     TilemapCoordinates worldPosition;
 
-    GameMemoryBlock tileChunkMemoryBlock;
-    GameMemoryBlock tilesMemoryBlock;
+    
 
     // X and Y pixel coordinates for the camera's starting position (to start drawing from)
     // Camera is drawn out to dimensions of GameFrameBuffer.width/height

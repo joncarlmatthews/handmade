@@ -1,21 +1,22 @@
 #include "memory.h"
 
-void initGameMemoryBlock(GameMemoryRegion memoryRegion,
-                            GameMemoryBlock *memoryBlock,
+void memoryRegionReserveBlock(MemoryRegion memoryRegion,
+                            MemoryBlock *memoryBlock,
                             uint8 *startingAddress,
                             sizet maximumSizeInBytes)
 {
     assert(maximumSizeInBytes <= memoryRegion.bytesFree);
 
     memoryBlock->startingAddress        = startingAddress;
+    memoryBlock->endingAddress          = (startingAddress + (maximumSizeInBytes -1));
     memoryBlock->lastAddressReserved    = 0;
     memoryBlock->totalSizeInBytes       = maximumSizeInBytes;
     memoryBlock->bytesUsed              = 0;
     memoryBlock->bytesFree              = maximumSizeInBytes;
 }
 
-void *gameMemoryBlockReserveType_(GameMemoryRegion *memoryRegion,
-                                    GameMemoryBlock *memoryBlock,
+void *memoryBlockReserveType_(MemoryRegion *memoryRegion,
+                                    MemoryBlock *memoryBlock,
                                     sizet typeSize,
                                     sizet noOfTypes)
 {
