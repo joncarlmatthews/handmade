@@ -2,7 +2,10 @@
 #define HEADER_HH_GAME
 
 #include "types.h"
+#include "utility.h"
 #include "memory.h"
+#include "graphics.h"
+#include "world.h"
 #include "tilemap.h"
 #include "player.h"
 
@@ -296,7 +299,6 @@ typedef struct SineWave
 
 //
 // Game state & memory
-// @NOTE(JM) Move this to memory.h
 //====================================================
 typedef struct GameMemory
 {
@@ -343,35 +345,12 @@ typedef struct GameState
     // The currently active world position based off of the player's absolute position
     TilemapCoordinates worldPosition;
 
-    
-
     // X and Y pixel coordinates for the camera's starting position (to start drawing from)
     // Camera is drawn out to dimensions of GameFrameBuffer.width/height
     xyuint cameraPositionPx;
 
     SineWave sineWave;
 } GameState;
-
-//
-// Graphics
-//====================================================
-
-/**
- * Insert a rectangle into the frame buffer
- *
- * @param xOffset   Offset, in pixels along the x axis to start drawing from
- * @param yOffset   Offset, in pixels along the y axis to start drawing from
- * @param width     Width, in pixels, to draw
- * @param height    Height, in pixels, to draw
- * @return void
- */
-internal_func
-void writeRectangle(GameFrameBuffer* buffer,
-                    int64 xOffset,
-                    int64 yOffset,
-                    int64 width,
-                    int64 height,
-                    Colour colour);
 
 //
 // Audio
