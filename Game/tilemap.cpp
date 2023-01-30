@@ -112,9 +112,9 @@ void setTileValue(MemoryRegion memoryRegion, GameState *gameState, Tilemap *tile
 
     if (!tileChunk->tiles){
         tileChunk->tiles = memoryBlockReserveArray(&memoryRegion,
-                                                        &gameState->tilesMemoryBlock,
-                                                        uint32,
-                                                        (sizet)((sizet)tilemap->tileChunkTileDimensions * (sizet)tilemap->tileChunkTileDimensions));
+                                                    &gameState->tilesMemoryBlock,
+                                                    uint32,
+                                                    (sizet)(tilemap->tileChunkTileDimensions * tilemap->tileChunkTileDimensions));
 
     }
 
@@ -192,10 +192,10 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
 
 Colour getOutOfMemoryBoundsColour()
 {
-    return { (204.0f/255.0f), (51.0f/255.0f), 0.0f }; // red
+    return { (1.0f/255.0f), (2.0f/255.0f), (172.0f/255.0f) }; // blue
 }
 
 Colour getUninitialisedTileChunkTilesColour()
 {
-    return { 0.0f, (102.0f/255.0f), (255.0f/255.0f) }; // blue
+    return { (204.0f/255.0f), (51.0f/255.0f), 0.0f }; // red
 }

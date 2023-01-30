@@ -41,11 +41,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
 
-        // Init the game memory block for the tile chunks
+        // Reserve a block of the memory region for the tile chunks
         memoryRegionReserveBlock(memory->permanentStorage,
                                     &gameState->tileChunkMemoryBlock,
                                     (uint8 *)(gameState + 1),
-                                     (sizet)utilMebibytesToBytes(4));
+                                     (sizet)utilMebibytesToBytes(1));
+
+        // Reserve a block of the memory region for the tiles (used within the tile chunks)
+        memoryRegionReserveBlock(memory->permanentStorage,
+                                    &gameState->tilesMemoryBlock,
+                                    (gameState->tileChunkMemoryBlock.endingAddress +1),
+                                    (sizet)utilMebibytesToBytes(1));
 
         // Init the World's Tilemap
         initTilemap(&memory->permanentStorage,
@@ -56,12 +62,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     TILE_CHUNK_DIMENSIONS_BIT_SHIFT,
                     TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT,
                     TILE_DIMENSIONS_METERS);
-
-        // Init the game memory block for the tiles (used within the tile chunks)
-        memoryRegionReserveBlock(memory->permanentStorage,
-                                    &gameState->tilesMemoryBlock,
-                                    (gameState->tileChunkMemoryBlock.endingAddress +1),
-                                    (sizet)utilMebibytesToBytes(10));
 
         // Init the World
         gameState->world.pixelsPerMeter  = (uint16)WORLD_PIXELS_PER_METER;
@@ -229,211 +229,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
      * 
      */
 
-    
-
-
     // Draw the tile map.
     // @NOTE(JM) Drawing this pixel by pixel, this is incapable of hitting 60fps
     // @TODO(JM) Optimise this!!!
     Tilemap tilemap = gameState->world.tilemap;
 
-    uint32 leftEdgeToRender = (tilemap.tileWidthPx - (gameState->cameraPositionPx.x % tilemap.tileWidthPx));
-    uint32 rightEdgeToRender = (tilemap.tileWidthPx - leftEdgeToRender);
-    uint32 completeTilesX = ((frameBuffer->widthPx / tilemap.tileWidthPx) - 1);
-    rightEdgeToRender;
-    completeTilesX;
-    #if 0
-    {
-        char buff[400] = {};
-        sprintf_s(buff, sizeof(buff),
-            "Pixels to render left edge: %i. \
-Pixels to render right edge: %i. \
-Complete tiles to render : %i\n",
-leftEdgeToRender,
-rightEdgeToRender,
-completeTilesX);
-        memory->DEBUG_platformLog(buff);
-    }
-    #endif
-
-#if 0
-    for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
-        for (uint32 x = 0; x < leftEdgeToRender; x++) {
-
-            // Calculate the x and y absolute tile index for this pixel
-            uint32 absTileIndexX = (((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx) % tilemap.tileDimensions);
-            uint32 absTileIndexY = (((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx) % tilemap.tileDimensions);
-
-            // Get the tile chunk index based off of the absolute tile indexes
-            xyuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileIndexX, absTileIndexY, tilemap);
-
-            // Is this tile chunk out of the sparse storage memory bounds?
-            if ( (tileChunkIndex.x > (tilemap.tileChunkDimensions -1))
-                || (tileChunkIndex.y > (tilemap.tileChunkDimensions -1))){
-                writeRectangle(frameBuffer, x, y, 1, 1, getOutOfMemoryBoundsColour()); // red
-                continue;
-            }
-
-            // Get the relevant tile chunk
-            TileChunk *tileChunk = (tilemap.tileChunks + ((tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x));
-
-            // Calculate the tile chunk relative tile indexes
-            xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndexX, absTileIndexY, tilemap);
-
-            // Get the individual tile
-            uint32 *tileValue = (tileChunk->tiles + ((chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
-
-            // Is this tile out of the sparse storage memory bounds?
-            if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||
-                ( (uint8 *)tileValue > gameState->tilesMemoryBlock.lastAddressReserved
-                    || (uint8 *)tileValue < gameState->tilesMemoryBlock.startingAddress) ){
-                writeRectangle(frameBuffer, x, y, 1, 1, getUninitialisedTileChunkTilesColour()); // blue
-                continue;
-            }
-
-            // Null pointer check
-            if (!tileValue) {
-                continue;
-            }
-
-            Colour pixelColour = {};
-            setTileColour(&pixelColour, *tileValue);
-
-            if ( absTileIndexX == gameState->worldPosition.tileIndex.x
-                && absTileIndexY == gameState->worldPosition.tileIndex.y ){
-                pixelColour.r = 0.0f;
-                pixelColour.g = 1.0f;
-                pixelColour.b = 0.0f;
-            }
-
-            writeRectangle(frameBuffer, x, y, 1, 1, pixelColour);
-        }
-    }
-#endif
-
-    uint32 startX = (gameState->cameraPositionPx.x + leftEdgeToRender);
-    uint32 startY = (gameState->cameraPositionPx.y + 0);
-
-    for (uint32 tileX = 0; tileX < 20; tileX++) {
-
-        startX = (tileX * tilemap.tileWidthPx);
-
-        // Calculate the x and y absolute tile index for this pixel
-        uint32 absTileIndexX = ((startX / tilemap.tileWidthPx) % tilemap.tileDimensions);
-        uint32 absTileIndexY = ((startY / tilemap.tileHeightPx) % tilemap.tileDimensions);
-
-        // Get the tile chunk index based off of the absolute tile indexes
-        xyuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileIndexX, absTileIndexY, tilemap);
-
-        // Is this tile chunk out of the sparse storage memory bounds?
-        if ( (tileChunkIndex.x > (tilemap.tileChunkDimensions -1))
-            || (tileChunkIndex.y > (tilemap.tileChunkDimensions -1))){
-            writeRectangle(frameBuffer, startX, startY, tilemap.tileWidthPx, tilemap.tileHeightPx, getOutOfMemoryBoundsColour()); // red
-            startX += tilemap.tileWidthPx;
-            continue;
-        }
-
-        // Get the relevant tile chunk
-        TileChunk *tileChunk = (tilemap.tileChunks + ((tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x));
-
-        // Calculate the tile chunk relative tile indexes
-        xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndexX, absTileIndexY, tilemap);
-
-        // Get the individual tile
-        uint32 *tileValue = (tileChunk->tiles + ((chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
-
-        // Is this tile out of the sparse storage memory bounds?
-        if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||
-            ( (uint8 *)tileValue > gameState->tilesMemoryBlock.lastAddressReserved
-                || (uint8 *)tileValue < gameState->tilesMemoryBlock.startingAddress) ){
-            writeRectangle(frameBuffer, startX, startY, tilemap.tileWidthPx, tilemap.tileHeightPx, getUninitialisedTileChunkTilesColour()); // blue
-            startX += tilemap.tileWidthPx;
-            continue;
-        }
-
-        // Null pointer check
-        if (!tileValue) {
-            startX += tilemap.tileWidthPx;
-            continue;
-        }
-
-        Colour pixelColour = {};
-        setTileColour(&pixelColour, *tileValue);
-
-        if ( absTileIndexX == gameState->worldPosition.tileIndex.x
-            && absTileIndexY == gameState->worldPosition.tileIndex.y ){
-            pixelColour.r = 0.0f;
-            pixelColour.g = 1.0f;
-            pixelColour.b = 0.0f;
-        }
-
-        writeRectangle(frameBuffer, startX, startY, tilemap.tileWidthPx, tilemap.tileHeightPx, pixelColour);
-
-        startX += tilemap.tileWidthPx;
-        
-    }
-
-    #if 0
-    for (uint32 tiley = 1; tiley < 36; tiley++) {
-        for (uint32 tilex = 1; tilex < completeTilesX; tilex++) {
-
-            uint32 x = (tilex * tilemap.tileWidthPx);
-            uint32 y = (tiley * tilemap.tileWidthPx);
-
-            // Calculate the x and y absolute tile index for this pixel
-            uint32 absTileIndexX = (((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx) % tilemap.tileDimensions);
-            uint32 absTileIndexY = (((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx) % tilemap.tileDimensions);
-
-            // Get the tile chunk index based off of the absolute tile indexes
-            xyuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileIndexX, absTileIndexY, tilemap);
-
-            // Is this tile chunk out of the sparse storage memory bounds?
-            if ( (tileChunkIndex.x > (tilemap.tileChunkDimensions -1))
-                || (tileChunkIndex.y > (tilemap.tileChunkDimensions -1))){
-                writeRectangle(frameBuffer, x, y, tilemap.tileWidthPx, tilemap.tileHeightPx, getOutOfMemoryBoundsColour()); // red
-                continue;
-            }
-
-            // Get the relevant tile chunk
-            TileChunk *tileChunk = (tilemap.tileChunks + ((tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x));
-
-            // Calculate the tile chunk relative tile indexes
-            xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndexX, absTileIndexY, tilemap);
-
-            // Get the individual tile
-            uint32 *tileValue = (tileChunk->tiles + ((chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
-
-            // Is this tile out of the sparse storage memory bounds?
-            if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||
-                ( (uint8 *)tileValue > gameState->tilesMemoryBlock.lastAddressReserved
-                    || (uint8 *)tileValue < gameState->tilesMemoryBlock.startingAddress) ){
-                writeRectangle(frameBuffer, x, y, tilemap.tileWidthPx, tilemap.tileHeightPx, getUninitialisedTileChunkTilesColour()); // blue
-                continue;
-            }
-
-            // Null pointer check
-            if (!tileValue) {
-                continue;
-            }
-
-            Colour pixelColour = {};
-            setTileColour(&pixelColour, *tileValue);
-
-            if ( absTileIndexX == gameState->worldPosition.tileIndex.x
-                && absTileIndexY == gameState->worldPosition.tileIndex.y ){
-                pixelColour.r = 0.0f;
-                pixelColour.g = 1.0f;
-                pixelColour.b = 0.0f;
-            }
-
-            writeRectangle(frameBuffer, x, y, tilemap.tileWidthPx, tilemap.tileHeightPx, pixelColour);
-        }
-    }
-    #endif
-
-
-
-    #if 0
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
 
@@ -447,7 +247,7 @@ completeTilesX);
             // Is this tile chunk out of the sparse storage memory bounds?
             if ( (tileChunkIndex.x > (tilemap.tileChunkDimensions -1))
                 || (tileChunkIndex.y > (tilemap.tileChunkDimensions -1))){
-                writeRectangle(frameBuffer, x, y, 1, 1, getOutOfMemoryBoundsColour()); // red
+                writeRectangle(frameBuffer, x, y, 1, 1, getOutOfMemoryBoundsColour()); // blue
                 continue;
             }
 
@@ -464,7 +264,7 @@ completeTilesX);
             if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||
                     ( (uint8 *)tileValue > gameState->tilesMemoryBlock.lastAddressReserved
                         || (uint8 *)tileValue < gameState->tilesMemoryBlock.startingAddress) ){
-                writeRectangle(frameBuffer, x, y, 1, 1, getUninitialisedTileChunkTilesColour()); // blue
+                writeRectangle(frameBuffer, x, y, 1, 1, getUninitialisedTileChunkTilesColour()); // red
                 continue;
             }
 
@@ -486,7 +286,6 @@ completeTilesX);
             writeRectangle(frameBuffer, x, y, 1, 1, pixelColour);
         }
     }
-    #endif
 
     // Draw player
     writeRectangle(frameBuffer,
