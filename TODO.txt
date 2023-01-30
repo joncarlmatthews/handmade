@@ -1,5 +1,4 @@
 Day 035:
- -^ Implement sparse tilemap storage.
  -x Randomness
  -x Doors left/right/top/bottom
  -x Tile collision reimplementation
