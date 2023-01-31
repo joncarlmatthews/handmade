@@ -21,6 +21,8 @@
 // How many bits of a 32-bit integer do we want to allocate to each tile chunk's
 // total tile dimensions*? (*along one side)
 // Note that a tile chunk doesnt have to write tile data to all of its tiles.
+// Temp note: A tile chunk's tiles can contain an entire room, many rooms,
+// part of another room etc etc. A single tile chunk's tiles does not necessarily = 1 room
 #define TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT 4
 
 // How many meters does one side of an individual tile have? (Tiles are always square)

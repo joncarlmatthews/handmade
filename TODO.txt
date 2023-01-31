@@ -1,6 +1,5 @@
 Day 035:
- -x Doors left/right/top/bottom
- -x Deprecate modulo function??
+ -x Add z-axis with doors top & bottom
 
 Ongoing:
  -x Slow frame rate (now that we're rendering pixel by pixel)
@@ -8,3 +7,4 @@ Ongoing:
  -x Diagonal speed bug (will fix when implement vectors)
  -x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
  -x Postfix pixel variables with Px (tidy up, where appropiate)
+  -x Deprecate modulo function?? Why doesnt the mod operator suffice??

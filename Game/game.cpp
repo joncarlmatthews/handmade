@@ -70,8 +70,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         World world         = gameState->world;
         Tilemap tilemap     = world.tilemap;
 
-        uint32 rooms = 6; // @TODO(JM) make this equal to tileChunkDimensions
-        //uint32 roomTileDims = gameState->world.tilemap.tileChunkTileDimensions;
+        uint32 rooms = 20;
         uint32 roomTileDims = 10;
 
         uint32 absTileX = 0;
@@ -85,31 +84,37 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         uint randomNumberIndex = 0;
 
+        uint doorTop        = false;
+        uint doorLeft       = false;
+        uint doorBottom     = false;
+        uint doorRight      = false;
+
         for (uint32 room = 0; room < rooms; room++){
 
             uint32 randomNumber = (randomNumbers[randomNumberIndex] % 2);
-            if (room > 0){
-                switch (randomNumber)
-                {
-                case 0:
-                default:
-                    shiftRight = true;
-                    break;
-                case 1:
-                    shiftUp = true;
-                    break;
-                }
-            }
 
             // Where should the starting X and Y be for this room?
             if (shiftRight) {
-                roomStartTileX = roomStartTileX + tilemap.tileChunkTileDimensions;
+                roomStartTileX = roomStartTileX + roomTileDims;
+                doorLeft = true;
             }else if (shiftUp) {
-                roomStartTileY = roomStartTileY + tilemap.tileChunkTileDimensions;
+                roomStartTileY = roomStartTileY + roomTileDims;
+                doorBottom = true;
             }
             
             absTileX = roomStartTileX;
             absTileY = roomStartTileY;
+
+            switch (randomNumber)
+            {
+                case 0:
+                default:
+                    doorRight = true;
+                    break;
+                case 1:
+                    doorTop = true;
+                    break;
+            }
 
             for (uint32 y = 0; y < roomTileDims; y++) {
                 for (uint32 x = 0; x < roomTileDims; x++) {
@@ -120,13 +125,47 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     // Edge?
                     if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
 
-                        // Center edge?
-                        if ( (x == (roomTileDims / 2)) || (y == (roomTileDims / 2)) ) {
-                            // Passageway
-                            tileValue = 3;
-                        }else{
-                            // Wall
-                            tileValue = 2;
+                        // Wall
+                        tileValue = 2;
+
+                        // Left edge, up
+                        if (0 == x) {
+                            if (doorLeft){
+                                // Half way up?
+                                if ((y == (roomTileDims / 2))){
+                                    tileValue = 3; // Passageway
+                                }
+                            }
+                        }
+
+                        // Right edge, up
+                        if (x == (roomTileDims -1)) {
+                            if (doorRight){
+                                // Half way up?
+                                if ((y == (roomTileDims / 2))){
+                                    tileValue = 3; // Passageway
+                                }
+                            }
+                        }
+
+                        // Bottom edge, along
+                        if (0 == y) {
+                            if (doorBottom){
+                                // Half way along?
+                                if ((x == (roomTileDims / 2))){
+                                    tileValue = 3; // Passageway
+                                }
+                            }
+                        }
+
+                        // Top edge, along
+                        if (y == (roomTileDims -1)) {
+                            if (doorTop){
+                                // Half way along?
+                                if ((x == (roomTileDims / 2))){
+                                    tileValue = 3; // Passageway
+                                }
+                            }
                         }
                     }
 
@@ -137,8 +176,24 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 absTileY++;
             }
 
-            shiftUp     = false;
-            shiftRight  = false;
+            switch (randomNumber)
+            {
+                case 0:
+                default:
+                    shiftRight = true;
+                    shiftUp = false;
+                    break;
+                case 1:
+                    shiftRight = false;
+                    shiftUp = true;
+                    break;
+            }
+
+            doorTop        = false;
+            doorLeft       = false;
+            doorBottom     = false;
+            doorRight      = false;
+
             randomNumberIndex++;
         }
 
