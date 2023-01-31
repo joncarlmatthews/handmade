@@ -15,7 +15,7 @@
 
 // How many bits of a 32-bit integer do we want to allocate to the total number
 // of "tile chunks" dimensions*? (*along one side)
-#define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 2
+#define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 3
 
 // How many bits of a 32-bit integer do we want to allocate to the tile chunk's
 // tile dimensions*? (*along one side)
@@ -102,7 +102,11 @@ void setCoordinateData(TilemapCoordinates *coordinates,
 void setTileColour(Colour *tileColour, uint32 tileValue);
 
 typedef struct GameState GameState;
-void setTileValue(MemoryRegion memoryRegion, GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value);
+void setTileValue(MemoryRegion memoryRegion,
+                    GameState *gameState,
+                    uint32 absTileX,
+                    uint32 absTileY,
+                    uint32 value);
 
 typedef struct PlayerPositionData PlayerPositionData;
 typedef struct GameState GameState;
@@ -114,7 +118,7 @@ TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tile
 
 xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
 
-Colour getOutOfMemoryBoundsColour();
+Colour getOutOfTileChunkMemoryBoundsColour();
 Colour getUninitialisedTileChunkTilesColour();
 
 #endif

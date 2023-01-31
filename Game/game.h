@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "utility.h"
+#include "random.h"
 #include "memory.h"
 #include "graphics.h"
 #include "world.h"
@@ -339,7 +340,7 @@ typedef struct GameState
     Player player1;
     World world;
 
-    MemoryBlock tileChunkMemoryBlock;
+    MemoryBlock tileChunksMemoryBlock;
     MemoryBlock tilesMemoryBlock;
 
     // The currently active world position based off of the player's absolute position

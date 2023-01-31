@@ -100,64 +100,67 @@ xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilem
     return index;
 }
 
-void setTileValue(MemoryRegion memoryRegion, GameState *gameState, Tilemap *tilemap, uint32 absTileX, uint32 absTileY, uint32 value)
+void setTileValue(MemoryRegion memoryRegion,
+                    GameState *gameState,
+                    uint32 absTileX,
+                    uint32 absTileY,
+                    uint32 value)
 {
-    TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, *tilemap);
+    Tilemap tilemap = gameState->world.tilemap;
+
+    TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, tilemap);
 
     // Is this tile chunk out of the sparse storage memory bounds?
-    if ((uint8 *)tileChunk > gameState->tileChunkMemoryBlock.lastAddressReserved
-        || (uint8 *)tileChunk < gameState->tileChunkMemoryBlock.startingAddress){
+#if HANDMADE_LOCAL_BUILD
+    if ((uint8 *)tileChunk > gameState->tileChunksMemoryBlock.lastAddressReserved
+        || (uint8 *)tileChunk < gameState->tileChunksMemoryBlock.startingAddress){
         assert(!"Cannot set tile value for an absolute tile that sits outside of the available tile chunks")
     }
+#endif
 
     if (!tileChunk->tiles){
         tileChunk->tiles = memoryBlockReserveArray(&memoryRegion,
                                                     &gameState->tilesMemoryBlock,
                                                     uint32,
-                                                    (sizet)(tilemap->tileChunkTileDimensions * tilemap->tileChunkTileDimensions));
+                                                    (sizet)(tilemap.tileChunkTileDimensions * tilemap.tileChunkTileDimensions));
 
     }
 
-    xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileX, absTileY, *tilemap);
+    xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileX, absTileY, tilemap);
 
     uint32 *tile = tileChunk->tiles;
-    tile += (chunkRelTileIndex.y * tilemap->tileChunkTileDimensions) + chunkRelTileIndex.x;
+    tile += (chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x;
     *tile = value;
 }
 
 bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData *playerPositionData)
 {
-    uint32 tilePosX = playerPositionData->activeTile.tileIndex.x;
-    uint32 tilePosY = playerPositionData->activeTile.tileIndex.y;
+    uint32 absTileX = playerPositionData->activeTile.tileIndex.x;
+    uint32 absTileY = playerPositionData->activeTile.tileIndex.y;
 
-    // Get the tile chunk based off of the absolute tile index
-    TileChunk *tileChunk = getTileChunkForAbsTile(tilePosX, tilePosY, tilemap);
+    uint32 relTileX = playerPositionData->activeTile.chunkRelativeTileIndex.x;
+    uint32 relTileY = playerPositionData->activeTile.chunkRelativeTileIndex.y;
+
+    xyuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileX, absTileY, tilemap);
 
     // Is this tile chunk out of the sparse storage memory bounds?
-    if ((uint8 *)tileChunk > gameState->tileChunkMemoryBlock.lastAddressReserved
-        || (uint8 *)tileChunk < gameState->tileChunkMemoryBlock.startingAddress){
-#if HANDMADE_LOCAL_BUILD
-        return true;
-#else
+    if ( (tileChunkIndex.x > (tilemap.tileChunkDimensions -1))
+        || (tileChunkIndex.y > (tilemap.tileChunkDimensions -1))){
         return false;
-#endif
     }
+
+    // Get the tile chunk based off of the absolute tile index
+    TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, tilemap);
 
     // Have the tiles within this tile chunk been initialised?
     if (!tileChunk->tiles) {
-#if HANDMADE_LOCAL_BUILD
-        return true;
-#else
         return false;
-#endif
     }
 
-    uint32 tileNumber = (tilePosY * tilemap.tileDimensions) + tilePosX;
+    uint32 *tile = (tileChunk->tiles + ((relTileY * tilemap.tileChunkTileDimensions) + relTileX));
 
-    uint32 *tileState = (tilemap.tileChunks->tiles + tileNumber);
-
-    if (tileState) {
-        if (*tileState == 2) {
+    if (tile) {
+        if (*tile == 2) {
             return false;
         }
     }
@@ -190,7 +193,7 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
     }
 }
 
-Colour getOutOfMemoryBoundsColour()
+Colour getOutOfTileChunkMemoryBoundsColour()
 {
     return { (1.0f/255.0f), (2.0f/255.0f), (172.0f/255.0f) }; // blue
 }

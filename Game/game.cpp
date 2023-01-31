@@ -37,20 +37,20 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Reserve a block of the memory region for the tile chunks
         memoryRegionReserveBlock(memory->permanentStorage,
-                                    &gameState->tileChunkMemoryBlock,
+                                    &gameState->tileChunksMemoryBlock,
                                     (uint8 *)(gameState + 1),
                                      (sizet)utilMebibytesToBytes(1));
 
         // Reserve a block of the memory region for the tiles (used within the tile chunks)
         memoryRegionReserveBlock(memory->permanentStorage,
                                     &gameState->tilesMemoryBlock,
-                                    (gameState->tileChunkMemoryBlock.endingAddress +1),
+                                    (gameState->tileChunksMemoryBlock.endingAddress +1),
                                     (sizet)utilMebibytesToBytes(1));
 
         // Init the World's Tilemap
         initTilemap(&memory->permanentStorage,
                     gameState,
-                    &gameState->tileChunkMemoryBlock,
+                    &gameState->tileChunksMemoryBlock,
                     WORLD_PIXELS_PER_METER,
                     TILE_DIMENSIONS_BIT_SHIFT,
                     TILE_CHUNK_DIMENSIONS_BIT_SHIFT,
@@ -69,10 +69,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // Spam some tile values into the tilemap...      
         World world         = gameState->world;
         Tilemap tilemap     = world.tilemap;
-        //uint32 *startTile   = tilemap.tileChunks->tiles;
 
-        uint32 rooms = 6;
-        uint32 roomTileDims = 16;
+        uint32 rooms = 6; // @TODO(JM) make this equal to tileChunkDimensions
+        uint32 roomTileDims = gameState->world.tilemap.tileChunkTileDimensions;
 
         uint32 absTileX = 0;
         uint32 absTileY = 0;
@@ -81,44 +80,31 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         uint32 roomStartTileY = 0;
 
         bool shiftUp        = false;
-        bool shiftDown      = false;
-        bool shiftLeft      = false;
         bool shiftRight     = false;
+
+        uint randomNumberIndex = 0;
 
         for (uint32 room = 0; room < rooms; room++){
 
-            switch (room)
-            {
-            default:
-                break;
-            case 1:
-                shiftRight = true;
-                break;
-            case 2:
-                shiftRight = true;
-                break;
-            case 3:
-                shiftUp = true;
-                break;
-            case 4:
-                shiftUp = true;
-                break;
-            case 5:
-                shiftLeft = true;
-                break;
+            uint32 randomNumber = (randomNumbers[randomNumberIndex] % 2);
+            if (room > 0){
+                switch (randomNumber)
+                {
+                case 0:
+                default:
+                    shiftRight = true;
+                    break;
+                case 1:
+                    shiftUp = true;
+                    break;
+                }
             }
 
             // Where should the starting X and Y be for this room?
             if (shiftRight) {
                 roomStartTileX = roomStartTileX + tilemap.tileChunkTileDimensions;
-            }else if(shiftLeft){
-                roomStartTileX = roomStartTileX - tilemap.tileChunkTileDimensions;
-            }
-
-            if (shiftUp) {
+            }else if (shiftUp) {
                 roomStartTileY = roomStartTileY + tilemap.tileChunkTileDimensions;
-            }else if(shiftDown){
-                roomStartTileY = roomStartTileY - tilemap.tileChunkTileDimensions;
             }
             
             absTileX = roomStartTileX;
@@ -143,7 +129,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         }
                     }
 
-                    setTileValue(memory->permanentStorage, gameState, &gameState->world.tilemap, absTileX, absTileY, tileValue);
+                    setTileValue(memory->permanentStorage, gameState, absTileX, absTileY, tileValue);
                     absTileX++;
                 }
                 absTileX = roomStartTileX;
@@ -151,9 +137,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
 
             shiftUp     = false;
-            shiftDown   = false;
-            shiftLeft   = false;
             shiftRight  = false;
+            randomNumberIndex++;
         }
 
         // Character attributes
@@ -241,7 +226,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             // Is this tile chunk out of the sparse storage memory bounds?
             if ( (tileChunkIndex.x > (tilemap.tileChunkDimensions -1))
                 || (tileChunkIndex.y > (tilemap.tileChunkDimensions -1))){
-                writeRectangle(frameBuffer, x, y, 1, 1, getOutOfMemoryBoundsColour()); // blue
+                writeRectangle(frameBuffer, x, y, 1, 1, getOutOfTileChunkMemoryBoundsColour()); // blue
                 continue;
             }
 
