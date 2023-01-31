@@ -17,17 +17,14 @@ void initTilemap(MemoryRegion *memoryRegion,
                     uint32 tileChunkTileDimensionsBitShift,
                     float32 tileDimensionsMeters)
 {
-    gameState->world.tilemap.tileDimensionsBitShift  = tileDimensionsBitShift;
-    gameState->world.tilemap.tileDimensionsBitMask   = ((1 << tileDimensionsBitShift) - 1);
-    gameState->world.tilemap.tileDimensions          = (1 << tileDimensionsBitShift);
+    gameState->world.tilemap.tileDimensionsBitShift     = tileDimensionsBitShift;
+    gameState->world.tilemap.tileDimensions             = (1 << tileDimensionsBitShift);
 
-    gameState->world.tilemap.tileChunkDimensionsBitShift  = tileChunkDimensionsBitShift;
-    gameState->world.tilemap.tileChunkDimensionsBitMask   = ((1 << tileChunkDimensionsBitShift) - 1);
-    gameState->world.tilemap.tileChunkDimensions          = (1 << tileChunkDimensionsBitShift);
+    gameState->world.tilemap.tileChunkDimensionsBitShift    = tileChunkDimensionsBitShift;
+    gameState->world.tilemap.tileChunkDimensions            = (1 << tileChunkDimensionsBitShift);
 
-    gameState->world.tilemap.tileChunkTileDimensionsBitShift  = tileChunkTileDimensionsBitShift;
-    gameState->world.tilemap.tileChunkTileDimensionsBitMask   = ((1 << tileChunkTileDimensionsBitShift) - 1);
-    gameState->world.tilemap.tileChunkTileDimensions          = (1 << tileChunkTileDimensionsBitShift);
+    gameState->world.tilemap.tileChunkTileDimensionsBitShift    = tileChunkTileDimensionsBitShift;
+    gameState->world.tilemap.tileChunkTileDimensions            = (1 << tileChunkTileDimensionsBitShift);
 
     // Check that the tilemap's total possible tile dimensions are at least
     // big enough to hold the number of tile chunks and tile chunk tile dimensions

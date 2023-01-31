@@ -23,6 +23,11 @@
 
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
+    uint32 foo = 1;
+    foo = (foo << 2);
+
+    uint32 bitMask = ((1 << 1) - 1);
+    bitMask;
     /**
      * Game state initialisation
      */

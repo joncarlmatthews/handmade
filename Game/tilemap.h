@@ -11,6 +11,9 @@
 
 // How many bits of a 32-bit integer do we want to allocate to the tilemap's
 // total tile dimensions*? (along one side)
+// 0 = 1x1
+// 1 = 2x2
+// 2 = 4x4 etc
 #define TILE_DIMENSIONS_BIT_SHIFT 10
 
 // How many bits of a 32-bit integer do we want to allocate to the total number
@@ -40,18 +43,15 @@ typedef struct Tilemap
     // Total possible number of tiles across 1 whole side of the tilemap
     // (Total tilemap tile dimensions are always square)
     uint32 tileDimensionsBitShift;
-    uint32 tileDimensionsBitMask;
     uint32 tileDimensions;
 
     // Total number of tile chunks requested within the tilemap
     uint32 tileChunkDimensionsBitShift;
-    uint32 tileChunkDimensionsBitMask;
     uint32 tileChunkDimensions;
 
     // Total number of tiles across one side of an individual tile chunk
     // (Tile chunks are always square)
     uint32 tileChunkTileDimensionsBitShift;
-    uint32 tileChunkTileDimensionsBitMask;
     uint32 tileChunkTileDimensions;
 
     // Height and width in pixels of an individual tile
