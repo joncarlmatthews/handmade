@@ -1,6 +1,6 @@
 # "Handmade Hero"
 
-Low level game programming concepts in C/C++
+Low level game programming in C flavoured C++.
 
 ## Current Progress
 

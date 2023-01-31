@@ -1,7 +1,5 @@
 Day 035:
- -x Randomness
  -x Doors left/right/top/bottom
- -x Tile collision reimplementation
  -x Deprecate modulo function??
 
 Ongoing:
