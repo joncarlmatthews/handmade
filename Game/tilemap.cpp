@@ -133,8 +133,16 @@ void setTileValue(MemoryRegion memoryRegion,
     *tile = value;
 }
 
+#ifdef HANDMADE_WALK_THROUGH_WALLS
+bool isTilemapTileFree(GameState* gameState, Tilemap tilemap, PlayerPositionData* playerPositionData)
+{
+    return true;
+}
+#else
+
 bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData *playerPositionData)
 {
+
     uint32 absTileX = playerPositionData->activeTile.tileIndex.x;
     uint32 absTileY = playerPositionData->activeTile.tileIndex.y;
 
@@ -167,28 +175,34 @@ bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData
 
     return true;
 }
+#endif
 
 void setTileColour(Colour *tileColour, uint32 tileValue)
 {
     switch (tileValue) {
     default:
-        *tileColour =  { (255.0f/255.0f), (255.0f/255.0f), (0.0f/255.0f) }; // Default tile value
+        // Allocated tile memory, but no value set. (Yellow)
+        *tileColour =  { (255.0f/255.0f), (255.0f/255.0f), (0.0f/255.0f) };
         break;
 
-    case 1: 
-        *tileColour = { (89.0f/255.0f), (89.0f/255.0f), (89.0f/255.0f) }; // stone floor
+    case 1:
+        // stone floor
+        *tileColour = { (89.0f/255.0f), (89.0f/255.0f), (89.0f/255.0f) }; 
         break;
 
     case 2:
-        *tileColour = { (38.0f/255.0f), (38.0f/255.0f), (38.0f/255.0f) }; // stone wall
+        // stone wall
+        *tileColour = { (38.0f/255.0f), (38.0f/255.0f), (38.0f/255.0f) }; 
         break;
 
     case 3:
-        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f) }; // passageway
+        // passageway
+        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f) }; 
         break;
 
     case 4:
-        *tileColour = { (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f) }; // earth/grass
+        // earth/grass
+        *tileColour = { (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f) }; 
         break;
     }
 }

@@ -71,7 +71,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         Tilemap tilemap     = world.tilemap;
 
         uint32 rooms = 6; // @TODO(JM) make this equal to tileChunkDimensions
-        uint32 roomTileDims = gameState->world.tilemap.tileChunkTileDimensions;
+        //uint32 roomTileDims = gameState->world.tilemap.tileChunkTileDimensions;
+        uint32 roomTileDims = 10;
 
         uint32 absTileX = 0;
         uint32 absTileY = 0;

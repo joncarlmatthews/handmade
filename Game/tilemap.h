@@ -14,11 +14,13 @@
 #define TILE_DIMENSIONS_BIT_SHIFT 10
 
 // How many bits of a 32-bit integer do we want to allocate to the total number
-// of "tile chunks" dimensions*? (*along one side)
+// of possible "tile chunks" dimensions*? (*along one side)
+// Note not all tile chunks have to be used.
 #define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 3
 
-// How many bits of a 32-bit integer do we want to allocate to the tile chunk's
-// tile dimensions*? (*along one side)
+// How many bits of a 32-bit integer do we want to allocate to each tile chunk's
+// total tile dimensions*? (*along one side)
+// Note that a tile chunk doesnt have to write tile data to all of its tiles.
 #define TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT 4
 
 // How many meters does one side of an individual tile have? (Tiles are always square)

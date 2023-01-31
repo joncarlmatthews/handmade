@@ -19,6 +19,7 @@
     // #define HANDMADE_DEBUG_FPS
     // #define HANDMADE_DEBUG_CLOCKCYCLES
     // #define HANDMADE_DEBUG_AUDIO
+    #define HANDMADE_WALK_THROUGH_WALLS
 #endif
 
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
