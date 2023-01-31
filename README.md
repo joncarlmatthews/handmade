@@ -79,29 +79,3 @@ Finally, run the build script with the relevant Configuration and Release argume
 The platform layer will then dynamically reload the game code without the need to rebuild the platform code. You can safely run `build.bat` with (a) the Visual Studio debugger running the platform layer or (b) when simply running primary the .exe
 
 This `build.bat` build script has been coded to match the Visual Studio build commands and so all files generated are placed in the usual directories.
-
-## Command line flags
-
-```
-HANDMADE_LOCAL_BUILD
-  - 0 for all non-dev builds
-  - 1 to include code that should only be included within a local build of the game
-```
-
-```
-HANDMADE_DEBUG
-  - 0 no arbitrary debug
-  - 1 arbitrary debug
-```
-
-```
-HANDMADE_DEBUG_FPS
-  - 0 no FPS console debug
-  - 1 to debug FPS counts to the console.
-```
-
-```
-HANDMADE_DEBUG_AUDIO
-  - 0 no audio debug
-  - 1 debug audio
-```
