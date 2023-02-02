@@ -1,5 +1,8 @@
 Day 035:
- -x Add z-axis with doors top & bottom
+ -x Collapse tile spam into single loop
+ -x Add z-index to player position
+ -x Draw up/down doors
+ -x Only show up/down if room has no exit
 
 Ongoing:
  -x Slow frame rate (now that we're rendering pixel by pixel)

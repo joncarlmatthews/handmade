@@ -54,6 +54,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     WORLD_PIXELS_PER_METER,
                     TILE_DIMENSIONS_BIT_SHIFT,
                     TILE_CHUNK_DIMENSIONS_BIT_SHIFT,
+                    TILEMAP_Z_PLANES,
                     TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT,
                     TILE_DIMENSIONS_METERS);
 
@@ -71,6 +72,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         Tilemap tilemap     = world.tilemap;
         uint randomNumberIndex = 0;
 
+        // z-plane 0
         {
             uint32 rooms = 20;
             uint32 roomTileDims = 10;
@@ -199,6 +201,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
         }
 
+        // z-plane 1
         {
             uint32 rooms = 8;
             uint32 roomTileDims = 10;

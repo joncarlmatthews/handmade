@@ -14,9 +14,12 @@ void initTilemap(MemoryRegion *memoryRegion,
                     uint16 pixelsPerMeter,
                     uint32 tileDimensionsBitShift,
                     uint32 tileChunkDimensionsBitShift,
+                    uint32 tilemapTotalZPlanes,
                     uint32 tileChunkTileDimensionsBitShift,
                     float32 tileDimensionsMeters)
 {
+    assert(tilemapTotalZPlanes > 0);
+
     gameState->world.tilemap.tileDimensionsBitShift     = tileDimensionsBitShift;
     gameState->world.tilemap.tileDimensions             = (1 << tileDimensionsBitShift);
 
@@ -37,7 +40,7 @@ void initTilemap(MemoryRegion *memoryRegion,
     gameState->world.tilemap.tileChunks = memoryBlockReserveArray(memoryRegion,
                                                                     memoryBlock,
                                                                     TileChunk,
-                                                                    (sizet)((gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions * 2)));
+                                                                    (sizet)((gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions) * tilemapTotalZPlanes));
 }
 
 void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
