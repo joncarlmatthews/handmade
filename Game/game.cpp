@@ -200,7 +200,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         }
 
         {
-            uint32 rooms = 3;
+            uint32 rooms = 8;
             uint32 roomTileDims = 10;
 
             uint32 absTileX = 0;
@@ -327,8 +327,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
         }
 
-        
-
         // Character attributes
         gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
         gameState->player1.widthMeters   = ((float32)gameState->player1.heightMeters * 0.65f);
@@ -420,7 +418,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
 
             // Get the relevant tile chunk
-            TileChunk *tileChunk = (tilemap.tileChunks + ((tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x));
+            TileChunk* tileChunk = getTileChunkForAbsTile(absTileIndexX, absTileIndexY, absTileIndexZ, tilemap);
 
             // Calculate the tile chunk relative tile indexes
             xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndexX, absTileIndexY, tilemap);
