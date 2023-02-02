@@ -3,6 +3,7 @@ Day 035:
  -x Add z-index to player position
  -x Draw up/down doors
  -x Only show up/down if room has no exit
+ -x shift and mask to store chunk and tile in the same 32 bit integer?
 
 Ongoing:
  -x Slow frame rate (now that we're rendering pixel by pixel)
