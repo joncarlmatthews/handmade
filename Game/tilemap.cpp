@@ -37,7 +37,7 @@ void initTilemap(MemoryRegion *memoryRegion,
     gameState->world.tilemap.tileChunks = memoryBlockReserveArray(memoryRegion,
                                                                     memoryBlock,
                                                                     TileChunk,
-                                                                    (sizet)(gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions));
+                                                                    (sizet)((gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions * 2)));
 }
 
 void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
@@ -69,21 +69,22 @@ void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pi
     coordinates->tileRelativePixelCoordinates.y = 0;
 }
 
-xyuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap)
+xyzuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap)
 {
-    xyuint tileChunkIndex = { 0 };
+    xyzuint tileChunkIndex = { 0 };
 
     tileChunkIndex.x = (absTileX / tilemap.tileChunkTileDimensions);
     tileChunkIndex.y = (absTileY / tilemap.tileChunkTileDimensions);
+    tileChunkIndex.z = absTileZ;
 
     return tileChunkIndex;
 }
 
-TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap)
+TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap)
 {
-    xyuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileX, absTileY, tilemap);
+    xyzuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileX, absTileY, absTileZ, tilemap);
     TileChunk *tileChunk = tilemap.tileChunks;
-    tileChunk = (tileChunk + (tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x);
+    tileChunk = tileChunk + (tileChunkIndex.z * (tilemap.tileChunkDimensions * tilemap.tileChunkDimensions)) + (tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x;
     return tileChunk;
 }
 
@@ -101,11 +102,12 @@ void setTileValue(MemoryRegion memoryRegion,
                     GameState *gameState,
                     uint32 absTileX,
                     uint32 absTileY,
+                    uint32 absTileZ,
                     uint32 value)
 {
     Tilemap tilemap = gameState->world.tilemap;
 
-    TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, tilemap);
+    TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, absTileZ, tilemap);
 
     // Is this tile chunk out of the sparse storage memory bounds?
 #if HANDMADE_LOCAL_BUILD

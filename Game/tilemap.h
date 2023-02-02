@@ -10,7 +10,7 @@
 // Tilemap is the entire game world
 
 // How many bits of a 32-bit integer do we want to allocate to the tilemap's
-// total tile dimensions*? (along one side)
+// tile dimensions*? (along one side)
 // 0 = 1x1
 // 1 = 2x2
 // 2 = 4x4 etc
@@ -18,8 +18,11 @@
 
 // How many bits of a 32-bit integer do we want to allocate to the total number
 // of possible "tile chunks" dimensions*? (*along one side)
-// Note not all tile chunks have to be used.
-#define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 3
+// 
+// Note:
+// 1) Tiles can only be stored within a tile chunk, not arbitrarily anywhere in the world 
+// 2) Not all tile chunks have to be used.
+#define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 6
 
 // How many bits of a 32-bit integer do we want to allocate to each tile chunk's
 // total tile dimensions*? (*along one side)
@@ -40,7 +43,7 @@ typedef struct TileChunk
 
 typedef struct Tilemap
 {
-    // Total possible number of tiles across 1 whole side of the tilemap
+    // Total number of tiles across 1 whole side of the tilemap
     // (Total tilemap tile dimensions are always square)
     uint32 tileDimensionsBitShift;
     uint32 tileDimensions;
@@ -71,7 +74,7 @@ typedef struct TilemapCoordinates
     xyuint pixelCoordinates;
 
     // x and y absolute tile index (relative to the entire tilemap)
-    xyuint tileIndex;
+    xyzuint tileIndex;
 
     // X and Y index of the current tile chunk
     xyuint chunkIndex;
@@ -110,15 +113,16 @@ void setTileValue(MemoryRegion memoryRegion,
                     GameState *gameState,
                     uint32 absTileX,
                     uint32 absTileY,
+                    uint32 absTileZ,
                     uint32 value);
 
 typedef struct PlayerPositionData PlayerPositionData;
 typedef struct GameState GameState;
 bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData *playerPositionData);
 
-xyuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
+xyzuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap);
 
-TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
+TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap);
 
 xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
 
