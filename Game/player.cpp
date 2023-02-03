@@ -132,6 +132,12 @@ pixelsPerFrame);
         playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
     }
 
+    if (controller.up.endedDown) {
+        gameState->player1.zIndex = 1;
+    }else if (controller.down.endedDown) {
+        gameState->player1.zIndex = 0;
+    }
+
     if (controller.isAnalog) {
 
         if (controller.leftThumbstick.position.x) {

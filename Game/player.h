@@ -13,25 +13,28 @@
 
 // Average male running speed
 // https://www.calculateme.com/speed/miles-per-hour/to-meters-per-second/8
-//#define PLAYER_SPEED 3.57632f
+#define PLAYER_SPEED 3.57632f
 //#define PLAYER_SPEED 7.0f
-#define PLAYER_SPEED 30.57632f
+//#define PLAYER_SPEED 30.57632f
 
 typedef struct Player {
-    // Position in relation to the world
+    // Pixel position in relation to the world
     xyuint absolutePosition;
+
+    // Which tilemap z-plane is the player on?
+    uint32 zIndex;
 
     // Position in relation to screen (for background scrolling)
     xyuint fixedPosition;
 
-    // Position in relation to the tile chunk
+    // Last direction the player moved in (up, down, left, right)
     uint32 lastMoveDirections;
 
     float32 heightMeters;
     float32 widthMeters;
     uint16 heightPx;
     uint16 widthPx;
-    float32 movementSpeedMPS; // Metre's per second
+    float32 movementSpeedMPS; // Metres per second
 
     // @NOTE(JM) old, temp jump code
     bool8 jumping;

@@ -350,6 +350,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->player1.fixedPosition.y = (frameBuffer->heightPx / 2);
         gameState->player1.absolutePosition.x = gameState->player1.fixedPosition.x;
         gameState->player1.absolutePosition.y = gameState->player1.fixedPosition.y;
+        gameState->player1.zIndex = 0;
        
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data
@@ -374,6 +375,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     */
 
     // Which controller has the user selected as the main controller?
+    // 0 = keyboard, 1 = first controller
     uint8 userSelectedMainController = 0; // @TODO(JM) make this selectable through a UI
 
     playerHandleMovement(gameState,
@@ -401,6 +403,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // @NOTE(JM) Drawing this pixel by pixel, this is incapable of hitting 60fps
     // @TODO(JM) Optimise this!!!
     Tilemap tilemap = gameState->world.tilemap;
+    uint32 absTileIndexZ = gameState->player1.zIndex;
 
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
@@ -408,7 +411,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             // Calculate the x and y absolute tile index for this pixel
             uint32 absTileIndexX = (((x + gameState->cameraPositionPx.x) / tilemap.tileWidthPx) % tilemap.tileDimensions);
             uint32 absTileIndexY = (((y + gameState->cameraPositionPx.y) / tilemap.tileHeightPx) % tilemap.tileDimensions);
-            uint32 absTileIndexZ = 1;
 
             // Get the tile chunk index based off of the absolute tile indexes
             xyzuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileIndexX, absTileIndexY, absTileIndexZ, tilemap);
@@ -421,7 +423,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
 
             // Get the relevant tile chunk
-            TileChunk* tileChunk = getTileChunkForAbsTile(absTileIndexX, absTileIndexY, absTileIndexZ, tilemap);
+            TileChunk *tileChunk = getTileChunkForAbsTile(absTileIndexX, absTileIndexY, absTileIndexZ, tilemap);
 
             // Calculate the tile chunk relative tile indexes
             xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndexX, absTileIndexY, tilemap);

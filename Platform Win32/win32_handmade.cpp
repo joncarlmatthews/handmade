@@ -848,7 +848,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                     float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
 
                     // Calculate the FPS given the speed of this current frame.
-                    float32 fps = (1000.0f / (float32)netFrameTimeMS);
+                    float32 fps = (1000.0f / (float32)millisecondsElapsedForFrame);
 
                     // Calculate the processor running speed in GHz
                     float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
@@ -1441,6 +1441,14 @@ internal_func void win32ProcessMessages(HWND window,
                         state.wasDown = oldGameInput.controllers[0].shoulderR1.endedDown;
                         gameInput->controllers[0].shoulderR1 = state;
                     } break;
+                    case VK_UP: {
+                        state.wasDown = oldGameInput.controllers[0].up.endedDown;
+                        gameInput->controllers[0].up = state;
+                    } break;
+                    case VK_DOWN: {
+                        state.wasDown = oldGameInput.controllers[0].down.endedDown;
+                        gameInput->controllers[0].down = state;
+                    } break;
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
                     // Playback recording/looping
@@ -1457,6 +1465,7 @@ internal_func void win32ProcessMessages(HWND window,
                             }
                         }
                     } break;
+#endif
 
                     case 'P':{
                         if (keyDown) {
@@ -1467,7 +1476,6 @@ internal_func void win32ProcessMessages(HWND window,
                             }
                         }
                     } break;
-#endif
                 }
             }
 
