@@ -43,7 +43,7 @@ void initTilemap(MemoryRegion *memoryRegion,
                                                                     (sizet)((gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions) * tilemapTotalZPlanes));
 }
 
-void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
+void setTileCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
 {
     coordinates->pixelCoordinates.x = pixelX;
     coordinates->pixelCoordinates.y = pixelY;
@@ -68,8 +68,9 @@ void setCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pi
     coordinates->chunkRelativePixelCoordinates.y = 0;
 
     // @TODO(JM)
-    coordinates->tileRelativePixelCoordinates.x = 0;
-    coordinates->tileRelativePixelCoordinates.y = 0;
+    coordinates->tileRelativePixelCoordinates.x = (pixelX - (tilemap.tileWidthPx * tileIndexX));
+    coordinates->tileRelativePixelCoordinates.y = (pixelY - (tilemap.tileHeightPx * tileIndexY));
+    return;
 }
 
 xyzuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap)
@@ -147,11 +148,12 @@ bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData
 
     uint32 absTileX = playerPositionData->activeTile.tileIndex.x;
     uint32 absTileY = playerPositionData->activeTile.tileIndex.y;
+    uint32 absTileZ = gameState->player1.zIndex;
 
     uint32 relTileX = playerPositionData->activeTile.chunkRelativeTileIndex.x;
     uint32 relTileY = playerPositionData->activeTile.chunkRelativeTileIndex.y;
 
-    xyuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileX, absTileY, tilemap);
+    xyzuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileX, absTileY, absTileZ, tilemap);
 
     // Is this tile chunk out of the sparse storage memory bounds?
     if ( (tileChunkIndex.x > (tilemap.tileChunkDimensions -1))
@@ -160,7 +162,12 @@ bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData
     }
 
     // Get the tile chunk based off of the absolute tile index
-    TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, tilemap);
+    TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, absTileZ, tilemap);
+
+    if ((uint8 *)tileChunk > gameState->tileChunksMemoryBlock.lastAddressReserved
+        || (uint8 *)tileChunk < gameState->tileChunksMemoryBlock.startingAddress){
+        return false;
+    }
 
     // Have the tiles within this tile chunk been initialised?
     if (!tileChunk->tiles) {

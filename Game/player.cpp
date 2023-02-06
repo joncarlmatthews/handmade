@@ -6,73 +6,6 @@
 #include "world.h"
 #include "utility.h"
 
-/**
- * Gets the X and Y pixel coordinates of a certain part of the player
- *
- * @param PlayerPositionData    positionData        The PlayerPositionData object to write the position data into
- * @param xyuint             playerPixelPos      The X and Y pixel coords to base the calculation on. This is the top left point
- * @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
- * @param Player                player              The player object containing the height/width etc
- * @param World                 world               The world object
-*/
-void getPositionDataForPlayer(PlayerPositionData *positionData,
-                                xyuint playerPixelPos,
-                                PLAYER_POINT_POS pointPos,
-                                GameState *gameState)
-{
-    float32 pixelInset = 0.0f;
-    float32 x = 0.0f;
-    float32 y = 0.0f;
-
-    // Apply point the offsets...
-    switch (pointPos)
-    {
-    case PLAYER_POINT_POS::RAW:
-        x = (float32)playerPixelPos.x;
-        y = (float32)playerPixelPos.y;
-        break;
-    case PLAYER_POINT_POS::TOP_LEFT:
-        x = (float32)playerPixelPos.x;
-        y = (float32)playerPixelPos.y;
-        break;
-    case PLAYER_POINT_POS::TOP_MIDDLE:
-        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx / 2.0f);
-        y = ((float32)playerPixelPos.y + (float32)gameState->player1.heightPx - pixelInset);
-        break;
-    case PLAYER_POINT_POS::MIDDLE_LEFT:
-        x = (float32)playerPixelPos.x;
-        y = ((float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f) - pixelInset);
-        break;
-    case PLAYER_POINT_POS::MIDDLE:
-        x = (float32)playerPixelPos.x + ((float32)gameState->player1.widthPx / 2.0f);
-        y = (float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f);
-        break;
-    case PLAYER_POINT_POS::MIDDLE_RIGHT:
-        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx - pixelInset);
-        y = ((float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f) - pixelInset);
-        break;
-    case PLAYER_POINT_POS::BOTTOM_MIDDLE:
-        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx / 2.0f);
-        y = ((float32)playerPixelPos.y + pixelInset);
-        break;
-    case PLAYER_POINT_POS::BOTTOM_RIGHT:
-        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx - pixelInset);
-        y = ((float32)playerPixelPos.y + pixelInset);
-        break;
-    case PLAYER_POINT_POS::BOTTOM_LEFT:
-        x = (float32)playerPixelPos.x;
-        y = ((float32)playerPixelPos.y + pixelInset);
-        break;
-    default:
-        assert(!"Tile point position not yet supported");
-        break;
-    }
-
-    positionData->pointPosition = pointPos;
-
-    setCoordinateData(&positionData->activeTile, (uint32)x, (uint32)y, gameState->world.tilemap);
-}
-
 void playerHandleMovement(GameState *gameState,
                             GameMemory *memory,
                             GameFrameBuffer *frameBuffer,
@@ -323,4 +256,71 @@ gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
     }
 #endif
 
+}
+
+/**
+* Gets the X and Y pixel coordinates of a certain part of the player
+*
+* @param PlayerPositionData    positionData        The PlayerPositionData object to write the position data into
+* @param xyuint             playerPixelPos      The X and Y pixel coords to base the calculation on. This is the top left point
+* @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
+* @param Player                player              The player object containing the height/width etc
+* @param World                 world               The world object
+*/
+void getPositionDataForPlayer(PlayerPositionData *positionData,
+    xyuint playerPixelPos,
+    PLAYER_POINT_POS pointPos,
+    GameState *gameState)
+{
+    float32 pixelInset = 0.0f;
+    float32 x = 0.0f;
+    float32 y = 0.0f;
+
+    // Apply point the offsets...
+    switch (pointPos)
+    {
+    case PLAYER_POINT_POS::RAW:
+        x = (float32)playerPixelPos.x;
+        y = (float32)playerPixelPos.y;
+        break;
+    case PLAYER_POINT_POS::TOP_LEFT:
+        x = (float32)playerPixelPos.x;
+        y = (float32)playerPixelPos.y;
+        break;
+    case PLAYER_POINT_POS::TOP_MIDDLE:
+        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx / 2.0f);
+        y = ((float32)playerPixelPos.y + (float32)gameState->player1.heightPx - pixelInset);
+        break;
+    case PLAYER_POINT_POS::MIDDLE_LEFT:
+        x = (float32)playerPixelPos.x;
+        y = ((float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f) - pixelInset);
+        break;
+    case PLAYER_POINT_POS::MIDDLE:
+        x = (float32)playerPixelPos.x + ((float32)gameState->player1.widthPx / 2.0f);
+        y = (float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f);
+        break;
+    case PLAYER_POINT_POS::MIDDLE_RIGHT:
+        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx - pixelInset);
+        y = ((float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f) - pixelInset);
+        break;
+    case PLAYER_POINT_POS::BOTTOM_MIDDLE:
+        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx / 2.0f);
+        y = ((float32)playerPixelPos.y + pixelInset);
+        break;
+    case PLAYER_POINT_POS::BOTTOM_RIGHT:
+        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx - pixelInset);
+        y = ((float32)playerPixelPos.y + pixelInset);
+        break;
+    case PLAYER_POINT_POS::BOTTOM_LEFT:
+        x = (float32)playerPixelPos.x;
+        y = ((float32)playerPixelPos.y + pixelInset);
+        break;
+    default:
+        assert(!"Tile point position not yet supported");
+        break;
+    }
+
+    positionData->pointPosition = pointPos;
+
+    setTileCoordinateData(&positionData->activeTile, (uint32)x, (uint32)y, gameState->world.tilemap);
 }

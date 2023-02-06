@@ -105,7 +105,7 @@ void initTilemap(MemoryRegion *memoryRegion,
                     uint32 tileChunkTileDimensionsBitShift,
                     float32 tileDimensionsMeters);
 
-void setCoordinateData(TilemapCoordinates *coordinates,
+void setTileCoordinateData(TilemapCoordinates *coordinates,
                         uint32 pixelX,
                         uint32 pixelY,
                         Tilemap tilemap);

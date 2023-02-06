@@ -23,7 +23,7 @@ void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
     x = floorf(x);
     y = floorf(y);
 
-    setCoordinateData(&gameState->worldPosition, (uint32)x, (uint32)y, gameState->world.tilemap);
+    setTileCoordinateData(&gameState->worldPosition, (uint32)x, (uint32)y, gameState->world.tilemap);
 
     // Update the camera position
     gameState->cameraPositionPx.x = modulo((gameState->player1.absolutePosition.x - (frameBuffer->widthPx / 2)), gameState->world.worldWidthPx);

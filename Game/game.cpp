@@ -75,7 +75,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // z-plane 0
         {
             uint32 rooms = 20;
-            uint32 roomTileDims = 10;
+            uint32 roomTileDims = 15;
 
             uint32 absTileX = 0;
             uint32 absTileY = 0;
@@ -204,7 +204,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // z-plane 1
         {
             uint32 rooms = 8;
-            uint32 roomTileDims = 10;
+            uint32 roomTileDims = 15;
 
             uint32 absTileX = 0;
             uint32 absTileY = 0;
@@ -404,6 +404,24 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // @TODO(JM) Optimise this!!!
     Tilemap tilemap = gameState->world.tilemap;
     uint32 absTileIndexZ = gameState->player1.zIndex;
+
+    uint32 maxTilesX = (frameBuffer->widthPx / tilemap.tileWidthPx);
+    uint32 maxTilesY = (frameBuffer->heightPx / tilemap.tileHeightPx);
+    int32 tilesTop = ((maxTilesY -1) / 2);
+    int32 tilesBottom = (tilesTop *-1);
+    int32 tilesRight = ((maxTilesX -1) / 2);
+    int32 tilesLeft = (tilesRight *-1);
+    tilesTop;tilesBottom;tilesRight;tilesLeft;
+
+    for (int32 row = tilesLeft; row < tilesRight; row++){
+        for (int32 col = tilesBottom; col < tilesTop; col++){
+            int32 absTileIndexX = (gameState->worldPosition.tileIndex.x + row);
+            int32 absTileIndexY = (gameState->worldPosition.tileIndex.y + col);
+            int32 absTileIndexZ = gameState->player1.zIndex;
+            absTileIndexX;absTileIndexY;
+            continue;
+        }
+    }
 
     for (uint32 y = 0; y < frameBuffer->heightPx; y++) {
         for (uint32 x = 0; x < frameBuffer->widthPx; x++) {
