@@ -402,10 +402,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     uint32 absTileIndexZ = gameState->player1.zIndex;
 
     // Draw the tile map.
-    // @NOTE(JM) Drawing this pixel by pixel, this is incapable of hitting 60fps
-    // @TODO(JM) Optimise this!!!
+    // @TODO(JM) Calculate how many rows/columns we can fit on a screen and add
+    // margin of safety for smooth scrolling.
     for (uint32 column = 0; column < 20; column++){
-        for (uint32 row = 0; row < 35; row++) {
+        for (uint32 row = 0; row < 40; row++) {
 
             // @TODO(JM) Calculate absolute world pixel x and y. Needs to wrap.
             // Note: Get the center pixel pos of the player minus half the
