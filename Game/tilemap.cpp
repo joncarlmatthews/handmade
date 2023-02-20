@@ -73,6 +73,14 @@ void setTileCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint3
     return;
 }
 
+xyuint geAbsTileIndexFromAbsPixel(uint32 pixelX, uint32 pixelY, Tilemap tilemap)
+{
+    xyuint tileIndex = {};
+    tileIndex.x = (pixelX / tilemap.tileWidthPx);
+    tileIndex.y = (pixelY / tilemap.tileHeightPx);
+    return tileIndex;
+}
+
 xyzuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap)
 {
     xyzuint tileChunkIndex = { 0 };
@@ -100,6 +108,18 @@ xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilem
     index.y = (absTileY % tilemap.tileChunkTileDimensions);
 
     return index;
+}
+
+xyuint getTileRelativePixelPos(uint32 pixelX, uint32 pixelY, Tilemap tilemap)
+{
+    xyuint absTileIndex = geAbsTileIndexFromAbsPixel(pixelX, pixelY, tilemap);
+
+    xyuint pixelPos = {};
+
+    pixelPos.x = (pixelX - (tilemap.tileWidthPx * absTileIndex.x));
+    pixelPos.y = (pixelY - (tilemap.tileHeightPx * absTileIndex.y));
+
+    return pixelPos;
 }
 
 void setTileValue(MemoryRegion memoryRegion,

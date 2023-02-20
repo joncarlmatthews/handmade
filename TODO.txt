@@ -1,10 +1,10 @@
 Day 035:
  -x Finish new tilemap draw loop
- -x Refactor writeRectangle to draw up and across
  -x Collapse tile spam into single loop
  -x Draw up/down doors
  -x Only show up/down if room has no exit
  -x shift and mask to store chunk and tile in the same 32 bit integer?
+ -x update command line build script
 
 Ongoing:
  -x Slow frame rate (now that we're rendering pixel by pixel)

@@ -1,24 +1,3 @@
-// Wide-strings.
-// Defines wchar_t
-// @see https://www.cplusplus.com/reference/cwchar/
-#include <wchar.h>
-
-// Unicode characters.
-// Defines char16_t, char32_t
-// @see https://www.cplusplus.com/reference/cuchar/
-#include <uchar.h>
-
-// Common mathematical operations and transformations.
-// Defines floor, floorf, M_PI
-// @see https://www.cplusplus.com/reference/cmath/
-#define _USE_MATH_DEFINES
-#include <math.h>
-
-// Common input/output operations.
-// Defines: sprintf_s
-// @see https://www.cplusplus.com/reference/cstdio/
-#include <stdio.h>
-
 #include "game.h"
 
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
@@ -336,7 +315,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         gameState->player1.heightPx  = (int16)metersToPixels(gameState->world, gameState->player1.heightMeters);
         gameState->player1.widthPx   = (int16)metersToPixels(gameState->world, gameState->player1.widthMeters);
 
-        // Tiles should be bigger than the player.
+        // A single tile should be bigger than the player.
         assert(gameState->world.tilemap.tileHeightPx > gameState->player1.heightPx);
         assert(gameState->world.tilemap.tileWidthPx > gameState->player1.widthPx);
 
@@ -346,10 +325,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Initial character starting position. Start the player in the middle
         // of screen
-        gameState->player1.fixedPosition.x = (frameBuffer->widthPx / 2);
-        gameState->player1.fixedPosition.y = (frameBuffer->heightPx / 2);
-        gameState->player1.absolutePosition.x = gameState->player1.fixedPosition.x;
-        gameState->player1.absolutePosition.y = gameState->player1.fixedPosition.y;
+        gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - (gameState->player1.widthPx / 2));
+        gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - (gameState->player1.heightPx / 2));
+        gameState->player1.absolutePosition.x = (frameBuffer->widthPx / 2);
+        gameState->player1.absolutePosition.y = (frameBuffer->heightPx / 2);
         gameState->player1.zIndex = 0;
        
         // Calculate the currently active tile based on player1's position and
@@ -393,36 +372,55 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     audioBufferWriteSineWave(gameState, audioBuffer);
 #endif // HANDMADE_DEBUG_AUDIO
    
-
     /**
      * Write the frame buffer...
      * 
      */
     Tilemap tilemap = gameState->world.tilemap;
+
     uint32 absTileIndexZ = gameState->player1.zIndex;
 
-    // Draw the tile map.
-    // @TODO(JM) Calculate how many rows/columns we can fit on a screen and add
+    PlayerPositionData middle;
+    getPositionDataForPlayer(&middle,
+        gameState->player1.absolutePosition,
+        PLAYER_POINT_POS::BOTTOM_MIDDLE,
+        gameState);
+
+    uint32 centerX = middle.activeTile.pixelCoordinates.x;
+    uint32 centerY = middle.activeTile.pixelCoordinates.y;
+    centerX; centerY;
+
+    uint32 centerXTileIndex = middle.activeTile.tileIndex.x;
+    uint32 centerYTileIndex = middle.activeTile.tileIndex.y;
+
+    // Draw the tile map...
+
+    // Calculate how many rows/columns we can fit on a screen and add
     // margin of safety for smooth scrolling.
-    for (uint32 column = 0; column < 20; column++){
-        for (uint32 row = 0; row < 40; row++) {
+    uint32 tilesPerScreenX = (u32RoundUpDivide(frameBuffer->widthPx, tilemap.tileWidthPx) + 2);
+    int32 tilesPerHalfRow = i32RoundUpDivide((int32)tilesPerScreenX, 2);
 
-            // @TODO(JM) Calculate absolute world pixel x and y. Needs to wrap.
-            // Note: Get the center pixel pos of the player minus half the
-            // screen width
-            uint32 absolutePixelX = 0;
-            uint32 absolutePixelY = 0;
-            absolutePixelX; absolutePixelY;
+    uint32 tilesPerScreenY = (u32RoundUpDivide(frameBuffer->heightPx, tilemap.tileHeightPx) + 2);
+    int32 tilesPerHalfCol = i32RoundUpDivide((int32)tilesPerScreenY, 2);
 
-            // TODO(JM) 
-            uint32 absTileIndexX = row;
-            uint32 absTileIndexY = column;
+    tilesPerHalfRow = 2;
 
-            uint32 startPixelX = ((row * tilemap.tileWidthPx) - gameState->cameraPositionPx.x);
-            uint32 startPixelY = ((column * tilemap.tileHeightPx) - gameState->cameraPositionPx.y);
+    // Tilemap pixel loop
+    for (int32 column = (tilesPerHalfCol *-1); column < tilesPerHalfCol; column++){
+        for (int32 row = (tilesPerHalfRow *-1); row < tilesPerHalfRow; row++) {
+
+            uint32 startPixelX = (((centerXTileIndex * tilemap.tileWidthPx) - (middle.activeTile.tileRelativePixelCoordinates.x - (tilemap.tileWidthPx/2))) + (row * tilemap.tileWidthPx));
+            uint32 startPixelY = (((centerYTileIndex * tilemap.tileHeightPx) - (middle.activeTile.tileRelativePixelCoordinates.y - (tilemap.tileHeightPx / 2))) + (column * tilemap.tileHeightPx));
+
+            xyuint absTileIndex = geAbsTileIndexFromAbsPixel(startPixelX,
+                                                                startPixelY,
+                                                                tilemap);
 
             // Get the tile chunk index based off of the absolute tile indexes
-            xyzuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileIndexX, absTileIndexY, absTileIndexZ, tilemap);
+            xyzuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileIndex.x,
+                                                                    absTileIndex.y,
+                                                                    absTileIndexZ,
+                                                                    tilemap);
 
             // Is this tile chunk out of the sparse storage memory bounds?
             if ((tileChunkIndex.x > (tilemap.tileChunkDimensions - 1))
@@ -437,10 +435,15 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
 
             // Get the relevant tile chunk
-            TileChunk *tileChunk = getTileChunkForAbsTile(absTileIndexX, absTileIndexY, absTileIndexZ, tilemap);
+            TileChunk *tileChunk = getTileChunkForAbsTile(absTileIndex.x,
+                                                            absTileIndex.y,
+                                                            absTileIndexZ,
+                                                            tilemap);
 
             // Calculate the tile chunk relative tile indexes
-            xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndexX, absTileIndexY, tilemap);
+            xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndex.x,
+                                                                    absTileIndex.y,
+                                                                    tilemap);
 
             // Get the individual tile
             uint32 *tileValue = (tileChunk->tiles + ((chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
@@ -466,8 +469,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             Colour pixelColour = {};
             setTileColour(&pixelColour, *tileValue);
 
-            if (absTileIndexX == gameState->worldPosition.tileIndex.x
-                && absTileIndexY == gameState->worldPosition.tileIndex.y) {
+            if (absTileIndex.x == gameState->worldPosition.tileIndex.x
+                && absTileIndex.y == gameState->worldPosition.tileIndex.y) {
                 pixelColour.r = 0.0f;
                 pixelColour.g = 1.0f;
                 pixelColour.b = 0.0f;
@@ -490,6 +493,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->player1.heightPx,
                     { 0.301f, 0.156f, 0.0f });
 
+#if 0
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
         writeRectangle(frameBuffer,
@@ -499,6 +503,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         50,
                         { 0.5f, 0.0f, 0.5f });
     }
+#endif
 
 #if defined(HANDMADE_DEBUG_AUDIO)
     frameBufferWriteAudioDebug(gameState, frameBuffer, audioBuffer);

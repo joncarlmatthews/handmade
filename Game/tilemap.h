@@ -124,12 +124,14 @@ typedef struct PlayerPositionData PlayerPositionData;
 typedef struct GameState GameState;
 bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData *playerPositionData);
 
+xyuint geAbsTileIndexFromAbsPixel(uint32 pixelX, uint32 pixelY, Tilemap tilemap);
+
 xyzuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap);
 
 TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap);
 
 xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
-
+xyuint getTileRelativePixelPos(uint32 pixelX, uint32 pixelY, Tilemap tilemap);
 Colour getOutOfTileChunkMemoryBoundsColour();
 Colour getUninitialisedTileChunkTilesColour();
 

@@ -1,3 +1,4 @@
+#include <math.h>
 #include "utility.h"
 
 /**
@@ -136,4 +137,14 @@ int32 modulo(int32 dividend, uint32 divisor)
     uint32 res = (dividend / divisor);
     res = (res * divisor);
     return (dividend - res);
+}
+
+uint32 u32RoundUpDivide(uint32 dividend, uint32 divisor)
+{
+    return (uint32)ceilf((float32)dividend / (float32)divisor);
+}
+
+int32 i32RoundUpDivide(int32 dividend, int32 divisor)
+{
+    return (int32)ceilf((float32)dividend / (float32)divisor);
 }
