@@ -54,7 +54,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // z-plane 0
         {
             uint32 rooms = 20;
-            uint32 roomTileDims = 15;
+            uint32 roomTileDims = 18;
 
             uint32 absTileX = 0;
             uint32 absTileY = 0;
@@ -380,18 +380,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     uint32 absTileIndexZ = gameState->player1.zIndex;
 
-    PlayerPositionData middle;
-    getPositionDataForPlayer(&middle,
-        gameState->player1.absolutePosition,
-        PLAYER_POINT_POS::BOTTOM_MIDDLE,
-        gameState);
+    xyuint centerTileIndex = geAbsTileIndexFromAbsPixel(gameState->player1.absolutePosition.x,
+                                                        gameState->player1.absolutePosition.y,
+                                                        tilemap);
 
-    uint32 centerX = middle.activeTile.pixelCoordinates.x;
-    uint32 centerY = middle.activeTile.pixelCoordinates.y;
-    centerX; centerY;
+    xyuint tileRelPos = getTileRelativePixelPos(gameState->player1.absolutePosition.x,
+                                                gameState->player1.absolutePosition.y,
+                                                tilemap);
 
-    uint32 centerXTileIndex = middle.activeTile.tileIndex.x;
-    uint32 centerYTileIndex = middle.activeTile.tileIndex.y;
+    // Center tile start x and y
+    xyuint centerTileStart = {};
+    centerTileStart.x = ((frameBuffer->widthPx / 2) - tileRelPos.x);
+    centerTileStart.y = ((frameBuffer->heightPx / 2) - tileRelPos.y);
 
     // Draw the tile map...
 
@@ -403,22 +403,26 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     uint32 tilesPerScreenY = (u32RoundUpDivide(frameBuffer->heightPx, tilemap.tileHeightPx) + 2);
     int32 tilesPerHalfCol = i32RoundUpDivide((int32)tilesPerScreenY, 2);
 
-    tilesPerHalfRow = 2;
+    // temp. testing.
+    //tilesPerHalfRow = 2;
 
     // Tilemap pixel loop
-    for (int32 column = (tilesPerHalfCol *-1); column < tilesPerHalfCol; column++){
-        for (int32 row = (tilesPerHalfRow *-1); row < tilesPerHalfRow; row++) {
+    for (int32 column = (tilesPerHalfCol *-1); column <= tilesPerHalfCol; column++){
+        for (int32 row = (tilesPerHalfRow *-1); row <= tilesPerHalfRow; row++) {
 
-            uint32 startPixelX = (((centerXTileIndex * tilemap.tileWidthPx) - (middle.activeTile.tileRelativePixelCoordinates.x - (tilemap.tileWidthPx/2))) + (row * tilemap.tileWidthPx));
-            uint32 startPixelY = (((centerYTileIndex * tilemap.tileHeightPx) - (middle.activeTile.tileRelativePixelCoordinates.y - (tilemap.tileHeightPx / 2))) + (column * tilemap.tileHeightPx));
+            xyuint tileIndex = {
+                (centerTileIndex.x + row) ,
+                (centerTileIndex.y + column)
+            };
 
-            xyuint absTileIndex = geAbsTileIndexFromAbsPixel(startPixelX,
-                                                                startPixelY,
-                                                                tilemap);
+            xyuint startPixelPos = {
+                (centerTileStart.x + (row * tilemap.tileWidthPx)),
+                (centerTileStart.y + (column * tilemap.tileHeightPx))
+            };
 
             // Get the tile chunk index based off of the absolute tile indexes
-            xyzuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileIndex.x,
-                                                                    absTileIndex.y,
+            xyzuint tileChunkIndex = getTileChunkIndexForAbsTile(tileIndex.x,
+                                                                    tileIndex.y,
                                                                     absTileIndexZ,
                                                                     tilemap);
 
@@ -426,8 +430,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             if ((tileChunkIndex.x > (tilemap.tileChunkDimensions - 1))
                 || (tileChunkIndex.y > (tilemap.tileChunkDimensions - 1))) {
                 writeRectangle(frameBuffer,
-                            startPixelX,
-                            startPixelY,
+                            startPixelPos.x,
+                            startPixelPos.y,
                             tilemap.tileWidthPx,
                             tilemap.tileHeightPx,
                             getOutOfTileChunkMemoryBoundsColour()); // blue
@@ -435,14 +439,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
 
             // Get the relevant tile chunk
-            TileChunk *tileChunk = getTileChunkForAbsTile(absTileIndex.x,
-                                                            absTileIndex.y,
+            TileChunk *tileChunk = getTileChunkForAbsTile(tileIndex.x,
+                                                            tileIndex.y,
                                                             absTileIndexZ,
                                                             tilemap);
 
             // Calculate the tile chunk relative tile indexes
-            xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileIndex.x,
-                                                                    absTileIndex.y,
+            xyuint chunkRelTileIndex = getChunkRelativeTileIndex(tileIndex.x,
+                                                                    tileIndex.y,
                                                                     tilemap);
 
             // Get the individual tile
@@ -453,8 +457,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     ((uint8*)tileValue > gameState->tilesMemoryBlock.lastAddressReserved
                         || (uint8*)tileValue < gameState->tilesMemoryBlock.startingAddress)) {
                 writeRectangle(frameBuffer,
-                            startPixelX,
-                            startPixelY,
+                            startPixelPos.x,
+                            startPixelPos.y,
                             tilemap.tileWidthPx,
                             tilemap.tileHeightPx,
                             getUninitialisedTileChunkTilesColour()); // red
@@ -469,16 +473,16 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             Colour pixelColour = {};
             setTileColour(&pixelColour, *tileValue);
 
-            if (absTileIndex.x == gameState->worldPosition.tileIndex.x
-                && absTileIndex.y == gameState->worldPosition.tileIndex.y) {
+            if (tileIndex.x == gameState->worldPosition.tileIndex.x
+                && tileIndex.y == gameState->worldPosition.tileIndex.y) {
                 pixelColour.r = 0.0f;
                 pixelColour.g = 1.0f;
                 pixelColour.b = 0.0f;
             }
 
             writeRectangle(frameBuffer,
-                            startPixelX,
-                            startPixelY,
+                            startPixelPos.x,
+                            startPixelPos.y,
                             tilemap.tileWidthPx,
                             tilemap.tileHeightPx,
                             pixelColour);

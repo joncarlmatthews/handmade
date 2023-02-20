@@ -268,9 +268,9 @@ gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
 * @param World                 world               The world object
 */
 void getPositionDataForPlayer(PlayerPositionData *positionData,
-    xyuint playerPixelPos,
-    PLAYER_POINT_POS pointPos,
-    GameState *gameState)
+                                xyuint playerPixelPos,
+                                PLAYER_POINT_POS pointPos,
+                                GameState *gameState)
 {
     float32 pixelInset = 0.0f;
     float32 x = 0.0f;
