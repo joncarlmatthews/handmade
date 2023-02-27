@@ -69,6 +69,11 @@ typedef struct Tilemap
     // Pointer to all of the tile chunks
     TileChunk *tileChunks;
 
+    uint32 tilesPerScreenX;
+    uint32 tilesPerHalfScreenX;
+    uint32 tilesPerScreenY;
+    uint32 tilesPerHalfScreenY;
+
 } Tilemap;
 
 typedef struct TilemapCoordinates
@@ -92,6 +97,7 @@ typedef struct TilemapCoordinates
 
 typedef struct World World;
 typedef struct GameState GameState;
+typedef struct GameFrameBuffer GameFrameBuffer;
 void initTilemap(MemoryRegion *memoryRegion,
                     GameState *gameState,
                     MemoryBlock *memoryBlock,
@@ -100,7 +106,8 @@ void initTilemap(MemoryRegion *memoryRegion,
                     uint32 tileChunkDimensionsBitShift,
                     uint32 tilemapTotalZPlanes,
                     uint32 tileChunkTileDimensionsBitShift,
-                    float32 tileDimensionsMeters);
+                    float32 tileDimensionsMeters,
+                    GameFrameBuffer *frameBuffer);
 
 void setTileCoordinateData(TilemapCoordinates *coordinates,
                         uint32 pixelX,
@@ -126,7 +133,7 @@ xyuint geAbsTileIndexFromAbsPixel(uint32 pixelX, uint32 pixelY, Tilemap tilemap)
 xyzuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap);
 
 TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap);
-
+TileChunk *getTileChunkFoTileChunkIndex(xyzuint tileChunkIndex, Tilemap tilemap);
 xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilemap);
 xyuint getTileRelativePixelPos(uint32 pixelX, uint32 pixelY, Tilemap tilemap);
 Colour getOutOfTileChunkMemoryBoundsColour();

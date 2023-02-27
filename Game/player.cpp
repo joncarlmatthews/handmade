@@ -270,6 +270,7 @@ gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chun
 */
 void setPlayerGamePosition(GameState *gameState)
 {
+    //gameState->player1.gamePosition.x = (gameState->player1.absolutePosition.x + (gameState->player1.widthPx / 2));
     gameState->player1.gamePosition.x = gameState->player1.absolutePosition.x;
     gameState->player1.gamePosition.y = gameState->player1.absolutePosition.y;
     return;

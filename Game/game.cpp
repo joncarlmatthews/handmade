@@ -35,7 +35,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     TILE_CHUNK_DIMENSIONS_BIT_SHIFT,
                     TILEMAP_Z_PLANES,
                     TILE_CHUNK_TILE_DIMENSIONS_BIT_SHIFT,
-                    TILE_DIMENSIONS_METERS);
+                    TILE_DIMENSIONS_METERS,
+                    frameBuffer);
 
         // Init the World
         gameState->world.pixelsPerMeter  = (uint16)WORLD_PIXELS_PER_METER;
@@ -391,18 +392,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     centerTileStart.y = ((frameBuffer->heightPx / 2) - tileRelPos.y);
 
     // Draw the tile map...
-
-    // Calculate how many rows/columns we can fit on a screen and add
-    // margin of safety for smooth scrolling.
-    uint32 tilesPerScreenX = (u32RoundUpDivide(frameBuffer->widthPx, tilemap.tileWidthPx) + 2);
-    int32 tilesPerHalfScreenX = i32RoundUpDivide((int32)tilesPerScreenX, 2);
-
-    uint32 tilesPerScreenY = (u32RoundUpDivide(frameBuffer->heightPx, tilemap.tileHeightPx) + 2);
-    int32 tilesPerHalfScreenY = i32RoundUpDivide((int32)tilesPerScreenY, 2);
-
-    // Tilemap pixel loop
-    for (int32 row = (tilesPerHalfScreenY * -1); row <= tilesPerHalfScreenY; row++) {
-        for (int32 column = (tilesPerHalfScreenX *-1); column <= tilesPerHalfScreenX; column++){
+    for (int32 row = ((int32)gameState->world.tilemap.tilesPerHalfScreenY * -1); row <= (int32)gameState->world.tilemap.tilesPerHalfScreenY; row++) {
+        for (int32 column = ((int32)gameState->world.tilemap.tilesPerHalfScreenX *-1); column <= (int32)gameState->world.tilemap.tilesPerHalfScreenX; column++){
 
             xyuint tileIndex = {
                 (centerTileIndex.x + column),
@@ -433,10 +424,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
 
             // Get the relevant tile chunk
-            TileChunk *tileChunk = getTileChunkForAbsTile(tileIndex.x,
-                                                            tileIndex.y,
-                                                            absTileIndexZ,
-                                                            tilemap);
+            TileChunk *tileChunk = getTileChunkFoTileChunkIndex(tileChunkIndex,
+                                                                tilemap);
 
             // Calculate the tile chunk relative tile indexes
             xyuint chunkRelTileIndex = getChunkRelativeTileIndex(tileIndex.x,

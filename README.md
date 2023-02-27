@@ -6,7 +6,13 @@ Low level game programming in C flavoured C++.
 
 ![Current progress](/current_state.png?raw=true "Current progress")
 
-## Development Environment
+## To run the game
+
+TODO
+
+## To develop the game
+
+### Development Environment
 
 Using Windows as the development environment as it meets the following developer requirements:
 
@@ -16,15 +22,14 @@ Using Windows as the development environment as it meets the following developer
 
 ✔ Allows setting of a base memory address
 
-## Pre-req
+To develop or build the game's source code first install [Visual Studio Community 2022](https://visualstudio.microsoft.com/vs/community/). Once Visual Studio is installed navigate to **Tools** -> **Get Tools and Features** options and make sure the **Desktop development with C++** workflow is installed.
 
-Install [Visual Studio Community 2020](https://visualstudio.microsoft.com/vs/community/). Once Visual Studio is installed navigate to **Tools** -> **Get Tools and Features** options and check that the latest version of the Windows 10 SDK is installed. The Windows SDK gives you access to `windows.h`. If it's not installed you'll receive the `cannot open source file "windows.h"` error message when attempting the build the source code.
 
-## Project Structure
+### Project Structure
 
 There are two main parts to the project, the Win32 platform code (`Platform Win32\`) and the game code (`Game\`). Both are built into the same build directory. The platform code is built as an exe and the game code is built as a DLL.
 
-## Building
+### Building
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
@@ -32,7 +37,7 @@ All build files (including the binary executables) are placed into the `build` d
 
 ## Running
 
-To run the executable, open the .exe within the relevant `build\Win32\<arch>\<config>\` directory
+To run the executable, open the built .exe binary within the relevant `build\Win32\<arch>\<config>\` directory
 
 To run the program from directly within Visual Studio, hit **Ctrl** + **F5**.
 
@@ -45,7 +50,7 @@ To run the program in Visual Studio with the debugger attached, simply hit **F5*
 
 The game code is built as a DLL to enable dynamic reloading of (just) the game code without having the rebuild the whole program. If you want to dynamically reload the game code, with the program running, execute the `built.bat` file using the Windows command prompt from with the `Game` directory.
 
-Click: `Tools` -> `Command Line` -> `Developer Command Prompt`
+Click: **Tools** > **Command Line** > **Developer Command Prompt**
 
 ```
 > cd Game

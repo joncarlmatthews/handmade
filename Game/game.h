@@ -143,9 +143,6 @@ typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 // Graphics
 //====================================================
 
-#define FRAME_BUFFER_PIXEL_WIDTH  1280
-#define FRAME_BUFFER_PIXEL_HEIGHT 720
-
 /*
  * Struct for the screen buffer
  * 

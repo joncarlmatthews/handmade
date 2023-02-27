@@ -7,6 +7,9 @@
 // Graphics
 //====================================================
 
+#define FRAME_BUFFER_PIXEL_WIDTH  1280
+#define FRAME_BUFFER_PIXEL_HEIGHT 720
+
 /**
 * Write a rectangle into the frame buffer
 *

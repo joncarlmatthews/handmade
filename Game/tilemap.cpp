@@ -16,7 +16,8 @@ void initTilemap(MemoryRegion *memoryRegion,
                     uint32 tileChunkDimensionsBitShift,
                     uint32 tilemapTotalZPlanes,
                     uint32 tileChunkTileDimensionsBitShift,
-                    float32 tileDimensionsMeters)
+                    float32 tileDimensionsMeters,
+                    GameFrameBuffer *frameBuffer)
 {
     assert(tilemapTotalZPlanes > 0);
 
@@ -35,6 +36,14 @@ void initTilemap(MemoryRegion *memoryRegion,
 
     gameState->world.tilemap.tileHeightPx = (uint32)((uint32)pixelsPerMeter * tileDimensionsMeters);
     gameState->world.tilemap.tileWidthPx = gameState->world.tilemap.tileHeightPx;
+
+    // Calculate how many rows/columns we can fit on a screen and add
+    // margin of safety for smooth scrolling.
+    gameState->world.tilemap.tilesPerScreenX = (u32RoundUpDivide(frameBuffer->widthPx, gameState->world.tilemap.tileWidthPx) + 2);
+    gameState->world.tilemap.tilesPerHalfScreenX = i32RoundUpDivide((int32)gameState->world.tilemap.tilesPerScreenX, 2);
+
+    gameState->world.tilemap.tilesPerScreenY = (u32RoundUpDivide(frameBuffer->heightPx, gameState->world.tilemap.tileHeightPx) + 2);
+    gameState->world.tilemap.tilesPerHalfScreenY = i32RoundUpDivide((int32)gameState->world.tilemap.tilesPerScreenY, 2);
 
     // Reserve the tile chunk arrays from within the memory block
     gameState->world.tilemap.tileChunks = memoryBlockReserveArray(memoryRegion,
@@ -116,10 +125,16 @@ xyzuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, uint32 abs
 TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap)
 {
     xyzuint tileChunkIndex = getTileChunkIndexForAbsTile(absTileX, absTileY, absTileZ, tilemap);
+    return getTileChunkFoTileChunkIndex(tileChunkIndex, tilemap);
+}
+
+TileChunk *getTileChunkFoTileChunkIndex(xyzuint tileChunkIndex, Tilemap tilemap)
+{
     TileChunk *tileChunk = tilemap.tileChunks;
     tileChunk = tileChunk + (tileChunkIndex.z * (tilemap.tileChunkDimensions * tilemap.tileChunkDimensions)) + (tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x;
     return tileChunk;
 }
+
 
 xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilemap)
 {

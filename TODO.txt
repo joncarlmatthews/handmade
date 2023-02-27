@@ -1,9 +1,11 @@
 Day 035:
+ -x Move gameState->player1.zIndex to world position
+ -x Figure out how to make active tile based off of new player game position
  -x Collapse tile spam into single loop
  -x Draw up/down doors
  -x Only show up/down if room has no exit
  -x shift and mask to store chunk and tile in the same 32 bit integer?
- -x update command line build script
+ -x Add dist/ folder to include working win32 build
 
 Ongoing:
  -x Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
