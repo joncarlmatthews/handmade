@@ -24,6 +24,9 @@ Using Windows as the development environment as it meets the following developer
 
 To develop or build the game's source code first install [Visual Studio Community 2022](https://visualstudio.microsoft.com/vs/community/). Once Visual Studio is installed navigate to **Tools** -> **Get Tools and Features** options and make sure the **Desktop development with C++** workflow is installed.
 
+#### Reccommended Visual Studio Plugins
+[Editor Guidelines](https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview)
+
 
 ### Project Structure
 
@@ -31,22 +34,23 @@ There are two main parts to the project, the Win32 platform code (`Platform Win3
 
 ### Building
 
+To build and/or run the program whilst developing, use Visual Studio.
+
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
 All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\Win32\<arch>\<config>\` E.g. `build\Win32\x86\Debug\`, or `build\Win32\x64\Release\`
 
-## Running
+### Running
 
 To run the executable, open the built .exe binary within the relevant `build\Win32\<arch>\<config>\` directory
 
 To run the program from directly within Visual Studio, hit **Ctrl** + **F5**.
 
+### Debugging
+
 To run the program in Visual Studio with the debugger attached, simply hit **F5**.
 
-## Reccommended Visual Studio Plugins
-[Editor Guidelines](https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview)
-
-## Dynamically reloading the game code
+### Dynamically reloading the game code
 
 The game code is built as a DLL to enable dynamic reloading of (just) the game code without having the rebuild the whole program. If you want to dynamically reload the game code, with the program running, execute the `built.bat` file using the Windows command prompt from with the `Game` directory.
 
