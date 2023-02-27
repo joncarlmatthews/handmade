@@ -94,8 +94,8 @@ pixelsPerFrame);
     if (playerAttemptingMove) {
 
         xyuint playerNewPos = { 0 };
-        playerNewPos.x = modulo(playerNewPosTmp.x, gameState->world.worldWidthPx);
-        playerNewPos.y = modulo(playerNewPosTmp.y, gameState->world.worldHeightPx);
+        playerNewPos.x = (playerNewPosTmp.x % gameState->world.worldWidthPx);
+        playerNewPos.y = (playerNewPosTmp.y % gameState->world.worldHeightPx);
 
         // Player movement direction
         uint32 movedUp = 0;
@@ -180,6 +180,8 @@ gameState->player1.absolutePosition.y);
                 gameState->player1.absolutePosition.y = playerNewPos.y;
                 gameState->player1.lastMoveDirections = lastMoveDirections;
 
+                setPlayerGamePosition(gameState);
+
                 setWorldPosition(gameState, frameBuffer);
 
 #ifdef HANDMADE_DEBUG_TILE_POS
@@ -190,13 +192,11 @@ Plr World Pos x:%i y:%i. \
 World Tile x:%i y:%i. \
 Chunk Index x:%i y:%i. \
 Chunk Tile x:%i y:%i. \
-Camera pos x:%i y:%i. \
 \n",
 gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
 gameState->worldPosition.tileIndex.x, gameState->worldPosition.tileIndex.y,
 gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
 gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chunkRelativeTileIndex.y,
-gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
 );
                 memory->DEBUG_platformLog(buff);
 #endif
@@ -256,6 +256,23 @@ gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
     }
 #endif
 
+}
+
+/**
+ * The absolute player position within the game state is the absolute
+ * position where we start drawing the player from (bottom left). It's not
+ * necessarily where we consider the player to "be" in terms of the game play.
+ * This function is used when we want to get what the game considers the position
+ * of the player to be.
+ * 
+ * @param gameState 
+ * @return 
+*/
+void setPlayerGamePosition(GameState *gameState)
+{
+    gameState->player1.gamePosition.x = gameState->player1.absolutePosition.x;
+    gameState->player1.gamePosition.y = gameState->player1.absolutePosition.y;
+    return;
 }
 
 /**

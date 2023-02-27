@@ -325,10 +325,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Initial character starting position. Start the player in the middle
         // of screen
-        gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - (gameState->player1.widthPx / 2));
-        gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - (gameState->player1.heightPx / 2));
         gameState->player1.absolutePosition.x = (frameBuffer->widthPx / 2);
         gameState->player1.absolutePosition.y = (frameBuffer->heightPx / 2);
+        gameState->player1.fixedPosition.x = gameState->player1.absolutePosition.x;
+        gameState->player1.fixedPosition.y = gameState->player1.absolutePosition.y;
+        setPlayerGamePosition(gameState);
         gameState->player1.zIndex = 0;
        
         // Calculate the currently active tile based on player1's position and
@@ -337,7 +338,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         memory->initialised = true;
     } // initialisation
-    
+
     /**
     * Handle controller input...
     */
@@ -380,13 +381,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     uint32 absTileIndexZ = gameState->player1.zIndex;
 
-    xyuint centerTileIndex = geAbsTileIndexFromAbsPixel(gameState->player1.absolutePosition.x,
-                                                        gameState->player1.absolutePosition.y,
-                                                        tilemap);
+    xyzuint centerTileIndex = gameState->worldPosition.tileIndex;
 
-    xyuint tileRelPos = getTileRelativePixelPos(gameState->player1.absolutePosition.x,
-                                                gameState->player1.absolutePosition.y,
-                                                tilemap);
+    xyuint tileRelPos = gameState->worldPosition.tileRelativePixelCoordinates;
 
     // Center tile start x and y
     xyuint centerTileStart = {};
@@ -398,26 +395,23 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Calculate how many rows/columns we can fit on a screen and add
     // margin of safety for smooth scrolling.
     uint32 tilesPerScreenX = (u32RoundUpDivide(frameBuffer->widthPx, tilemap.tileWidthPx) + 2);
-    int32 tilesPerHalfRow = i32RoundUpDivide((int32)tilesPerScreenX, 2);
+    int32 tilesPerHalfScreenX = i32RoundUpDivide((int32)tilesPerScreenX, 2);
 
     uint32 tilesPerScreenY = (u32RoundUpDivide(frameBuffer->heightPx, tilemap.tileHeightPx) + 2);
-    int32 tilesPerHalfCol = i32RoundUpDivide((int32)tilesPerScreenY, 2);
-
-    // temp. testing.
-    //tilesPerHalfRow = 2;
+    int32 tilesPerHalfScreenY = i32RoundUpDivide((int32)tilesPerScreenY, 2);
 
     // Tilemap pixel loop
-    for (int32 column = (tilesPerHalfCol *-1); column <= tilesPerHalfCol; column++){
-        for (int32 row = (tilesPerHalfRow *-1); row <= tilesPerHalfRow; row++) {
+    for (int32 row = (tilesPerHalfScreenY * -1); row <= tilesPerHalfScreenY; row++) {
+        for (int32 column = (tilesPerHalfScreenX *-1); column <= tilesPerHalfScreenX; column++){
 
             xyuint tileIndex = {
-                (centerTileIndex.x + row) ,
-                (centerTileIndex.y + column)
+                (centerTileIndex.x + column),
+                (centerTileIndex.y + row)
             };
 
-            xyuint startPixelPos = {
-                (centerTileStart.x + (row * tilemap.tileWidthPx)),
-                (centerTileStart.y + (column * tilemap.tileHeightPx))
+            xyint startPixelPos = {
+                ((int32)centerTileStart.x + (column * (int32)tilemap.tileWidthPx)),
+                ((int32)centerTileStart.y + (row * (int32)tilemap.tileHeightPx))
             };
 
             // Get the tile chunk index based off of the absolute tile indexes
@@ -428,7 +422,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
             // Is this tile chunk out of the sparse storage memory bounds?
             if ((tileChunkIndex.x > (tilemap.tileChunkDimensions - 1))
-                || (tileChunkIndex.y > (tilemap.tileChunkDimensions - 1))) {
+                    || (tileChunkIndex.y > (tilemap.tileChunkDimensions - 1))) {
                 writeRectangle(frameBuffer,
                             startPixelPos.x,
                             startPixelPos.y,

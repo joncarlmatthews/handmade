@@ -43,33 +43,54 @@ void initTilemap(MemoryRegion *memoryRegion,
                                                                     (sizet)((gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions) * tilemapTotalZPlanes));
 }
 
-void setTileCoordinateData(TilemapCoordinates *coordinates, uint32 pixelX, uint32 pixelY, Tilemap tilemap)
+/**
+ * @brief For any absolute pixel, this function will calculate the absolute tile
+ * index, tile chunk index, chunk relative tile index and the tile relative
+ * pixel position
+ * 
+ * @param coordinates 
+ * @param absPixelX 
+ * @param absPixelY 
+ * @param tilemap 
+*/
+void setTileCoordinateData(TilemapCoordinates *coordinates,
+                            uint32 absPixelX,
+                            uint32 absPixelY,
+                            Tilemap tilemap)
 {
-    coordinates->pixelCoordinates.x = pixelX;
-    coordinates->pixelCoordinates.y = pixelY;
+    coordinates->pixelCoordinates.x = absPixelX;
+    coordinates->pixelCoordinates.y = absPixelY;
 
     // Calculate the absolute x and y tile index relative to the entire tilemap
-    uint32 tileIndexX = (int32)floorf((float32)pixelX / (float32)tilemap.tileWidthPx);
-    uint32 tileIndexY = (int32)floorf((float32)pixelY / (float32)tilemap.tileHeightPx);
+    xyuint absTileIndex = geAbsTileIndexFromAbsPixel(absPixelX,
+                                                        absPixelY,
+                                                        tilemap);
 
-    coordinates->tileIndex.x = (modulo(tileIndexX, tilemap.tileDimensions));
-    coordinates->tileIndex.y = (modulo(tileIndexY, tilemap.tileDimensions));
+    coordinates->tileIndex.x = absTileIndex.x;
+    coordinates->tileIndex.y = absTileIndex.y;
 
     // Calculate the x and y tile chunk index relative to the entire tilemap
-    coordinates->chunkIndex.x = (int32)floorf((float32)pixelX / (float32)(tilemap.tileWidthPx * tilemap.tileChunkTileDimensions));
-    coordinates->chunkIndex.y = (int32)floorf((float32)pixelY / (float32)(tilemap.tileHeightPx * tilemap.tileChunkTileDimensions));
+    xyzuint chunkIndex = getTileChunkIndexForAbsTile(absTileIndex.x,
+                                                        absTileIndex.y,
+                                                        0, // @TODO(JM)
+                                                        tilemap);
 
-    // @TODO(JM)
-    coordinates->chunkRelativeTileIndex.x = modulo(coordinates->tileIndex.x, tilemap.tileChunkTileDimensions);
-    coordinates->chunkRelativeTileIndex.y = modulo(coordinates->tileIndex.y, tilemap.tileChunkTileDimensions);
+    coordinates->chunkIndex.x = chunkIndex.x;
+    coordinates->chunkIndex.y = chunkIndex.y;
 
-    // @TODO(JM)
-    coordinates->chunkRelativePixelCoordinates.x = 0;
-    coordinates->chunkRelativePixelCoordinates.y = 0;
+    // Get the tile index relative to the tile chunk it's within
+    xyuint chunkRelativeTileIndex = getChunkRelativeTileIndex(absTileIndex.x,
+                                                                absTileIndex.y,
+                                                                tilemap);
 
-    // @TODO(JM)
-    coordinates->tileRelativePixelCoordinates.x = (pixelX - (tilemap.tileWidthPx * tileIndexX));
-    coordinates->tileRelativePixelCoordinates.y = (pixelY - (tilemap.tileHeightPx * tileIndexY));
+    coordinates->chunkRelativeTileIndex.x = chunkRelativeTileIndex.x;
+    coordinates->chunkRelativeTileIndex.y = chunkRelativeTileIndex.y;
+
+    xyuint tileRelPos = getTileRelativePixelPos(absPixelX, absPixelY, tilemap);
+
+    coordinates->tileRelativePixelCoordinates.x = tileRelPos.x;
+    coordinates->tileRelativePixelCoordinates.y = tileRelPos.y;
+
     return;
 }
 
@@ -112,12 +133,10 @@ xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilem
 
 xyuint getTileRelativePixelPos(uint32 pixelX, uint32 pixelY, Tilemap tilemap)
 {
-    xyuint absTileIndex = geAbsTileIndexFromAbsPixel(pixelX, pixelY, tilemap);
-
     xyuint pixelPos = {};
 
-    pixelPos.x = (pixelX - (tilemap.tileWidthPx * absTileIndex.x));
-    pixelPos.y = (pixelY - (tilemap.tileHeightPx * absTileIndex.y));
+    pixelPos.x = (pixelX % tilemap.tileWidthPx);
+    pixelPos.y = (pixelY % tilemap.tileHeightPx);
 
     return pixelPos;
 }

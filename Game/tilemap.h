@@ -85,9 +85,6 @@ typedef struct TilemapCoordinates
     // X and Y tile index relative to the tile chunk
     xyuint chunkRelativeTileIndex;
 
-    // The pixel coordinates relative to the tile chunk the pixelCoordinates are in
-    xyuint chunkRelativePixelCoordinates;
-
     // The pixel coordinates relative to the tile the pixelCoordinates are in
     xyuint tileRelativePixelCoordinates;
 

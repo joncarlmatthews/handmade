@@ -17,14 +17,18 @@
 //#define PLAYER_SPEED 30.57632f
 
 typedef struct Player {
-    // Pixel position in relation to the world
+    // Pixel position in relation to the world.
+    // This is the starting position that the player is
+    // drawn from.
     xyuint absolutePosition;
-
-    // Which tilemap z-plane is the player on?
-    uint32 zIndex;
 
     // Position in relation to screen (for background scrolling)
     xyuint fixedPosition;
+
+    xyuint gamePosition;
+
+    // Which tilemap z-plane is the player on?
+    uint32 zIndex;
 
     // Last direction the player moved in (up, down, left, right)
     uint32 lastMoveDirections;
@@ -75,6 +79,8 @@ typedef struct PlayerPositionData {
     PLAYER_POINT_POS pointPosition;
     TilemapCoordinates activeTile;
 } PlayerPositionData;
+
+void setPlayerGamePosition(GameState* gameState);
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
                                 xyuint playerPixelPos,

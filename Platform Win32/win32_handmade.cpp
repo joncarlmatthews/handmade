@@ -958,7 +958,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
                     0, 0,
                     clientDimensions.width,
                     clientDimensions.height,
-                    BLACKNESS);
+                    WHITENESS);
 
             // Display the buffer to the screen
             win32DisplayFrameBuffer(deviceHandleForWindow,
