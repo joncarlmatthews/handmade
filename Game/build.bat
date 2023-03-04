@@ -43,7 +43,7 @@ if %PlatformArg% == x64 (
     SET PlatformFolder=Win32
 ) else if %PlatformArg% == Win32 (
     SET Platform=x86
-    SET PlatformFolder=Win3
+    SET PlatformFolder=Win32
 ) else (
     GOTO platform_usage
 )
@@ -149,5 +149,5 @@ ECHO Invalid configuration. Supported configurations: Debug, Release
 exit /B 1
 
 :platform_usage
-ECHO Invalid platform. Supported platforms: x86, x64
+ECHO Invalid platform architecture. Supported platforms: x86, x64
 exit /B 1
