@@ -1,5 +1,4 @@
 Day 035:
- -x Move gameState->player1.zIndex to world position
  -x Collapse tile spam into single loop
  -x Draw up/down doors
  -x Only show up/down if room has no exit

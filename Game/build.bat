@@ -1,6 +1,8 @@
 @echo off
 
 REM =========================================================================================
+REM
+REM Builds the Game DLL
 REM 
 REM You need to set the shell environment by running shell_x64.bat or shell_x86.bat once per
 REM shell before running this build script.

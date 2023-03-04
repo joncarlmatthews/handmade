@@ -328,8 +328,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // of screen
         gameState->player1.absolutePosition.x = 40;
         gameState->player1.absolutePosition.y = 40;
-        setPlayerGamePosition(gameState, frameBuffer);
         gameState->player1.zIndex = 0;
+        setPlayerGamePosition(gameState, frameBuffer);
        
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data

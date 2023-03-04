@@ -34,6 +34,8 @@
 #if HANDMADE_LOCAL_BUILD
 
     // Flags:
+    // #define HANDMADE_LIVE_LOOP_EDITING
+    // #define HANDMADE_DEBUG_LIVE_LOOP_EDITING
     // #define HANDMADE_DEBUG_TILE_POS
     // #define HANDMADE_LIVE_LOOP_EDITING
     // #define HANDMADE_DEBUG
@@ -362,7 +364,8 @@ typedef struct GameState
     MemoryBlock tileChunksMemoryBlock;
     MemoryBlock tilesMemoryBlock;
 
-    // The currently active world position based off of the player's absolute position
+    // The currently active world position based off of the player's
+    // absolute position
     TilemapPosition worldPosition;
 
     SineWave sineWave;

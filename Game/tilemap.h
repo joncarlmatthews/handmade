@@ -81,7 +81,7 @@ typedef struct TilemapPosition
     // The absolute pixel position (relative to the entire tilemap)
     xyuint absPixelPos;
 
-    // x and y absolute tile index (relative to the entire tilemap)
+    // X and Y absolute tile index (relative to the entire tilemap)
     xyzuint tileIndex;
 
     // X and Y index of the current tile chunk
@@ -90,7 +90,7 @@ typedef struct TilemapPosition
     // X and Y tile index relative to the tile chunk
     xyuint chunkRelativeTileIndex;
 
-    // The pixel position relative to the tile
+    // The tile relative pixel position
     xyuint tileRelativePixelPos;
 
 } TilemapPosition;

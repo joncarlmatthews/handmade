@@ -707,7 +707,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                     &controllerCounts);
             }
 
+
+#ifdef HANDMADE_LIVE_LOOP_EDITING
             win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
+#endif
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
@@ -1564,6 +1567,58 @@ internal_func void win32LoadXInputDLLFunctions(void)
     }
 }
 
+internal_func void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, GameCode *gameCode)
+{
+    // Load code from Game_copy.dll
+    HMODULE libHandle = LoadLibrary(absPathToDLL);
+
+    bool8 valid = 1;
+
+    if (libHandle) {
+
+        gameCode->dllHandle = libHandle;
+
+        GameUpdate *gameUpdateAddr = (GameUpdate *)GetProcAddress(libHandle, "gameUpdate");
+        GameInitFrameBuffer *gameInitFrameBufferAddr = (GameInitFrameBuffer *)GetProcAddress(libHandle, "gameInitFrameBuffer");
+        GameInitAudioBuffer *gameInitAudioBufferAddr = (GameInitAudioBuffer *)GetProcAddress(libHandle, "gameInitAudioBuffer");
+
+        if (gameUpdateAddr) {
+            gameCode->gameUpdate = gameUpdateAddr;
+        } else {
+            assert(!"unable to find gameUpdate");
+            valid = 0;
+        }
+
+        if (gameInitFrameBufferAddr) {
+            gameCode->gameInitFrameBuffer = gameInitFrameBufferAddr;
+        } else {
+            assert(!"unable to find gameInitFrameBuffer");
+            valid = 0;
+        }
+
+        if (gameInitAudioBufferAddr) {
+            gameCode->gameInitAudioBuffer = gameInitAudioBufferAddr;
+        } else {
+            assert(!"unable to find gameInitAudioBuffer");
+            valid = 0;
+        }
+
+    } else {
+        assert(!"unable to load game code");
+        valid = 0;
+    }
+
+    if (!valid) {
+
+        gameCode->gameUpdate = &gameUpdateStub;
+        gameCode->gameInitFrameBuffer = &gameInitFrameBufferStub;
+        gameCode->gameInitAudioBuffer = &gameInitAudioBufferStub;
+
+        // @TODO(JM) Win32 error message that game could not be loaded.
+        //...
+    }
+}
+
 internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
 {
     wchar_t gameDLLFileName[20] = L"Game.dll";
@@ -1575,6 +1630,11 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
     utilConcatStringsW(absPath, MAX_PATH, gameDLLFileName, 20, gameDLLFilePath, 276);
     utilConcatStringsW(absPath, MAX_PATH, gameCopyDLLFileName, 20, gameCopyDLLFilePath, 276);
 
+#if !defined(HANDMADE_LIVE_LOOP_EDITING)
+    win32LoadGameDLLFunctionsFromFile(gameDLLFilePath, gameCode);
+    return;
+#endif
+
     BOOL loadGameCode = false;
 
     // Does the copy yet exist?
@@ -1582,7 +1642,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 
     if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))) {
 
-#if defined(HANDMADE_DEBUG)
+#if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
         wchar_t buff[500] = { 0 };
         swprintf_s(buff, 500, L"Game_copy.dll doesnt exist, going to copy...\n");
         OutputDebugString(buff);
@@ -1591,13 +1651,12 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
         BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
 
         if (!res) {
-            #if defined(HANDMADE_DEBUG)
+            #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
                 wchar_t buff[500] = { 0 };
-                swprintf_s(buff, 500, L"Game_temp.dll doesnt exist, but could not copy: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
+                swprintf_s(buff, 500, L"Game_copy.dll doesnt exist, but could not copy: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
                 OutputDebugString(buff);
                 assert(!"Game code can not be loaded");
             #endif
-
         }
 
         loadGameCode = true;
@@ -1619,27 +1678,31 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
                 BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
 
                 if (!res) {
-                    #if defined(HANDMADE_DEBUG)
+                #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
                         wchar_t buff[500] = { 0 };
-                        swprintf_s(buff, 500, L"Could not free DLL handle: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
+                        swprintf_s(buff, 500, L"Could not free DLL handle lock: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
                         OutputDebugString(buff);
                     #endif
                 }
 
             }
 
+            // Copy file contents from Game.dll to Game_copy.dll
             BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
 
-
+#ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
             if (!res) {
-                #if defined(HANDMADE_DEBUG)
-                    wchar_t buff[500] = { 0 };
-                    swprintf_s(buff, 500, L"DLL copy failed: 0x%X\n", GetLastError()); // 0x20 = The process cannot access the file because it is being used by another process.
-                    OutputDebugString(buff);
-                #endif
+                wchar_t buff[500] = { 0 };
+                swprintf_s(buff, 500, L"DLL copy failed: 0x%X\n", GetLastError()); // 0x20 = The process cannot access the file because it is being used by another process.
+                OutputDebugString(buff);
+            }else {
+                wchar_t buff[500] = { 0 };
+                swprintf_s(buff, 500, L"DLL copy succeeded\n");
+                OutputDebugString(buff);
             }
-
+#endif
             loadGameCode = true;
+
         } else {
 
             if (gameCode->dllHandle == 0x0) {
@@ -1649,49 +1712,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
     }
 
     if (loadGameCode) {
-        HMODULE libHandle = LoadLibrary(gameCopyDLLFilePath);
-
-        bool8 valid = 1;
-
-        if (libHandle) {
-
-            gameCode->dllHandle = libHandle;
-
-            GameUpdate *gameUpdateAddr = (GameUpdate *)GetProcAddress(libHandle, "gameUpdate");
-            GameInitFrameBuffer *gameInitFrameBufferAddr = (GameInitFrameBuffer *)GetProcAddress(libHandle, "gameInitFrameBuffer");
-            GameInitAudioBuffer *gameInitAudioBufferAddr = (GameInitAudioBuffer *)GetProcAddress(libHandle, "gameInitAudioBuffer");
-
-            if (gameUpdateAddr) {
-                gameCode->gameUpdate = gameUpdateAddr;
-            } else {
-                assert(!"unable to find gameUpdate");
-                valid = 0;
-            }
-
-            if (gameInitFrameBufferAddr) {
-                gameCode->gameInitFrameBuffer = gameInitFrameBufferAddr;
-            } else {
-                assert(!"unable to find gameInitFrameBuffer");
-                valid = 0;
-            }
-
-            if (gameInitAudioBufferAddr) {
-                gameCode->gameInitAudioBuffer = gameInitAudioBufferAddr;
-            } else {
-                assert(!"unable to find gameInitAudioBuffer");
-                valid = 0;
-            }
-
-        } else {
-            assert(!"unable to load game code");
-            valid = 0;
-        }
-
-        if (!valid) {
-            gameCode->gameUpdate = &gameUpdateStub;
-            gameCode->gameInitFrameBuffer = &gameInitFrameBufferStub;
-            gameCode->gameInitAudioBuffer = &gameInitAudioBufferStub;
-        }
+        win32LoadGameDLLFunctionsFromFile(gameCopyDLLFilePath, gameCode);
     }
 }
 

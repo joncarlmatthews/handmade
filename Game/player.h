@@ -17,18 +17,20 @@
 //#define PLAYER_SPEED 30.57632f
 
 typedef struct Player {
-    // Pixel position in relation to the world.
-    // This is the starting position that the player is
-    // drawn from.
+    // Pixel position in relation to the entire tilemap.
+    // This is the starting position that the player is drawn from (bottom left).
     xyuint absolutePosition;
 
-    // Position in relation to screen (for background scrolling)
-    xyuint fixedPosition;
-
+    // The pixel position of where we consider the player to be. Which isnt
+    // necessarily the bottom left.
     xyuint gamePosition;
 
     // Which tilemap z-plane is the player on?
     uint32 zIndex;
+
+    // The fixed position that we draw the player from. @NOTE(JM) Should we move
+    // this to some place else other than the player?
+    xyuint fixedPosition;
 
     // Last direction the player moved in (up, down, left, right)
     uint32 lastMoveDirections;
