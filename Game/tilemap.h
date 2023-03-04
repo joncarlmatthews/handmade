@@ -76,10 +76,10 @@ typedef struct Tilemap
 
 } Tilemap;
 
-typedef struct TilemapCoordinates
+typedef struct TilemapPosition
 {
-    // The absolute pixel coordinates (relative to the entire tilemap)
-    xyuint pixelCoordinates;
+    // The absolute pixel position (relative to the entire tilemap)
+    xyuint absPixelPos;
 
     // x and y absolute tile index (relative to the entire tilemap)
     xyzuint tileIndex;
@@ -90,10 +90,10 @@ typedef struct TilemapCoordinates
     // X and Y tile index relative to the tile chunk
     xyuint chunkRelativeTileIndex;
 
-    // The pixel coordinates relative to the tile the pixelCoordinates are in
-    xyuint tileRelativePixelCoordinates;
+    // The pixel position relative to the tile
+    xyuint tileRelativePixelPos;
 
-} TilemapCoordinates;
+} TilemapPosition;
 
 typedef struct World World;
 typedef struct GameState GameState;
@@ -109,7 +109,7 @@ void initTilemap(MemoryRegion *memoryRegion,
                     float32 tileDimensionsMeters,
                     GameFrameBuffer *frameBuffer);
 
-void setTileCoordinateData(TilemapCoordinates *coordinates,
+void setTileCoordinateData(TilemapPosition *coordinates,
                         uint32 pixelX,
                         uint32 pixelY,
                         Tilemap tilemap);

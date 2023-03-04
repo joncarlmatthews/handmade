@@ -57,26 +57,26 @@ void initTilemap(MemoryRegion *memoryRegion,
  * index, tile chunk index, chunk relative tile index and the tile relative
  * pixel position
  * 
- * @param coordinates 
+ * @param tilemapPosition 
  * @param absPixelX 
  * @param absPixelY 
  * @param tilemap 
 */
-void setTileCoordinateData(TilemapCoordinates *coordinates,
+void setTileCoordinateData(TilemapPosition *tilemapPosition,
                             uint32 absPixelX,
                             uint32 absPixelY,
                             Tilemap tilemap)
 {
-    coordinates->pixelCoordinates.x = absPixelX;
-    coordinates->pixelCoordinates.y = absPixelY;
+    tilemapPosition->absPixelPos.x = absPixelX;
+    tilemapPosition->absPixelPos.y = absPixelY;
 
     // Calculate the absolute x and y tile index relative to the entire tilemap
     xyuint absTileIndex = geAbsTileIndexFromAbsPixel(absPixelX,
                                                         absPixelY,
                                                         tilemap);
 
-    coordinates->tileIndex.x = absTileIndex.x;
-    coordinates->tileIndex.y = absTileIndex.y;
+    tilemapPosition->tileIndex.x = absTileIndex.x;
+    tilemapPosition->tileIndex.y = absTileIndex.y;
 
     // Calculate the x and y tile chunk index relative to the entire tilemap
     xyzuint chunkIndex = getTileChunkIndexForAbsTile(absTileIndex.x,
@@ -84,21 +84,21 @@ void setTileCoordinateData(TilemapCoordinates *coordinates,
                                                         0, // @TODO(JM)
                                                         tilemap);
 
-    coordinates->chunkIndex.x = chunkIndex.x;
-    coordinates->chunkIndex.y = chunkIndex.y;
+    tilemapPosition->chunkIndex.x = chunkIndex.x;
+    tilemapPosition->chunkIndex.y = chunkIndex.y;
 
     // Get the tile index relative to the tile chunk it's within
     xyuint chunkRelativeTileIndex = getChunkRelativeTileIndex(absTileIndex.x,
                                                                 absTileIndex.y,
                                                                 tilemap);
 
-    coordinates->chunkRelativeTileIndex.x = chunkRelativeTileIndex.x;
-    coordinates->chunkRelativeTileIndex.y = chunkRelativeTileIndex.y;
+    tilemapPosition->chunkRelativeTileIndex.x = chunkRelativeTileIndex.x;
+    tilemapPosition->chunkRelativeTileIndex.y = chunkRelativeTileIndex.y;
 
     xyuint tileRelPos = getTileRelativePixelPos(absPixelX, absPixelY, tilemap);
 
-    coordinates->tileRelativePixelCoordinates.x = tileRelPos.x;
-    coordinates->tileRelativePixelCoordinates.y = tileRelPos.y;
+    tilemapPosition->tileRelativePixelPos.x = tileRelPos.x;
+    tilemapPosition->tileRelativePixelPos.y = tileRelPos.y;
 
     return;
 }

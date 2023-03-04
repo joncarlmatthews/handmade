@@ -180,7 +180,7 @@ gameState->player1.absolutePosition.y);
                 gameState->player1.absolutePosition.y = playerNewPos.y;
                 gameState->player1.lastMoveDirections = lastMoveDirections;
 
-                setPlayerGamePosition(gameState);
+                setPlayerGamePosition(gameState, frameBuffer);
 
                 setWorldPosition(gameState, frameBuffer);
 
@@ -189,14 +189,16 @@ gameState->player1.absolutePosition.y);
                 sprintf_s(buff, sizeof(buff),
                     "MOVED. \
 Plr World Pos x:%i y:%i. \
-World Tile x:%i y:%i. \
+Abs Tile Index x:%i y:%i. \
 Chunk Index x:%i y:%i. \
-Chunk Tile x:%i y:%i. \
+Chunk Rel Tile index x:%i y:%i. \
+Tile Rel Pos x:%i y:%i. \
 \n",
 gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
 gameState->worldPosition.tileIndex.x, gameState->worldPosition.tileIndex.y,
 gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
 gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chunkRelativeTileIndex.y,
+gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRelativePixelPos.y
 );
                 memory->DEBUG_platformLog(buff);
 #endif
@@ -264,15 +266,24 @@ gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chun
  * necessarily where we consider the player to "be" in terms of the game play.
  * This function is used when we want to get what the game considers the position
  * of the player to be.
+ *
+ * We also set the fixed position (for where to draw the player on screen) within
+ * this function, as it needs to be relative to the game position offsets
  * 
  * @param gameState 
  * @return 
 */
-void setPlayerGamePosition(GameState *gameState)
+void setPlayerGamePosition(GameState *gameState, GameFrameBuffer *frameBuffer)
 {
-    //gameState->player1.gamePosition.x = (gameState->player1.absolutePosition.x + (gameState->player1.widthPx / 2));
-    gameState->player1.gamePosition.x = gameState->player1.absolutePosition.x;
-    gameState->player1.gamePosition.y = gameState->player1.absolutePosition.y;
+    uint32 offsetX = (gameState->player1.widthPx / 2);
+    uint32 offsetY = (uint32)(gameState->player1.heightPx * 0.15);
+
+    gameState->player1.gamePosition.x = (gameState->player1.absolutePosition.x + offsetX);
+    gameState->player1.gamePosition.y = gameState->player1.absolutePosition.y + offsetY;
+
+    gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - offsetX);
+    gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - offsetY);
+
     return;
 }
 

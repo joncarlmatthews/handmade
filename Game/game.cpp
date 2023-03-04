@@ -326,11 +326,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Initial character starting position. Start the player in the middle
         // of screen
-        gameState->player1.absolutePosition.x = (frameBuffer->widthPx / 2);
-        gameState->player1.absolutePosition.y = (frameBuffer->heightPx / 2);
-        gameState->player1.fixedPosition.x = gameState->player1.absolutePosition.x;
-        gameState->player1.fixedPosition.y = gameState->player1.absolutePosition.y;
-        setPlayerGamePosition(gameState);
+        gameState->player1.absolutePosition.x = 40;
+        gameState->player1.absolutePosition.y = 40;
+        setPlayerGamePosition(gameState, frameBuffer);
         gameState->player1.zIndex = 0;
        
         // Calculate the currently active tile based on player1's position and
@@ -384,7 +382,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     xyzuint centerTileIndex = gameState->worldPosition.tileIndex;
 
-    xyuint tileRelPos = gameState->worldPosition.tileRelativePixelCoordinates;
+    xyuint tileRelPos = gameState->worldPosition.tileRelativePixelPos;
 
     // Center tile start x and y
     xyuint centerTileStart = {};

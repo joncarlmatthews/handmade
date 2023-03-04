@@ -77,10 +77,8 @@ enum jumpDirection {
 
 typedef struct PlayerPositionData {
     PLAYER_POINT_POS pointPosition;
-    TilemapCoordinates activeTile;
+    TilemapPosition activeTile;
 } PlayerPositionData;
-
-void setPlayerGamePosition(GameState* gameState);
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
                                 xyuint playerPixelPos,
@@ -89,9 +87,11 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
 
 
 typedef struct GameState GameState;
-typedef struct GameMemory GameMemory;
 typedef struct GameFrameBuffer GameFrameBuffer;
 typedef struct GameAudioBuffer GameAudioBuffer;
+void setPlayerGamePosition(GameState *gameState, GameFrameBuffer *frameBuffer);
+
+typedef struct GameMemory GameMemory;
 typedef struct GameInput GameInput;
 void playerHandleMovement(GameState *gameState,
                             GameMemory *memory,

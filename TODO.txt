@@ -1,6 +1,5 @@
 Day 035:
  -x Move gameState->player1.zIndex to world position
- -x Figure out how to make active tile based off of new player game position
  -x Collapse tile spam into single loop
  -x Draw up/down doors
  -x Only show up/down if room has no exit
@@ -10,5 +9,5 @@ Day 035:
 
 Ongoing:
  -x Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
- -x Diagonal speed bug (will fix when implement vectors)
+ -x Diagonal speed bug (will fix when implement vectors) Disabled diagonal movement for now.
  -x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
