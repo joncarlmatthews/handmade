@@ -4,7 +4,6 @@ Day 035:
  -x Draw up/down doors
  -x Only show up/down if room has no exit
  -x shift and mask to store chunk and tile in the same 32 bit integer?
- -x Add dist/ folder to include working win32 build
  -x When running the .exe the code always creates a Game_copy.dll file. This shouldnt happen if it's not needed and should never happen in release mode
 
 Ongoing:

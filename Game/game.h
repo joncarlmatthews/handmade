@@ -34,7 +34,7 @@
 #if HANDMADE_LOCAL_BUILD
 
     // Flags:
-    #define HANDMADE_DEBUG_TILE_POS
+    // #define HANDMADE_DEBUG_TILE_POS
     // #define HANDMADE_LIVE_LOOP_EDITING
     // #define HANDMADE_DEBUG
     // #define HANDMADE_DEBUG_FPS
