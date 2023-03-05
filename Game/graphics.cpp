@@ -75,10 +75,10 @@ void writeRectangle(GameFrameBuffer *buffer,
     // Move in from left to starting absolutePosition
     row = (row + xOffset);
 
-    // Up (rows)
+    // Up (rows) y
     for (int64 i = 0; i < height; i++) {
 
-        // Accross (columns)
+        // Accross (columns) x
         uint32 *pixel = (uint32*)row;
         for (int64 x = 0; x < width; x++) {
 

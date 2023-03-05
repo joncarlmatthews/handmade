@@ -13,8 +13,8 @@
 
 // Average male running speed
 // https://www.calculateme.com/speed/miles-per-hour/to-meters-per-second/8
-#define PLAYER_SPEED 3.57632f
-//#define PLAYER_SPEED 30.57632f
+//#define PLAYER_SPEED 3.57632f
+#define PLAYER_SPEED 15.0f
 
 typedef struct Player {
     // Pixel position in relation to the entire tilemap.
@@ -84,6 +84,7 @@ typedef struct PlayerPositionData {
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
                                 xyuint playerPixelPos,
+                                uint32 zIndex,
                                 PLAYER_POINT_POS pointPos,
                                 GameState *gameState);
 

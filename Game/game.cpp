@@ -54,7 +54,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // z-plane 0
         {
-            uint32 rooms = 20;
+            uint32 rooms = 3;
             uint32 roomTileDims = 18;
 
             uint32 absTileX = 0;
@@ -66,11 +66,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
             bool shiftUp        = false;
             bool shiftRight     = false;
+            bool shiftAbove     = false;
 
             uint doorTop        = false;
             uint doorLeft       = false;
             uint doorBottom     = false;
             uint doorRight      = false;
+            uint doorUp         = false;
 
             for (uint32 room = 0; room < rooms; room++){
 
@@ -96,6 +98,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     break;
                 case 1:
                     doorTop = true;
+                    break;
+                case 2:
+                    doorUp = true;
+                    ++absTileZ;
                     break;
                 }
 
@@ -165,22 +171,31 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 default:
                     shiftRight = true;
                     shiftUp = false;
+                    shiftAbove = false;
                     break;
                 case 1:
                     shiftRight = false;
                     shiftUp = true;
+                    shiftAbove = false;
+                    break;
+                case 2:
+                    shiftRight = false;
+                    shiftUp = false;
+                    shiftAbove = true;
                     break;
                 }
 
-                doorTop        = false;
-                doorLeft       = false;
-                doorBottom     = false;
-                doorRight      = false;
+                doorTop         = false;
+                doorLeft        = false;
+                doorBottom      = false;
+                doorRight       = false;
+                doorUp          = false;
 
                 randomNumberIndex++;
             }
         }
 
+        #if 0
         // z-plane 1
         {
             uint32 rooms = 8;
@@ -309,6 +324,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 randomNumberIndex++;
             }
         }
+        #endif
 
         // Character attributes
         gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
@@ -422,7 +438,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
 
             // Get the relevant tile chunk
-            TileChunk *tileChunk = getTileChunkFoTileChunkIndex(tileChunkIndex,
+            TileChunk *tileChunk = getTileChunkFromTileChunkIndex(tileChunkIndex,
                                                                 tilemap);
 
             // Calculate the tile chunk relative tile indexes
