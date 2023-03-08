@@ -16,10 +16,10 @@
 void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
 {
     setTilemapPositionData(&gameState->worldPosition,
-        gameState->player1.gamePosition.x,
-        gameState->player1.gamePosition.y,
-        gameState->player1.zIndex,
-        gameState->world.tilemap);
+                            gameState->player1.gamePosition.x,
+                            gameState->player1.gamePosition.y,
+                            gameState->player1.zIndex,
+                            gameState->world.tilemap);
 }
 
 int64 metersToPixels(World world, float32 metres)

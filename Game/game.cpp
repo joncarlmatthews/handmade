@@ -47,285 +47,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert(gameState->world.worldHeightPx > frameBuffer->heightPx);
         assert(gameState->world.worldWidthPx > frameBuffer->widthPx);
 
-        // Spam some tile values into the tilemap...      
-        World world         = gameState->world;
-        Tilemap tilemap     = world.tilemap;
-        uint randomNumberIndex = 0;
-
-        // z-plane 0
-        {
-            uint32 rooms = 3;
-            uint32 roomTileDims = 18;
-
-            uint32 absTileX = 0;
-            uint32 absTileY = 0;
-            uint32 absTileZ = 0;
-
-            uint32 roomStartTileX = 0;
-            uint32 roomStartTileY = 0;
-
-            bool shiftUp        = false;
-            bool shiftRight     = false;
-            bool shiftAbove     = false;
-
-            uint doorTop        = false;
-            uint doorLeft       = false;
-            uint doorBottom     = false;
-            uint doorRight      = false;
-            uint doorUp         = false;
-
-            for (uint32 room = 0; room < rooms; room++){
-
-                uint32 randomNumber = (randomNumbers[randomNumberIndex] % 2);
-
-                // Where should the starting X and Y be for this room?
-                if (shiftRight) {
-                    roomStartTileX = roomStartTileX + roomTileDims;
-                    doorLeft = true;
-                }else if (shiftUp) {
-                    roomStartTileY = roomStartTileY + roomTileDims;
-                    doorBottom = true;
-                }
-
-                absTileX = roomStartTileX;
-                absTileY = roomStartTileY;
-
-                switch (randomNumber)
-                {
-                case 0:
-                default:
-                    doorRight = true;
-                    break;
-                case 1:
-                    doorTop = true;
-                    break;
-                case 2:
-                    doorUp = true;
-                    ++absTileZ;
-                    break;
-                }
-
-                for (uint32 y = 0; y < roomTileDims; y++) {
-                    for (uint32 x = 0; x < roomTileDims; x++) {
-
-                        // Floor
-                        uint32 tileValue = 1;
-
-                        // Edge?
-                        if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
-
-                            // Wall
-                            tileValue = 2;
-
-                            // Left edge, up
-                            if (0 == x) {
-                                if (doorLeft){
-                                    // Half way up?
-                                    if ((y == (roomTileDims / 2))){
-                                        tileValue = 3; // Passageway
-                                    }
-                                }
-                            }
-
-                            // Right edge, up
-                            if (x == (roomTileDims -1)) {
-                                if (doorRight){
-                                    // Half way up?
-                                    if ((y == (roomTileDims / 2))){
-                                        tileValue = 3; // Passageway
-                                    }
-                                }
-                            }
-
-                            // Bottom edge, along
-                            if (0 == y) {
-                                if (doorBottom){
-                                    // Half way along?
-                                    if ((x == (roomTileDims / 2))){
-                                        tileValue = 3; // Passageway
-                                    }
-                                }
-                            }
-
-                            // Top edge, along
-                            if (y == (roomTileDims -1)) {
-                                if (doorTop){
-                                    // Half way along?
-                                    if ((x == (roomTileDims / 2))){
-                                        tileValue = 3; // Passageway
-                                    }
-                                }
-                            }
-                        }
-
-                        setTileValue(memory->permanentStorage, gameState, absTileX, absTileY, absTileZ, tileValue);
-                        absTileX++;
-                    }
-                    absTileX = roomStartTileX;
-                    absTileY++;
-                }
-
-                switch (randomNumber)
-                {
-                case 0:
-                default:
-                    shiftRight = true;
-                    shiftUp = false;
-                    shiftAbove = false;
-                    break;
-                case 1:
-                    shiftRight = false;
-                    shiftUp = true;
-                    shiftAbove = false;
-                    break;
-                case 2:
-                    shiftRight = false;
-                    shiftUp = false;
-                    shiftAbove = true;
-                    break;
-                }
-
-                doorTop         = false;
-                doorLeft        = false;
-                doorBottom      = false;
-                doorRight       = false;
-                doorUp          = false;
-
-                randomNumberIndex++;
-            }
-        }
-
-        #if 0
-        // z-plane 1
-        {
-            uint32 rooms = 8;
-            uint32 roomTileDims = 15;
-
-            uint32 absTileX = 0;
-            uint32 absTileY = 0;
-            uint32 absTileZ = 1;
-
-            uint32 roomStartTileX = 0;
-            uint32 roomStartTileY = 0;
-
-            bool shiftUp        = false;
-            bool shiftRight     = false;
-
-            uint doorTop        = false;
-            uint doorLeft       = false;
-            uint doorBottom     = false;
-            uint doorRight      = false;
-
-            for (uint32 room = 0; room < rooms; room++){
-
-                uint32 randomNumber = (randomNumbers[randomNumberIndex] % 2);
-
-                // Where should the starting X and Y be for this room?
-                if (shiftRight) {
-                    roomStartTileX = roomStartTileX + roomTileDims;
-                    doorLeft = true;
-                }else if (shiftUp) {
-                    roomStartTileY = roomStartTileY + roomTileDims;
-                    doorBottom = true;
-                }
-
-                absTileX = roomStartTileX;
-                absTileY = roomStartTileY;
-
-                switch (randomNumber)
-                {
-                case 0:
-                default:
-                    doorRight = true;
-                    break;
-                case 1:
-                    doorTop = true;
-                    break;
-                }
-
-                for (uint32 y = 0; y < roomTileDims; y++) {
-                    for (uint32 x = 0; x < roomTileDims; x++) {
-
-                        // Floor
-                        uint32 tileValue = 1;
-
-                        // Edge?
-                        if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
-
-                            // Wall
-                            tileValue = 2;
-
-                            // Left edge, up
-                            if (0 == x) {
-                                if (doorLeft){
-                                    // Half way up?
-                                    if ((y == (roomTileDims / 2))){
-                                        tileValue = 3; // Passageway
-                                    }
-                                }
-                            }
-
-                            // Right edge, up
-                            if (x == (roomTileDims -1)) {
-                                if (doorRight){
-                                    // Half way up?
-                                    if ((y == (roomTileDims / 2))){
-                                        tileValue = 3; // Passageway
-                                    }
-                                }
-                            }
-
-                            // Bottom edge, along
-                            if (0 == y) {
-                                if (doorBottom){
-                                    // Half way along?
-                                    if ((x == (roomTileDims / 2))){
-                                        tileValue = 3; // Passageway
-                                    }
-                                }
-                            }
-
-                            // Top edge, along
-                            if (y == (roomTileDims -1)) {
-                                if (doorTop){
-                                    // Half way along?
-                                    if ((x == (roomTileDims / 2))){
-                                        tileValue = 3; // Passageway
-                                    }
-                                }
-                            }
-                        }
-
-                        setTileValue(memory->permanentStorage, gameState, absTileX, absTileY, absTileZ, tileValue);
-                        absTileX++;
-                    }
-                    absTileX = roomStartTileX;
-                    absTileY++;
-                }
-
-                switch (randomNumber)
-                {
-                case 0:
-                default:
-                    shiftRight = true;
-                    shiftUp = false;
-                    break;
-                case 1:
-                    shiftRight = false;
-                    shiftUp = true;
-                    break;
-                }
-
-                doorTop        = false;
-                doorLeft       = false;
-                doorBottom     = false;
-                doorRight      = false;
-
-                randomNumberIndex++;
-            }
-        }
-        #endif
-
         // Character attributes
         gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
         gameState->player1.widthMeters   = ((float32)gameState->player1.heightMeters * 0.65f);
@@ -342,14 +63,212 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Initial character starting position. Start the player in the middle
         // of screen
-        gameState->player1.absolutePosition.x = 40;
-        gameState->player1.absolutePosition.y = 40;
+        gameState->player1.absolutePosition.x = 280;
+        gameState->player1.absolutePosition.y = 280;
         gameState->player1.zIndex = 0;
         setPlayerGamePosition(gameState, frameBuffer);
-       
+
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data
         setWorldPosition(gameState, frameBuffer);
+
+        // Spam some tile values into the tilemap...      
+        World world         = gameState->world;
+        Tilemap tilemap     = world.tilemap;
+        uint randomNumberIndex = 0;
+
+        uint32 rooms = 5;
+        uint32 roomTileDims = 18;
+
+        uint32 absTileX = 0;
+        uint32 absTileY = 0;
+        uint32 absTileZ = 0;
+
+        uint32 roomStartTileX = 0;
+        uint32 roomStartTileY = 0;
+
+        bool shiftTop       = false;
+        bool shiftRight     = false;
+        bool shiftUp        = false;
+        bool shiftDown      = false;
+
+        uint doorTop        = false;
+        uint doorLeft       = false;
+        uint doorBottom     = false;
+        uint doorRight      = false;
+        uint doorUp         = false;
+        uint doorDown       = false;
+
+        for (uint32 room = 0; room < rooms; room++){
+
+            // Where should the starting X and Y be for this room..?
+
+            // What was the state of the last room?
+            if (shiftRight) { // Did the last room have a door right?
+                roomStartTileX = roomStartTileX + roomTileDims;
+                doorLeft = true;
+            }else if (shiftTop) { // Did the last room have a door top?
+                roomStartTileY = roomStartTileY + roomTileDims;
+                doorBottom = true;
+            }else if (shiftUp) { // Did the last room have a door up?
+                doorDown = true;
+            }else if (shiftDown) { // Did the last room have a door up?
+                doorUp = true;
+            }
+
+            absTileX = roomStartTileX;
+            absTileY = roomStartTileY;
+
+            uint32 randomNumber = (randomNumbers[randomNumberIndex] % 3);
+
+            // Was the last move up or down? If so, next move can only be lateral
+            if (shiftUp || shiftDown){
+                randomNumber = (randomNumbers[randomNumberIndex] % 2);
+            }
+
+            switch (randomNumber)
+            {
+            case 0:
+                doorRight = true;
+                break;
+            case 1:
+                doorTop = true;
+                break;
+            case 2:
+                switch (absTileZ) {
+                    case 0:
+                        doorUp = true;
+                        break;
+                    case 1:
+                        doorDown = true;
+                        break;
+                }
+                break;
+            }
+
+            // Final room?
+            if ((rooms -1) == room){
+                doorTop         = false;
+                doorRight       = false;
+            }
+
+            for (uint32 y = 0; y < roomTileDims; y++) {
+                for (uint32 x = 0; x < roomTileDims; x++) {
+
+                    // Floor
+                    uint32 tileValue = 1;
+
+                    // Middle?
+                    if ( ((roomTileDims / 2) == x) && ((roomTileDims / 2) == y) ){
+                        // Stairwell
+                        if (doorUp || doorDown){
+                            tileValue = 5;
+                        }
+                    }
+
+                    // Edge?
+                    if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
+
+                        // Wall
+                        tileValue = 2;
+
+                        // Left edge, up
+                        if (0 == x) {
+                            if (doorLeft){
+                                // Half way up?
+                                if ((y == (roomTileDims / 2))){
+                                    tileValue = 3; // Passageway
+                                }
+                            }
+                        }
+
+                        // Right edge, up
+                        if (x == (roomTileDims -1)) {
+                            if (doorRight){
+                                // Half way up?
+                                if ((y == (roomTileDims / 2))){
+                                    tileValue = 3; // Passageway
+                                }
+                            }
+                        }
+
+                        // Bottom edge, along
+                        if (0 == y) {
+                            if (doorBottom){
+                                // Half way along?
+                                if ((x == (roomTileDims / 2))){
+                                    tileValue = 3; // Passageway
+                                }
+                            }
+                        }
+
+                        // Top edge, along
+                        if (y == (roomTileDims -1)) {
+                            if (doorTop){
+                                // Half way along?
+                                if ((x == (roomTileDims / 2))){
+                                    tileValue = 3; // Passageway
+                                }
+                            }
+                        }
+                    }
+
+                    setTileValue(memory->permanentStorage,
+                                    gameState,
+                                    absTileX,
+                                    absTileY,
+                                    absTileZ,
+                                    tileValue);
+                    absTileX++;
+
+                } // x
+
+                absTileX = roomStartTileX;
+                absTileY++;
+
+            } // y
+
+            switch (randomNumber)
+            {
+            case 0:
+                shiftRight  = true;
+                shiftTop    = false;
+                shiftUp     = false;
+                shiftDown   = false;
+                break;
+            case 1:
+                shiftRight  = false;
+                shiftTop    = true;
+                shiftUp     = false;
+                shiftDown   = false;
+                break;
+            case 2:
+                shiftRight  = false;
+                shiftTop    = false;
+                switch (absTileZ) {
+                case 0:
+                    ++absTileZ;
+                    shiftUp     = true;
+                    shiftDown   = false;
+                    break;
+                case 1:
+                    --absTileZ;
+                    shiftUp     = false;
+                    shiftDown   = true;
+                    break;
+                }
+                break;
+            }
+
+            doorTop         = false;
+            doorLeft        = false;
+            doorBottom      = false;
+            doorRight       = false;
+            doorUp          = false;
+            doorDown        = false;
+
+            randomNumberIndex++;
+        }        
 
         memory->initialised = true;
     } // initialisation

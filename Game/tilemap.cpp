@@ -104,6 +104,11 @@ void setTilemapPositionData(TilemapPosition *tilemapPosition,
     // Get the TileChunk
     tilemapPosition->tileChunk = getTileChunkFromTileChunkIndex(chunkIndex, tilemap);
 
+    // Get the active tile
+    uint32 *tile = tilemapPosition->tileChunk->tiles;
+    tile += (chunkRelativeTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelativeTileIndex.x;
+    tilemapPosition->activeTile = tile;
+
     return;
 }
 
@@ -202,32 +207,27 @@ bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData
     return true;
 #endif
 
-    uint32 relTileX = playerPositionData->activeTile.chunkRelativeTileIndex.x;
-    uint32 relTileY = playerPositionData->activeTile.chunkRelativeTileIndex.y;
-
     // Is this tile chunk out of the sparse storage memory bounds?
-    if ( (playerPositionData->activeTile.chunkIndex.x > (tilemap.tileChunkDimensions -1))
-        || (playerPositionData->activeTile.chunkIndex.y > (tilemap.tileChunkDimensions -1))){
+    if ( (playerPositionData->tilemapPosition.chunkIndex.x > (tilemap.tileChunkDimensions -1))
+        || (playerPositionData->tilemapPosition.chunkIndex.y > (tilemap.tileChunkDimensions -1))){
         return false;
     }
 
-    if ((uint8 *)playerPositionData->activeTile.tileChunk > gameState->tileChunksMemoryBlock.lastAddressReserved
-        || (uint8 *)playerPositionData->activeTile.tileChunk < gameState->tileChunksMemoryBlock.startingAddress){
+    if ((uint8 *)playerPositionData->tilemapPosition.tileChunk > gameState->tileChunksMemoryBlock.lastAddressReserved
+        || (uint8 *)playerPositionData->tilemapPosition.tileChunk < gameState->tileChunksMemoryBlock.startingAddress){
         return false;
     }
 
     // Have the tiles within this tile chunk been initialised?
-    if (!playerPositionData->activeTile.tileChunk->tiles) {
+    if (!playerPositionData->tilemapPosition.tileChunk->tiles) {
         return false;
     }
 
-    uint32 *tile = (playerPositionData->activeTile.tileChunk->tiles + ((relTileY * tilemap.tileChunkTileDimensions) + relTileX));
-
-    if (!tile) {
+    if (!playerPositionData->tilemapPosition.activeTile) {
         return false;
     }
 
-    if (*tile == 2) {
+    if (*playerPositionData->tilemapPosition.activeTile == 2) {
         return false;
     }
 
@@ -260,6 +260,11 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
     case 4:
         // earth/grass
         *tileColour = { (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f) }; 
+        break;
+
+    case 5:
+        // stairwell
+        *tileColour = { (57.0f/255.0f), (57.0f/255.0f), (57.0f/255.0f) }; 
         break;
     }
 }

@@ -94,8 +94,10 @@ typedef struct TilemapPosition
     // The tile relative pixel position
     xyuint tileRelativePixelPos;
 
-    // The tile chunk for 
+    // Pointer to the active tile chunk
     TileChunk *tileChunk;
+
+    uint32 *activeTile;
 
 } TilemapPosition;
 

@@ -185,7 +185,19 @@ gameState->player1.absolutePosition.y);
 
                 setPlayerGamePosition(gameState, frameBuffer);
 
+                bool switchedTile = playerHasSwitchedActiveTile(gameState);
+
                 setWorldPosition(gameState, frameBuffer);
+
+                if (switchedTile){
+                    if (5 == *gameState->worldPosition.activeTile) {
+                        char buff[500] = {};
+                        sprintf_s(buff,
+                            sizeof(buff),
+                            "STAIRWELL.\n");
+                        memory->DEBUG_platformLog(buff);
+                    }
+                }
 
 #ifdef HANDMADE_DEBUG_TILE_POS
                 char buff[500] = {};
@@ -298,8 +310,6 @@ void setPlayerGamePosition(GameState *gameState, GameFrameBuffer *frameBuffer)
 * @param PlayerPositionData    positionData        The PlayerPositionData object to write the position data into
 * @param xyuint             playerPixelPos      The X and Y pixel coords to base the calculation on. This is the top left point
 * @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
-* @param Player                player              The player object containing the height/width etc
-* @param World                 world               The world object
 */
 void getPositionDataForPlayer(PlayerPositionData *positionData,
                                 xyuint playerPixelPos,
@@ -357,9 +367,26 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
 
     positionData->pointPosition = pointPos;
 
-    setTilemapPositionData(&positionData->activeTile,
+    setTilemapPositionData(&positionData->tilemapPosition,
                             x,
                             y,
                             zIndex,
                             gameState->world.tilemap);
+}
+
+bool playerHasSwitchedActiveTile(GameState *gameState)
+{
+    TilemapPosition posData = {0};
+    setTilemapPositionData(&posData,
+                            gameState->player1.gamePosition.x,
+                            gameState->player1.gamePosition.y,
+                            gameState->player1.zIndex,
+                            gameState->world.tilemap);
+
+    if ((posData.tileIndex.x != gameState->worldPosition.tileIndex.x) ||
+        (posData.tileIndex.y != gameState->worldPosition.tileIndex.y)){
+        return true;
+    }
+
+    return false;
 }

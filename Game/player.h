@@ -13,8 +13,8 @@
 
 // Average male running speed
 // https://www.calculateme.com/speed/miles-per-hour/to-meters-per-second/8
-//#define PLAYER_SPEED 3.57632f
-#define PLAYER_SPEED 15.0f
+#define PLAYER_SPEED 3.57632f
+//#define PLAYER_SPEED 15.0f
 
 typedef struct Player {
     // Pixel position in relation to the entire tilemap.
@@ -79,7 +79,7 @@ enum jumpDirection {
 
 typedef struct PlayerPositionData {
     PLAYER_POINT_POS pointPosition;
-    TilemapPosition activeTile;
+    TilemapPosition tilemapPosition;
 } PlayerPositionData;
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
@@ -102,5 +102,7 @@ void playerHandleMovement(GameState *gameState,
                             GameAudioBuffer *audioBuffer,
                             GameInput *gameInput,
                             uint8 selectedController);
+
+bool playerHasSwitchedActiveTile(GameState *gameState);
 
 #endif
