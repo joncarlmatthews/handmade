@@ -263,8 +263,13 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
         break;
 
     case 5:
-        // stairwell
+        // stairwell up
         *tileColour = { (57.0f/255.0f), (57.0f/255.0f), (57.0f/255.0f) }; 
+        break;
+
+    case 6:
+        // stairwell down
+        *tileColour = { (0/255.0f), (0/255.0f), (0/255.0f) }; 
         break;
     }
 }

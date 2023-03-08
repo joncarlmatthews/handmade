@@ -190,12 +190,13 @@ gameState->player1.absolutePosition.y);
                 setWorldPosition(gameState, frameBuffer);
 
                 if (switchedTile){
-                    if (5 == *gameState->worldPosition.activeTile) {
-                        char buff[500] = {};
-                        sprintf_s(buff,
-                            sizeof(buff),
-                            "STAIRWELL.\n");
-                        memory->DEBUG_platformLog(buff);
+                    switch(*gameState->worldPosition.activeTile){
+                        case 5:
+                            ++gameState->player1.zIndex;
+                            break;
+                        case 6:
+                            --gameState->player1.zIndex;
+                            break;
                     }
                 }
 

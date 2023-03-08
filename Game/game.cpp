@@ -77,7 +77,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         Tilemap tilemap     = world.tilemap;
         uint randomNumberIndex = 0;
 
-        uint32 rooms = 5;
+        uint32 rooms = 20;
         uint32 roomTileDims = 18;
 
         uint32 absTileX = 0;
@@ -161,8 +161,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     // Middle?
                     if ( ((roomTileDims / 2) == x) && ((roomTileDims / 2) == y) ){
                         // Stairwell
-                        if (doorUp || doorDown){
+                        if (doorUp){
                             tileValue = 5;
+                        }else if(doorDown) {
+                            tileValue = 6;
                         }
                     }
 
