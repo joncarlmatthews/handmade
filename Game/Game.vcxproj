@@ -20,7 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game.h" />
+    <ClInclude Include="graphics.h" />
+    <ClInclude Include="memory.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="random.h" />
     <ClInclude Include="tilemap.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
@@ -28,6 +31,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="graphics.cpp" />
+    <ClCompile Include="memory.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="tilemap.cpp" />
     <ClCompile Include="utility.cpp" />

@@ -1,19 +1,47 @@
 #ifndef HEADER_HH_GAME
 #define HEADER_HH_GAME
 
+// Wide-strings.
+// Defines wchar_t
+// @see https://www.cplusplus.com/reference/cwchar/
+#include <wchar.h>
+
+// Unicode characters.
+// Defines char16_t, char32_t
+// @see https://www.cplusplus.com/reference/cuchar/
+#include <uchar.h>
+
+// Common mathematical operations and transformations.
+// Defines floor, floorf, M_PI
+// @see https://www.cplusplus.com/reference/cmath/
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+// Common input/output operations.
+// Defines: sprintf_s
+// @see https://www.cplusplus.com/reference/cstdio/
+#include <stdio.h>
+
 #include "types.h"
+#include "utility.h"
+#include "random.h"
+#include "memory.h"
+#include "graphics.h"
+#include "world.h"
 #include "tilemap.h"
 #include "player.h"
 
 #if HANDMADE_LOCAL_BUILD
 
     // Flags:
-    // #define HANDMADE_DEBUG_TILE_POS
-    // #define HANDMADE_LIVE_LOOP_EDITING
     // #define HANDMADE_DEBUG
     // #define HANDMADE_DEBUG_FPS
     // #define HANDMADE_DEBUG_CLOCKCYCLES
     // #define HANDMADE_DEBUG_AUDIO
+    // #define HANDMADE_LIVE_LOOP_EDITING
+    // #define HANDMADE_DEBUG_LIVE_LOOP_EDITING
+    // #define HANDMADE_DEBUG_TILE_POS
+    // #define HANDMADE_WALK_THROUGH_WALLS
 #endif
 
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
@@ -115,9 +143,6 @@ typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 //
 // Graphics
 //====================================================
-
-#define FRAME_BUFFER_PIXEL_WIDTH  1280
-#define FRAME_BUFFER_PIXEL_HEIGHT 720
 
 /*
  * Struct for the screen buffer
@@ -298,25 +323,8 @@ typedef struct SineWave
 //====================================================
 typedef struct GameMemory
 {
-    /*
-     * Memory address of data we want to store permanently throughout the game.
-     */
-    void *permanentStorage;
-
-    /*
-     * Size, in bytes of the permanent memory storage.
-     */
-    uint64 permanentStorageSizeInBytes;
-
-    /*
-     * Memory address of data we want to store temporarily throughout the game.
-     */
-    void *transientStorage;
-
-    /*
-     * Size, in bytes of the temporary memory storage.
-     */
-    uint64 transientStorageSizeInBytes;
+    MemoryRegion permanentStorage;
+    MemoryRegion transientStorage;
 
 #if HANDMADE_LOCAL_BUILD
     void *recordingStorageGameState;
@@ -343,90 +351,24 @@ typedef struct GameMemory
 
 } GameMemory;
 
-typedef struct GameMemoryBlock
-{
-    uint8 *startingAddress; // 8 or 4 bytes in size (x64/x86). uint8 to step 1 byte at a time
-    sizet totalSizeInBytes;
-    sizet bytesUsed;
-    sizet bytesFree;
-} GameMemoryBlock;
-
+/**
+ * The GameState essentially sits inside (overlays) the memory's permanent storage
+ * region's bytes
+*/
 typedef struct GameState
 {
     Player player1;
+    World world;
 
-    GameMemoryBlock worldMemoryBlock;
-    World *world;
+    MemoryBlock tileChunksMemoryBlock;
+    MemoryBlock tilesMemoryBlock;
 
-    // The currently active world position based off of the player's absolute position
-    TilemapCoordinates worldPosition;
-
-    // X and Y pixel coordinates for the camera's starting position (to start drawing from)
-    // Camera is drawn out to dimensions of GameFrameBuffer.width/height
-    xyuint cameraPositionPx;
+    // The currently active world position based off of the player's
+    // absolute position
+    TilemapPosition worldPosition;
 
     SineWave sineWave;
 } GameState;
-
-/**
- * @brief Initialises a game memory block with a starting address and the
- * maximum number of bytes that the bock can fill up to
- * 
- * @param memoryBlock 
- * @param startingAddress 
- * @param maximumSizeInBytes 
-*/
-void initGameMemoryBlock(GameMemoryBlock *memoryBlock,
-                            uint8 *startingAddress,
-                            sizet maximumSizeInBytes);
-
-/**
- * @brief "Reserves" part of the memory block with enough space for a given struct.
- * by keeping track of the starting address and size of the data type within
- * the GameMemoryBlock. Doesnt write to any data.
- * Returns the starting memory address of the struct.
- * 
- * @param memoryBlock 
- * @param structSize    Size in bytes of the struct
- * @return void*        memory address
-*/
-void* GameMemoryBlockReserveStruct(GameMemoryBlock *memoryBlock, sizet structSize);
-
-/**
- * @brief "Reserves" part of the memory block with enough space for a given array.
- * by keeping track of the starting address and size of the data type within
- * the GameMemoryBlock. Doesnt write to any data.
- * Returns the starting memory address of the array
- * 
- * @param memoryBlock 
- * @param typeSize      Size in bytes of the data type that the array holds
- * @param noOfElements  How many elements in the array
- * @return void*       memory address
-*/
-void* GameMemoryBlockReserveArray(GameMemoryBlock *memoryBlock,
-                                    sizet typeSize,
-                                    sizet noOfElements);
-
-//
-// Graphics
-//====================================================
-
-/**
- * Insert a rectangle into the frame buffer
- *
- * @param xOffset   Offset, in pixels along the x axis to start drawing from
- * @param yOffset   Offset, in pixels along the y axis to start drawing from
- * @param width     Width, in pixels, to draw
- * @param height    Height, in pixels, to draw
- * @return void
- */
-internal_func
-void writeRectangle(GameFrameBuffer* buffer,
-                    int64 xOffset,
-                    int64 yOffset,
-                    int64 width,
-                    int64 height,
-                    Colour colour);
 
 //
 // Audio

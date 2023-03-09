@@ -1,6 +1,8 @@
 @echo off
 
 REM =========================================================================================
+REM
+REM Builds the Game DLL
 REM 
 REM You need to set the shell environment by running shell_x64.bat or shell_x86.bat once per
 REM shell before running this build script.
@@ -43,7 +45,7 @@ if %PlatformArg% == x64 (
     SET PlatformFolder=Win32
 ) else if %PlatformArg% == Win32 (
     SET Platform=x86
-    SET PlatformFolder=Win3
+    SET PlatformFolder=Win32
 ) else (
     GOTO platform_usage
 )
@@ -133,10 +135,10 @@ IF %Platform% == x64 (
 )
 
 REM Compile the source code
-cl %CompilerFlags% %~dp0game.cpp %~dp0utility.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp
+cl %CompilerFlags% %~dp0game.cpp %~dp0utility.cpp %~dp0memory.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp %~dp0graphics.cpp
 
 REM Run the linker
-link %LinkerFlags% %icf%game.obj %icf%utility.obj %icf%player.obj %icf%world.obj %icf%tilemap.obj
+link %LinkerFlags% %icf%game.obj %icf%utility.obj %icf%memory.obj %icf%player.obj %icf%world.obj %icf%tilemap.obj %icf%graphics.obj
 
 GOTO :eof
 
@@ -149,5 +151,5 @@ ECHO Invalid configuration. Supported configurations: Debug, Release
 exit /B 1
 
 :platform_usage
-ECHO Invalid platform. Supported platforms: x86, x64
+ECHO Invalid platform architecture. Supported platforms: x86, x64
 exit /B 1

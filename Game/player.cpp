@@ -6,73 +6,6 @@
 #include "world.h"
 #include "utility.h"
 
-/**
- * Gets the X and Y pixel coordinates of a certain part of the player
- *
- * @param PlayerPositionData    positionData        The PlayerPositionData object to write the position data into
- * @param xyuint             playerPixelPos      The X and Y pixel coords to base the calculation on. This is the top left point
- * @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
- * @param Player                player              The player object containing the height/width etc
- * @param World                 world               The world object
-*/
-void getPositionDataForPlayer(PlayerPositionData *positionData,
-                                xyuint playerPixelPos,
-                                PLAYER_POINT_POS pointPos,
-                                GameState *gameState)
-{
-    float32 pixelInset = 0.0f;
-    float32 x = 0.0f;
-    float32 y = 0.0f;
-
-    // Apply point the offsets...
-    switch (pointPos)
-    {
-    case PLAYER_POINT_POS::RAW:
-        x = (float32)playerPixelPos.x;
-        y = (float32)playerPixelPos.y;
-        break;
-    case PLAYER_POINT_POS::TOP_LEFT:
-        x = (float32)playerPixelPos.x;
-        y = (float32)playerPixelPos.y;
-        break;
-    case PLAYER_POINT_POS::TOP_MIDDLE:
-        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx / 2.0f);
-        y = ((float32)playerPixelPos.y + (float32)gameState->player1.heightPx - pixelInset);
-        break;
-    case PLAYER_POINT_POS::MIDDLE_LEFT:
-        x = (float32)playerPixelPos.x;
-        y = ((float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f) - pixelInset);
-        break;
-    case PLAYER_POINT_POS::MIDDLE:
-        x = (float32)playerPixelPos.x + ((float32)gameState->player1.widthPx / 2.0f);
-        y = (float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f);
-        break;
-    case PLAYER_POINT_POS::MIDDLE_RIGHT:
-        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx - pixelInset);
-        y = ((float32)playerPixelPos.y + ((float32)gameState->player1.heightPx / 2.0f) - pixelInset);
-        break;
-    case PLAYER_POINT_POS::BOTTOM_MIDDLE:
-        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx / 2.0f);
-        y = ((float32)playerPixelPos.y + pixelInset);
-        break;
-    case PLAYER_POINT_POS::BOTTOM_RIGHT:
-        x = ((float32)playerPixelPos.x + (float32)gameState->player1.widthPx - pixelInset);
-        y = ((float32)playerPixelPos.y + pixelInset);
-        break;
-    case PLAYER_POINT_POS::BOTTOM_LEFT:
-        x = (float32)playerPixelPos.x;
-        y = ((float32)playerPixelPos.y + pixelInset);
-        break;
-    default:
-        assert(!"Tile point position not yet supported");
-        break;
-    }
-
-    positionData->pointPosition = pointPos;
-
-    setCoordinateData(&positionData->activeTile, (uint32)x, (uint32)y, gameState->world->tilemap);
-}
-
 void playerHandleMovement(GameState *gameState,
                             GameMemory *memory,
                             GameFrameBuffer *frameBuffer,
@@ -89,7 +22,7 @@ void playerHandleMovement(GameState *gameState,
     // Normalise pixel movement regardless of framerate
     // @NOTE(JM) The truncated fractions cause issues with different framerates.
     // Not sure how to resolve at this point.
-    float32 pixelsPerSecond = ((*gameState->world).pixelsPerMeter * gameState->player1.movementSpeedMPS);
+    float32 pixelsPerSecond = (gameState->world.pixelsPerMeter * gameState->player1.movementSpeedMPS);
     float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
 
     // Ensure the player can at least move!
@@ -132,6 +65,12 @@ pixelsPerFrame);
         playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
     }
 
+    if (controller.up.endedDown) {
+        gameState->player1.zIndex = 1;
+    }else if (controller.down.endedDown) {
+        gameState->player1.zIndex = 0;
+    }
+
     if (controller.isAnalog) {
 
         if (controller.leftThumbstick.position.x) {
@@ -155,8 +94,8 @@ pixelsPerFrame);
     if (playerAttemptingMove) {
 
         xyuint playerNewPos = { 0 };
-        playerNewPos.x = modulo(playerNewPosTmp.x, (*gameState->world).worldWidthPx);
-        playerNewPos.y = modulo(playerNewPosTmp.y, (*gameState->world).worldHeightPx);
+        playerNewPos.x = (playerNewPosTmp.x % gameState->world.worldWidthPx);
+        playerNewPos.y = (playerNewPosTmp.y % gameState->world.worldHeightPx);
 
         // Player movement direction
         uint32 movedUp = 0;
@@ -184,18 +123,21 @@ pixelsPerFrame);
         PlayerPositionData middle;
         getPositionDataForPlayer(&middle,
             playerNewPos,
+            gameState->player1.zIndex,
             PLAYER_POINT_POS::MIDDLE,
             gameState);
 
         PlayerPositionData bottomLeft;
         getPositionDataForPlayer(&bottomLeft,
             playerNewPos,
+            gameState->player1.zIndex,
             PLAYER_POINT_POS::BOTTOM_LEFT,
             gameState);
 
         PlayerPositionData bottomRight;
         getPositionDataForPlayer(&bottomRight,
             playerNewPos,
+            gameState->player1.zIndex,
             PLAYER_POINT_POS::BOTTOM_RIGHT,
             gameState);
 
@@ -207,9 +149,9 @@ pixelsPerFrame);
         // Can the move to the new tile be taken?
         // @NOTE(JM) bug where rounding means player doesnt get a close as
         // possible to certain tiles when a move is invalid
-        if ((false == (isTilemapTileFree((*gameState->world).tilemap, &middle)))
-            || (false == (isTilemapTileFree((*gameState->world).tilemap, &bottomLeft)))
-            || (false == (isTilemapTileFree((*gameState->world).tilemap, &bottomRight)))) {
+        if ((false == (isTilemapTileFree(gameState, gameState->world.tilemap, &middle)))
+            || (false == (isTilemapTileFree(gameState, gameState->world.tilemap, &bottomLeft)))
+            || (false == (isTilemapTileFree(gameState, gameState->world.tilemap, &bottomRight)))) {
 
 #if 0
 #ifdef HANDMADE_DEBUG_TILE_POS
@@ -241,23 +183,38 @@ gameState->player1.absolutePosition.y);
                 gameState->player1.absolutePosition.y = playerNewPos.y;
                 gameState->player1.lastMoveDirections = lastMoveDirections;
 
+                setPlayerGamePosition(gameState, frameBuffer);
+
+                bool switchedTile = playerHasSwitchedActiveTile(gameState);
+
                 setWorldPosition(gameState, frameBuffer);
+
+                if (switchedTile){
+                    switch(*gameState->worldPosition.activeTile){
+                        case 5:
+                            ++gameState->player1.zIndex;
+                            break;
+                        case 6:
+                            --gameState->player1.zIndex;
+                            break;
+                    }
+                }
 
 #ifdef HANDMADE_DEBUG_TILE_POS
                 char buff[500] = {};
                 sprintf_s(buff, sizeof(buff),
                     "MOVED. \
 Plr World Pos x:%i y:%i. \
-World Tile x:%i y:%i. \
+Abs Tile Index x:%i y:%i. \
 Chunk Index x:%i y:%i. \
-Chunk Tile x:%i y:%i. \
-Camera pos x:%i y:%i. \
+Chunk Rel Tile index x:%i y:%i. \
+Tile Rel Pos x:%i y:%i. \
 \n",
 gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
 gameState->worldPosition.tileIndex.x, gameState->worldPosition.tileIndex.y,
 gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
 gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chunkRelativeTileIndex.y,
-gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
+gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRelativePixelPos.y
 );
                 memory->DEBUG_platformLog(buff);
 #endif
@@ -317,4 +274,120 @@ gameState->cameraPositionPx.x, gameState->cameraPositionPx.y
     }
 #endif
 
+}
+
+/**
+ * The absolute player position within the game state is the absolute
+ * position where we start drawing the player from (bottom left). It's not
+ * necessarily where we consider the player to "be" in terms of the game play.
+ * This function is used when we want to get what the game considers the position
+ * of the player to be.
+ *
+ * We also set the fixed position (for where to draw the player on screen) within
+ * this function, as it needs to be relative to the game position offsets
+ * 
+ * @param gameState 
+ * @return 
+*/
+void setPlayerGamePosition(GameState *gameState, GameFrameBuffer *frameBuffer)
+{
+    // Consider the game position as the bottom middle. With a small inset up
+    // from the bottom
+    uint32 offsetX = (gameState->player1.widthPx / 2);
+    uint32 offsetY = (uint32)(gameState->player1.heightPx * 0.15);
+
+    gameState->player1.gamePosition.x = (gameState->player1.absolutePosition.x + offsetX);
+    gameState->player1.gamePosition.y = gameState->player1.absolutePosition.y + offsetY;
+
+    gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - offsetX);
+    gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - offsetY);
+
+    return;
+}
+
+/**
+* Gets the X and Y pixel coordinates of a certain part of the player
+*
+* @param PlayerPositionData    positionData        The PlayerPositionData object to write the position data into
+* @param xyuint             playerPixelPos      The X and Y pixel coords to base the calculation on. This is the top left point
+* @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
+*/
+void getPositionDataForPlayer(PlayerPositionData *positionData,
+                                xyuint playerPixelPos,
+                                uint32 zIndex,
+                                PLAYER_POINT_POS pointPos,
+                                GameState *gameState)
+{
+    uint32 yInset = 0;
+    uint32 x = 0;
+    uint32 y = 0;
+
+    // Apply point the offsets...
+    switch (pointPos)
+    {
+    case PLAYER_POINT_POS::RAW:
+        x = playerPixelPos.x;
+        y = playerPixelPos.y;
+        break;
+    case PLAYER_POINT_POS::TOP_LEFT:
+        x = playerPixelPos.x;
+        y = playerPixelPos.y;
+        break;
+    case PLAYER_POINT_POS::TOP_MIDDLE:
+        x = (playerPixelPos.x + gameState->player1.widthPx / 2);
+        y = (playerPixelPos.y + gameState->player1.heightPx - yInset);
+        break;
+    case PLAYER_POINT_POS::MIDDLE_LEFT:
+        x = playerPixelPos.x;
+        y = (playerPixelPos.y + (gameState->player1.heightPx / 2) - yInset);
+        break;
+    case PLAYER_POINT_POS::MIDDLE:
+        x = playerPixelPos.x + (gameState->player1.widthPx / 2);
+        y = playerPixelPos.y + (gameState->player1.heightPx / 2);
+        break;
+    case PLAYER_POINT_POS::MIDDLE_RIGHT:
+        x = (playerPixelPos.x + gameState->player1.widthPx - yInset);
+        y = (playerPixelPos.y + (gameState->player1.heightPx / 2) - yInset);
+        break;
+    case PLAYER_POINT_POS::BOTTOM_MIDDLE:
+        x = (playerPixelPos.x + gameState->player1.widthPx / 2);
+        y = (playerPixelPos.y + yInset);
+        break;
+    case PLAYER_POINT_POS::BOTTOM_RIGHT:
+        x = (playerPixelPos.x + gameState->player1.widthPx - yInset);
+        y = (playerPixelPos.y + yInset);
+        break;
+    case PLAYER_POINT_POS::BOTTOM_LEFT:
+        x = playerPixelPos.x;
+        y = (playerPixelPos.y + yInset);
+        break;
+    default:
+        assert(!"Tile point position not yet supported");
+        break;
+    }
+
+    positionData->pointPosition = pointPos;
+
+    setTilemapPositionData(&positionData->tilemapPosition,
+                            x,
+                            y,
+                            zIndex,
+                            gameState->world.tilemap);
+}
+
+bool playerHasSwitchedActiveTile(GameState *gameState)
+{
+    TilemapPosition posData = {0};
+    setTilemapPositionData(&posData,
+                            gameState->player1.gamePosition.x,
+                            gameState->player1.gamePosition.y,
+                            gameState->player1.zIndex,
+                            gameState->world.tilemap);
+
+    if ((posData.tileIndex.x != gameState->worldPosition.tileIndex.x) ||
+        (posData.tileIndex.y != gameState->worldPosition.tileIndex.y)){
+        return true;
+    }
+
+    return false;
 }

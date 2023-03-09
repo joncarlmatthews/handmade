@@ -2,7 +2,7 @@
 
 ### Day 035 - Virtualized Tile Maps
 
-Couldn't implement sparse storage as I read up to and including the tilemap's total possible tile dimensions. Therefore I have to reserve at least that amount of memory from the permanent storage to ensure when reading from that data to draw the tilemap I dont read into memory that's being used to represent something else. With this in mind it's pointless to sparse store anything in the tilemap at this point.
+Now only reserving memory from our "tiles memory block" when we need to. As in, when we write a value to a tile. That said, the memory block allocated to hold all of the tile data is hardcoded to 1MB, it's just that we simply don't reserve a portion of it for a chunk's tiles if we don't need to. With this in mind, the sparse storage is somewhat basic at this point in the project.
 
 ### Day 033 - Virtualized Tile Maps
 

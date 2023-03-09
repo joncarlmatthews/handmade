@@ -19,7 +19,7 @@
  * long long:                           (8)     int64  (-9qn 9qn)
  *
  * unsigned char:                       (1)     uint8   (0 255)
- * unsigned short:                      (2)     uint16  (0 65,536)
+ * unsigned short:                      (2)     uint16  (0 65,535)
  * unsigned int (aka unsigned long):    (4)     uint32  (0 to 4.2bn) 4,294,967,295 (4GiB in byte count)
  * unsigned long long:                  (8)     uint64  (0 to 18qn)
  */
@@ -62,6 +62,12 @@ typedef struct xyuint {
     uint32 x;
     uint32 y;
 } xyuint;
+
+typedef struct xyzuint {
+    uint32 x;
+    uint32 y;
+    uint32 z;
+} xyzuint;
 
 typedef struct Colour {
     float32 r; // Between 0.0f and 1.0f

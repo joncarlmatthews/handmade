@@ -170,6 +170,14 @@ internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *p
 internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration);
 
 internal_func void win32LoadXInputDLLFunctions(void);
+
+/**
+ * @brief Loads game code from DLL
+ * 
+ * @param absPath Absolute path to the folder that contains game's main executeable
+ * @param gameCode 
+ * @return void
+*/
 internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode);
 internal_func void win32GetAbsolutePath(wchar_t *path);
 

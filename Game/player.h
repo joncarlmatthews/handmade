@@ -14,23 +14,32 @@
 // Average male running speed
 // https://www.calculateme.com/speed/miles-per-hour/to-meters-per-second/8
 //#define PLAYER_SPEED 3.57632f
-#define PLAYER_SPEED 30.57632f
+#define PLAYER_SPEED 12.0f
 
 typedef struct Player {
-    // Position in relation to the world
+    // Pixel position in relation to the entire tilemap.
+    // This is the starting position that the player is drawn from (bottom left).
     xyuint absolutePosition;
 
-    // Position in relation to screen (for background scrolling)
+    // The pixel position of where we consider the player to be. Which isnt
+    // necessarily the bottom left.
+    xyuint gamePosition;
+
+    // Which tilemap z-plane is the player on?
+    uint32 zIndex;
+
+    // The fixed position that we draw the player from. @NOTE(JM) Should we move
+    // this to some place else other than the player?
     xyuint fixedPosition;
 
-    // Position in relation to the tile chunk
+    // Last direction the player moved in (up, down, left, right)
     uint32 lastMoveDirections;
 
     float32 heightMeters;
     float32 widthMeters;
     uint16 heightPx;
     uint16 widthPx;
-    float32 movementSpeedMPS; // Metre's per second
+    float32 movementSpeedMPS; // Metres per second
 
     // @NOTE(JM) old, temp jump code
     bool8 jumping;
@@ -70,19 +79,22 @@ enum jumpDirection {
 
 typedef struct PlayerPositionData {
     PLAYER_POINT_POS pointPosition;
-    TilemapCoordinates activeTile;
+    TilemapPosition tilemapPosition;
 } PlayerPositionData;
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
                                 xyuint playerPixelPos,
+                                uint32 zIndex,
                                 PLAYER_POINT_POS pointPos,
                                 GameState *gameState);
 
 
 typedef struct GameState GameState;
-typedef struct GameMemory GameMemory;
 typedef struct GameFrameBuffer GameFrameBuffer;
 typedef struct GameAudioBuffer GameAudioBuffer;
+void setPlayerGamePosition(GameState *gameState, GameFrameBuffer *frameBuffer);
+
+typedef struct GameMemory GameMemory;
 typedef struct GameInput GameInput;
 void playerHandleMovement(GameState *gameState,
                             GameMemory *memory,
@@ -90,5 +102,7 @@ void playerHandleMovement(GameState *gameState,
                             GameAudioBuffer *audioBuffer,
                             GameInput *gameInput,
                             uint8 selectedController);
+
+bool playerHasSwitchedActiveTile(GameState *gameState);
 
 #endif
