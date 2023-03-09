@@ -25,7 +25,7 @@
 #define TILE_CHUNK_DIMENSIONS_BIT_SHIFT 6
 
 // How many z-planes should be allocated? Min 1
-#define TILEMAP_Z_PLANES 2
+#define TILEMAP_Z_PLANES 3
 
 // How many bits of a 32-bit integer do we want to allocate to each tile chunk's
 // total tile dimensions*? (*along one side)

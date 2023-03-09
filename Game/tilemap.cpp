@@ -205,7 +205,7 @@ bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData
 
 #ifdef HANDMADE_WALK_THROUGH_WALLS
     return true;
-#endif
+#else
 
     // Is this tile chunk out of the sparse storage memory bounds?
     if ( (playerPositionData->tilemapPosition.chunkIndex.x > (tilemap.tileChunkDimensions -1))
@@ -232,6 +232,8 @@ bool isTilemapTileFree(GameState *gameState, Tilemap tilemap, PlayerPositionData
     }
 
     return true;
+
+#endif
 }
 
 void setTileColour(Colour *tileColour, uint32 tileValue)

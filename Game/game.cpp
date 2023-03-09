@@ -119,7 +119,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             absTileX = roomStartTileX;
             absTileY = roomStartTileY;
 
-            uint32 randomNumber = (randomNumbers[randomNumberIndex] % 3);
+            uint32 randomNumber = (randomNumbers[randomNumberIndex] % 4);
 
             // Was the last move up or down? If so, next move can only be lateral
             if (shiftUp || shiftDown){
@@ -131,17 +131,28 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             case 0:
                 doorRight = true;
                 break;
+
             case 1:
                 doorTop = true;
                 break;
-            case 2:
-                switch (absTileZ) {
-                    case 0:
-                        doorUp = true;
-                        break;
-                    case 1:
-                        doorDown = true;
-                        break;
+
+            case 2: // up
+                doorUp = true;
+
+                // Already at the highest level?
+                if (absTileZ == (TILEMAP_Z_PLANES-1)){
+                    doorUp      = false;
+                    doorDown    = true;
+                }
+                break;
+
+            case 3: // down
+                doorDown = true;
+
+                // Already at the lowest level?
+                if (absTileZ == 0){
+                    doorDown    = false;
+                    doorUp      = true;
                 }
                 break;
             }
@@ -232,34 +243,49 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
             switch (randomNumber)
             {
-            case 0:
-                shiftRight  = true;
-                shiftTop    = false;
-                shiftUp     = false;
-                shiftDown   = false;
-                break;
-            case 1:
-                shiftRight  = false;
-                shiftTop    = true;
-                shiftUp     = false;
-                shiftDown   = false;
-                break;
-            case 2:
-                shiftRight  = false;
-                shiftTop    = false;
-                switch (absTileZ) {
                 case 0:
-                    ++absTileZ;
-                    shiftUp     = true;
+                    shiftRight  = true;
+                    shiftTop    = false;
+                    shiftUp     = false;
                     shiftDown   = false;
                     break;
                 case 1:
-                    --absTileZ;
+                    shiftRight  = false;
+                    shiftTop    = true;
                     shiftUp     = false;
-                    shiftDown   = true;
+                    shiftDown   = false;
                     break;
-                }
-                break;
+                case 2: // up
+                    shiftRight  = false;
+                    shiftTop    = false;
+
+                    // Already at the highest level?
+                    if (absTileZ == (TILEMAP_Z_PLANES-1)){
+                        --absTileZ;
+                        shiftUp     = false;
+                        shiftDown   = true;
+                    }else{
+                        ++absTileZ;
+                        shiftUp     = true;
+                        shiftDown   = false;
+                    }
+                    break;
+
+                case 3: // down
+                    shiftRight  = false;
+                    shiftTop    = false;
+
+                    // Already at the lowest level?
+                    if (absTileZ == 0){
+                        ++absTileZ;
+                        shiftUp     = true;
+                        shiftDown   = false;
+                    }else{
+                        --absTileZ;
+                        shiftUp     = false;
+                        shiftDown   = true;
+                    }
+                    break;
             }
 
             doorTop         = false;
