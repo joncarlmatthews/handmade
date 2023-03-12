@@ -55,9 +55,11 @@ To run the program in Visual Studio with the debugger attached, simply hit **F5*
 
 ### Dynamically reloading the game code
 
-The game code is built as a DLL to enable dynamic reloading of (just) the game code without having the rebuild the whole program. If you want to dynamically reload the game code, with the program running, execute the `built.bat` file using the Windows command prompt from with the `Game/` directory.
+The game code is built as a DLL to enable dynamic reloading of (just) the game code without having the rebuild the whole program. This enables fast debug cycles.
 
 Click: **Tools** > **Command Line** > **Developer Command Prompt**
+
+Move into the `Game\` directory
 
 ```
 > cd Game
@@ -82,7 +84,15 @@ If you don't, you'll receive the following error message when trying to build:
 operable program or batch file.
 ```
 
-Finally, run the build script with the relevant **Configuration** and **Platform Architecture** arguments:
+Make sure you have `HANDMADE_LIVE_LOOP_EDITING` defined within `game.h`
+
+```c
+#define HANDMADE_LIVE_LOOP_EDITING
+```
+
+Launch the program from within Visual Studio with the debugger attached. **F5**.
+
+With the program running, execute the build script with the relevant **Configuration** and **Platform Architecture** arguments:
 
 ```
 > build.bat Debug x64

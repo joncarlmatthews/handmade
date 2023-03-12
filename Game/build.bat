@@ -135,10 +135,10 @@ IF %Platform% == x64 (
 )
 
 REM Compile the source code
-cl %CompilerFlags% %~dp0game.cpp %~dp0utility.cpp %~dp0memory.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp %~dp0graphics.cpp
+cl %CompilerFlags% %~dp0game.cpp %~dp0utility.cpp %~dp0memory.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp %~dp0graphics.cpp %~dp0filesystem.cpp
 
 REM Run the linker
-link %LinkerFlags% %icf%game.obj %icf%utility.obj %icf%memory.obj %icf%player.obj %icf%world.obj %icf%tilemap.obj %icf%graphics.obj
+link %LinkerFlags% %icf%game.obj %icf%utility.obj %icf%memory.obj %icf%player.obj %icf%world.obj %icf%tilemap.obj %icf%graphics.obj %icf%filesystem.obj
 
 GOTO :eof
 

@@ -340,7 +340,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 #ifdef HANDMADE_DEBUG_AUDIO
     audioBufferWriteSineWave(gameState, audioBuffer);
 #endif // HANDMADE_DEBUG_AUDIO
-   
+
     /**
      * Write the frame buffer...
      * 
@@ -446,10 +446,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->player1.widthPx,
                     gameState->player1.heightPx,
                     { 0.301f, 0.156f, 0.0f });
-
-    writeBytes(frameBuffer,
-                0,
-                0,
+    writeBitmap(frameBuffer,
+                100,
+                100,
                 gameState->tempBitmapFile.widthPx,
                 gameState->tempBitmapFile.heightPx,
                 (uint32 *)gameState->tempBitmapFile.memory);
