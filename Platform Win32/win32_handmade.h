@@ -208,6 +208,22 @@ internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
 
 internal_func void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 
+//===========================================
+// Game-required platform layer signatures
+//===========================================
+PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory);
+PLATFORM_FREE_MEMORY(platformFreeMemory);
+PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate);
+
+#if HANDMADE_LOCAL_BUILD
+
+DEBUG_PLATFORM_LOG(DEBUG_platformLog);
+DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile);
+DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory);
+DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile);
+
+#endif
+
 #ifdef HANDMADE_LIVE_LOOP_EDITING
 
 internal_func void win32BeginInputRecording(Win32State *win32State);

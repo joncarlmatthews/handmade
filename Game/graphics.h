@@ -7,8 +7,9 @@
 // Graphics
 //====================================================
 
-#define FRAME_BUFFER_PIXEL_WIDTH  1280
-#define FRAME_BUFFER_PIXEL_HEIGHT 720
+// FHD
+#define FRAME_BUFFER_PIXEL_WIDTH  1920
+#define FRAME_BUFFER_PIXEL_HEIGHT 1080
 
 /**
 * Write a rectangle into the frame buffer
@@ -26,5 +27,12 @@ void writeRectangle(GameFrameBuffer *buffer,
                     int64 width,
                     int64 height,
                     Colour colour);
+
+void writeBytes(GameFrameBuffer *buffer,
+                int64 xOffset,
+                int64 yOffset,
+                int64 width,
+                int64 height,
+                uint32 *bytes);
 
 #endif

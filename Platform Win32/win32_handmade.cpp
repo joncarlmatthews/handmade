@@ -45,136 +45,6 @@ typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, L
 // in all places in the plarform layer.
 global_var int64 globalQPCFrequency;
 
-//===========================================
-// Game-required platform layer  functions
-//===========================================
-
-PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory)
-{
-    LPVOID startAddress = (LPVOID)memoryStartAddress;
-    return VirtualAlloc(startAddress, memorySizeInBytes, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-}
-
-PLATFORM_FREE_MEMORY(platformFreeMemory)
-{
-    VirtualFree(address, 0, MEM_RELEASE);
-}
-
-/**
- * Vibrate the controller. 0 = 0% motor usage, 65,535 = 100% motor usage.
- * The left motor is the low-frequency rumble motor. The right motor is the
- * high-frequency rumble motor.
- *
- */
-PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
-{
-    XINPUT_VIBRATION pVibration = { 0 };
-
-    pVibration.wLeftMotorSpeed = motor1Speed;
-    pVibration.wLeftMotorSpeed = motor2Speed;
-
-    XInputSetState(controllerIndex, &pVibration);
-}
-#if HANDMADE_LOCAL_BUILD
-
-    DEBUG_PLATFORM_LOG(DEBUG_platformLog)
-    {
-        OutputDebugStringA(buff);
-    }
-
-    DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
-    {
-        DEBUG_file file = { 0 };
-        bool32 res;
-
-        // Open the file for reading.
-        HANDLE handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-        if (INVALID_HANDLE_VALUE == handle) {
-            OutputDebugStringA("Cannot read file");
-            return file;
-        }
-
-        // Get the size of the file in bytes.
-        LARGE_INTEGER sizeStruct;
-        res = GetFileSizeEx(handle, &sizeStruct);
-
-        if (!res) {
-            OutputDebugStringA("Cannot get file size");
-            CloseHandle(handle);
-            return file;
-        }
-
-        uint64 sizeInBytes = sizeStruct.QuadPart;
-
-        // As GetFileSizeEx can read files larger than 4-bytes, but ReadFile can only
-        // take a maximum of 4-bytes, lets make sure we're not reading files larger
-        // than 4GB.
-        uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
-
-        // Allocate enough memory for the file.
-        file.memory = platformAllocateMemory(thread, 0, sizeInBytes);
-
-        if (NULL == file.memory) {
-            OutputDebugStringA("Cannot allocate memory for file");
-            CloseHandle(handle);
-            return file;
-        }
-
-        // Read the file into the memory.
-        DWORD bytesRead;
-        res = ReadFile(handle, file.memory, sizeInBytes32, &bytesRead, NULL);
-
-        if ((!res) || (bytesRead != sizeInBytes32)) {
-            OutputDebugStringA("Cannot read file into memory");
-            //DEBUG_platformFreeFileMemory(&file);
-            //CloseHandle(handle);
-            //return file;
-        }
-
-        file.sizeinBytes = bytesRead;
-
-        CloseHandle(handle);
-
-        return file;
-    }
-
-    DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
-    {
-        VirtualFree(file->memory, 0, MEM_RELEASE);
-        file->memory = 0;
-        file->sizeinBytes = 0;
-    }
-
-    DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
-    {
-        bool32 res;
-
-        // Open the file for writing.
-        HANDLE handle = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-        if (INVALID_HANDLE_VALUE == handle) {
-            OutputDebugStringA("Cannot read file");
-            return false;
-        }
-
-        // Read the file into the memory.
-        DWORD bytesWritten;
-        res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
-
-        if ((!res) || (bytesWritten != memorySizeInBytes)) {
-            OutputDebugStringA("Could not write file to location");
-            CloseHandle(handle);
-            return false;
-        }
-
-        CloseHandle(handle);
-
-        return true;
-    }
-
-#endif
-
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -1786,6 +1656,137 @@ internal_func void win32GetMousePosition(HWND window, GameMouseInput *mouseInput
         }
     }
 }
+
+//===========================================
+// Game-required platform layer  functions
+//===========================================
+
+/**
+ * Vibrate the controller. 0 = 0% motor usage, 65,535 = 100% motor usage.
+ * The left motor is the low-frequency rumble motor. The right motor is the
+ * high-frequency rumble motor.
+ *
+ */
+PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory)
+{
+    LPVOID startAddress = (LPVOID)memoryStartAddress;
+    return VirtualAlloc(startAddress, memorySizeInBytes, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+}
+
+PLATFORM_FREE_MEMORY(platformFreeMemory)
+{
+    VirtualFree(address, 0, MEM_RELEASE);
+}
+
+PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
+{
+    XINPUT_VIBRATION pVibration = { 0 };
+
+    pVibration.wLeftMotorSpeed = motor1Speed;
+    pVibration.wLeftMotorSpeed = motor2Speed;
+
+    XInputSetState(controllerIndex, &pVibration);
+}
+
+#if HANDMADE_LOCAL_BUILD
+
+DEBUG_PLATFORM_LOG(DEBUG_platformLog)
+{
+    OutputDebugStringA(buff);
+}
+
+DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
+{
+    DEBUG_file file = { 0 };
+    bool32 res;
+
+    // Open the file for reading.
+    HANDLE handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (INVALID_HANDLE_VALUE == handle) {
+        OutputDebugStringA("Cannot read file");
+        return file;
+    }
+
+    // Get the size of the file in bytes.
+    LARGE_INTEGER sizeStruct;
+    res = GetFileSizeEx(handle, &sizeStruct);
+
+    if (!res) {
+        OutputDebugStringA("Cannot get file size");
+        CloseHandle(handle);
+        return file;
+    }
+
+    uint64 sizeInBytes = sizeStruct.QuadPart;
+
+    // As GetFileSizeEx can read files larger than 4-bytes, but ReadFile can only
+    // take a maximum of 4-bytes, lets make sure we're not reading files larger
+    // than 4GB.
+    uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
+
+    // Allocate enough memory for the file.
+    file.memory = platformAllocateMemory(thread, 0, sizeInBytes);
+
+    if (NULL == file.memory) {
+        OutputDebugStringA("Cannot allocate memory for file");
+        CloseHandle(handle);
+        return file;
+    }
+
+    // Read the file into the memory.
+    DWORD bytesRead;
+    res = ReadFile(handle, file.memory, sizeInBytes32, &bytesRead, NULL);
+
+    if ((!res) || (bytesRead != sizeInBytes32)) {
+        OutputDebugStringA("Cannot read file into memory");
+        //DEBUG_platformFreeFileMemory(&file);
+        //CloseHandle(handle);
+        //return file;
+    }
+
+    file.sizeinBytes = bytesRead;
+
+    CloseHandle(handle);
+
+    return file;
+    }
+
+DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
+{
+    VirtualFree(file->memory, 0, MEM_RELEASE);
+    file->memory = 0;
+    file->sizeinBytes = 0;
+}
+
+DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
+{
+    bool32 res;
+
+    // Open the file for writing.
+    HANDLE handle = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (INVALID_HANDLE_VALUE == handle) {
+        OutputDebugStringA("Cannot read file");
+        return false;
+    }
+
+    // Read the file into the memory.
+    DWORD bytesWritten;
+    res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
+
+    if ((!res) || (bytesWritten != memorySizeInBytes)) {
+        OutputDebugStringA("Could not write file to location");
+        CloseHandle(handle);
+        return false;
+    }
+
+    CloseHandle(handle);
+
+    return true;
+}
+
+#endif
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
 
