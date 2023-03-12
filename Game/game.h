@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "utility.h"
+#include "filesystem.h"
 #include "random.h"
 #include "memory.h"
 #include "graphics.h"
@@ -94,45 +95,6 @@ typedef PLATFORM_FREE_MEMORY(PlatformFreeMemory);
  */
 #define PLATFORM_CONTROLLER_VIBRATE(name) void name(PlatformThreadContext *thread, uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed)
 typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
-
-/*
- * Definitions for local builds only. E.g. helper functions/structures
- * to aid debugging. None of these calls should remain in code that
- * ships, hence no stubs for if HANDMADE_LOCAL_BUILD isn't defined.
- */
-#if HANDMADE_LOCAL_BUILD
-
-    #define DEBUG_PLATFORM_LOG(name) void name(char *buff)
-    typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
-
-    typedef struct DEBUG_file
-    {
-        void *memory;
-        uint32 sizeinBytes;
-
-    } DEBUG_file;
-
-    /*
-     * Read an entire file into memory
-     *
-     * @note call DEBUG_platformFreeFileMemory in a subsequent call.
-     */
-    #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, char *filename)
-    typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
-
-    /*
-     * Free file memory read from DEBUG_platformReadEntireFile
-     */
-    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(PlatformThreadContext *thread, DEBUG_file *file)
-    typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
-
-    /*
-     * Write bytes into a new file
-     */
-    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(PlatformThreadContext *thread, char *filename, void *memory, uint32 memorySizeInBytes)
-    typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
-
-#endif
 
 //====================================================
 //====================================================
@@ -366,6 +328,8 @@ typedef struct GameState
     // The currently active world position based off of the player's
     // absolute position
     TilemapPosition worldPosition;
+
+    bitmapFile tempBitmapFile;
 
     SineWave sineWave;
 } GameState;

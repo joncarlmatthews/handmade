@@ -11,6 +11,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
+        bitmapFile bitmapFile = {0};
+        const char *filename = "C:\\Users\\jonca\\Documents\\clones\\handmade\\data\\test\\test_background.bmp";
+        DEBUGReadBMP(thread, memory->DEBUG_platformReadEntireFile, filename, &bitmapFile);
+
+        gameState->tempBitmapFile = bitmapFile;
+
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
 
@@ -440,6 +446,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->player1.widthPx,
                     gameState->player1.heightPx,
                     { 0.301f, 0.156f, 0.0f });
+
+    writeBytes(frameBuffer,
+                0,
+                0,
+                gameState->tempBitmapFile.widthPx,
+                gameState->tempBitmapFile.heightPx,
+                (uint32 *)gameState->tempBitmapFile.memory);
 
 #if 0
     // Mouse input testing
