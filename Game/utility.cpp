@@ -138,20 +138,32 @@ int32 i32RoundUpDivide(int32 dividend, int32 divisor)
     return (int32)ceilf((float32)dividend / (float32)divisor);
 }
 
+/**
+ * Returns a shift based on a 32-bit integer bitmask.
+ *
+ * Valid masks:
+ *   0x000000ff
+ *   0x0000ff00
+ *   0x00ff0000
+ *   0xff000000
+ * 
+ * @param mask uint32
+ * @return shift uint8
+*/
 uint8 getShiftFromMask(uint32 mask)
 {
     uint8 shift = 0;
     switch (mask) {
-        case 0xFF000000:
+        case 0xff000000:
             shift = 24;
             break;
-        case 0x00FF0000:
+        case 0x00ff0000:
             shift = 16;
             break;
-        case 0x0000FF00:
+        case 0x0000ff00:
             shift = 8;
             break;
-        case 0x000000FF:
+        case 0x000000ff:
             shift = 0;
             break;
     }
