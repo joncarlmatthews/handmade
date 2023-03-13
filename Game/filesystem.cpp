@@ -5,7 +5,7 @@
 void DEBUGReadBMP(PlatformThreadContext *thread,
                     DEBUGPlatformReadEntireFile *playformreadFile,
                     const char *filename,
-                    bitmapFile *bitmapFIle)
+                    BitmapFile *bitmapFIle)
 {
 
     DEBUG_file file = playformreadFile(thread, filename);
@@ -24,11 +24,21 @@ void DEBUGReadBMP(PlatformThreadContext *thread,
 
     bitmapInfoHeader *fileInfo = (bitmapInfoHeader *)((uint8 *)file.memory + sizeof(bitmapFileHeader));
 
+    if (fileInfo->biSize != BITMAP_INFO_HEADER_V5_SIZE) {
+        assert(!"Unsupported bitmap version. Can only load BITMAPV5HEADER BMP files");
+    }
+
+    bitmapInfoHeaderV5 *fileInfoV5 = (bitmapInfoHeaderV5 *)fileInfo;
+
     void *memory = (void *)((uint8 *)file.memory + fileHeader->bfOffBits);
 
     bitmapFIle->heightPx = fileInfo->biHeight;
     bitmapFIle->widthPx = fileInfo->biWidth;
     bitmapFIle->fileSize = fileInfo->biSizeImage;
+    bitmapFIle->redMask = fileInfoV5->bV5RedMask;
+    bitmapFIle->greenMask = fileInfoV5->bV5GreenMask;
+    bitmapFIle->blueMask = fileInfoV5->bV5BlueMask;
+    bitmapFIle->alphaMask = fileInfoV5->bV5AlphaMask;
     bitmapFIle->memory = memory;
 
     return;

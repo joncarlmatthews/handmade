@@ -11,8 +11,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-        bitmapFile bitmapFile = {0};
-        const char *filename = "C:\\Users\\jonca\\Documents\\clones\\handmade\\data\\test\\test_background.bmp";
+        BitmapFile bitmapFile = {0};
+        const char *filename = "C:\\Users\\jonca\\Documents\\clones\\handmade\\data\\test\\test_hero_front_head.bmp";
         DEBUGReadBMP(thread, memory->DEBUG_platformReadEntireFile, filename, &bitmapFile);
 
         gameState->tempBitmapFile = bitmapFile;
@@ -81,7 +81,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // Spam some tile values into the tilemap...      
         World world         = gameState->world;
         Tilemap tilemap     = world.tilemap;
-        uint randomNumberIndex = 0;
+        uint32 randomNumberIndex = 0;
 
         uint32 rooms = 20;
         uint32 roomTileDims = 18;
@@ -98,12 +98,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         bool shiftUp        = false;
         bool shiftDown      = false;
 
-        uint doorTop        = false;
-        uint doorLeft       = false;
-        uint doorBottom     = false;
-        uint doorRight      = false;
-        uint doorUp         = false;
-        uint doorDown       = false;
+        uint32 doorTop        = false;
+        uint32 doorLeft       = false;
+        uint32 doorBottom     = false;
+        uint32 doorRight      = false;
+        uint32 doorUp         = false;
+        uint32 doorDown       = false;
 
         for (uint32 room = 0; room < rooms; room++){
 
@@ -447,11 +447,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->player1.heightPx,
                     { 0.301f, 0.156f, 0.0f });
     writeBitmap(frameBuffer,
-                100,
-                100,
+                50,
+                200,
                 gameState->tempBitmapFile.widthPx,
                 gameState->tempBitmapFile.heightPx,
-                (uint32 *)gameState->tempBitmapFile.memory);
+                gameState->tempBitmapFile);
 
 #if 0
     // Mouse input testing

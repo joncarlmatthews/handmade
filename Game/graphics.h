@@ -2,6 +2,7 @@
 #define HEADER_HH_GRAPHICS
 
 #include "types.h"
+#include "filesystem.h"
 
 //
 // Graphics
@@ -33,6 +34,6 @@ void writeBitmap(GameFrameBuffer *buffer,
                     int64 yOffset,
                     int64 width,
                     int64 height,
-                    uint32 *bytes);
+                    BitmapFile bitmapFile);
 
 #endif

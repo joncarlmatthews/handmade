@@ -59,4 +59,6 @@ uint32 u32RoundUpDivide(uint32 dividend, uint32 divisor);
 
 int32 i32RoundUpDivide(int32 dividend, int32 divisor);
 
+uint8 getShiftFromMask(uint32 mask);
+
 #endif

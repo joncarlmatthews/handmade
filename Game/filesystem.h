@@ -4,9 +4,11 @@
 #include "types.h"
 
 #define BITMAP_FILE_ID 0x4D42
+#define BITMAP_INFO_HEADER_V5_SIZE 124
 
 #pragma pack(push, 1)
-typedef struct bitmapFileHeader {
+typedef struct bitmapFileHeader
+{
     uint16 bfType;          // specifies the file type
     uint32 bfSize;          // specifies the size in bytes of the bitmap file
     uint16 bfReserved1;     // reserved; must be 0
@@ -16,7 +18,9 @@ typedef struct bitmapFileHeader {
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct bitmapInfoHeader {
+// @see https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
+typedef struct bitmapInfoHeader
+{
     uint32 biSize;          // specifies the number of bytes required by the struct
     int32 biWidth;          // specifies width in pixels
     int32 biHeight;         // specifies height in pixels
@@ -31,13 +35,66 @@ typedef struct bitmapInfoHeader {
 } bitmapInfoHeader;
 #pragma pack(pop)
 
-typedef struct bitmapFile
+#pragma pack(push, 1)
+typedef struct rgbEndpoint
+{
+    int32 ciexyzX;
+    int32 ciexyzY;
+    int32 ciexyzZ;
+} rgbEndpoint;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct rgbEndpoints
+{
+    rgbEndpoint ciexyzRed;
+    rgbEndpoint ciexyzGreen;
+    rgbEndpoint ciexyzBlue;
+} rgbEndpoints;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+// @see https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapv5header
+typedef struct bitmapInfoHeaderV5
+{
+    uint32          bV5Size;
+    int32           bV5Width;
+    int32           bV5Height;
+    uint16          bV5Planes;
+    uint16          bV5BitCount;
+    uint32          bV5Compression;
+    uint32          bV5SizeImage;
+    int32           bV5XPelsPerMeter;
+    int32           bV5YPelsPerMeter;
+    uint32          bV5ClrUsed;
+    uint32          bV5ClrImportant;
+    uint32          bV5RedMask;
+    uint32          bV5GreenMask;
+    uint32          bV5BlueMask;
+    uint32          bV5AlphaMask;
+    uint32          bV5CSType;
+    rgbEndpoints    bV5Endpoints;
+    uint32          bV5GammaRed;
+    uint32          bV5GammaGreen;
+    uint32          bV5GammaBlue;
+    uint32          bV5Intent;
+    uint32          bV5ProfileData;
+    uint32          bV5ProfileSize;
+    uint32          bV5Reserved;
+} bitmapInfoHeaderV5;
+#pragma pack(pop)
+
+typedef struct BitmapFile
 {
     uint32 heightPx;
     uint32 widthPx;
     uint32 fileSize;
+    uint32 redMask;
+    uint32 greenMask;
+    uint32 blueMask;
+    uint32 alphaMask;
     void *memory;
-} bitmapFile;
+} BitmapFile;
 
 typedef struct PlatformThreadContext PlatformThreadContext;
 typedef struct GameMemory GameMemory;
@@ -78,7 +135,7 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
 void DEBUGReadBMP(PlatformThreadContext *thread,
                     DEBUGPlatformReadEntireFile *playformreadFile,
                     const char *filename,
-                    bitmapFile *bitmapFIle);
+                    BitmapFile *bitmapFIle);
 
 #endif
 

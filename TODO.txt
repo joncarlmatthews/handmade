@@ -1,7 +1,9 @@
-Day 035:
- -x shift and mask to store chunk and tile in the same 32 bit integer?
+Day 037:
+ -x Make DEBUG_platformReadEntireFile relative to current working directory?
+ -x Move audio code to audio specific file
 
 Ongoing:
+ -x shift and mask to store chunk and tile in the same 32 bit integer?
  -x Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
  -x Diagonal speed bug (will fix when implement vectors) Disabled diagonal movement for now.
  -x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid

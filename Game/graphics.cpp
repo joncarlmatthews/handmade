@@ -110,9 +110,10 @@ void writeBitmap(GameFrameBuffer *buffer,
                 int64 yOffset,
                 int64 width,
                 int64 height,
-                uint32 *bytes)
+                BitmapFile bitmapFile)
 {
     int64 originalXOffset = xOffset;
+    int64 originalYOffset = yOffset;
     int64 originalWidth = width;
 
     // Bounds checking
@@ -174,10 +175,14 @@ void writeBitmap(GameFrameBuffer *buffer,
     // Move in from left to starting absolutePosition
     row = (row + xOffset);
 
-    uint32 *imagePixel = bytes;
+    uint32 *imagePixel = (uint32 *)bitmapFile.memory;
 
     if (originalXOffset < 0) {
         imagePixel = (imagePixel + (originalXOffset*-1));
+    }
+
+    if (originalYOffset < 0) {
+        imagePixel = (imagePixel + ((originalYOffset*-1) * originalWidth));
     }
 
     // Up (rows) y
@@ -188,15 +193,15 @@ void writeBitmap(GameFrameBuffer *buffer,
         for (int64 x = 0; x < width; x++) {
 
             // Re order the bytes
-            uint8 blue      = (*imagePixel >> 24) & 0xff;
-            uint8 green     = (*imagePixel >> 16) & 0xff;
-            uint8 red       = (*imagePixel >> 8) & 0xff;
-            uint8 alpha     = *imagePixel & 0xff;
+            uint8 red       = ((*imagePixel & bitmapFile.redMask) >> getShiftFromMask(bitmapFile.redMask) & 0xFF);
+            uint8 green     = ((*imagePixel & bitmapFile.greenMask) >> getShiftFromMask(bitmapFile.greenMask) & 0xFF);
+            uint8 blue      = ((*imagePixel & bitmapFile.blueMask) >> getShiftFromMask(bitmapFile.blueMask) & 0xFF);
+            uint8 alpha     = ((*imagePixel & bitmapFile.alphaMask) >> getShiftFromMask(bitmapFile.alphaMask) & 0xFF);
 
             uint32 packed = 0;
-            packed |= red;
+            packed |= blue;
             packed |= green << 8;
-            packed |= blue << 16;
+            packed |= red << 16;
             packed |= alpha << 24;
 
             *pixel++ = packed;

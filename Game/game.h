@@ -60,7 +60,8 @@
 //====================================================
 //====================================================
 
-typedef struct PlatformThreadContext {
+typedef struct PlatformThreadContext
+{
     uint8 placeholder;
 } PlatformThreadContext;
 
@@ -329,7 +330,7 @@ typedef struct GameState
     // absolute position
     TilemapPosition worldPosition;
 
-    bitmapFile tempBitmapFile;
+    BitmapFile tempBitmapFile;
 
     SineWave sineWave;
 } GameState;
