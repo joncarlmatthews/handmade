@@ -40,6 +40,7 @@ float32 percentageOfAnotherf(float32 a, float32 b)
     return (fract * 100.0f);
 }
 
+
 void utilConcatStringsA(char *source1,
                         uint32 source1Length,
                         char *source2,

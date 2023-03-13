@@ -17,11 +17,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-// Common input/output operations.
-// Defines: sprintf_s
-// @see https://www.cplusplus.com/reference/cstdio/
-#include <stdio.h>
-
 #include "types.h"
 #include "utility.h"
 #include "filesystem.h"
@@ -34,15 +29,25 @@
 
 #if HANDMADE_LOCAL_BUILD
 
-    // Flags:
-    // #define HANDMADE_DEBUG
-    // #define HANDMADE_DEBUG_FPS
-    // #define HANDMADE_DEBUG_CLOCKCYCLES
-    // #define HANDMADE_DEBUG_AUDIO
-    #define HANDMADE_LIVE_LOOP_EDITING
-    // #define HANDMADE_DEBUG_LIVE_LOOP_EDITING
-    // #define HANDMADE_DEBUG_TILE_POS
-    // #define HANDMADE_WALK_THROUGH_WALLS
+// Flags:
+// #define HANDMADE_DEBUG
+// #define HANDMADE_DEBUG_FPS
+// #define HANDMADE_DEBUG_CLOCKCYCLES
+// #define HANDMADE_DEBUG_AUDIO
+#define HANDMADE_LIVE_LOOP_EDITING
+// #define HANDMADE_DEBUG_LIVE_LOOP_EDITING
+// #define HANDMADE_DEBUG_TILE_POS
+// #define HANDMADE_WALK_THROUGH_WALLS
+
+#endif
+
+#if HANDMADE_DEBUG
+
+// Common input/output operations.
+// Defines: sprintf_s
+// @see https://www.cplusplus.com/reference/cstdio/
+#include <stdio.h>
+
 #endif
 
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
