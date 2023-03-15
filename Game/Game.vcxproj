@@ -178,11 +178,20 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /E /D "$(SolutionDir)data" "$(TargetDir)\data\"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Copying assets...</Message>
+      <Message>
+      </Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR
+IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Copying assets...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
