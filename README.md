@@ -1,6 +1,6 @@
 # "Handmade Hero"
 
-Low level game programming in C flavoured C++. No frameworks or libraries. Everything written from scratch.
+Low level game programming in C flavoured C++. No frameworks or libraries are used for the game layer (except `math.h`). Everything written from scratch.
 
 ## Current Progress
 
