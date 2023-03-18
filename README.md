@@ -29,7 +29,9 @@ To develop or build the game's source code first install [Visual Studio Communit
 
 ### Project Structure
 
-There are two main parts to the project, the Win32 platform code (`Platform Win32\`) and the game code (`Game\`). Both are built into the same build directory. The platform code is built as an exe and the game code is built as a DLL.
+There are two distinct parts to the project, the Platform layers and the Game layer. At the time of writing, only the Windows platform layer has been prototyped. The code resides within the `Platform Win32\` directory. Future platform layers will reside in the `Platform Linux\` and `Platform macOS\` directories respectively. All of the game layer code resides within the `Game\` directory. 
+
+There is a single Visual Studio Solution for the entire codebase. Within the Solution there is a Project for the Windows platform layer and a separate Project for the Game layer. Building the solution compiles both projects. The platform and game layers are built into the same build directory. The platform code is built as an executable and the game code is built as a DLL.
 
 ### Coding Style
 

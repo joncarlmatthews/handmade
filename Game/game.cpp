@@ -11,6 +11,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
+#ifdef HANDMADE_LOCAL_BUILD
+
         BitmapFile bitmapFile = {0};
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
@@ -19,6 +21,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         &bitmapFile);
 
         gameState->tempBitmapFile = bitmapFile;
+
+#endif
 
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
@@ -449,6 +453,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->player1.widthPx,
                     gameState->player1.heightPx,
                     { 0.301f, 0.156f, 0.0f });
+
     writeBitmap(frameBuffer,
                 50,
                 200,
