@@ -132,12 +132,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // Calculate the absolute path to this executable.
     wchar_t absPath[MAX_PATH] = { 0 };
-    char    absPathA[MAX_PATH] = { 0 };
     win32GetAbsolutePath(absPath);
-    utilWideCharToChar(absPath, MAX_PATH, absPathA, MAX_PATH);
-
     wcsncpy_s(win32State.absPath, MAX_PATH, absPath, MAX_PATH);
-    strncpy_s(win32State.absPathA, sizeof(win32State.absPathA), absPathA, MAX_PATH);
 
     GameCode gameCode = { 0 };
     win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
@@ -175,6 +171,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformAllocateMemory = &platformAllocateMemory;
     memory.platformFreeMemory = &platformFreeMemory;
     memory.platformControllerVibrate = &platformControllerVibrate;
+
+    size_t len;
+    if (wcstombs_s(&len, memory.platformAbsPath, sizeof(memory.platformAbsPath), absPath, wcslen(absPath)) != 0) {
+        assert(!"Error converting absPath string\n");
+    }
 
 #if HANDMADE_LOCAL_BUILD
     memory.DEBUG_platformLog = &DEBUG_platformLog;
@@ -1491,14 +1492,16 @@ internal_func void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, Game
 
 internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
 {
-    wchar_t gameDLLFileName[20] = L"Game.dll";
-    wchar_t gameDLLFilePath[276] = { 0 };
+    // Calculate absolute path to the Game.dll
+    wchar_t gameDLLFilePath[MAX_PATH] = { 0 };
+    wcscat_s(gameDLLFilePath, countArray(gameDLLFilePath), absPath);
+    wcscat_s(gameDLLFilePath, countArray(gameDLLFilePath), L"Game.dll");
 
-    wchar_t gameCopyDLLFileName[20] = L"Game_copy.dll";
-    wchar_t gameCopyDLLFilePath[276] = {0};
+    // Calculate absolute path to the Game_copy.dll
+    wchar_t gameCopyDLLFilePath[MAX_PATH] = {0};
+    wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), absPath);
+    wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), L"Game_copy.dll");
 
-    utilConcatStringsW(absPath, MAX_PATH, gameDLLFileName, 20, gameDLLFilePath, 276);
-    utilConcatStringsW(absPath, MAX_PATH, gameCopyDLLFileName, 20, gameCopyDLLFilePath, 276);
 
 #if !defined(HANDMADE_LIVE_LOOP_EDITING)
     win32LoadGameDLLFunctionsFromFile(gameDLLFilePath, gameCode);
@@ -1697,11 +1700,19 @@ DEBUG_PLATFORM_LOG(DEBUG_platformLog)
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
 {
+    char fullFilename[MAX_PATH] = {0};
+
+    // Concatenate str1 and str2 into result
+    if (strcat_s(fullFilename, sizeof(fullFilename), absPath) != 0 ||
+        strcat_s(fullFilename, sizeof(fullFilename), filename) != 0) {
+        assert(!"Error concatenating file paths")
+    }
+
     DEBUG_file file = { 0 };
     bool32 res;
 
     // Open the file for reading.
-    HANDLE handle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE handle = CreateFileA(fullFilename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (INVALID_HANDLE_VALUE == handle) {
         OutputDebugStringA("Cannot read file");

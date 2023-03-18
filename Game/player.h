@@ -103,6 +103,6 @@ void playerHandleMovement(GameState *gameState,
                             GameInput *gameInput,
                             uint8 selectedController);
 
-bool playerHasSwitchedActiveTile(GameState *gameState);
+internal_func bool playerHasSwitchedActiveTile(GameState *gameState);
 
 #endif

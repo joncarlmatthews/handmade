@@ -1,4 +1,3 @@
-#include "graphics.h"
 #include "game.h"
 
 void writeRectangle(GameFrameBuffer *buffer,
@@ -91,14 +90,31 @@ void writeRectangle(GameFrameBuffer *buffer,
     }
 }
 
-// Only supports 32-bit aligned bytes
-void writeBytes(GameFrameBuffer *buffer,
+// 
+
+/**
+ * Byte order: AA RR GG BB (in little endian)
+ * Image rows are in bottom-up order
+ * Only supports 32-bit aligned bytes
+ * 
+ * @param buffer 
+ * @param xOffset 
+ * @param yOffset 
+ * @param width 
+ * @param height 
+ * @param bytes 
+*/
+void writeBitmap(GameFrameBuffer *buffer,
                 int64 xOffset,
                 int64 yOffset,
                 int64 width,
                 int64 height,
-                uint32 *bytes)
+                BitmapFile bitmapFile)
 {
+    int64 originalXOffset = xOffset;
+    int64 originalYOffset = yOffset;
+    int64 originalWidth = width;
+
     // Bounds checking
     if (xOffset >= buffer->widthPx) {
         return;
@@ -158,8 +174,15 @@ void writeBytes(GameFrameBuffer *buffer,
     // Move in from left to starting absolutePosition
     row = (row + xOffset);
 
-    //uint32 *imagePixel = (bytes + (width * height));
-    uint32 *imagePixel = bytes;
+    uint32 *imagePixel = (uint32 *)bitmapFile.memory;
+
+    if (originalXOffset < 0) {
+        imagePixel = (imagePixel + (originalXOffset*-1));
+    }
+
+    if (originalYOffset < 0) {
+        imagePixel = (imagePixel + ((originalYOffset*-1) * originalWidth));
+    }
 
     // Up (rows) y
     for (int64 y = 0; y < height; y++) {
@@ -168,22 +191,29 @@ void writeBytes(GameFrameBuffer *buffer,
         uint32 *pixel = (uint32*)row;
         for (int64 x = 0; x < width; x++) {
 
-            uint8 alpha    = (*imagePixel >> 24) & 0xff;
-            uint8 red      = (*imagePixel >> 16) & 0xff;
-            uint8 green    = (*imagePixel >> 8) & 0xff;
-            uint8 blue     = (*imagePixel & 0xff);
+            // Re order the bytes
+            uint8 red       = ((*imagePixel & bitmapFile.redMask) >> getShiftFromMask(bitmapFile.redMask) & 0xFF);
+            uint8 green     = ((*imagePixel & bitmapFile.greenMask) >> getShiftFromMask(bitmapFile.greenMask) & 0xFF);
+            uint8 blue      = ((*imagePixel & bitmapFile.blueMask) >> getShiftFromMask(bitmapFile.blueMask) & 0xFF);
+            uint8 alpha     = ((*imagePixel & bitmapFile.alphaMask) >> getShiftFromMask(bitmapFile.alphaMask) & 0xFF);
 
             uint32 packed = 0;
-            packed |= blue;           // pack a into the least significant byte
-            packed |= green << 8;      // pack b into the second least significant byte
-            packed |= red << 16;     // pack c into the third least significant byte
-            packed |= alpha << 24;     // pack d into the most significant byte
+            packed |= blue;
+            packed |= green << 8;
+            packed |= red << 16;
+            packed |= alpha << 24;
 
-            *++pixel = packed;
-            ++imagePixel;
+            *pixel++ = packed;
+            imagePixel++;
         }
 
         // Move up one entire row
         row = (row - buffer->widthPx);
+
+        if (originalXOffset < 0) {
+            imagePixel = (imagePixel + (originalXOffset*-1));
+        }else if ((originalXOffset + originalWidth) > buffer->widthPx) {
+            imagePixel = (imagePixel + ((originalWidth + originalXOffset) - buffer->widthPx));
+        }
     }
 }

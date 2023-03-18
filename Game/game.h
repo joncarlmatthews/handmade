@@ -1,26 +1,11 @@
 #ifndef HEADER_HH_GAME
 #define HEADER_HH_GAME
 
-// Wide-strings.
-// Defines wchar_t
-// @see https://www.cplusplus.com/reference/cwchar/
-#include <wchar.h>
-
-// Unicode characters.
-// Defines char16_t, char32_t
-// @see https://www.cplusplus.com/reference/cuchar/
-#include <uchar.h>
-
 // Common mathematical operations and transformations.
 // Defines floor, floorf, M_PI
 // @see https://www.cplusplus.com/reference/cmath/
 #define _USE_MATH_DEFINES
 #include <math.h>
-
-// Common input/output operations.
-// Defines: sprintf_s
-// @see https://www.cplusplus.com/reference/cstdio/
-#include <stdio.h>
 
 #include "types.h"
 #include "utility.h"
@@ -28,21 +13,32 @@
 #include "random.h"
 #include "memory.h"
 #include "graphics.h"
+#include "audio.h"
 #include "world.h"
 #include "tilemap.h"
 #include "player.h"
 
 #if HANDMADE_LOCAL_BUILD
 
-    // Flags:
-    // #define HANDMADE_DEBUG
-    // #define HANDMADE_DEBUG_FPS
-    // #define HANDMADE_DEBUG_CLOCKCYCLES
-    // #define HANDMADE_DEBUG_AUDIO
-    // #define HANDMADE_LIVE_LOOP_EDITING
-    // #define HANDMADE_DEBUG_LIVE_LOOP_EDITING
-    // #define HANDMADE_DEBUG_TILE_POS
-    // #define HANDMADE_WALK_THROUGH_WALLS
+// Flags:
+// #define HANDMADE_DEBUG
+// #define HANDMADE_DEBUG_FPS
+// #define HANDMADE_DEBUG_CLOCKCYCLES
+// #define HANDMADE_DEBUG_AUDIO
+#define HANDMADE_LIVE_LOOP_EDITING
+// #define HANDMADE_DEBUG_LIVE_LOOP_EDITING
+// #define HANDMADE_DEBUG_TILE_POS
+// #define HANDMADE_WALK_THROUGH_WALLS
+
+#endif
+
+#if HANDMADE_DEBUG
+
+// Common input/output operations.
+// Defines: sprintf_s
+// @see https://www.cplusplus.com/reference/cstdio/
+#include <stdio.h>
+
 #endif
 
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
@@ -60,7 +56,8 @@
 //====================================================
 //====================================================
 
-typedef struct PlatformThreadContext {
+typedef struct PlatformThreadContext
+{
     uint8 placeholder;
 } PlatformThreadContext;
 
@@ -288,23 +285,25 @@ typedef struct GameMemory
     MemoryRegion permanentStorage;
     MemoryRegion transientStorage;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LIVE_LOOP_EDITING
     void *recordingStorageGameState;
     void *recordingStorageInput;
 #endif
 
-    /*
-     * Flag to set whether or not our game memory has had its initial fill of data.
-     */
+    // Flag to set whether or not our game memory has had its initial fill of data.
     bool32 initialised;
 
+    // Absolute path to the folder that contains the running program
+    char platformAbsPath[GAME_MAX_PATH];
+
+    // Pointers to memory allocation deallocation functions with the platform layer
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
 
     // @NOTE(JM) Move this??
     PlarformControllerVibrate *platformControllerVibrate;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LOCAL_BUILD
     DEBUGPlatformLog *DEBUG_platformLog;
     DEBUGPlatformReadEntireFile *DEBUG_platformReadEntireFile;
     DEBUGPlatformFreeFileMemory *DEBUG_platformFreeFileMemory;
@@ -329,23 +328,10 @@ typedef struct GameState
     // absolute position
     TilemapPosition worldPosition;
 
-    bitmapFile tempBitmapFile;
+    BitmapFile tempBitmapFile;
 
     SineWave sineWave;
 } GameState;
-
-//
-// Audio
-//====================================================
-internal_func
-void audioBufferWriteSineWave(GameState *gameState,
-                                GameAudioBuffer *audioBuffer);
-internal_func
-void frameBufferWriteAudioDebug(GameState *gameState,
-                                GameFrameBuffer *buffer,
-                                GameAudioBuffer *audioBuffer);
-
-
 
 //====================================================
 //====================================================

@@ -11,11 +11,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-        bitmapFile bitmapFile = {0};
-        const char *filename = "C:\\Users\\jonca\\Documents\\clones\\handmade\\data\\test\\test_background.bmp";
-        DEBUGReadBMP(thread, memory->DEBUG_platformReadEntireFile, filename, &bitmapFile);
+#ifdef HANDMADE_LOCAL_BUILD
+
+        BitmapFile bitmapFile = {0};
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_head.bmp",
+                        &bitmapFile);
 
         gameState->tempBitmapFile = bitmapFile;
+
+#endif
 
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
@@ -81,7 +88,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // Spam some tile values into the tilemap...      
         World world         = gameState->world;
         Tilemap tilemap     = world.tilemap;
-        uint randomNumberIndex = 0;
+        uint32 randomNumberIndex = 0;
 
         uint32 rooms = 20;
         uint32 roomTileDims = 18;
@@ -98,12 +105,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         bool shiftUp        = false;
         bool shiftDown      = false;
 
-        uint doorTop        = false;
-        uint doorLeft       = false;
-        uint doorBottom     = false;
-        uint doorRight      = false;
-        uint doorUp         = false;
-        uint doorDown       = false;
+        uint32 doorTop        = false;
+        uint32 doorLeft       = false;
+        uint32 doorBottom     = false;
+        uint32 doorRight      = false;
+        uint32 doorUp         = false;
+        uint32 doorDown       = false;
 
         for (uint32 room = 0; room < rooms; room++){
 
@@ -340,7 +347,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 #ifdef HANDMADE_DEBUG_AUDIO
     audioBufferWriteSineWave(gameState, audioBuffer);
 #endif // HANDMADE_DEBUG_AUDIO
-   
+
     /**
      * Write the frame buffer...
      * 
@@ -447,12 +454,12 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->player1.heightPx,
                     { 0.301f, 0.156f, 0.0f });
 
-    writeBytes(frameBuffer,
-                0,
-                0,
+    writeBitmap(frameBuffer,
+                50,
+                200,
                 gameState->tempBitmapFile.widthPx,
                 gameState->tempBitmapFile.heightPx,
-                (uint32 *)gameState->tempBitmapFile.memory);
+                gameState->tempBitmapFile);
 
 #if 0
     // Mouse input testing
@@ -470,88 +477,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     frameBufferWriteAudioDebug(gameState, frameBuffer, audioBuffer);
 #endif
 
-}
-
-#if defined(HANDMADE_DEBUG_AUDIO)
-
-internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
-{
-    float32 coefficient = ((float32)buffer->widthPx / (float32)audioBuffer->platformBufferSizeInBytes);
-
-    // Audio buffer box
-    {
-        uint16 height = 100;
-        uint16 width = (uint16)((float32)audioBuffer->platformBufferSizeInBytes * coefficient);
-        uint32 yOffset = 100;
-        writeRectangle(buffer, 0x3333ff, height, width, yOffset, 0);
-    }
-
-    // Play cursor (green)
-    {
-        uint16 height = 100;
-        uint16 width = 10;
-        uint32 yOffset = 100;
-        uint32 xOffset = (uint32)((float32)audioBuffer->playCursorPosition * coefficient);
-        writeRectangle(buffer, 0x669900, height, width, yOffset, xOffset);
-    }
-
-    // Write cursor + lock size (amount written) (red)
-    {
-        uint16 height = 100;
-        uint32 width = (uint32)((float32)audioBuffer->lockSizeInBytes * coefficient);
-        uint32 yOffset = 100;
-        uint32 xOffset = (uint32)((float32)audioBuffer->writeCursorPosition * coefficient);
-        writeRectangle(buffer, 0xcc0000, height, width, yOffset, xOffset);
-    }
-}
-
-#endif
-
-internal_func
-void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer)
-{
-    gameState->sineWave.hertz = 100;
-    gameState->sineWave.sizeOfWave = 1000; // Volume
-
-    // Calculate the total number of 4-byte audio sample groups that we will have per complete cycle.
-    uint64 audioSampleGroupsPerCycle = ((audioBuffer->platformBufferSizeInBytes / audioBuffer->bytesPerSample) / gameState->sineWave.hertz);
-
-    // At the start of which 4 byte group index we are starting our write from?
-    // @TODO(JM) assert that this is a 4 byte boundry
-    uint32 byteGroupIndex = 0;
-
-    float32 percentageOfAngle = 0.0f;
-    float32 angle = 0.0f;
-    float32 radians = 0.0f;
-    float64 sine = 0.0f;
-
-    uint16 *audioSample = (uint16*)audioBuffer->memory;
-
-    // Iterate over each 2 - bytes and write the same data for both...
-    for (uint32 i = 0; i < audioBuffer->noOfSamplesToWrite; i++) {
-
-        percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
-        angle = (360.0f * (percentageOfAngle / 100.0f));
-        radians = (angle * ((float32)M_PI / 180.0f));
-        sine = sin(radians);
-
-        int16 audioSampleValue = (int16)(sine * gameState->sineWave.sizeOfWave);
-
-        // Left channel (16-bits)
-        *audioSample = audioSampleValue;
-
-        // Move to the right sample (16-bits)
-        audioSample++;
-
-        // Right channel (16-bits)
-        *audioSample = audioSampleValue;
-
-        // Move cursor to the start of the next sample grouping.
-        audioSample++;
-
-        // Write another 4 to the running byte group index.
-        byteGroupIndex = (uint32)((uint64)(byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
-    }
 }
 
 EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)

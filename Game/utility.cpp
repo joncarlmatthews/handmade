@@ -1,4 +1,4 @@
-#include <math.h>
+#include <math.h> // For ceilf
 #include "utility.h"
 
 /**
@@ -40,84 +40,6 @@ float32 percentageOfAnotherf(float32 a, float32 b)
     return (fract * 100.0f);
 }
 
-void utilConcatStringsA(char *source1,
-                        uint32 source1Length,
-                        char *source2,
-                        uint32 source2Length,
-                        char *dest,
-                        uint32 destLength)
-{
-    uint32 runningIndex = 0;
-    for (uint32 i = 0; i < source1Length; i++) {
-        if (source1[i] == '\0') {
-            break;
-        }
-        if (runningIndex >= (destLength - 1)) {
-            break;
-        }
-        dest[i] = source1[i];
-        runningIndex++;
-    }
-
-    for (uint32 i = 0; i < source2Length; i++) {
-        if (source2[i] == '\0') {
-            break;
-        }
-        if (runningIndex >= (destLength - 1)) {
-            break;
-        }
-        dest[runningIndex] = source2[i];
-        runningIndex++;
-    }
-}
-
-void utilConcatStringsW(wchar_t *source1,
-                        uint32 source1Length,
-                        wchar_t *source2,
-                        uint32 source2Length,
-                        wchar_t *dest,
-                        uint32 destLength)
-{
-    uint32 runningIndex = 0;
-    for (uint32 i = 0; i < source1Length; i++) {
-        if (source1[i] == '\0') {
-            break;
-        }
-        if (runningIndex >= (destLength - 1)) {
-            break;
-        }
-        dest[i] = source1[i];
-        runningIndex++;
-    }
-
-    for (uint32 i = 0; i < source2Length; i++) {
-        if (source2[i] == '\0') {
-            break;
-        }
-        if (runningIndex >= (destLength - 1)) {
-            break;
-        }
-        dest[runningIndex] = source2[i];
-        runningIndex++;
-    }
-}
-
-void utilWideCharToChar(wchar_t *wideCharArr,
-                        uint32 wideCharLength,
-                        char *charArr,
-                        uint32 charLength)
-{
-    for (uint32 x = 0; x < wideCharLength; x++) {
-        charArr[x] = (char)wideCharArr[x];
-        if ('\0' == wideCharArr[x]) {
-            break;
-        }
-        if (x >= (charLength - 1)) {
-            break;
-        }
-    }
-}
-
 inline uint32 truncateU8(float32 f)
 {
     return (uint8)f;
@@ -136,4 +58,36 @@ uint32 u32RoundUpDivide(uint32 dividend, uint32 divisor)
 int32 i32RoundUpDivide(int32 dividend, int32 divisor)
 {
     return (int32)ceilf((float32)dividend / (float32)divisor);
+}
+
+/**
+ * Returns a shift based on a 32-bit integer bitmask.
+ *
+ * Valid masks:
+ *   0x000000ff
+ *   0x0000ff00
+ *   0x00ff0000
+ *   0xff000000
+ * 
+ * @param mask uint32
+ * @return shift uint8
+*/
+uint8 getShiftFromMask(uint32 mask)
+{
+    uint8 shift = 0;
+    switch (mask) {
+        case 0xff000000:
+            shift = 24;
+            break;
+        case 0x00ff0000:
+            shift = 16;
+            break;
+        case 0x0000ff00:
+            shift = 8;
+            break;
+        case 0x000000ff:
+            shift = 0;
+            break;
+    }
+    return shift;
 }

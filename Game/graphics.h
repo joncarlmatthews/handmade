@@ -2,6 +2,7 @@
 #define HEADER_HH_GRAPHICS
 
 #include "types.h"
+#include "filesystem.h"
 
 //
 // Graphics
@@ -28,11 +29,11 @@ void writeRectangle(GameFrameBuffer *buffer,
                     int64 height,
                     Colour colour);
 
-void writeBytes(GameFrameBuffer *buffer,
-                int64 xOffset,
-                int64 yOffset,
-                int64 width,
-                int64 height,
-                uint32 *bytes);
+void writeBitmap(GameFrameBuffer *buffer,
+                    int64 xOffset,
+                    int64 yOffset,
+                    int64 width,
+                    int64 height,
+                    BitmapFile bitmapFile);
 
 #endif

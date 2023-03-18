@@ -1,6 +1,6 @@
 # "Handmade Hero"
 
-Low level game programming in C flavoured C++.
+Low level game programming in C flavoured C++. No frameworks or libraries are used for the game layer (except `math.h`). Everything written from scratch.
 
 ## Current Progress
 
@@ -29,7 +29,9 @@ To develop or build the game's source code first install [Visual Studio Communit
 
 ### Project Structure
 
-There are two main parts to the project, the Win32 platform code (`Platform Win32\`) and the game code (`Game\`). Both are built into the same build directory. The platform code is built as an exe and the game code is built as a DLL.
+There are two distinct parts to the project, the Platform layers and the Game layer. At the time of writing, only the Windows platform layer has been prototyped. The code resides within the `Platform Win32\` directory. Future platform layers will reside in the `Platform Linux\` and `Platform macOS\` directories respectively. All of the game layer code resides within the `Game\` directory. 
+
+There is a single Visual Studio Solution for the entire codebase. Within the Solution there is a Project for the Windows platform layer and a separate Project for the Game layer. Building the solution compiles both projects. The platform and game layers are built into the same build directory. The platform code is built as an executable and the game code is built as a DLL.
 
 ### Coding Style
 
@@ -55,9 +57,11 @@ To run the program in Visual Studio with the debugger attached, simply hit **F5*
 
 ### Dynamically reloading the game code
 
-The game code is built as a DLL to enable dynamic reloading of (just) the game code without having the rebuild the whole program. If you want to dynamically reload the game code, with the program running, execute the `built.bat` file using the Windows command prompt from with the `Game/` directory.
+The game code is built as a DLL to enable dynamic reloading of (just) the game code without having the rebuild the whole program. This enables fast debug cycles.
 
 Click: **Tools** > **Command Line** > **Developer Command Prompt**
+
+Move into the `Game\` directory
 
 ```
 > cd Game
@@ -82,7 +86,15 @@ If you don't, you'll receive the following error message when trying to build:
 operable program or batch file.
 ```
 
-Finally, run the build script with the relevant **Configuration** and **Platform Architecture** arguments:
+Make sure you have `HANDMADE_LIVE_LOOP_EDITING` defined within `game.h`
+
+```c
+#define HANDMADE_LIVE_LOOP_EDITING
+```
+
+Launch the program from within Visual Studio with the debugger attached. **F5**.
+
+With the program running, execute the build script with the relevant **Configuration** and **Platform Architecture** arguments:
 
 ```
 > build.bat Debug x64
