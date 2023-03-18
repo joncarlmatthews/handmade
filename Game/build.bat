@@ -25,6 +25,7 @@ IF [%2]==[] GOTO usage
 
 SET ConfigurationArg=%1
 SET PlatformArg=%2
+SET CopyAssetsArg=%3
 
 if %ConfigurationArg% == Release (
     SET Configuration=Release
@@ -32,6 +33,13 @@ if %ConfigurationArg% == Release (
     SET Configuration=Debug
 ) else (
     GOTO configuration_usage
+)
+
+if "%3"=="1" (
+    ECHO "COPY ASSETS"
+    SET CopyAssets=true
+)else (
+    SET CopyAssets=false
 )
 
 SET Timestamp=%date:~6,4%-%date:~3,2%-%date:~0,2%-%time:~0,2%-%time:~3,2%-%time:~6,2%
@@ -54,8 +62,12 @@ ECHO ============
 ECHO Building %Platform%
 ECHO ============
 
-REM Root build folder for project
+REM Root build folder for Solution and Project
 SET ProjectFolder=%~dp0..\build\Win32\
+SET SolutionFolder=%~dp0..\
+
+REM Solution level folders
+SET DataFolder=%SolutionFolder%data
 
 REM folders for the build location
 SET BuildArchFolder=%ProjectFolder%%PlatformFolder%\
@@ -81,6 +93,8 @@ del %BuildConfigurationFolder%Game_*.pdb
 
 REM double backslash directories (cl.exe and link.exe need the directories to be double backslashed)
 SET ProjectFolder=%ProjectFolder:\=\\%
+SET SolutionFolder=%SolutionFolder:\=\\%
+SET DataFolder=%DataFolder:\=\\%
 SET BuildArchFolder=%BuildArchFolder:\=\\%
 SET BuildConfigurationFolder=%BuildConfigurationFolder:\=\\%
 SET IntermediatesRootFolder=%IntermediatesRootFolder:\=\\%
@@ -134,16 +148,21 @@ IF %Platform% == x64 (
     )
 )
 
+REM Copy the data assets
+if %CopyAssets% == true (
+    robocopy "%DataFolder%" "%BuildConfigurationFolder%data" /E /PURGE /MIR
+)
+
 REM Compile the source code
-cl %CompilerFlags% %~dp0game.cpp %~dp0utility.cpp %~dp0memory.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp %~dp0graphics.cpp %~dp0filesystem.cpp
+cl %CompilerFlags% %~dp0game.cpp %~dp0utility.cpp %~dp0memory.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp %~dp0graphics.cpp %~dp0audio.cpp %~dp0filesystem.cpp
 
 REM Run the linker
-link %LinkerFlags% %icf%game.obj %icf%utility.obj %icf%memory.obj %icf%player.obj %icf%world.obj %icf%tilemap.obj %icf%graphics.obj %icf%filesystem.obj
+link %LinkerFlags% %icf%game.obj %icf%utility.obj %icf%memory.obj %icf%player.obj %icf%world.obj %icf%tilemap.obj %icf%graphics.obj %icf%audio.obj %icf%filesystem.obj
 
 GOTO :eof
 
 :usage
-ECHO Usage: %0 ^<Configuration^> ^<Platform^>
+ECHO Usage: %0 ^<Configuration^> ^<Platform^> ^<CopyAssets^> 
 exit /B 1
 
 :configuration_usage

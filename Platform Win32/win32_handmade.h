@@ -113,7 +113,6 @@ typedef struct Win32GameInputRecording
 typedef struct Win32State
 {
     wchar_t absPath[MAX_PATH];
-    char absPathA[MAX_PATH];
 
     uint64 gameMemorySize;
     void *gameMemory;
@@ -129,7 +128,11 @@ typedef struct Win32State
 
 } Win32State;
 
-internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
+internal_func
+LRESULT CALLBACK win32MainWindowCallback(HWND window,
+                                            UINT message,
+                                            WPARAM wParam,
+                                            LPARAM lParam);
 
 /*
  * Creates and returns the current time via QueryPerformanceCounter

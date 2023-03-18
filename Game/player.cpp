@@ -375,7 +375,7 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
                             gameState->world.tilemap);
 }
 
-bool playerHasSwitchedActiveTile(GameState *gameState)
+internal_func bool playerHasSwitchedActiveTile(GameState *gameState)
 {
     TilemapPosition posData = {0};
     setTilemapPositionData(&posData,

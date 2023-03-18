@@ -1,16 +1,6 @@
 #ifndef HEADER_HH_GAME
 #define HEADER_HH_GAME
 
-// Wide-strings.
-// Defines wchar_t
-// @see https://www.cplusplus.com/reference/cwchar/
-#include <wchar.h>
-
-// Unicode characters.
-// Defines char16_t, char32_t
-// @see https://www.cplusplus.com/reference/cuchar/
-#include <uchar.h>
-
 // Common mathematical operations and transformations.
 // Defines floor, floorf, M_PI
 // @see https://www.cplusplus.com/reference/cmath/
@@ -23,6 +13,7 @@
 #include "random.h"
 #include "memory.h"
 #include "graphics.h"
+#include "audio.h"
 #include "world.h"
 #include "tilemap.h"
 #include "player.h"
@@ -294,23 +285,25 @@ typedef struct GameMemory
     MemoryRegion permanentStorage;
     MemoryRegion transientStorage;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LIVE_LOOP_EDITING
     void *recordingStorageGameState;
     void *recordingStorageInput;
 #endif
 
-    /*
-     * Flag to set whether or not our game memory has had its initial fill of data.
-     */
+    // Flag to set whether or not our game memory has had its initial fill of data.
     bool32 initialised;
 
+    // Absolute path to the folder that contains the running program
+    char platformAbsPath[GAME_MAX_PATH];
+
+    // Pointers to memory allocation deallocation functions with the platform layer
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
 
     // @NOTE(JM) Move this??
     PlarformControllerVibrate *platformControllerVibrate;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LOCAL_BUILD
     DEBUGPlatformLog *DEBUG_platformLog;
     DEBUGPlatformReadEntireFile *DEBUG_platformReadEntireFile;
     DEBUGPlatformFreeFileMemory *DEBUG_platformFreeFileMemory;
@@ -339,19 +332,6 @@ typedef struct GameState
 
     SineWave sineWave;
 } GameState;
-
-//
-// Audio
-//====================================================
-internal_func
-void audioBufferWriteSineWave(GameState *gameState,
-                                GameAudioBuffer *audioBuffer);
-internal_func
-void frameBufferWriteAudioDebug(GameState *gameState,
-                                GameFrameBuffer *buffer,
-                                GameAudioBuffer *audioBuffer);
-
-
 
 //====================================================
 //====================================================

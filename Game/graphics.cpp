@@ -1,4 +1,3 @@
-#include "graphics.h"
 #include "game.h"
 
 void writeRectangle(GameFrameBuffer *buffer,

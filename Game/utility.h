@@ -24,37 +24,6 @@ uint64 utilTebibyteToBytes(uint8 tebibytes);
  */
 float32 percentageOfAnotherf(float32 a, float32 b);
 
-/**
- * Concatenates two wide char strings
- *
- */
-void utilConcatStringsW(wchar_t *source1,
-                        uint32 source1Length,
-                        wchar_t *source2,
-                        uint32 source2Length,
-                        wchar_t *dest,
-                        uint32 destLength);
-
-/**
- * Concatenates two char strings
- *
- */
-void utilConcatStringsA(char *source1,
-                        uint32 source1Length,
-                        char *source2,
-                        uint32 source2Length,
-                        char *dest,
-                        uint32 destLength);
-
-/**
- * Converts a wide char to a regular char
- *
- */
-void utilWideCharToChar(wchar_t *wideCharArr,
-                        uint32 wideCharLength,
-                        char *charArr,
-                        uint32 charLength);
-
 uint32 u32RoundUpDivide(uint32 dividend, uint32 divisor);
 
 int32 i32RoundUpDivide(int32 dividend, int32 divisor);

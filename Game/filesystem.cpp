@@ -4,11 +4,12 @@
 
 void DEBUGReadBMP(PlatformThreadContext *thread,
                     DEBUGPlatformReadEntireFile *playformreadFile,
+                    const char *abspath,
                     const char *filename,
                     BitmapFile *bitmapFIle)
 {
 
-    DEBUG_file file = playformreadFile(thread, filename);
+    DEBUG_file file = playformreadFile(thread, abspath, filename);
 
     if (file.sizeinBytes <= 0) {
         assert(!"Cannot read BMP");

@@ -116,7 +116,7 @@ typedef struct DEBUG_file
 *
 * @note call DEBUG_platformFreeFileMemory in a subsequent call.
 */
-#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, const char *filename)
+#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, const char *absPath, const char *filename)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
 
 /*
@@ -134,6 +134,7 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
 
 void DEBUGReadBMP(PlatformThreadContext *thread,
                     DEBUGPlatformReadEntireFile *playformreadFile,
+                    const char *absPath,
                     const char *filename,
                     BitmapFile *bitmapFIle);
 
