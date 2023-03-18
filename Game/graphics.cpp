@@ -192,10 +192,10 @@ void writeBitmap(GameFrameBuffer *buffer,
         for (int64 x = 0; x < width; x++) {
 
             // Re order the bytes
-            uint8 red       = ((*imagePixel & bitmapFile.redMask) >> getShiftFromMask(bitmapFile.redMask) & 0xFF);
-            uint8 green     = ((*imagePixel & bitmapFile.greenMask) >> getShiftFromMask(bitmapFile.greenMask) & 0xFF);
-            uint8 blue      = ((*imagePixel & bitmapFile.blueMask) >> getShiftFromMask(bitmapFile.blueMask) & 0xFF);
-            uint8 alpha     = ((*imagePixel & bitmapFile.alphaMask) >> getShiftFromMask(bitmapFile.alphaMask) & 0xFF);
+            uint8 red       = ((*imagePixel & bitmapFile.redMask) >> intrinBitScanForward(bitmapFile.redMask) & 0xFF);
+            uint8 green     = ((*imagePixel & bitmapFile.greenMask) >> intrinBitScanForward(bitmapFile.greenMask) & 0xFF);
+            uint8 blue      = ((*imagePixel & bitmapFile.blueMask) >> intrinBitScanForward(bitmapFile.blueMask) & 0xFF);
+            uint8 alpha     = ((*imagePixel & bitmapFile.alphaMask) >> intrinBitScanForward(bitmapFile.alphaMask) & 0xFF);
 
             uint32 packed = 0;
             packed |= blue;

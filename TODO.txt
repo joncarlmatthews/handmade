@@ -1,5 +1,6 @@
-Day 037:
- 
+Day 038:
+ -x refactor intrinBitScanForward and include intrinsics
+
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?
@@ -7,3 +8,4 @@ Ongoing:
  -x Diagonal speed bug (will fix when implement vectors) Disabled diagonal movement for now.
  -x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
  -x Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
+ -x deprecate math.h

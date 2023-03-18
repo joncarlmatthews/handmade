@@ -49,6 +49,7 @@ typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
 
+#define GAME_PI 3.14159265358979323846   // pi
 #define GAME_MAX_PATH 260
 
 //

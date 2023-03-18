@@ -1,13 +1,9 @@
 #ifndef HEADER_HH_GAME
 #define HEADER_HH_GAME
 
-// Common mathematical operations and transformations.
-// Defines floor, floorf, M_PI
-// @see https://www.cplusplus.com/reference/cmath/
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include "types.h"
+#include "intrinsics.h"
+#include "utility_shared.h"
 #include "utility.h"
 #include "filesystem.h"
 #include "random.h"

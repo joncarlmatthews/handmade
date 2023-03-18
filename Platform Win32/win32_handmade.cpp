@@ -4,16 +4,11 @@
 #include <strsafe.h> // sprintf_s support
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
-#include <math.h>  // ceil.
 
-#include "..\Game\types.h" // Basic types
-#include "..\Game\utility.h" // Function signatures and basic types that are shared across the game and platform layer
 #include "..\Game\game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
-// Include the definitions of the utility/helper Functions that are
-// shared across the game and platform layer
-#include "..\Game\utility.cpp"
+#include "..\Game\utility_shared.cpp"
 
 // Function stubs for functions provided by external DLL
 GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
