@@ -1,7 +1,5 @@
-#include "types.h"
-#include "game.h"
 #include "world.h"
-#include "tilemap.h"
+#include "game.h"
 
 /**
  * @brief Sets the tilemap position data for the world's active tile based

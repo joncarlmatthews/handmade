@@ -1,10 +1,5 @@
-#include <stdio.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
-#include "game.h"
 #include "player.h"
-#include "world.h"
-#include "utility.h"
+#include "game.h"
 
 void playerHandleMovement(GameState *gameState,
                             GameMemory *memory,

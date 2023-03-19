@@ -1,6 +1,5 @@
-#include "types.h"
+#include "audio.h"
 #include "game.h"
-#include "intrinsics.h"
 
 #if defined(HANDMADE_DEBUG_AUDIO)
 

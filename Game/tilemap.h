@@ -2,6 +2,7 @@
 #define HEADER_HH_TILEMAP
 
 #include "types.h"
+#include "utility.h"
 #include "memory.h"
 
 //

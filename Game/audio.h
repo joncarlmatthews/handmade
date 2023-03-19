@@ -2,6 +2,7 @@
 #define HEADER_HH_AUDIO
 
 #include "types.h"
+#include "intrinsics.h"
 
 typedef struct GameState GameState;
 typedef struct GameFrameBuffer GameFrameBuffer;
