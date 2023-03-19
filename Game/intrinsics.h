@@ -12,6 +12,6 @@ float64 intrinSin(float64 radians);
 
 float32 intrinCeilf(float32 num);
 
-uint8 intrinBitScanForward(uint32 mask);
+bool32 intrinBitScanForward(uint32 *index, uint32 mask);
 
 #endif

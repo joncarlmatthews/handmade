@@ -184,6 +184,32 @@ void writeBitmap(GameFrameBuffer *buffer,
         imagePixel = (imagePixel + ((originalYOffset*-1) * originalWidth));
     }
 
+    bool32 shiftRes;
+    uint32 redShift;
+    uint32 greenShift;
+    uint32 blueShift;
+    uint32 alphaShift;
+
+    shiftRes = intrinBitScanForward(&redShift, bitmapFile.redMask);
+    if (!shiftRes){
+        assert(!"Error finding red mask bit shift");
+    }
+
+    shiftRes = intrinBitScanForward(&greenShift, bitmapFile.greenMask);
+    if (!shiftRes){
+        assert(!"Error finding green mask bit shift");
+    }
+
+    shiftRes = intrinBitScanForward(&blueShift, bitmapFile.blueMask);
+    if (!shiftRes){
+        assert(!"Error finding blue mask bit shift");
+    }
+
+    shiftRes = intrinBitScanForward(&alphaShift, bitmapFile.alphaMask);
+    if (!shiftRes){
+        assert(!"Error finding alpha mask bit shift");
+    }
+
     // Up (rows) y
     for (int64 y = 0; y < height; y++) {
 
@@ -192,10 +218,10 @@ void writeBitmap(GameFrameBuffer *buffer,
         for (int64 x = 0; x < width; x++) {
 
             // Re order the bytes
-            uint8 red       = ((*imagePixel & bitmapFile.redMask) >> intrinBitScanForward(bitmapFile.redMask) & 0xFF);
-            uint8 green     = ((*imagePixel & bitmapFile.greenMask) >> intrinBitScanForward(bitmapFile.greenMask) & 0xFF);
-            uint8 blue      = ((*imagePixel & bitmapFile.blueMask) >> intrinBitScanForward(bitmapFile.blueMask) & 0xFF);
-            uint8 alpha     = ((*imagePixel & bitmapFile.alphaMask) >> intrinBitScanForward(bitmapFile.alphaMask) & 0xFF);
+            uint8 red       = (((*imagePixel & bitmapFile.redMask) >> redShift) & 0xFF);
+            uint8 green     = (((*imagePixel & bitmapFile.greenMask) >> greenShift) & 0xFF);
+            uint8 blue      = (((*imagePixel & bitmapFile.blueMask) >> blueShift) & 0xFF);
+            uint8 alpha     = (((*imagePixel & bitmapFile.alphaMask) >> alphaShift) & 0xFF);
 
             uint32 packed = 0;
             packed |= blue;
