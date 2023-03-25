@@ -8,10 +8,6 @@
 // Graphics
 //====================================================
 
-// FHD
-#define FRAME_BUFFER_PIXEL_WIDTH  1920
-#define FRAME_BUFFER_PIXEL_HEIGHT 1080
-
 /**
 * Write a rectangle into the frame buffer
 *

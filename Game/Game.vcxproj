@@ -22,9 +22,11 @@
     <ClInclude Include="audio.h" />
     <ClInclude Include="filesystem.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="global_macros.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="intrinsics.h" />
     <ClInclude Include="memory.h" />
+    <ClInclude Include="platform.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="tilemap.h" />

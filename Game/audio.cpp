@@ -3,7 +3,7 @@
 
 #if defined(HANDMADE_DEBUG_AUDIO)
 
-internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
+void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
 {
     float32 coefficient = ((float32)buffer->widthPx / (float32)audioBuffer->platformBufferSizeInBytes);
 
@@ -36,7 +36,6 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 
 #endif
 
-internal_func
 void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer)
 {
     gameState->sineWave.hertz = 100;
