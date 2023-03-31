@@ -106,11 +106,11 @@ void writeRectangle(GameFrameBuffer *buffer,
  * @param bytes 
 */
 void writeBitmap(GameFrameBuffer *buffer,
-                int64 xOffset,
-                int64 yOffset,
-                int64 width,
-                int64 height,
-                BitmapFile bitmapFile)
+                    int64 xOffset,
+                    int64 yOffset,
+                    int64 width,
+                    int64 height,
+                    BitmapFile bitmapFile)
 {
     int64 originalXOffset = xOffset;
     int64 originalYOffset = yOffset;
@@ -212,23 +212,35 @@ void writeBitmap(GameFrameBuffer *buffer,
         uint32 *pixel = (uint32*)row;
         for (int64 x = 0; x < width; x++) {
 
-            // Re order the bytes
+            // Extract RGBA values from bitmap.
             uint8 red       = (((*imagePixel & bitmapFile.redMask) >> redShift.index) & 0xFF);
             uint8 green     = (((*imagePixel & bitmapFile.greenMask) >> greenShift.index) & 0xFF);
             uint8 blue      = (((*imagePixel & bitmapFile.blueMask) >> blueShift.index) & 0xFF);
             uint8 alpha     = (((*imagePixel & bitmapFile.alphaMask) >> alphaShift.index) & 0xFF);
 
-            // Alpha test
-            if (alpha > 127){
+            // Extract RGB values from data that already exists at this location
+            uint8 origRed = ((*pixel >> 16) & 0xFF);
+            uint8 origGreen = ((*pixel >> 8) & 0xFF);
+            uint8 origBlue = ((*pixel >> 0) & 0xFF);
 
-                uint32 packed = 0;
-                packed |= blue;
-                packed |= green << 8;
-                packed |= red << 16;
-                packed |= alpha << 24;
+            // Do linear alpha blend
+            float32 alphaf = ((float32)alpha / 255.0f);
 
-                *pixel = packed;
-            }
+            float32 blendedR = ((float32)origRed - ((float32)origRed * alphaf) +
+             ((float32)red * alphaf));
+            float32 blendedG = ((float32)origGreen - ((float32)origGreen * alphaf) +
+            ((float32)green * alphaf));
+            float32 blendedB = ((float32)origBlue - ((float32)origBlue * alphaf) +
+             ((float32)blue * alphaf));
+
+            // Re order the bytes into order we need
+            uint32 packed = 0;
+            packed |= (uint32)blendedB;
+            packed |= (uint32)blendedG << 8;
+            packed |= (uint32)blendedR << 16;
+            //packed |= alpha << 24; // We're not actually using the alpha channel yet
+
+            *pixel = packed;
 
             pixel++;
             imagePixel++;
