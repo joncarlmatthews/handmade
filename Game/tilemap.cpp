@@ -1,9 +1,6 @@
-#include <math.h>
-#include "types.h"
 #include "tilemap.h"
 #include "game.h"
 #include "player.h"
-#include "utility.h"
 
 /**
  * @NOTE(JM) the tilemap, tile chunks and individual tiles are always square

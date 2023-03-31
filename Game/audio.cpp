@@ -1,8 +1,9 @@
+#include "audio.h"
 #include "game.h"
 
 #if defined(HANDMADE_DEBUG_AUDIO)
 
-internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
+void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuffer *buffer, GameAudioBuffer *audioBuffer)
 {
     float32 coefficient = ((float32)buffer->widthPx / (float32)audioBuffer->platformBufferSizeInBytes);
 
@@ -35,7 +36,6 @@ internal_func void frameBufferWriteAudioDebug(GameState *gameState, GameFrameBuf
 
 #endif
 
-internal_func
 void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer)
 {
     gameState->sineWave.hertz = 100;
@@ -60,8 +60,8 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
 
         percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
         angle = (360.0f * (percentageOfAngle / 100.0f));
-        radians = (angle * ((float32)M_PI / 180.0f));
-        sine = sin(radians);
+        radians = (angle * ((float32)GAME_PI / 180.0f));
+        sine = intrinSin(radians);
 
         int16 audioSampleValue = (int16)(sine * gameState->sineWave.sizeOfWave);
 

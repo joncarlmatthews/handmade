@@ -1,16 +1,6 @@
 #ifndef HEADER_HH_TYPES
 #define HEADER_HH_TYPES
 
-// Global variables
-#define global_var static
-
-// Static variables within a local scope (e.g. case statement, function)
-#define local_persist_var static
-
-// Functions that are only available within the translation unit they're declared in.
-// This helps the compiler out by knowing that there is no external linking to be done.
-#define internal_func static
-
 // Typedefs that specify exact-width integer types for increased code portability.
 /*
  * char:                                (1)     int8   (-128 127)
@@ -49,8 +39,6 @@ typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
 
-#define GAME_MAX_PATH 260
-
 //
 // Game types...
 //====================================================
@@ -76,12 +64,6 @@ typedef struct Colour {
     float32 b; // Between 0.0f and 1.0f
     float32 a; // Between 0.0f and 1.0f
 } Colour;
-
-#if HANDMADE_LOCAL_BUILD
-    #define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
-#else
-    #define assert(expression)
-#endif
 
 // @NOTE(JM) Putting these here for reference.
 // The following useful types are defined in the Win32 API

@@ -1,6 +1,7 @@
 #ifndef HEADER_HH_FILESYSTEM
 #define HEADER_HH_FILESYSTEM
 
+#include "global_macros.h"
 #include "types.h"
 
 #define BITMAP_FILE_ID 0x4D42
@@ -100,9 +101,6 @@ typedef struct PlatformThreadContext PlatformThreadContext;
 typedef struct GameMemory GameMemory;
 
 #if HANDMADE_LOCAL_BUILD
-
-#define DEBUG_PLATFORM_LOG(name) void name(char *buff)
-typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
 
 typedef struct DEBUG_file
 {

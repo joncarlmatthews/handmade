@@ -22,13 +22,17 @@
     <ClInclude Include="audio.h" />
     <ClInclude Include="filesystem.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="global_macros.h" />
     <ClInclude Include="graphics.h" />
+    <ClInclude Include="intrinsics.h" />
     <ClInclude Include="memory.h" />
+    <ClInclude Include="global.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="tilemap.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
+    <ClInclude Include="utility_shared.h" />
     <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
@@ -36,10 +40,12 @@
     <ClCompile Include="filesystem.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="graphics.cpp" />
+    <ClCompile Include="intrinsics.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="tilemap.cpp" />
     <ClCompile Include="utility.cpp" />
+    <ClCompile Include="utility_shared.cpp" />
     <ClCompile Include="world.cpp" />
   </ItemGroup>
   <ItemGroup>

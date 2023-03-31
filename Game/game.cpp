@@ -455,8 +455,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     { 0.301f, 0.156f, 0.0f });
 
     writeBitmap(frameBuffer,
-                50,
-                200,
+                gameState->player1.fixedPosition.x,
+                gameState->player1.fixedPosition.y,
                 gameState->tempBitmapFile.widthPx,
                 gameState->tempBitmapFile.heightPx,
                 gameState->tempBitmapFile);

@@ -2,6 +2,7 @@
 #define HEADER_HH_PLAYER
 
 #include "types.h"
+#include "utility.h"
 #include "world.h"
 
 //

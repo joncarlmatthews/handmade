@@ -1,3 +1,4 @@
+#include "graphics.h"
 #include "game.h"
 
 void writeRectangle(GameFrameBuffer *buffer,
@@ -105,11 +106,11 @@ void writeRectangle(GameFrameBuffer *buffer,
  * @param bytes 
 */
 void writeBitmap(GameFrameBuffer *buffer,
-                int64 xOffset,
-                int64 yOffset,
-                int64 width,
-                int64 height,
-                BitmapFile bitmapFile)
+                    int64 xOffset,
+                    int64 yOffset,
+                    int64 width,
+                    int64 height,
+                    BitmapFile bitmapFile)
 {
     int64 originalXOffset = xOffset;
     int64 originalYOffset = yOffset;
@@ -184,6 +185,26 @@ void writeBitmap(GameFrameBuffer *buffer,
         imagePixel = (imagePixel + ((originalYOffset*-1) * originalWidth));
     }
 
+    bitScanResult redShift = intrinBitScanForward(bitmapFile.redMask);
+    if (!redShift.found){
+        assert(!"Error finding red mask bit shift");
+    }
+
+    bitScanResult greenShift = intrinBitScanForward(bitmapFile.greenMask);
+    if (!greenShift.found){
+        assert(!"Error finding green mask bit shift");
+    }
+
+    bitScanResult blueShift = intrinBitScanForward(bitmapFile.blueMask);
+    if (!blueShift.found){
+        assert(!"Error finding blue mask bit shift");
+    }
+
+    bitScanResult alphaShift = intrinBitScanForward(bitmapFile.alphaMask);
+    if (!alphaShift.found){
+        assert(!"Error finding alpha mask bit shift");
+    }
+
     // Up (rows) y
     for (int64 y = 0; y < height; y++) {
 
@@ -191,19 +212,37 @@ void writeBitmap(GameFrameBuffer *buffer,
         uint32 *pixel = (uint32*)row;
         for (int64 x = 0; x < width; x++) {
 
-            // Re order the bytes
-            uint8 red       = ((*imagePixel & bitmapFile.redMask) >> getShiftFromMask(bitmapFile.redMask) & 0xFF);
-            uint8 green     = ((*imagePixel & bitmapFile.greenMask) >> getShiftFromMask(bitmapFile.greenMask) & 0xFF);
-            uint8 blue      = ((*imagePixel & bitmapFile.blueMask) >> getShiftFromMask(bitmapFile.blueMask) & 0xFF);
-            uint8 alpha     = ((*imagePixel & bitmapFile.alphaMask) >> getShiftFromMask(bitmapFile.alphaMask) & 0xFF);
+            // Extract RGBA values from bitmap.
+            uint8 red       = (((*imagePixel & bitmapFile.redMask) >> redShift.index) & 0xFF);
+            uint8 green     = (((*imagePixel & bitmapFile.greenMask) >> greenShift.index) & 0xFF);
+            uint8 blue      = (((*imagePixel & bitmapFile.blueMask) >> blueShift.index) & 0xFF);
+            uint8 alpha     = (((*imagePixel & bitmapFile.alphaMask) >> alphaShift.index) & 0xFF);
 
+            // Extract RGB values from data that already exists at this location
+            uint8 origRed = ((*pixel >> 16) & 0xFF);
+            uint8 origGreen = ((*pixel >> 8) & 0xFF);
+            uint8 origBlue = ((*pixel >> 0) & 0xFF);
+
+            // Do linear alpha blend
+            float32 alphaf = ((float32)alpha / 255.0f);
+
+            float32 blendedR = ((float32)origRed - ((float32)origRed * alphaf) +
+             ((float32)red * alphaf));
+            float32 blendedG = ((float32)origGreen - ((float32)origGreen * alphaf) +
+            ((float32)green * alphaf));
+            float32 blendedB = ((float32)origBlue - ((float32)origBlue * alphaf) +
+             ((float32)blue * alphaf));
+
+            // Re order the bytes into order we need
             uint32 packed = 0;
-            packed |= blue;
-            packed |= green << 8;
-            packed |= red << 16;
-            packed |= alpha << 24;
+            packed |= (uint32)blendedB;
+            packed |= (uint32)blendedG << 8;
+            packed |= (uint32)blendedR << 16;
+            //packed |= alpha << 24; // We're not actually using the alpha channel yet
 
-            *pixel++ = packed;
+            *pixel = packed;
+
+            pixel++;
             imagePixel++;
         }
 

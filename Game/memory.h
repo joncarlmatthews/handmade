@@ -1,6 +1,7 @@
 #ifndef HEADER_HH_MEMORY
 #define HEADER_HH_MEMORY
 
+#include "global_macros.h"
 #include "types.h"
 
 /**
