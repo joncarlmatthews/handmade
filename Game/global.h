@@ -2,7 +2,7 @@
 #define HEADER_HH_PLATFORM
 
 //
-// platform.h
+// global.h
 //====================================================
 // Game setup definitions that are required for both the game layer and the
 // platform layer to have access to. This file should be considered the root

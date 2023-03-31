@@ -26,7 +26,7 @@
     <ClInclude Include="graphics.h" />
     <ClInclude Include="intrinsics.h" />
     <ClInclude Include="memory.h" />
-    <ClInclude Include="platform.h" />
+    <ClInclude Include="global.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="tilemap.h" />

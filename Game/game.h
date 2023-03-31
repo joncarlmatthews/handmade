@@ -10,7 +10,7 @@
 
 #include "global_macros.h"
 #include "types.h"
-#include "platform.h"
+#include "global.h"
 #include "intrinsics.h"
 #include "utility_shared.h"
 #include "utility.h"
