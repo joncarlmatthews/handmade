@@ -11,19 +11,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-#ifdef HANDMADE_LOCAL_BUILD
-
-        BitmapFile bitmapFile = {0};
-        DEBUGReadBMP(thread,
-                        memory->DEBUG_platformReadEntireFile,
-                        memory->platformAbsPath,
-                        "data\\test\\test_hero_front_head.bmp",
-                        &bitmapFile);
-
-        gameState->tempBitmapFile = bitmapFile;
-
-#endif
-
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
 
@@ -84,6 +71,89 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data
         setWorldPosition(gameState, frameBuffer);
+
+#ifdef HANDMADE_LOCAL_BUILD
+
+        // Load the player's bitmaps...
+        gameState->player1.currentBitmapIndex = 0;
+        
+        // Back
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_back_head.bmp",
+                        &gameState->player1.bitmaps[0].head);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_back_cape.bmp",
+                        &gameState->player1.bitmaps[0].cape);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_torso.bmp",
+                        &gameState->player1.bitmaps[0].torso);
+
+        // Right
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_right_head.bmp",
+                        &gameState->player1.bitmaps[1].head);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_right_cape.bmp",
+                        &gameState->player1.bitmaps[1].cape);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_right_torso.bmp",
+                        &gameState->player1.bitmaps[1].torso);
+
+        // Front
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_head.bmp",
+                        &gameState->player1.bitmaps[2].head);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_cape.bmp",
+                        &gameState->player1.bitmaps[2].cape);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_torso.bmp",
+                        &gameState->player1.bitmaps[2].torso);
+
+        // Left
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_left_head.bmp",
+                        &gameState->player1.bitmaps[3].head);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_left_cape.bmp",
+                        &gameState->player1.bitmaps[3].cape);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_left_torso.bmp",
+                        &gameState->player1.bitmaps[3].torso);
+
+#endif
 
         // Spam some tile values into the tilemap...      
         World world         = gameState->world;
@@ -454,12 +524,28 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     gameState->player1.heightPx,
                     { 0.301f, 0.156f, 0.0f });
 
+    PlayerBitmap playerBitmap = gameState->player1.bitmaps[gameState->player1.currentBitmapIndex];
+
     writeBitmap(frameBuffer,
                 gameState->player1.fixedPosition.x,
                 gameState->player1.fixedPosition.y,
-                gameState->tempBitmapFile.widthPx,
-                gameState->tempBitmapFile.heightPx,
-                gameState->tempBitmapFile);
+                playerBitmap.torso.widthPx,
+                playerBitmap.torso.heightPx,
+                playerBitmap.torso);
+
+    writeBitmap(frameBuffer,
+                gameState->player1.fixedPosition.x,
+                gameState->player1.fixedPosition.y,
+                playerBitmap.cape.widthPx,
+                playerBitmap.cape.heightPx,
+                playerBitmap.cape);
+
+    writeBitmap(frameBuffer,
+                gameState->player1.fixedPosition.x,
+                gameState->player1.fixedPosition.y,
+                playerBitmap.head.widthPx,
+                playerBitmap.head.heightPx,
+                playerBitmap.head);
 
 #if 0
     // Mouse input testing

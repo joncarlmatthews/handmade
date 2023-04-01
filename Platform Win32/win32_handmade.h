@@ -1,7 +1,7 @@
 #ifndef HEADER_WIN32
 #define HEADER_WIN32
 
-#define TARGET_FPS 60
+#define TARGET_FPS 30
 
 #define FRAME_RATE_CAP_MODE_SPIN_LOCK   0x1
 #define FRAME_RATE_CAP_MODE_SLEEP       0x2

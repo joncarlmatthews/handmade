@@ -1,4 +1,7 @@
 Day 038:
+ -x Draw torso, head, cape for player
+ -x Draw bitmap relevant to player direction
+ -x Bitmap draw offset x and y to align with game position 
 
 
 Ongoing:

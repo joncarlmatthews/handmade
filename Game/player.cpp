@@ -49,15 +49,19 @@ pixelsPerFrame);
     if (controller.dPadLeft.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.x += (int32)(pixelsPerFrame * -1.0f);
+        gameState->player1.currentBitmapIndex = 3;
     }else if (controller.dPadRight.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.x += (int32)pixelsPerFrame;
+        gameState->player1.currentBitmapIndex = 1;
     }else if (controller.dPadUp.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.y += (int32)pixelsPerFrame;
+        gameState->player1.currentBitmapIndex = 0;
     }else if (controller.dPadDown.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
+        gameState->player1.currentBitmapIndex = 2;
     }
 
     if (controller.up.endedDown) {

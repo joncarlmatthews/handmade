@@ -4,6 +4,7 @@
 #include "types.h"
 #include "utility.h"
 #include "world.h"
+#include "filesystem.h"
 
 //
 // Player
@@ -17,13 +18,19 @@
 //#define PLAYER_SPEED 3.57632f
 #define PLAYER_SPEED 20.0f
 
+typedef struct PlayerBitmap {
+    BitmapFile torso;
+    BitmapFile head;
+    BitmapFile cape;
+} PlayerBitmap;
+
 typedef struct Player {
     // Pixel position in relation to the entire tilemap.
     // This is the starting position that the player is drawn from (bottom left).
     xyuint absolutePosition;
 
     // The pixel position of where we consider the player to be. Which isnt
-    // necessarily the bottom left.
+    // necessarily the bottom left (which is where we start drawing from).
     xyuint gamePosition;
 
     // Which tilemap z-plane is the player on?
@@ -35,6 +42,9 @@ typedef struct Player {
 
     // Last direction the player moved in (up, down, left, right)
     uint32 lastMoveDirections;
+
+    PlayerBitmap bitmaps[4];
+    uint32 currentBitmapIndex;
 
     float32 heightMeters;
     float32 widthMeters;

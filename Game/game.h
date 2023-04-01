@@ -63,8 +63,6 @@ typedef struct GameState
     // absolute position
     TilemapPosition worldPosition;
 
-    BitmapFile tempBitmapFile;
-
     SineWave sineWave;
 
 } GameState;
