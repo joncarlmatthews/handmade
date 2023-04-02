@@ -1,7 +1,4 @@
 Day 038:
- -x Draw torso, head, cape for player
- -x Draw bitmap relevant to player direction
- -x Bitmap draw offset x and y to align with game position 
 
 
 Ongoing:
@@ -12,3 +9,4 @@ Ongoing:
  -x Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
  -x deprecate math.h
  -x Move sub-includes from .h into .cpp
+ -x Support for drawing bitmap at different size to that of the original asset

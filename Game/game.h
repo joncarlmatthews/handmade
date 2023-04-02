@@ -23,7 +23,7 @@
 #include "tilemap.h"
 #include "player.h"
 
-#if HANDMADE_DEBUG
+#ifdef HANDMADE_DEBUG_TILE_POS
 
 // Common input/output operations.
 // Defines: sprintf_s

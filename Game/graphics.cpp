@@ -110,8 +110,24 @@ void writeBitmap(GameFrameBuffer *buffer,
                     int64 yOffset,
                     int64 width,
                     int64 height,
+                    int64 alignX,
+                    int64 alignY,
                     BitmapFile bitmapFile)
 {
+    if (alignX < 0) {
+        xOffset = (xOffset - (alignX * -1));
+    }
+    else if (alignX > 0) {
+        xOffset = (xOffset + alignX);
+    }
+
+    if (alignY < 0) {
+        yOffset = (yOffset - (alignY * -1));
+    }
+    else if (alignY > 0) {
+        yOffset = (yOffset + alignY);
+    }
+
     int64 originalXOffset = xOffset;
     int64 originalYOffset = yOffset;
     int64 originalWidth = width;

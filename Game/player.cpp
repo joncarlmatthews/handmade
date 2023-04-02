@@ -160,12 +160,15 @@ pixelsPerFrame);
 Plr Proposed World Pos: x:%i y:%i. \
 Plr Proposed World Tile: x:%i y:%i. \
 Plr Actual World Pos: x:%i y:%i. \
+Plr Game Pos: x:%i y:%i. \
 playerNewPos.x,
 playerNewPos.y,
 debugPoint.activeTile.tileIndex.x,
 debugPoint.activeTile.tileIndex.y,
 gameState->player1.absolutePosition.x,
-gameState->player1.absolutePosition.y);
+gameState->player1.absolutePosition.y,
+gameState->player1.gamePosition.x,
+gameState->player1.gamePosition.y);
             memory->DEBUG_platformLog(buff);
 #endif
 #endif

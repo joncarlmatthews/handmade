@@ -63,8 +63,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Initial character starting position. Start the player in the middle
         // of screen
-        gameState->player1.absolutePosition.x = 280;
-        gameState->player1.absolutePosition.y = 280;
+        gameState->player1.absolutePosition.x = 41;
+        gameState->player1.absolutePosition.y = 41;
         gameState->player1.zIndex = 0;
         setPlayerGamePosition(gameState, frameBuffer);
 
@@ -531,13 +531,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 gameState->player1.fixedPosition.y,
                 playerBitmap.torso.widthPx,
                 playerBitmap.torso.heightPx,
+                -62,
+                -34,
                 playerBitmap.torso);
 
     writeBitmap(frameBuffer,
-                gameState->player1.fixedPosition.x,
+               gameState->player1.fixedPosition.x,
                 gameState->player1.fixedPosition.y,
                 playerBitmap.cape.widthPx,
                 playerBitmap.cape.heightPx,
+                -62,
+                -34,
                 playerBitmap.cape);
 
     writeBitmap(frameBuffer,
@@ -545,6 +549,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 gameState->player1.fixedPosition.y,
                 playerBitmap.head.widthPx,
                 playerBitmap.head.heightPx,
+                -62,
+                -34,
                 playerBitmap.head);
 
 #if 0

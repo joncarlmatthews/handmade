@@ -45,7 +45,6 @@ assert(!"only 1 target compiler can be specified")
 #if HANDMADE_LOCAL_BUILD
 
 // Flags:
-// #define HANDMADE_DEBUG
 // #define HANDMADE_DEBUG_FPS
 // #define HANDMADE_DEBUG_CLOCKCYCLES
 // #define HANDMADE_DEBUG_AUDIO

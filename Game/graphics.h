@@ -30,6 +30,8 @@ void writeBitmap(GameFrameBuffer *buffer,
                     int64 yOffset,
                     int64 width,
                     int64 height,
+                    int64 alignX,
+                    int64 alignY,
                     BitmapFile bitmapFile);
 
 #endif
