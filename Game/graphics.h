@@ -25,6 +25,18 @@ void writeRectangle(GameFrameBuffer *buffer,
                     int64 height,
                     Colour colour);
 
+/**
+ * Writes a bitmap into a frame buffer. Supports alpha blending.
+ *
+ * @param buffer        Frame back buffer
+ * @param xOffset       x coordinate to start drawing the bitmap from
+ * @param yOffset       y coordinate to start drawing the bitmap from
+ * @param width         Width to draw the bitmap at
+ * @param height        Height to draw the bitmap at
+ * @param alignX        Move the bitmap N number of pixels left/right on the x axis
+ * @param alignY        Move the bitmap N number of pixels up/down on the y axis
+ * @param bitmapFile    The BitmapFile object
+*/
 void writeBitmap(GameFrameBuffer *buffer,
                     int64 xOffset,
                     int64 yOffset,

@@ -500,12 +500,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             Colour pixelColour = {};
             setTileColour(&pixelColour, *tileValue);
 
+#ifdef HANDMADE_DEBUG_TILE_POS
             if (tileIndex.x == gameState->worldPosition.tileIndex.x
                 && tileIndex.y == gameState->worldPosition.tileIndex.y) {
                 pixelColour.r = 0.0f;
                 pixelColour.g = 1.0f;
                 pixelColour.b = 0.0f;
             }
+#endif
 
             writeRectangle(frameBuffer,
                             startPixelPos.x,
@@ -517,13 +519,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
 
     // Draw player
-    writeRectangle(frameBuffer,
-                    gameState->player1.fixedPosition.x,
-                    gameState->player1.fixedPosition.y,
-                    gameState->player1.widthPx,
-                    gameState->player1.heightPx,
-                    { 0.301f, 0.156f, 0.0f });
-
     PlayerBitmap playerBitmap = gameState->player1.bitmaps[gameState->player1.currentBitmapIndex];
 
     writeBitmap(frameBuffer,

@@ -211,12 +211,14 @@ Abs Tile Index x:%i y:%i. \
 Chunk Index x:%i y:%i. \
 Chunk Rel Tile index x:%i y:%i. \
 Tile Rel Pos x:%i y:%i. \
+Screen x:%i y:%i. \
 \n",
 gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
 gameState->worldPosition.tileIndex.x, gameState->worldPosition.tileIndex.y,
 gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
 gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chunkRelativeTileIndex.y,
-gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRelativePixelPos.y
+gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRelativePixelPos.y,
+gameState->worldPosition.screenIndex.x, gameState->worldPosition.screenIndex.y
 );
                 memory->DEBUG_platformLog(buff);
 #endif

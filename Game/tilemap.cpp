@@ -106,6 +106,9 @@ void setTilemapPositionData(TilemapPosition *tilemapPosition,
     tile += (chunkRelativeTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelativeTileIndex.x;
     tilemapPosition->activeTile = tile;
 
+    tilemapPosition->screenIndex.x = (absPixelX / FRAME_BUFFER_PIXEL_WIDTH);
+    tilemapPosition->screenIndex.y = (absPixelY / FRAME_BUFFER_PIXEL_HEIGHT);
+
     return;
 }
 

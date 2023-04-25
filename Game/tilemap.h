@@ -100,6 +100,8 @@ typedef struct TilemapPosition
 
     uint32 *activeTile;
 
+    xyuint screenIndex;
+
 } TilemapPosition;
 
 typedef struct World World;

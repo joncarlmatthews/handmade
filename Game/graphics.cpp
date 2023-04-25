@@ -91,19 +91,22 @@ void writeRectangle(GameFrameBuffer *buffer,
     }
 }
 
-// 
-
 /**
- * Byte order: AA RR GG BB (in little endian)
- * Image rows are in bottom-up order
- * Only supports 32-bit aligned bytes
+ * Writes a bitmap into a frame buffer. Implements linear alpha blending by
+ * blending with pixel data that exists directly below where the bitmap is
+ * writting to.
  * 
- * @param buffer 
- * @param xOffset 
- * @param yOffset 
- * @param width 
- * @param height 
- * @param bytes 
+ * - Image rows are in bottom-up order
+ *  -Only supports 32-bit aligned bytes
+ * 
+ * @param buffer        Frame back buffer
+ * @param xOffset       x coordinate to start drawing the bitmap from
+ * @param yOffset       y coordinate to start drawing the bitmap from
+ * @param width         Width to draw the bitmap at
+ * @param height        Height to draw the bitmap at
+ * @param alignX        Adjust the bitmap N number of pixels left/right on the x axis
+ * @param alignY        Adjust the bitmap N number of pixels up/down on the y axis
+ * @param bitmapFile    The BitmapFile object
 */
 void writeBitmap(GameFrameBuffer *buffer,
                     int64 xOffset,
@@ -201,6 +204,7 @@ void writeBitmap(GameFrameBuffer *buffer,
         imagePixel = (imagePixel + ((originalYOffset*-1) * originalWidth));
     }
 
+    // Fetch the RGBA shifts from the bitmap's masks...
     bitScanResult redShift = intrinBitScanForward(bitmapFile.redMask);
     if (!redShift.found){
         assert(!"Error finding red mask bit shift");
@@ -254,7 +258,7 @@ void writeBitmap(GameFrameBuffer *buffer,
             packed |= (uint32)blendedB;
             packed |= (uint32)blendedG << 8;
             packed |= (uint32)blendedR << 16;
-            //packed |= alpha << 24; // We're not actually using the alpha channel yet
+            //packed |= alpha << 24; // We're not actually using the alpha channel yet when we blit to screen
 
             *pixel = packed;
 

@@ -1,5 +1,5 @@
 Day 038:
-
+ - Remove background scrolling and move the camera per room. Make toggleable via a macro switch
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?
