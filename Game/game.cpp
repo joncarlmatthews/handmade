@@ -72,6 +72,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         // write it to the World Position data
         setWorldPosition(gameState, frameBuffer);
 
+        setCameraPosition(gameState, frameBuffer);
+
 #ifdef HANDMADE_LOCAL_BUILD
 
         // Load the player's bitmaps...
@@ -564,6 +566,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     frameBufferWriteAudioDebug(gameState, frameBuffer, audioBuffer);
 #endif
 
+}
+
+void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
+{
+    uint32 indexX = (gameState->player1.absolutePosition.x / frameBuffer->widthPx);
+    uint32 cameraPosX = (frameBuffer->widthPx / 2) + (indexX * frameBuffer->widthPx);
+
+    uint32 indexY = (gameState->player1.absolutePosition.y / frameBuffer->heightPx);
+    uint32 cameraPosY = (frameBuffer->heightPx / 2) + (indexY * frameBuffer->heightPx);
+
+    gameState->cameraPosition.x = cameraPosX;
+    gameState->cameraPosition.y = cameraPosY;
 }
 
 EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)

@@ -63,8 +63,12 @@ typedef struct GameState
     // absolute position
     TilemapPosition worldPosition;
 
+    xyuint cameraPosition;
+
     SineWave sineWave;
 
 } GameState;
+
+void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer);
 
 #endif
