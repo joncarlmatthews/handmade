@@ -33,6 +33,7 @@ typedef struct Player {
     // necessarily the bottom left (which is where we start drawing from).
     xyuint gamePosition;
 
+    // The absolute position normalised so it's relative to the screen.
     xyuint canonicalAbsolutePosition;
 
     // Which tilemap z-plane is the player on?
