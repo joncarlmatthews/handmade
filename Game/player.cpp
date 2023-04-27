@@ -181,11 +181,13 @@ gameState->player1.gamePosition.y);
             if ( (gameState->player1.absolutePosition.x != playerNewPos.x)
                 || (gameState->player1.absolutePosition.y != playerNewPos.y) ){
 
-                gameState->player1.absolutePosition.x = playerNewPos.x;
-                gameState->player1.absolutePosition.y = playerNewPos.y;
                 gameState->player1.lastMoveDirections = lastMoveDirections;
 
-                setPlayerGamePosition(gameState, frameBuffer);
+                setPlayerPosition(playerNewPos.x,
+                                    playerNewPos.y,
+                                    gameState->player1.zIndex,
+                                    gameState,
+                                    frameBuffer);
 
                 bool switchedTile = playerHasSwitchedActiveTile(gameState);
 
@@ -292,8 +294,15 @@ gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRe
  * @param gameState 
  * @return 
 */
-void setPlayerGamePosition(GameState *gameState, GameFrameBuffer *frameBuffer)
+void setPlayerPosition(uint32 absX, uint32 absY, uint32 zIndex, GameState *gameState, GameFrameBuffer *frameBuffer)
 {
+    gameState->player1.absolutePosition.x = absX;
+    gameState->player1.absolutePosition.y = absY;
+    gameState->player1.zIndex = zIndex;
+
+    gameState->player1.canonicalAbsolutePosition.x = (absX % frameBuffer->widthPx);
+    gameState->player1.canonicalAbsolutePosition.y = (absY % frameBuffer->heightPx);
+
     // Consider the game position as the bottom middle. With a small inset up
     // from the bottom
     uint32 offsetX = (gameState->player1.widthPx / 2);

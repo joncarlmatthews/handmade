@@ -33,6 +33,8 @@ typedef struct Player {
     // necessarily the bottom left (which is where we start drawing from).
     xyuint gamePosition;
 
+    xyuint canonicalAbsolutePosition;
+
     // Which tilemap z-plane is the player on?
     uint32 zIndex;
 
@@ -103,7 +105,7 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
 typedef struct GameState GameState;
 typedef struct GameFrameBuffer GameFrameBuffer;
 typedef struct GameAudioBuffer GameAudioBuffer;
-void setPlayerGamePosition(GameState *gameState, GameFrameBuffer *frameBuffer);
+void setPlayerPosition(uint32 absX, uint32 absY, uint32 zIndex, GameState *gameState, GameFrameBuffer *frameBuffer);
 
 typedef struct GameMemory GameMemory;
 typedef struct GameInput GameInput;

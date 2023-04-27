@@ -63,10 +63,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Initial character starting position. Start the player in the middle
         // of screen
-        gameState->player1.absolutePosition.x = 41;
-        gameState->player1.absolutePosition.y = 41;
-        gameState->player1.zIndex = 0;
-        setPlayerGamePosition(gameState, frameBuffer);
+        setPlayerPosition(41, 41, 0, gameState, frameBuffer);
 
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data
@@ -428,9 +425,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     uint32 absTileIndexZ = gameState->player1.zIndex;
 
+#if SCROLL_TYPE == SCROLL_TYPE_SMOOTH
     xyzuint centerTileIndex = gameState->worldPosition.tileIndex;
-
     xyuint tileRelPos = gameState->worldPosition.tileRelativePixelPos;
+#elif SCROLL_TYPE == SCROLL_TYPE_SCREEN
+    xyzuint centerTileIndex = gameState->cameraPosition.tileIndex;
+    xyuint tileRelPos = gameState->cameraPosition.tileRelativePixelPos;
+#endif
 
     // Center tile start x and y
     xyuint centerTileStart = {};
@@ -523,9 +524,15 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Draw player
     PlayerBitmap playerBitmap = gameState->player1.bitmaps[gameState->player1.currentBitmapIndex];
 
+#if SCROLL_TYPE == SCROLL_TYPE_SMOOTH
+    xyuint playerPositionData = gameState->player1.fixedPosition;
+#elif SCROLL_TYPE == SCROLL_TYPE_SCREEN
+    xyuint playerPositionData = gameState->player1.canonicalAbsolutePosition;
+#endif
+
     writeBitmap(frameBuffer,
-                gameState->player1.fixedPosition.x,
-                gameState->player1.fixedPosition.y,
+                playerPositionData.x,
+                playerPositionData.y,
                 playerBitmap.torso.widthPx,
                 playerBitmap.torso.heightPx,
                 -62,
@@ -533,8 +540,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.torso);
 
     writeBitmap(frameBuffer,
-               gameState->player1.fixedPosition.x,
-                gameState->player1.fixedPosition.y,
+                playerPositionData.x,
+                playerPositionData.y,
                 playerBitmap.cape.widthPx,
                 playerBitmap.cape.heightPx,
                 -62,
@@ -542,8 +549,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.cape);
 
     writeBitmap(frameBuffer,
-                gameState->player1.fixedPosition.x,
-                gameState->player1.fixedPosition.y,
+                playerPositionData.x,
+                playerPositionData.y,
                 playerBitmap.head.widthPx,
                 playerBitmap.head.heightPx,
                 -62,
@@ -576,8 +583,14 @@ void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
     uint32 indexY = (gameState->player1.absolutePosition.y / frameBuffer->heightPx);
     uint32 cameraPosY = (frameBuffer->heightPx / 2) + (indexY * frameBuffer->heightPx);
 
-    gameState->cameraPosition.x = cameraPosX;
-    gameState->cameraPosition.y = cameraPosY;
+    gameState->cameraPosition.absPixelPos.x = cameraPosX;
+    gameState->cameraPosition.absPixelPos.y = cameraPosY;
+
+    setTilemapPositionData(&gameState->cameraPosition,
+                            cameraPosX,
+                            cameraPosY,
+                            gameState->player1.zIndex,
+                            gameState->world.tilemap);
 }
 
 EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
