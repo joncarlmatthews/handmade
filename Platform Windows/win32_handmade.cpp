@@ -40,6 +40,8 @@ typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, L
 // in all places in the plarform layer.
 global_var int64 globalQPCFrequency;
 
+global_var WINDOWPLACEMENT g_wpPrev = { sizeof(g_wpPrev) };
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -75,6 +77,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Instance of the running application.
     windowClass.hInstance = instance;
     windowClass.lpszClassName = TEXT("handmadeHeroWindowClass");
+    windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+#ifdef HANDMADE_LOCAL_BUILD
+    ShowCursor(FALSE);
+#else
+    ShowCursor(FALSE);
+#endif
 
     // Registers the window class for subsequent use in calls to 
     // the CreateWindowEx function.
@@ -88,7 +96,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Physically open the window using CreateWindowEx. (WS_EX_TOPMOST is
     // handy to have the game window not disappear behind Visual Studio dialogs when debugging
     DWORD windowStyle = NULL;
-    //windowStyle = WS_EX_TOPMOST;
+
     HWND window = CreateWindowEx(windowStyle,
                                     windowClass.lpszClassName,
                                     TEXT("Handmade Hero"),
@@ -119,6 +127,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // Create a Win32 state object to hold persistent data for the platform layer.
     Win32State win32State = { 0 };
+
+    win32State.window = &window;
 
 #if HANDMADE_LOCAL_BUILD
     win32State.inputRecording = 0;
@@ -153,6 +163,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Init game memory
     GameMemory memory = {0};
 
+    memory.platformStateWindows = &win32State;
+    memory.platformStateMacOS = NULL;
+    memory.platformStateLinux = NULL;
+
     memory.permanentStorage.bytes = platformMemory;
     memory.permanentStorage.sizeInBytes = permanentStorageSizeInBytes;
     memory.permanentStorage.bytesUsed = 0;
@@ -166,6 +180,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformAllocateMemory = &platformAllocateMemory;
     memory.platformFreeMemory = &platformFreeMemory;
     memory.platformControllerVibrate = &platformControllerVibrate;
+    memory.platformToggleFullscreen = &platformToggleFullscreen;
 
     size_t len;
     if (wcstombs_s(&len, memory.platformAbsPath, sizeof(memory.platformAbsPath), absPath, wcslen(absPath)) != 0) {
@@ -279,6 +294,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Get the number of processor clock cycles
         uint64 runningProcessorClockCyclesCounter = __rdtsc();
 #endif
+
+        PostMessage(window, WM_HANDMADE_HERO_READY, 0, 0);
 
         /**
          * MAIN GAME LOOP
@@ -566,6 +583,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Main game code.
             if (gameCode.gameUpdate){ // C6011 NULL pointer warning
                 gameCode.gameUpdate(&thread,
+                                    (void *)&win32State,
+                                    NULL,
+                                    NULL,
                                     &memory,
                                     &gameFrameBuffer,
                                     &gameAudioBuffer,
@@ -1310,6 +1330,10 @@ internal_func void win32ProcessMessages(HWND window,
                         state.wasDown = oldGameInput.controllers[0].shoulderR1.endedDown;
                         gameInput->controllers[0].shoulderR1 = state;
                     } break;
+                    case 'F': {
+                        state.wasDown = oldGameInput.controllers[0].option1.endedDown;
+                        gameInput->controllers[0].option1 = state;
+                    } break;
                     case VK_UP: {
                         state.wasDown = oldGameInput.controllers[0].up.endedDown;
                         gameInput->controllers[0].up = state;
@@ -1674,6 +1698,38 @@ PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory)
 PLATFORM_FREE_MEMORY(platformFreeMemory)
 {
     VirtualFree(address, 0, MEM_RELEASE);
+}
+
+PLATFORM_TOGGLE_FULLSCREEN(platformToggleFullscreen)
+{
+    Win32State *state = (Win32State *)platformStateWindows;
+    HWND window = *state->window;
+
+    // Go full screen. Credit Raymond Chen
+    // @link https://devblogs.microsoft.com/oldnewthing/20100412-00/?p=14353
+
+    DWORD dwStyle = GetWindowLong(window, GWL_STYLE);
+    if (dwStyle & WS_OVERLAPPEDWINDOW) {
+        MONITORINFO mi = { sizeof(mi) };
+        if (GetWindowPlacement(window, &g_wpPrev) &&
+            GetMonitorInfo(MonitorFromWindow(window,
+                MONITOR_DEFAULTTOPRIMARY), &mi)) {
+            SetWindowLong(window, GWL_STYLE,
+                          dwStyle & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(window, HWND_TOP,
+                         mi.rcMonitor.left, mi.rcMonitor.top,
+                         mi.rcMonitor.right - mi.rcMonitor.left,
+                         mi.rcMonitor.bottom - mi.rcMonitor.top,
+                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        }
+    } else {
+        SetWindowLong(window, GWL_STYLE,
+                      dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(window, &g_wpPrev);
+        SetWindowPos(window, NULL, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+    }
 }
 
 PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)

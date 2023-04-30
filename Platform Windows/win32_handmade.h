@@ -6,6 +6,10 @@
 #define FRAME_RATE_CAP_MODE_SPIN_LOCK   0x1
 #define FRAME_RATE_CAP_MODE_SLEEP       0x2
 
+// Custom message ID for sending to the window when we consider
+// the app ready.
+#define WM_HANDMADE_HERO_READY (WM_APP + 1)
+
 /**
  * Struct for the Win32 screen buffer
  */
@@ -117,6 +121,8 @@ typedef struct Win32State
     uint64 gameMemorySize;
     void *gameMemory;
 
+    HWND *window;
+
 #if HANDMADE_LOCAL_BUILD
     void *gameMemoryRecordedState;
     void *gameMemoryRecordedInput;
@@ -216,6 +222,7 @@ internal_func void win32GetMousePosition(HWND window, GameMouseInput* mouseInput
 //===========================================
 PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory);
 PLATFORM_FREE_MEMORY(platformFreeMemory);
+PLATFORM_TOGGLE_FULLSCREEN(platformToggleFullscreen);
 PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate);
 
 #if HANDMADE_LOCAL_BUILD
