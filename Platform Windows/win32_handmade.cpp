@@ -1079,7 +1079,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
 
     win32AudioBuffer->bufferSuccessfulyCreated = TRUE;
 
-#if defined(HANDMADE_DEBUG)
+#if defined(HANDMADE_DEBUG_AUDIO)
     OutputDebugStringA("Primary & secondary successfully buffer created\n");
 #endif
 }

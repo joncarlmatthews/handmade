@@ -8,6 +8,16 @@
 // Definitons that both the game layer and the platform layer need access to
 // should reside in platform.h
 
+// Scroll type
+#define SCROLL_TYPE_SMOOTH 1
+#define SCROLL_TYPE_SCREEN 2
+
+#define SCROLL_TYPE SCROLL_TYPE_SCREEN
+
+#if (SCROLL_TYPE != SCROLL_TYPE_SMOOTH && SCROLL_TYPE != SCROLL_TYPE_SCREEN)
+#error "Invalid SCROLL_TYPE value"
+#endif
+
 #include "global_macros.h"
 #include "types.h"
 #include "global.h"
@@ -23,7 +33,7 @@
 #include "tilemap.h"
 #include "player.h"
 
-#if HANDMADE_DEBUG
+#ifdef HANDMADE_DEBUG_TILE_POS
 
 // Common input/output operations.
 // Defines: sprintf_s
@@ -63,10 +73,12 @@ typedef struct GameState
     // absolute position
     TilemapPosition worldPosition;
 
-    BitmapFile tempBitmapFile;
+    TilemapPosition cameraPosition;
 
     SineWave sineWave;
 
 } GameState;
+
+void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer);
 
 #endif

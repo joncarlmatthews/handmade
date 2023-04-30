@@ -28,8 +28,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{271fcad7-a0d8-4d27-85c6-510a29f543db}</ProjectGuid>
-    <RootNamespace>PlatformWin32</RootNamespace>
+    <RootNamespace>PlatformWindows</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Platform Windows</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -78,26 +79,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Win32\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Win32\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\x86\$(Configuration)\</IntDir>
     <TargetName>Handmade Hero</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Win32\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Win32\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\x86\$(Configuration)\</IntDir>
     <TargetName>Handmade Hero</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Win32\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Win32\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>Handmade Hero</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Win32\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Win32\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>Handmade Hero</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

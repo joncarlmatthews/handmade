@@ -118,7 +118,7 @@ void initTilemap(MemoryRegion *memoryRegion,
                     float32 tileDimensionsMeters,
                     GameFrameBuffer *frameBuffer);
 
-void setTilemapPositionData(TilemapPosition *coordinates,
+void setTilemapPositionData(TilemapPosition *tilemapPosition,
                             uint32 pixelX,
                             uint32 pixelY,
                             uint32 zIndex,

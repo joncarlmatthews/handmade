@@ -45,14 +45,13 @@ assert(!"only 1 target compiler can be specified")
 #if HANDMADE_LOCAL_BUILD
 
 // Flags:
-// #define HANDMADE_DEBUG
- #define HANDMADE_DEBUG_FPS
-// #define HANDMADE_DEBUG_CLOCKCYCLES
-// #define HANDMADE_DEBUG_AUDIO
+//#define HANDMADE_DEBUG_FPS
+//#define HANDMADE_DEBUG_CLOCKCYCLES
+//#define HANDMADE_DEBUG_AUDIO
 #define HANDMADE_LIVE_LOOP_EDITING
-// #define HANDMADE_DEBUG_LIVE_LOOP_EDITING
-// #define HANDMADE_DEBUG_TILE_POS
-// #define HANDMADE_WALK_THROUGH_WALLS
+//#define HANDMADE_DEBUG_LIVE_LOOP_EDITING
+//#define HANDMADE_DEBUG_TILE_POS
+//#define HANDMADE_WALK_THROUGH_WALLS
 
 #endif
 
@@ -71,9 +70,16 @@ assert(!"only 1 target compiler can be specified")
 // Return the number of elements in a static array
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-// FHD
-#define FRAME_BUFFER_PIXEL_WIDTH  1920
-#define FRAME_BUFFER_PIXEL_HEIGHT 1080
+// Game resolution
+// @see https://en.wikipedia.org/wiki/Display_resolution
+
+// FHD (16:9)
+//#define FRAME_BUFFER_PIXEL_WIDTH  1920
+//#define FRAME_BUFFER_PIXEL_HEIGHT 1080
+
+// WXGA (16:9)
+#define FRAME_BUFFER_PIXEL_WIDTH  1280
+#define FRAME_BUFFER_PIXEL_HEIGHT 720
 
 // Maximum number of supported controllers
 // 1 keyboard, 4 gamepad controllers.

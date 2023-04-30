@@ -49,15 +49,19 @@ pixelsPerFrame);
     if (controller.dPadLeft.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.x += (int32)(pixelsPerFrame * -1.0f);
+        gameState->player1.currentBitmapIndex = 3;
     }else if (controller.dPadRight.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.x += (int32)pixelsPerFrame;
+        gameState->player1.currentBitmapIndex = 1;
     }else if (controller.dPadUp.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.y += (int32)pixelsPerFrame;
+        gameState->player1.currentBitmapIndex = 0;
     }else if (controller.dPadDown.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
+        gameState->player1.currentBitmapIndex = 2;
     }
 
     if (controller.up.endedDown) {
@@ -156,12 +160,15 @@ pixelsPerFrame);
 Plr Proposed World Pos: x:%i y:%i. \
 Plr Proposed World Tile: x:%i y:%i. \
 Plr Actual World Pos: x:%i y:%i. \
+Plr Game Pos: x:%i y:%i. \
 playerNewPos.x,
 playerNewPos.y,
 debugPoint.activeTile.tileIndex.x,
 debugPoint.activeTile.tileIndex.y,
 gameState->player1.absolutePosition.x,
-gameState->player1.absolutePosition.y);
+gameState->player1.absolutePosition.y,
+gameState->player1.gamePosition.x,
+gameState->player1.gamePosition.y);
             memory->DEBUG_platformLog(buff);
 #endif
 #endif
@@ -174,15 +181,18 @@ gameState->player1.absolutePosition.y);
             if ( (gameState->player1.absolutePosition.x != playerNewPos.x)
                 || (gameState->player1.absolutePosition.y != playerNewPos.y) ){
 
-                gameState->player1.absolutePosition.x = playerNewPos.x;
-                gameState->player1.absolutePosition.y = playerNewPos.y;
                 gameState->player1.lastMoveDirections = lastMoveDirections;
 
-                setPlayerGamePosition(gameState, frameBuffer);
+                setPlayerPosition(playerNewPos.x,
+                                    playerNewPos.y,
+                                    gameState->player1.zIndex,
+                                    gameState,
+                                    frameBuffer);
 
                 bool switchedTile = playerHasSwitchedActiveTile(gameState);
 
                 setWorldPosition(gameState, frameBuffer);
+                setCameraPosition(gameState, frameBuffer);
 
                 if (switchedTile){
                     switch(*gameState->worldPosition.activeTile){
@@ -209,7 +219,7 @@ gameState->player1.absolutePosition.x, gameState->player1.absolutePosition.y,
 gameState->worldPosition.tileIndex.x, gameState->worldPosition.tileIndex.y,
 gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
 gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chunkRelativeTileIndex.y,
-gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRelativePixelPos.y
+gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRelativePixelPos.y,
 );
                 memory->DEBUG_platformLog(buff);
 #endif
@@ -284,8 +294,15 @@ gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRe
  * @param gameState 
  * @return 
 */
-void setPlayerGamePosition(GameState *gameState, GameFrameBuffer *frameBuffer)
+void setPlayerPosition(uint32 absX, uint32 absY, uint32 zIndex, GameState *gameState, GameFrameBuffer *frameBuffer)
 {
+    gameState->player1.absolutePosition.x = absX;
+    gameState->player1.absolutePosition.y = absY;
+    gameState->player1.zIndex = zIndex;
+
+    gameState->player1.canonicalAbsolutePosition.x = (absX % frameBuffer->widthPx);
+    gameState->player1.canonicalAbsolutePosition.y = (absY % frameBuffer->heightPx);
+
     // Consider the game position as the bottom middle. With a small inset up
     // from the bottom
     uint32 offsetX = (gameState->player1.widthPx / 2);

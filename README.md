@@ -1,6 +1,6 @@
 # "Handmade Hero"
 
-Low level game programming in C flavoured C++. No frameworks or libraries are used for the game layer (except `math.h`). Everything written from scratch.
+Low level game & game engine programming in C flavoured C++. No frameworks or libraries are used for the game layer (except `math.h`). Everything written from scratch. Masochist.
 
 ## Current Progress
 
@@ -29,7 +29,7 @@ To develop or build the game's source code first install [Visual Studio Communit
 
 ### Project Structure
 
-There are two distinct parts to the project, the Platform layers and the Game layer. At the time of writing, only the Windows platform layer has been prototyped. The code resides within the `Platform Win32\` directory. Future platform layers will reside in the `Platform Linux\` and `Platform macOS\` directories respectively. All of the game layer code resides within the `Game\` directory. 
+There are two distinct parts to the project, the Platform layers and the Game layer. At the time of writing, only the Windows platform layer has been prototyped. The code resides within the `Platform Windows\` directory. Future platform layers will reside in the `Platform Linux\` and `Platform macOS\` directories respectively. All of the game layer code resides within the `Game\` directory. 
 
 There is a single Visual Studio Solution for the entire codebase. Within the Solution there is a Project for the Windows platform layer and a separate Project for the Game layer. Building the solution compiles both projects. The platform and game layers are built into the same build directory. The platform code is built as an executable and the game code is built as a DLL.
 
@@ -43,11 +43,11 @@ To build and/or run the program whilst developing, use Visual Studio.
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
-All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\Win32\<arch>\<config>\` E.g. `build\Win32\x86\Debug\`, or `build\Win32\x64\Release\`
+All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\Windows\<arch>\<config>\` E.g. `build\Windows\x86\Debug\`, or `build\Windows\x64\Release\`
 
 ### Running the program
 
-To run the executable, open the built .exe binary within the relevant `build\Win32\<arch>\<config>\` directory
+To run the executable, open the built .exe binary within the relevant `build\Windows\<arch>\<config>\` directory
 
 To run the program from directly within Visual Studio, hit **Ctrl** + **F5**.
 

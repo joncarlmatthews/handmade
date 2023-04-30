@@ -11,19 +11,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-#ifdef HANDMADE_LOCAL_BUILD
-
-        BitmapFile bitmapFile = {0};
-        DEBUGReadBMP(thread,
-                        memory->DEBUG_platformReadEntireFile,
-                        memory->platformAbsPath,
-                        "data\\test\\test_hero_front_head.bmp",
-                        &bitmapFile);
-
-        gameState->tempBitmapFile = bitmapFile;
-
-#endif
-
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
 
@@ -76,14 +63,96 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         // Initial character starting position. Start the player in the middle
         // of screen
-        gameState->player1.absolutePosition.x = 280;
-        gameState->player1.absolutePosition.y = 280;
-        gameState->player1.zIndex = 0;
-        setPlayerGamePosition(gameState, frameBuffer);
+        setPlayerPosition(41, 41, 0, gameState, frameBuffer);
 
         // Calculate the currently active tile based on player1's position and
         // write it to the World Position data
         setWorldPosition(gameState, frameBuffer);
+
+        setCameraPosition(gameState, frameBuffer);
+
+#ifdef HANDMADE_LOCAL_BUILD
+
+        // Load the player's bitmaps...
+        gameState->player1.currentBitmapIndex = 0;
+        
+        // Back
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_back_head.bmp",
+                        &gameState->player1.bitmaps[0].head);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_back_cape.bmp",
+                        &gameState->player1.bitmaps[0].cape);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_torso.bmp",
+                        &gameState->player1.bitmaps[0].torso);
+
+        // Right
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_right_head.bmp",
+                        &gameState->player1.bitmaps[1].head);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_right_cape.bmp",
+                        &gameState->player1.bitmaps[1].cape);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_right_torso.bmp",
+                        &gameState->player1.bitmaps[1].torso);
+
+        // Front
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_head.bmp",
+                        &gameState->player1.bitmaps[2].head);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_cape.bmp",
+                        &gameState->player1.bitmaps[2].cape);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_front_torso.bmp",
+                        &gameState->player1.bitmaps[2].torso);
+
+        // Left
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_left_head.bmp",
+                        &gameState->player1.bitmaps[3].head);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_left_cape.bmp",
+                        &gameState->player1.bitmaps[3].cape);
+
+        DEBUGReadBMP(thread,
+                        memory->DEBUG_platformReadEntireFile,
+                        memory->platformAbsPath,
+                        "data\\test\\test_hero_left_torso.bmp",
+                        &gameState->player1.bitmaps[3].torso);
+
+#endif
 
         // Spam some tile values into the tilemap...      
         World world         = gameState->world;
@@ -356,9 +425,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     uint32 absTileIndexZ = gameState->player1.zIndex;
 
+#if SCROLL_TYPE == SCROLL_TYPE_SMOOTH
     xyzuint centerTileIndex = gameState->worldPosition.tileIndex;
-
     xyuint tileRelPos = gameState->worldPosition.tileRelativePixelPos;
+#elif SCROLL_TYPE == SCROLL_TYPE_SCREEN
+    xyzuint centerTileIndex = gameState->cameraPosition.tileIndex;
+    xyuint tileRelPos = gameState->cameraPosition.tileRelativePixelPos;
+#endif
 
     // Center tile start x and y
     xyuint centerTileStart = {};
@@ -430,12 +503,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             Colour pixelColour = {};
             setTileColour(&pixelColour, *tileValue);
 
+#ifdef HANDMADE_DEBUG_TILE_POS
             if (tileIndex.x == gameState->worldPosition.tileIndex.x
                 && tileIndex.y == gameState->worldPosition.tileIndex.y) {
                 pixelColour.r = 0.0f;
                 pixelColour.g = 1.0f;
                 pixelColour.b = 0.0f;
             }
+#endif
 
             writeRectangle(frameBuffer,
                             startPixelPos.x,
@@ -447,19 +522,40 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     }
 
     // Draw player
-    writeRectangle(frameBuffer,
-                    gameState->player1.fixedPosition.x,
-                    gameState->player1.fixedPosition.y,
-                    gameState->player1.widthPx,
-                    gameState->player1.heightPx,
-                    { 0.301f, 0.156f, 0.0f });
+    PlayerBitmap playerBitmap = gameState->player1.bitmaps[gameState->player1.currentBitmapIndex];
+
+#if SCROLL_TYPE == SCROLL_TYPE_SMOOTH
+    xyuint playerPositionData = gameState->player1.fixedPosition;
+#elif SCROLL_TYPE == SCROLL_TYPE_SCREEN
+    xyuint playerPositionData = gameState->player1.canonicalAbsolutePosition;
+#endif
 
     writeBitmap(frameBuffer,
-                gameState->player1.fixedPosition.x,
-                gameState->player1.fixedPosition.y,
-                gameState->tempBitmapFile.widthPx,
-                gameState->tempBitmapFile.heightPx,
-                gameState->tempBitmapFile);
+                playerPositionData.x,
+                playerPositionData.y,
+                playerBitmap.torso.widthPx,
+                playerBitmap.torso.heightPx,
+                -62,
+                -34,
+                playerBitmap.torso);
+
+    writeBitmap(frameBuffer,
+                playerPositionData.x,
+                playerPositionData.y,
+                playerBitmap.cape.widthPx,
+                playerBitmap.cape.heightPx,
+                -62,
+                -34,
+                playerBitmap.cape);
+
+    writeBitmap(frameBuffer,
+                playerPositionData.x,
+                playerPositionData.y,
+                playerBitmap.head.widthPx,
+                playerBitmap.head.heightPx,
+                -62,
+                -34,
+                playerBitmap.head);
 
 #if 0
     // Mouse input testing
@@ -477,6 +573,24 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     frameBufferWriteAudioDebug(gameState, frameBuffer, audioBuffer);
 #endif
 
+}
+
+void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
+{
+    uint32 indexX = (gameState->player1.absolutePosition.x / frameBuffer->widthPx);
+    uint32 cameraPosX = (frameBuffer->widthPx / 2) + (indexX * frameBuffer->widthPx);
+
+    uint32 indexY = (gameState->player1.absolutePosition.y / frameBuffer->heightPx);
+    uint32 cameraPosY = (frameBuffer->heightPx / 2) + (indexY * frameBuffer->heightPx);
+
+    gameState->cameraPosition.absPixelPos.x = cameraPosX;
+    gameState->cameraPosition.absPixelPos.y = cameraPosY;
+
+    setTilemapPositionData(&gameState->cameraPosition,
+                            cameraPosX,
+                            cameraPosY,
+                            gameState->player1.zIndex,
+                            gameState->world.tilemap);
 }
 
 EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)
