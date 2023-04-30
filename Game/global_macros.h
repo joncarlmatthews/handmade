@@ -73,7 +73,7 @@ assert(!"only 1 target compiler can be specified")
 // Game resolution
 // @see https://en.wikipedia.org/wiki/Display_resolution
 
-// Minimum resolution. WXGA (16:9)
+// WXGA (16:9)
 //#define FRAME_BUFFER_PIXEL_WIDTH  1280
 //#define FRAME_BUFFER_PIXEL_HEIGHT 720
 
