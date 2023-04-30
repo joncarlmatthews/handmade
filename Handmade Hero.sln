@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Platform Win32", "Platform Win32\Platform Win32.vcxproj", "{271FCAD7-A0D8-4D27-85C6-510A29F543DB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Platform Windows", "Platform Windows\Platform Win32.vcxproj", "{271FCAD7-A0D8-4D27-85C6-510A29F543DB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{39BEC1AA-0EE5-4B0B-AC79-E9D8D000B61F} = {39BEC1AA-0EE5-4B0B-AC79-E9D8D000B61F}
 	EndProjectSection
