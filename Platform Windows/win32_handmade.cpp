@@ -40,7 +40,8 @@ typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, L
 // in all places in the plarform layer.
 global_var int64 globalQPCFrequency;
 
-global_var WINDOWPLACEMENT g_wpPrev = { sizeof(g_wpPrev) };
+// For full screen toggle functionality
+global_var WINDOWPLACEMENT globalWindowPosition = { sizeof(globalWindowPosition) };
 
 /*
  * The entry point for this graphical Windows-based application.
@@ -79,7 +80,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     windowClass.lpszClassName = TEXT("handmadeHeroWindowClass");
     windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 #ifdef HANDMADE_LOCAL_BUILD
-    ShowCursor(FALSE);
+    ShowCursor(TRUE);
 #else
     ShowCursor(FALSE);
 #endif
@@ -614,8 +615,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             win32DisplayFrameBuffer(deviceHandleForWindow,
                                     win32FrameBuffer,
                                     clientDimensions.width,
-                                    clientDimensions.height,
-                                    CLIP);
+                                    clientDimensions.height);
 
             // How long did this game loop (frame) take? (E.g. 2ms)
             LARGE_INTEGER gameLoopTime = win32GetTime();
@@ -847,14 +847,13 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
                     0, 0,
                     clientDimensions.width,
                     clientDimensions.height,
-                    WHITENESS);
+                    BLACKNESS);
 
             // Display the buffer to the screen
             win32DisplayFrameBuffer(deviceHandleForWindow,
                                     win32FrameBuffer,
                                     clientDimensions.width,
-                                    clientDimensions.height,
-                                    CLIP);
+                                    clientDimensions.height);
 
             // End the paint request and releases the device context.
             EndPaint(window, &paint);
@@ -952,33 +951,59 @@ internal_func void win32InitFrameBuffer(PlatformThreadContext *thread,
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, 
                                             Win32FrameBuffer buffer,
                                             uint32 clientWindowWidth,
-                                            uint32 clientWindowHeight,
-                                            StretchDIBitsMode mode)
+                                            uint32 clientWindowHeight)
 {
-    // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
-    // sure we don't introduce artifacts. We can achieve this by not allowing the image
-    // to stretch (by setting the destination width and height to be fixed to what the
-    // source width and height are). This will help us when it comes to learning how
-    // to write our renderer.
-    if (CLIP == mode) {
-        clientWindowWidth = buffer.width;
-        clientWindowHeight = buffer.height;
-    }
-
-    // Draw the frame with margin?
-    int offsetX = 0;
-    int offsetY = 0;
-    
     // StretchDIBits function copies the data of a rectangle of pixels to 
     // the specified destination. The first parameter is the handle for
     // the destination's window that we want to write the data to.
     // Pixels are drawn to screen from the top left to the top right, then drops a row,
     // draws from left to right and so on. Finally finishing on the bottom right pixel.
+ 
+    // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
+    // sure we don't introduce artifacts. We can achieve this by not allowing the image
+    // to stretch (by setting the destination width and height to be fixed to what the
+    // source width and height are). This will help us when it comes to learning how
+    // to write our renderer.
+
+    // As a minimum force the destination to be at least the size of the buffer.
+    // If the window is physically smaller that the desination width/height then
+    // the game rendering will be clipped. To have the game render at the exact
+    // size of the window, set the destination width/height to clientWindowWidth
+    // and clientWindowHeight. This will make the game rendering stretch.
+    uint32 destinationWidth = buffer.width;
+    uint32 destinationHeight = buffer.height;
+
+    // Draw the frame with margin?
+    int offsetX = 0;
+    int offsetY = 0;
+
+    // @TODO(JM) Attempting to better support various window sizes for a best fit.
+    // This needs lots more ifs/elses for maximum support.
+    if ((buffer.width > clientWindowWidth)
+            || (buffer.height > clientWindowHeight)) {
+        destinationWidth = buffer.width / 2;
+        destinationHeight = buffer.height / 2;
+    }else {
+        destinationWidth = buffer.width;
+        destinationHeight = buffer.height;
+    }
+    
+    // If the height and width of the window are at least twice as large as the
+    // height and width of our buffer, then upscale our desination width/height
+    // graphics by 2x.
+    if ( (clientWindowWidth >= (buffer.width * 2))
+            || (clientWindowHeight >= (buffer.height * 2)) ){
+        destinationWidth = buffer.width * 2;
+        destinationHeight = buffer.height * 2;
+    }
+
+    // If the physical window is larger than our destination width/height, then
+    // anything else in the window will be the colour set in PatBlt()
     StretchDIBits(deviceHandleForWindow,
                     offsetX,
                     offsetY,
-                    clientWindowWidth,
-                    clientWindowHeight,
+                    destinationWidth,
+                    destinationHeight,
                     0,
                     0,
                     buffer.width,
@@ -1711,7 +1736,7 @@ PLATFORM_TOGGLE_FULLSCREEN(platformToggleFullscreen)
     DWORD dwStyle = GetWindowLong(window, GWL_STYLE);
     if (dwStyle & WS_OVERLAPPEDWINDOW) {
         MONITORINFO mi = { sizeof(mi) };
-        if (GetWindowPlacement(window, &g_wpPrev) &&
+        if (GetWindowPlacement(window, &globalWindowPosition) &&
             GetMonitorInfo(MonitorFromWindow(window,
                 MONITOR_DEFAULTTOPRIMARY), &mi)) {
             SetWindowLong(window, GWL_STYLE,
@@ -1725,7 +1750,7 @@ PLATFORM_TOGGLE_FULLSCREEN(platformToggleFullscreen)
     } else {
         SetWindowLong(window, GWL_STYLE,
                       dwStyle | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(window, &g_wpPrev);
+        SetWindowPlacement(window, &globalWindowPosition);
         SetWindowPos(window, NULL, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
                      SWP_NOOWNERZORDER | SWP_FRAMECHANGED);

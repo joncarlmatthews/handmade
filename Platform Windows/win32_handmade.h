@@ -45,12 +45,6 @@ typedef struct win32ClientDimensions
     uint32 height;
 } win32ClientDimensions;
 
-typedef enum
-{
-    CLIP,
-    STRETCH,
-} StretchDIBitsMode;
-
 /**
  * Struct for the Win32 secondary sound buffer.
  */
@@ -169,8 +163,7 @@ internal_func
 void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                                 Win32FrameBuffer buffer,
                                 uint32 clientWindowWidth,
-                                uint32 clientWindowHeight,
-                                StretchDIBitsMode mode);
+                                uint32 clientWindowHeight);
 
 internal_func win32ClientDimensions win32GetClientDimensions(HWND window);
 
