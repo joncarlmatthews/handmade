@@ -50,10 +50,10 @@ if %PlatformArg% == x64 (
     SET PlatformFolder=x64
 ) else if %PlatformArg% == x86 (
     SET Platform=x86
-    SET PlatformFolder=Windows
+    SET PlatformFolder=x86
 ) else if %PlatformArg% == Windows (
     SET Platform=x86
-    SET PlatformFolder=Windows
+    SET PlatformFolder=x86
 ) else (
     GOTO platform_usage
 )
