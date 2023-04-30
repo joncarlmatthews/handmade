@@ -50,10 +50,10 @@ if %PlatformArg% == x64 (
     SET PlatformFolder=x64
 ) else if %PlatformArg% == x86 (
     SET Platform=x86
-    SET PlatformFolder=Win32
-) else if %PlatformArg% == Win32 (
+    SET PlatformFolder=Windows
+) else if %PlatformArg% == Windows (
     SET Platform=x86
-    SET PlatformFolder=Win32
+    SET PlatformFolder=Windows
 ) else (
     GOTO platform_usage
 )
@@ -63,7 +63,7 @@ ECHO Building %Platform%
 ECHO ============
 
 REM Root build folder for Solution and Project
-SET ProjectFolder=%~dp0..\build\Win32\
+SET ProjectFolder=%~dp0..\build\Windows\
 SET SolutionFolder=%~dp0..\
 
 REM Solution level folders
