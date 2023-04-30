@@ -106,5 +106,8 @@
     <None Include="shell_x86.bat">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="static_checker.bat">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

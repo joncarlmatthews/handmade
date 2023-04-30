@@ -52,6 +52,7 @@
     <None Include="build.bat" />
     <None Include="shell_x64.bat" />
     <None Include="shell_x86.bat" />
+    <None Include="static_checker.bat" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -107,13 +108,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Windows\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\x86\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Windows\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\x86\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
