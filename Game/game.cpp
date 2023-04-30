@@ -11,6 +11,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
+        memory->platformStateWindows = platformStateWindows;
+        memory->platformStateMacOS = platformStateMacOS;
+        memory->platformStateLinux = platformStateLinux;
+
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
 
@@ -408,6 +412,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                             audioBuffer,
                             &inputInstances[0],
                             userSelectedMainController);
+
+    GameControllerInput controller = inputInstances[0].controllers[userSelectedMainController];
+
+    if (controller.option1.endedDown){
+        memory->platformToggleFullscreen(memory->platformStateWindows,
+                                            memory->platformStateMacOS,
+                                            memory->platformStateLinux);
+    }
 
     /**
      * Audio stuff...

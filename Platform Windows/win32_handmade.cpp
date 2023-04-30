@@ -40,6 +40,9 @@ typedef HRESULT WINAPI DirectSoundCreateDT(LPGUID lpGuid, LPDIRECTSOUND *ppDS, L
 // in all places in the plarform layer.
 global_var int64 globalQPCFrequency;
 
+// For full screen toggle functionality
+global_var WINDOWPLACEMENT globalWindowPosition = { sizeof(globalWindowPosition) };
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -75,6 +78,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Instance of the running application.
     windowClass.hInstance = instance;
     windowClass.lpszClassName = TEXT("handmadeHeroWindowClass");
+    windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+#ifdef HANDMADE_LOCAL_BUILD
+    ShowCursor(TRUE);
+#else
+    ShowCursor(FALSE);
+#endif
 
     // Registers the window class for subsequent use in calls to 
     // the CreateWindowEx function.
@@ -88,7 +97,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Physically open the window using CreateWindowEx. (WS_EX_TOPMOST is
     // handy to have the game window not disappear behind Visual Studio dialogs when debugging
     DWORD windowStyle = NULL;
-    //windowStyle = WS_EX_TOPMOST;
+
     HWND window = CreateWindowEx(windowStyle,
                                     windowClass.lpszClassName,
                                     TEXT("Handmade Hero"),
@@ -119,6 +128,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // Create a Win32 state object to hold persistent data for the platform layer.
     Win32State win32State = { 0 };
+
+    win32State.window = &window;
 
 #if HANDMADE_LOCAL_BUILD
     win32State.inputRecording = 0;
@@ -153,6 +164,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Init game memory
     GameMemory memory = {0};
 
+    memory.platformStateWindows = &win32State;
+    memory.platformStateMacOS = NULL;
+    memory.platformStateLinux = NULL;
+
     memory.permanentStorage.bytes = platformMemory;
     memory.permanentStorage.sizeInBytes = permanentStorageSizeInBytes;
     memory.permanentStorage.bytesUsed = 0;
@@ -166,6 +181,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformAllocateMemory = &platformAllocateMemory;
     memory.platformFreeMemory = &platformFreeMemory;
     memory.platformControllerVibrate = &platformControllerVibrate;
+    memory.platformToggleFullscreen = &platformToggleFullscreen;
 
     size_t len;
     if (wcstombs_s(&len, memory.platformAbsPath, sizeof(memory.platformAbsPath), absPath, wcslen(absPath)) != 0) {
@@ -279,6 +295,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Get the number of processor clock cycles
         uint64 runningProcessorClockCyclesCounter = __rdtsc();
 #endif
+
+        PostMessage(window, WM_HANDMADE_HERO_READY, 0, 0);
 
         /**
          * MAIN GAME LOOP
@@ -566,6 +584,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             // Main game code.
             if (gameCode.gameUpdate){ // C6011 NULL pointer warning
                 gameCode.gameUpdate(&thread,
+                                    (void *)&win32State,
+                                    NULL,
+                                    NULL,
                                     &memory,
                                     &gameFrameBuffer,
                                     &gameAudioBuffer,
@@ -594,8 +615,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             win32DisplayFrameBuffer(deviceHandleForWindow,
                                     win32FrameBuffer,
                                     clientDimensions.width,
-                                    clientDimensions.height,
-                                    CLIP);
+                                    clientDimensions.height);
 
             // How long did this game loop (frame) take? (E.g. 2ms)
             LARGE_INTEGER gameLoopTime = win32GetTime();
@@ -827,14 +847,13 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
                     0, 0,
                     clientDimensions.width,
                     clientDimensions.height,
-                    WHITENESS);
+                    BLACKNESS);
 
             // Display the buffer to the screen
             win32DisplayFrameBuffer(deviceHandleForWindow,
                                     win32FrameBuffer,
                                     clientDimensions.width,
-                                    clientDimensions.height,
-                                    CLIP);
+                                    clientDimensions.height);
 
             // End the paint request and releases the device context.
             EndPaint(window, &paint);
@@ -932,33 +951,59 @@ internal_func void win32InitFrameBuffer(PlatformThreadContext *thread,
 internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, 
                                             Win32FrameBuffer buffer,
                                             uint32 clientWindowWidth,
-                                            uint32 clientWindowHeight,
-                                            StretchDIBitsMode mode)
+                                            uint32 clientWindowHeight)
 {
-    // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
-    // sure we don't introduce artifacts. We can achieve this by not allowing the image
-    // to stretch (by setting the destination width and height to be fixed to what the
-    // source width and height are). This will help us when it comes to learning how
-    // to write our renderer.
-    if (CLIP == mode) {
-        clientWindowWidth = buffer.width;
-        clientWindowHeight = buffer.height;
-    }
-
-    // Draw the frame with margin?
-    int offsetX = 0;
-    int offsetY = 0;
-    
     // StretchDIBits function copies the data of a rectangle of pixels to 
     // the specified destination. The first parameter is the handle for
     // the destination's window that we want to write the data to.
     // Pixels are drawn to screen from the top left to the top right, then drops a row,
     // draws from left to right and so on. Finally finishing on the bottom right pixel.
+ 
+    // For prototyping purposes, we are always going to blit 1-to-1 pixels to make
+    // sure we don't introduce artifacts. We can achieve this by not allowing the image
+    // to stretch (by setting the destination width and height to be fixed to what the
+    // source width and height are). This will help us when it comes to learning how
+    // to write our renderer.
+
+    // As a minimum force the destination to be at least the size of the buffer.
+    // If the window is physically smaller that the desination width/height then
+    // the game rendering will be clipped. To have the game render at the exact
+    // size of the window, set the destination width/height to clientWindowWidth
+    // and clientWindowHeight. This will make the game rendering stretch.
+    uint32 destinationWidth = buffer.width;
+    uint32 destinationHeight = buffer.height;
+
+    // Draw the frame with margin?
+    int offsetX = 0;
+    int offsetY = 0;
+
+    // @TODO(JM) Attempting to better support various window sizes for a best fit.
+    // This needs lots more ifs/elses for maximum support.
+    if ((buffer.width > clientWindowWidth)
+            || (buffer.height > clientWindowHeight)) {
+        destinationWidth = buffer.width / 2;
+        destinationHeight = buffer.height / 2;
+    }else {
+        destinationWidth = buffer.width;
+        destinationHeight = buffer.height;
+    }
+    
+    // If the height and width of the window are at least twice as large as the
+    // height and width of our buffer, then upscale our desination width/height
+    // graphics by 2x.
+    if ( (clientWindowWidth >= (buffer.width * 2))
+            || (clientWindowHeight >= (buffer.height * 2)) ){
+        destinationWidth = buffer.width * 2;
+        destinationHeight = buffer.height * 2;
+    }
+
+    // If the physical window is larger than our destination width/height, then
+    // anything else in the window will be the colour set in PatBlt()
     StretchDIBits(deviceHandleForWindow,
                     offsetX,
                     offsetY,
-                    clientWindowWidth,
-                    clientWindowHeight,
+                    destinationWidth,
+                    destinationHeight,
                     0,
                     0,
                     buffer.width,
@@ -1309,6 +1354,10 @@ internal_func void win32ProcessMessages(HWND window,
                     case 'E': {
                         state.wasDown = oldGameInput.controllers[0].shoulderR1.endedDown;
                         gameInput->controllers[0].shoulderR1 = state;
+                    } break;
+                    case 'F': {
+                        state.wasDown = oldGameInput.controllers[0].option1.endedDown;
+                        gameInput->controllers[0].option1 = state;
                     } break;
                     case VK_UP: {
                         state.wasDown = oldGameInput.controllers[0].up.endedDown;
@@ -1674,6 +1723,38 @@ PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory)
 PLATFORM_FREE_MEMORY(platformFreeMemory)
 {
     VirtualFree(address, 0, MEM_RELEASE);
+}
+
+PLATFORM_TOGGLE_FULLSCREEN(platformToggleFullscreen)
+{
+    Win32State *state = (Win32State *)platformStateWindows;
+    HWND window = *state->window;
+
+    // Go full screen. Credit Raymond Chen
+    // @link https://devblogs.microsoft.com/oldnewthing/20100412-00/?p=14353
+
+    DWORD dwStyle = GetWindowLong(window, GWL_STYLE);
+    if (dwStyle & WS_OVERLAPPEDWINDOW) {
+        MONITORINFO mi = { sizeof(mi) };
+        if (GetWindowPlacement(window, &globalWindowPosition) &&
+            GetMonitorInfo(MonitorFromWindow(window,
+                MONITOR_DEFAULTTOPRIMARY), &mi)) {
+            SetWindowLong(window, GWL_STYLE,
+                          dwStyle & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(window, HWND_TOP,
+                         mi.rcMonitor.left, mi.rcMonitor.top,
+                         mi.rcMonitor.right - mi.rcMonitor.left,
+                         mi.rcMonitor.bottom - mi.rcMonitor.top,
+                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        }
+    } else {
+        SetWindowLong(window, GWL_STYLE,
+                      dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(window, &globalWindowPosition);
+        SetWindowPos(window, NULL, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+    }
 }
 
 PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)

@@ -64,6 +64,16 @@ typedef PLATFORM_FREE_MEMORY(PlatformFreeMemory);
 #define PLATFORM_CONTROLLER_VIBRATE(name) void name(PlatformThreadContext *thread, uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed)
 typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
 
+/**
+ * Toggle the fullscreen mode each time function is called.
+ *
+ * @param address Pointer to the memory block
+ *
+ * @return void
+*/
+#define PLATFORM_TOGGLE_FULLSCREEN(name) void name(void *platformStateWindows, void *platformStateMacOS, void *platformStateLinux)
+typedef PLATFORM_TOGGLE_FULLSCREEN(PlatformToggleFullscreen);
+
 //====================================================
 //====================================================
 // End platform layer services
@@ -206,6 +216,8 @@ typedef struct GameControllerInput
             GameControllerBtnState right;
             GameControllerBtnState shoulderL1;
             GameControllerBtnState shoulderR1;
+            GameControllerBtnState option1;
+            GameControllerBtnState option2;
         };
     };
 
@@ -238,12 +250,16 @@ typedef struct GameInput
 //====================================================
 typedef struct GameMemory
 {
+    void *platformStateWindows;
+    void *platformStateMacOS;
+    void *platformStateLinux;
+
     MemoryRegion permanentStorage;
     MemoryRegion transientStorage;
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
-    void* recordingStorageGameState;
-    void* recordingStorageInput;
+    void *recordingStorageGameState;
+    void *recordingStorageInput;
 #endif
 
     // Flag to set whether or not our game memory has had its initial fill of data.
@@ -256,11 +272,13 @@ typedef struct GameMemory
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
 
+    PlatformToggleFullscreen *platformToggleFullscreen;
+
     // @NOTE(JM) Move this??
     PlarformControllerVibrate *platformControllerVibrate;
 
 #ifdef HANDMADE_LOCAL_BUILD
-    DEBUGPlatformLog* DEBUG_platformLog;
+    DEBUGPlatformLog *DEBUG_platformLog;
     DEBUGPlatformReadEntireFile *DEBUG_platformReadEntireFile;
     DEBUGPlatformFreeFileMemory *DEBUG_platformFreeFileMemory;
     DEBUGPlatformWriteEntireFile *DEBUG_platformWriteEntireFile;
@@ -288,6 +306,9 @@ typedef struct GameMemory
  * @return void
 */
 #define GAME_UPDATE(name) void name(PlatformThreadContext *thread, \
+                                    void *platformStateWindows, \
+                                    void *platformStateMacOS, \
+                                    void *platformStateLinux, \
                                     GameMemory *memory, \
                                     GameFrameBuffer *frameBuffer, \
                                     GameAudioBuffer *audioBuffer, \
