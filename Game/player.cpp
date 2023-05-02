@@ -254,7 +254,7 @@ gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRe
         gameState->player1.jumpRunningFrameCtr++;
 
         jumpPercentageOfAngle = percentageOfAnotherf(gameState->player1.jumpRunningFrameCtr, gameState->player1.jumpDuration);
-        jumpAngle = (360.0f * (jumpPercentageOfAngle / 100.0f));
+        jumpAngle = (360.0f * jumpPercentageOfAngle);
         jumpRadians = (jumpAngle * ((float32)M_PI / 180.0f));
         jumpSine = sinf(jumpRadians);
 

@@ -41,3 +41,12 @@ uint32 gcd(uint32 a, uint32 b)
         return gcd(b, a % b);
     }
 }
+
+float32 percentageOfAnotherf(float32 a, float32 b)
+{
+    if (b <= 0) {
+        return 0.0f;
+    }
+
+    return (a / b);
+}

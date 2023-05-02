@@ -961,16 +961,6 @@ internal_func void win32InitFrameBuffer(PlatformThreadContext *thread,
     buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
 }
 
-float32 w32percentageOfAnotherf(float32 a, float32 b)
-{
-    if (b <= 0) {
-        return 0.0f;
-    }
-
-    float32 fract = (a / b);
-    return (fract);
-}
-
 /*
  * Function for handling WM_PAINT message.
  *
@@ -1020,7 +1010,7 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
 
         if (clientWindowHeight < buffer.height){
 
-            float32 co = w32percentageOfAnotherf((float32)clientWindowHeight,
+            float32 co = percentageOfAnotherf((float32)clientWindowHeight,
                                                 (float32)buffer.height);
 
             destinationHeight = (uint32)((float32)buffer.height * co);
@@ -1028,7 +1018,7 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
             
         }else if (clientWindowWidth < buffer.width){
 
-            float32 co = w32percentageOfAnotherf((float32)clientWindowWidth,
+            float32 co = percentageOfAnotherf((float32)clientWindowWidth,
                                                     (float32)buffer.width);
 
             destinationHeight = (uint32)((float32)buffer.height * co);

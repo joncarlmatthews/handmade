@@ -24,4 +24,13 @@ uint64 utilTebibyteToBytes(uint8 tebibytes);
  */
 uint32 gcd(uint32 a, uint32 b);
 
+/**
+ * Simple function to calculate one number as a percentage of another.
+ *
+ * @param float32 a What is (a) as a percentage of...
+ * @param float32 b ?
+ * @return float32
+ */
+float32 percentageOfAnotherf(float32 a, float32 b);
+
 #endif

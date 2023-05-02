@@ -59,7 +59,7 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
     for (uint32 i = 0; i < audioBuffer->noOfSamplesToWrite; i++) {
 
         percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
-        angle = (360.0f * (percentageOfAngle / 100.0f));
+        angle = (360.0f * percentageOfAngle);
         radians = (angle * ((float32)GAME_PI / 180.0f));
         sine = intrinSin(radians);
 
