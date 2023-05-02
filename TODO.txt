@@ -1,5 +1,6 @@
-Day 038:
- - Remove background scrolling and move the camera per room. Make toggleable via a macro switch. Instead of drawing outwards from the player position, simply draw outwards from a screen position. Only update the screen position when a player moves "off screen"
+Day 042:
+ - Create vector classes for integers and floats. Refactor xyuint and xyint to new vevtor classes.
+ - Configure VS to format code as per my style!!!
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?

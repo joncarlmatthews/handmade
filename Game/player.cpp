@@ -20,9 +20,9 @@ void playerHandleMovement(GameState *gameState,
     float32 pixelsPerSecond = (gameState->world.pixelsPerMeter * gameState->player1.movementSpeedMPS);
     float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
 
-    // Ensure the player can at least move!
+    // Any movement to take?
     if (pixelsPerFrame < 1.0f){
-        pixelsPerFrame = 1.0f;
+        return;
     }
 
 #if 0
@@ -45,6 +45,15 @@ pixelsPerFrame);
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
     playerNewPosTmp.y = gameState->player1.absolutePosition.y;
 
+    // Handling diagonal movement
+    if ( (controller.dPadLeft.endedDown || controller.dPadRight.endedDown)
+            && (controller.dPadUp.endedDown || controller.dPadDown.endedDown) ) {
+        // The square root of "a half" is how much we need to move our player
+        // by if they're moving diagonally. The square root of 0.5 is approximately
+        // 0.70710678118. 
+        float32 sqrtOfHalf = 0.70710678118f;
+        pixelsPerFrame = (pixelsPerFrame * sqrtOfHalf);
+    }
 
     if (controller.dPadLeft.endedDown) {
         playerAttemptingMove = true;
@@ -54,7 +63,9 @@ pixelsPerFrame);
         playerAttemptingMove = true;
         playerNewPosTmp.x += (int32)pixelsPerFrame;
         gameState->player1.currentBitmapIndex = 1;
-    }else if (controller.dPadUp.endedDown) {
+    }
+
+    if (controller.dPadUp.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.y += (int32)pixelsPerFrame;
         gameState->player1.currentBitmapIndex = 0;
@@ -62,12 +73,6 @@ pixelsPerFrame);
         playerAttemptingMove = true;
         playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
         gameState->player1.currentBitmapIndex = 2;
-    }
-
-    if (controller.up.endedDown) {
-        gameState->player1.zIndex = 1;
-    }else if (controller.down.endedDown) {
-        gameState->player1.zIndex = 0;
     }
 
     if (controller.isAnalog) {
@@ -92,6 +97,7 @@ pixelsPerFrame);
 
     if (playerAttemptingMove) {
 
+        // Wrap the player movement for toroidal world
         xyuint playerNewPos = { 0 };
         playerNewPos.x = (playerNewPosTmp.x % gameState->world.worldWidthPx);
         playerNewPos.y = (playerNewPosTmp.y % gameState->world.worldHeightPx);

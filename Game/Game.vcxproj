@@ -25,6 +25,7 @@
     <ClInclude Include="global_macros.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="intrinsics.h" />
+    <ClInclude Include="math.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="player.h" />
@@ -41,6 +42,7 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="intrinsics.cpp" />
+    <ClCompile Include="math.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="tilemap.cpp" />

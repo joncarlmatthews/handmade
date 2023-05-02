@@ -12,7 +12,7 @@
 #define SCROLL_TYPE_SMOOTH 1
 #define SCROLL_TYPE_SCREEN 2
 
-#define SCROLL_TYPE SCROLL_TYPE_SCREEN
+#define SCROLL_TYPE SCROLL_TYPE_SMOOTH
 
 #if (SCROLL_TYPE != SCROLL_TYPE_SMOOTH && SCROLL_TYPE != SCROLL_TYPE_SCREEN)
 #error "Invalid SCROLL_TYPE value"
@@ -20,6 +20,7 @@
 
 #include "global_macros.h"
 #include "types.h"
+#include "math.h"
 #include "global.h"
 #include "intrinsics.h"
 #include "utility_shared.h"
