@@ -1,9 +1,9 @@
-#ifndef HEADER_HH_UTILITY_SHARED
-#define HEADER_HH_UTILITY_SHARED
+#ifndef HEADER_HH_GLOBAL_UTILITY
+#define HEADER_HH_GLOBAL_UTILITY
 
-/*
- * Utility/helper Functions that are shared across the game and platform layer
- */
+//
+// Utility/helper Functions that are shared across the game and platform layer
+// ============================================================================
 
 #include "types.h"
 
@@ -19,7 +19,9 @@ uint64 utilMebibytesToBytes(uint8 mebibytes);
 uint64 utilGibibytesToBytes(uint8 gibibytes);
 uint64 utilTebibyteToBytes(uint8 tebibytes);
 
-
+/**
+ * Greatest common divisor
+ */
 uint32 gcd(uint32 a, uint32 b);
 
 #endif

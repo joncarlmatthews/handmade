@@ -23,7 +23,7 @@
 #include "math.h"
 #include "global.h"
 #include "intrinsics.h"
-#include "utility_shared.h"
+#include "global_utility.h"
 #include "utility.h"
 #include "filesystem.h"
 #include "random.h"

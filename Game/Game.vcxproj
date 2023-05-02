@@ -33,7 +33,7 @@
     <ClInclude Include="tilemap.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
-    <ClInclude Include="utility_shared.h" />
+    <ClInclude Include="global_utility.h" />
     <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
@@ -47,7 +47,7 @@
     <ClCompile Include="player.cpp" />
     <ClCompile Include="tilemap.cpp" />
     <ClCompile Include="utility.cpp" />
-    <ClCompile Include="utility_shared.cpp" />
+    <ClCompile Include="global_utility.cpp" />
     <ClCompile Include="world.cpp" />
   </ItemGroup>
   <ItemGroup>

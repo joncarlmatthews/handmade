@@ -51,7 +51,7 @@
     <ClInclude Include="intrinsics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="utility_shared.h">
+    <ClInclude Include="global_utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="global.h">
@@ -95,7 +95,7 @@
     <ClCompile Include="intrinsics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="utility_shared.cpp">
+    <ClCompile Include="global_utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="math.cpp">

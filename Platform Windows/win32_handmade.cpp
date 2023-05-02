@@ -8,7 +8,7 @@
 #include "..\Game\global.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
-#include "..\Game\utility_shared.cpp"
+#include "..\Game\global_utility.cpp"
 
 // Function stubs for functions provided by external DLL
 GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }

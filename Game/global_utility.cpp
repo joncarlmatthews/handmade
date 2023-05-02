@@ -1,4 +1,4 @@
-#include "utility_shared.h"
+#include "global_utility.h"
 
 /**
 * 1 KiB = 1,024 bytes
