@@ -28,3 +28,16 @@ uint64 utilTebibyteToBytes(uint8 tebibytes)
 {
     return (uint64)(((uint64)1024 * utilGibibytesToBytes(1)) * tebibytes);
 }
+
+/**
+ * Greatest common divisor
+ */
+uint32 gcd(uint32 a, uint32 b)
+{
+    if (b == 0) {
+        return a;
+    }
+    else {
+        return gcd(b, a % b);
+    }
+}

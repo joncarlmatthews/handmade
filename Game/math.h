@@ -4,6 +4,26 @@
 #include "types.h"
 #include <math.h>
 
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+
+/**
+ * Greatest Common Divisor
+ * 
+ * @param a 
+ * @param b 
+*/
+/*
+uint32 gcd(uint32 a, uint32 b)
+{
+    if (b == 0) {
+        return a;
+    } else {
+        return gcd(b, a % b);
+    }
+}
+*/
+
 // Our standard vector is 32-bit floating point.
  struct Vector2 {
     float32 x;

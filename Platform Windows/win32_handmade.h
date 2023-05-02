@@ -117,6 +117,8 @@ typedef struct Win32State
 
     HWND *window;
 
+    xyuint monitorDims;
+
 #if HANDMADE_LOCAL_BUILD
     void *gameMemoryRecordedState;
     void *gameMemoryRecordedInput;

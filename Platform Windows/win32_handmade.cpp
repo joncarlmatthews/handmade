@@ -233,6 +233,33 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
         }
 
+        {
+            // Get the handle to the monitor containing the window
+            HMONITOR hMonitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
+
+            // Get the monitor information
+            MONITORINFO monitorInfo;
+            monitorInfo.cbSize = sizeof(MONITORINFO);
+            GetMonitorInfo(hMonitor, &monitorInfo);
+
+            // Calculate the width and height of the monitor
+            uint32 monitorWidth = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+            uint32 monitorHeight = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+
+            // Display the width and height of the monitor in a message box
+            uint32 ratio = gcd(monitorHeight, monitorWidth);
+            uint32 ratioL = (max(monitorHeight, monitorWidth) / ratio);
+            uint32 ratioR = (min(monitorHeight, monitorWidth) / ratio);
+
+            char buff[200] = { 0 };
+            sprintf_s(buff,
+                sizeof(buff),
+                "monitor h/w %i %i (%i:%i)\n",
+                monitorHeight, monitorWidth,
+                ratioL, ratioR);
+            OutputDebugStringA(buff);
+        }
+
         /*
          * Audio
          */

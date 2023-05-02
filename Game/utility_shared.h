@@ -19,4 +19,7 @@ uint64 utilMebibytesToBytes(uint8 mebibytes);
 uint64 utilGibibytesToBytes(uint8 gibibytes);
 uint64 utilTebibyteToBytes(uint8 tebibytes);
 
+
+uint32 gcd(uint32 a, uint32 b);
+
 #endif
