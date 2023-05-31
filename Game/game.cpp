@@ -569,6 +569,96 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 -34,
                 playerBitmap.head);
 
+    // Vector stuff...
+
+    // Vector origins
+    uint32 vox = (FRAME_BUFFER_PIXEL_WIDTH / 2);
+    uint32 voy = (FRAME_BUFFER_PIXEL_HEIGHT / 2);
+
+    // Pixels per point
+    float32 pixelsPerPoint = 10.0f;
+
+    // Y axis
+    writeRectangle(frameBuffer,
+        (FRAME_BUFFER_PIXEL_WIDTH / 2),
+        (FRAME_BUFFER_PIXEL_HEIGHT / 2) - 500,
+        1,
+        1000,
+        {1.0f, 1.0f, 1.0f});
+
+    // X axis
+    writeRectangle(frameBuffer,
+        (FRAME_BUFFER_PIXEL_WIDTH / 2) - 500,
+        (FRAME_BUFFER_PIXEL_HEIGHT / 2),
+        1000,
+        1,
+        {1.0f, 1.0f, 1.0f});
+
+    // Vector 1
+    {
+        Vector2 v1 = {5.0f, 10.0f}; // "points"
+        float32 v1mag = getVectorMagnitude(v1);
+
+        float32 xfract = (v1.x / v1mag);
+        float32 yfract = (v1.y / v1mag);
+
+        for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
+            float32 x = ((float32)vox + ((float32)i*xfract));
+            float32 y = ((float32)voy + ((float32)i*yfract));
+            writeRectangle(frameBuffer,
+                (uint64)x,
+                (uint64)y,
+                1,
+                1,
+                {1.0f, 0.0f, 0.0f});
+        }
+    }
+
+    // Vector 2
+    {
+        Vector2 v1 = {15.0f, 6.0f}; // "points"
+        float32 v1mag = getVectorMagnitude(v1);
+
+        float32 xfract = (v1.x / v1mag);
+        float32 yfract = (v1.y / v1mag);
+
+        for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
+            float32 x = ((float32)vox + ((float32)i*xfract));
+            float32 y = ((float32)voy + ((float32)i*yfract));
+            writeRectangle(frameBuffer,
+                (uint64)x,
+                (uint64)y,
+                1,
+                1,
+                {0.0f, 1.0f, 0.0f});
+        }
+    }
+
+    // Vector 3
+    {
+        Vector2 v2 = {5.0f, 10.0f}; // "points"
+        Vector2 v3 = {15.0f, 6.0f}; // "points"
+
+        Vector2 v1 = {0.0f, 0.0f}; // "points"
+        v1 += v2;
+        v1 += v3;
+        float32 v1mag = getVectorMagnitude(v1);
+
+        float32 xfract = (v1.x / v1mag);
+        float32 yfract = (v1.y / v1mag);
+
+        for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
+            float32 x = ((float32)vox + ((float32)i*xfract));
+            float32 y = ((float32)voy + ((float32)i*yfract));
+            writeRectangle(frameBuffer,
+                (uint64)x,
+                (uint64)y,
+                1,
+                1,
+                {0.0f, 0.0f, 1.0f});
+        }
+    }
+
 #if 0
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {

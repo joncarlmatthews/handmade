@@ -1,6 +1,8 @@
 Day 042:
+ - Fun with vectors!
+ - Convert int to float, and abstract away the uint type casting when writing to the buffers?
  - Create vector classes for integers and floats. Refactor xyuint and xyint to new vevtor classes.
- - Configure VS to format code as per my style!!!
+ - Configure VS to format code as per my style
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?
@@ -9,5 +11,5 @@ Ongoing:
  -x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
  -x Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
  -x deprecate math.h
- -x Move sub-includes from .h into .cpp
- -x Support for drawing bitmap at different size to that of the original asset
+ -x Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
+ -x Support for drawing bitmap at different size to that of the original asset. When the asset is drawn at the different size (via resizing the window) it tears.

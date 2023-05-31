@@ -154,7 +154,7 @@ if %CopyAssets% == true (
 )
 
 REM Compile the source code
-cl %CompilerFlags% %~dp0game.cpp  %~dp0intrinsics.cpp %~dp0utility_shared.cpp %~dp0utility.cpp %~dp0memory.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp %~dp0graphics.cpp %~dp0audio.cpp %~dp0filesystem.cpp %~dp0math.cpp
+cl %CompilerFlags% %~dp0game.cpp  %~dp0intrinsics.cpp %~dp0global_utility.cpp %~dp0utility.cpp %~dp0memory.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp %~dp0graphics.cpp %~dp0audio.cpp %~dp0filesystem.cpp %~dp0math.cpp
 
 REM Run the linker
 link %LinkerFlags% %icf%game.obj %icf%intrinsics.obj %icf%global_utility.obj %icf%utility.obj %icf%memory.obj %icf%player.obj %icf%world.obj %icf%tilemap.obj %icf%graphics.obj %icf%audio.obj %icf%filesystem.obj %icf%math.obj
