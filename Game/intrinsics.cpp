@@ -8,14 +8,39 @@
 #include "intrinsics.h"
 #include <math.h> // @see https://www.cplusplus.com/reference/cmath/
 
-float64 intrinSin(float64 radians)
+float64 intrin_sin(float64 radians)
 {
     return sin(radians);
 }
 
-float32 intrinCeilf(float32 num)
+float32 intrin_ceilf(float32 num)
 {
     return ceilf(num);
+}
+
+float32 intrin_sqrtf(float32 num)
+{
+    return sqrtf(num);
+}
+
+int32 intrin_roundFloat32ToInt32(float32 num)
+{
+    return (int32)roundf(num);
+}
+
+uint32 intrin_roundFloat32ToUInt32(float32 num)
+{
+    return (uint32)roundf(num);
+}
+
+int32 intrin_floorFloat32ToInt32(float32 num)
+{
+    return (int32)floorf(num);
+}
+
+int32 intrin_truncateFloat32ToInt32(float32 num)
+{
+    return (int32)num;
 }
 
 /**
@@ -32,7 +57,7 @@ float32 intrinCeilf(float32 num)
 * @param mask uint32
 * @return res bool32
 */
-bitScanResult intrinBitScanForward(uint32 mask)
+bitScanResult intrin_bitScanForward(uint32 mask)
 {
     bitScanResult result = {0, 0};
 

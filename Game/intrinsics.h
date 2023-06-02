@@ -9,10 +9,20 @@ typedef struct bitScanResult
     uint32 index; // aka shift
 } bitScanResult;
 
-float64 intrinSin(float64 radians);
+float64 intrin_sin(float64 radians);
 
-float32 intrinCeilf(float32 num);
+float32 intrin_ceilf(float32 num);
 
-bitScanResult intrinBitScanForward(uint32 mask);
+float32 intrin_sqrtf(float32 num);
+
+int32 intrin_roundFloat32ToInt32(float32 val);
+
+uint32 intrin_roundFloat32ToUInt32(float32 val);
+
+int32 intrin_floorFloat32ToInt32(float32 val);
+
+int32 intrin_truncateFloat32ToInt32(float32 val);
+
+bitScanResult intrin_bitScanForward(uint32 mask);
 
 #endif

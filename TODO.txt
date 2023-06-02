@@ -1,7 +1,7 @@
 Day 042:
- - Fun with vectors!
+ -x Fun with vectors!
  - Convert int to float, and abstract away the uint type casting when writing to the buffers?
- - Create vector classes for integers and floats. Refactor xyuint and xyint to new vevtor classes.
+ - Create vector classes for integers and floats. Refactor xyuint and xyint to new 2d vevtor classes.
  - Configure VS to format code as per my style
 
 Ongoing:

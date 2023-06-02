@@ -18,11 +18,18 @@
 * @return void
 */
 typedef struct GameFrameBuffer GameFrameBuffer;
-void writeRectangle(GameFrameBuffer *buffer,
+void writeRectangleInt(GameFrameBuffer *buffer,
                     int64 xOffset,
                     int64 yOffset,
                     int64 width,
                     int64 height,
+                    Colour colour);
+
+void writeRectangle(GameFrameBuffer *buffer,
+                    float32 xOffsetf,
+                    float32 yOffsetf,
+                    float32 widthf,
+                    float32 heightf,
                     Colour colour);
 
 /**

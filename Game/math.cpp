@@ -1,5 +1,5 @@
 #include "math.h"
-#include <math.h>
+#include "intrinsics.h"
 
 Vector2& Vector2::operator+=(Vector2 v) {
     this->x = (this->x + v.x);
@@ -28,5 +28,5 @@ Vector2& Vector2::operator*=(Vector2 v) {
 
 float32 getVectorMagnitude(Vector2 v)
 {
-    return sqrtf((v.x * v.x) + (v.y * v.y));
+    return intrin_sqrtf((v.x * v.x) + (v.y * v.y));
 }
