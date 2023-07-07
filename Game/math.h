@@ -7,7 +7,7 @@
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
 // Our standard vector is 32-bit floating point.
- struct Vector2 {
+struct Vector2 {
     float32 x;
     float32 y;
 
@@ -107,5 +107,7 @@
 } ;
 
 float32 getVectorMagnitude(Vector2 v);
+
+float32 modF32(float32 dividend, float32 divisor);
 
 #endif

@@ -28,14 +28,14 @@ int32 intrin_roundF32ToI32(float32 num)
     return (int32)roundf(num);
 }
 
-uint32 intrin_roundF32ToUI32(float32 num)
-{
-    return (uint32)roundf(num);
-}
-
 int32 intrin_floorF32ToI32(float32 num)
 {
     return (int32)floorf(num);
+}
+
+uint32 intrin_roundF32ToUI32(float32 num)
+{
+    return (uint32)roundf(num);
 }
 
 int32 intrin_truncateF32ToI32(float32 num)

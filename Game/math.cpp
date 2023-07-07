@@ -30,3 +30,7 @@ float32 getVectorMagnitude(Vector2 v)
 {
     return intrin_sqrtf((v.x * v.x) + (v.y * v.y));
 }
+
+float32 modF32(float32 dividend, float32 divisor) {
+    return (dividend - ((int)(dividend / divisor) * divisor));
+}

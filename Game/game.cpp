@@ -699,10 +699,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
 void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
 {
-    uint32 indexX = (gameState->player1.absolutePosition.x / frameBuffer->widthPx);
+    uint32 indexX = (intrin_roundF32ToUI32(gameState->player1.absolutePosition.x) / frameBuffer->widthPx);
     uint32 cameraPosX = (frameBuffer->widthPx / 2) + (indexX * frameBuffer->widthPx);
 
-    uint32 indexY = (gameState->player1.absolutePosition.y / frameBuffer->heightPx);
+    uint32 indexY = (intrin_roundF32ToUI32(gameState->player1.absolutePosition.y) / frameBuffer->heightPx);
     uint32 cameraPosY = (frameBuffer->heightPx / 2) + (indexY * frameBuffer->heightPx);
 
     gameState->cameraPosition.absPixelPos.x = cameraPosX;

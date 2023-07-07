@@ -5,6 +5,7 @@
 #include "utility.h"
 #include "world.h"
 #include "filesystem.h"
+#include "math.h"
 
 //
 // Player
@@ -27,7 +28,7 @@ typedef struct PlayerBitmap {
 typedef struct Player {
     // Pixel position in relation to the entire tilemap.
     // This is the starting position that the player is drawn from (bottom left).
-    xyuint absolutePosition;
+    struct Vector2 absolutePosition;
 
     // The pixel position of where we consider the player to be. Which isnt
     // necessarily the bottom left (which is where we start drawing from).
@@ -98,7 +99,7 @@ typedef struct PlayerPositionData {
 } PlayerPositionData;
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
-                                xyuint playerPixelPos,
+                                struct Vector2 playerPixelPos,
                                 uint32 zIndex,
                                 PLAYER_POINT_POS pointPos,
                                 GameState *gameState);
@@ -107,7 +108,11 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
 typedef struct GameState GameState;
 typedef struct GameFrameBuffer GameFrameBuffer;
 typedef struct GameAudioBuffer GameAudioBuffer;
-void setPlayerPosition(uint32 absX, uint32 absY, uint32 zIndex, GameState *gameState, GameFrameBuffer *frameBuffer);
+void setPlayerPosition(float32 absX,
+                        float32 absY,
+                        uint32 zIndex,
+                        GameState* gameState,
+                        GameFrameBuffer* frameBuffer);
 
 typedef struct GameMemory GameMemory;
 typedef struct GameInput GameInput;
