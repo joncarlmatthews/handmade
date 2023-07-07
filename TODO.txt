@@ -1,6 +1,6 @@
 Day 042:
  -/ Fun with vectors!
- - For position objects/attributes, refactor xyuint and xyint to new 2d vector class
+ / For position objects/attributes, refactor xyuint and xyint to new 2d vector class
  - Migrate from writeRectangleInt to writeRectangle
  / Player height and width is now no longer initialised as pixels but as metres. Need to adjust
  - Remove operator overloading of Vector to make it C, not C++?

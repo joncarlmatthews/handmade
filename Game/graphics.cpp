@@ -220,13 +220,15 @@ void writeBitmap(GameFrameBuffer *buffer,
                     float32 alignYf,
                     BitmapFile bitmapFile)
 {
+    assert(widthf >= 1.0f);
+    assert(heightf >= 1.0f);
 
-    int64 xOffset   = (int64)intrin_roundF32ToI32(xOffsetf);
-    int64 yOffset   = (int64)intrin_roundF32ToI32(yOffsetf);
-    int64 width     = (int64)intrin_roundF32ToI32(widthf);
-    int64 height    = (int64)intrin_roundF32ToI32(heightf);
-    int64 alignX    = (int64)intrin_roundF32ToI32(alignXf);
-    int64 alignY    = (int64)intrin_roundF32ToI32(alignYf);
+    int32 xOffset   = intrin_roundF32ToI32(xOffsetf);
+    int32 yOffset   = intrin_roundF32ToI32(yOffsetf);
+    int32 width     = intrin_roundF32ToI32(widthf);
+    int32 height    = intrin_roundF32ToI32(heightf);
+    int32 alignX    = intrin_roundF32ToI32(alignXf);
+    int32 alignY    = intrin_roundF32ToI32(alignYf);
     
     if (alignX < 0) {
         xOffset = (xOffset - (alignX * -1));
@@ -242,16 +244,16 @@ void writeBitmap(GameFrameBuffer *buffer,
         yOffset = (yOffset + alignY);
     }
 
-    int64 originalXOffset = xOffset;
-    int64 originalYOffset = yOffset;
-    int64 originalWidth = width;
+    int32 originalXOffset = xOffset;
+    int32 originalYOffset = yOffset;
+    int32 originalWidth = width;
 
     // Bounds checking
-    if (xOffset >= buffer->widthPx) {
+    if (xOffset >= (int32)buffer->widthPx) {
         return;
     }
 
-    if (yOffset >= buffer->heightPx) {
+    if (yOffset >= (int32)buffer->heightPx) {
         return;
     }
 
@@ -274,20 +276,20 @@ void writeBitmap(GameFrameBuffer *buffer,
     }
 
     // Max x
-    int64 maxX = (xOffset + width);
+    int32 maxX = (xOffset + width);
 
-    if (maxX > buffer->widthPx) {
-        maxX = (buffer->widthPx - xOffset);
+    if (maxX > (int32)buffer->widthPx) {
+        maxX = ((int32)buffer->widthPx - xOffset);
         if (width > maxX) {
             width = maxX;
         }
     }
 
     // Max y
-    int64 maxY = (yOffset + height);
+    int32 maxY = (yOffset + height);
 
-    if (maxY > buffer->heightPx) {
-        maxY = (buffer->heightPx - yOffset);
+    if (maxY > (int32)buffer->heightPx) {
+        maxY = ((int32)buffer->heightPx - yOffset);
         if (height > maxY) {
             height = maxY;
         }
@@ -337,11 +339,11 @@ void writeBitmap(GameFrameBuffer *buffer,
     }
 
     // Up (rows) y
-    for (int64 y = 0; y < height; y++) {
+    for (int32 y = 0; y < height; y++) {
 
         // Accross (columns) x
         uint32 *pixel = (uint32*)row;
-        for (int64 x = 0; x < width; x++) {
+        for (int32 x = 0; x < width; x++) {
 
             // Extract RGBA values from bitmap.
             uint8 red       = (((*imagePixel & bitmapFile.redMask) >> redShift.index) & 0xFF);
@@ -382,7 +384,7 @@ void writeBitmap(GameFrameBuffer *buffer,
 
         if (originalXOffset < 0) {
             imagePixel = (imagePixel + (originalXOffset*-1));
-        }else if ((originalXOffset + originalWidth) > buffer->widthPx) {
+        }else if ((originalXOffset + originalWidth) > (int32)buffer->widthPx) {
             imagePixel = (imagePixel + ((originalWidth + originalXOffset) - buffer->widthPx));
         }
     }
