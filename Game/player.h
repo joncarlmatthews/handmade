@@ -32,7 +32,7 @@ typedef struct Player {
 
     // The pixel position of where we consider the player to be. Which isnt
     // necessarily the bottom left (which is where we start drawing from).
-    xyuint gamePosition;
+    struct Vector2 gamePosition;
 
     // The absolute position normalised so it's relative to the screen.
     struct Vector2 canonicalAbsolutePosition;

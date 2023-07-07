@@ -315,14 +315,14 @@ void setPlayerPosition(float32 absX,
 
     // Consider the game position as the bottom middle. With a small inset up
     // from the bottom
-    uint32 offsetX = (gameState->player1.widthPx / 2);
-    uint32 offsetY = (uint32)(gameState->player1.heightPx * 0.15);
+    float32 offsetX = ((float32)gameState->player1.widthPx / 2.0f);
+    float32 offsetY = ((float32)gameState->player1.heightPx * 0.15f);
 
-    gameState->player1.gamePosition.x = (intrin_roundF32ToI32(gameState->player1.absolutePosition.x) + offsetX);
-    gameState->player1.gamePosition.y = intrin_roundF32ToI32(gameState->player1.absolutePosition.y) + offsetY;
+    gameState->player1.gamePosition.x = gameState->player1.absolutePosition.x + offsetX;
+    gameState->player1.gamePosition.y = gameState->player1.absolutePosition.y + offsetY;
 
-    gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - offsetX);
-    gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - offsetY);
+    gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - (uint32)offsetX);
+    gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - (uint32)offsetY);
 
     return;
 }
@@ -401,8 +401,8 @@ internal_func bool playerHasSwitchedActiveTile(GameState *gameState)
 {
     TilemapPosition posData = {0};
     setTilemapPositionData(&posData,
-                            gameState->player1.gamePosition.x,
-                            gameState->player1.gamePosition.y,
+                            intrin_roundF32ToUI32(gameState->player1.gamePosition.x),
+                            intrin_roundF32ToUI32(gameState->player1.gamePosition.y),
                             gameState->player1.zIndex,
                             gameState->world.tilemap);
 

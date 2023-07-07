@@ -543,8 +543,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 #endif
 
     writeBitmap(frameBuffer,
-                playerPositionData.x,
-                playerPositionData.y,
+                (float32)playerPositionData.x,
+                (float32)playerPositionData.y,
                 (float32)playerBitmap.torso.widthPx,
                 (float32)playerBitmap.torso.heightPx,
                 -62.0f,
@@ -552,8 +552,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.torso);
 
     writeBitmap(frameBuffer,
-                playerPositionData.x,
-                playerPositionData.y,
+                (float32)playerPositionData.x,
+                (float32)playerPositionData.y,
                 (float32)playerBitmap.cape.widthPx,
                 (float32)playerBitmap.cape.heightPx,
                 -62.0f,
@@ -561,8 +561,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.cape);
 
     writeBitmap(frameBuffer,
-                playerPositionData.x,
-                playerPositionData.y,
+                (float32)playerPositionData.x,
+                (float32)playerPositionData.y,
                 (float32)playerBitmap.head.widthPx,
                 (float32)playerBitmap.head.heightPx,
                 -62.0f,
