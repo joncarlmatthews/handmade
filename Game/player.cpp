@@ -321,8 +321,8 @@ void setPlayerPosition(float32 absX,
     gameState->player1.gamePosition.x = gameState->player1.absolutePosition.x + offsetX;
     gameState->player1.gamePosition.y = gameState->player1.absolutePosition.y + offsetY;
 
-    gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - (uint32)offsetX);
-    gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - (uint32)offsetY);
+    gameState->player1.fixedPosition.x = ((float32)(frameBuffer->widthPx / 2.0f) - offsetX);
+    gameState->player1.fixedPosition.y = ((float32)(frameBuffer->heightPx / 2.0f) - offsetY);
 
     return;
 }

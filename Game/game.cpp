@@ -537,14 +537,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     PlayerBitmap playerBitmap = gameState->player1.bitmaps[gameState->player1.currentBitmapIndex];
 
 #if SCROLL_TYPE_SMOOTH
-    xyuint playerPositionData = gameState->player1.fixedPosition;
+    struct Vector2 playerPositionData = gameState->player1.fixedPosition;
 #elif SCROLL_TYPE_SCREEN
     struct Vector2 playerPositionData = gameState->player1.canonicalAbsolutePosition;
 #endif
 
     writeBitmap(frameBuffer,
-                (float32)playerPositionData.x,
-                (float32)playerPositionData.y,
+                playerPositionData.x,
+                playerPositionData.y,
                 (float32)playerBitmap.torso.widthPx,
                 (float32)playerBitmap.torso.heightPx,
                 -62.0f,
@@ -552,8 +552,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.torso);
 
     writeBitmap(frameBuffer,
-                (float32)playerPositionData.x,
-                (float32)playerPositionData.y,
+                playerPositionData.x,
+                playerPositionData.y,
                 (float32)playerBitmap.cape.widthPx,
                 (float32)playerBitmap.cape.heightPx,
                 -62.0f,
@@ -561,8 +561,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.cape);
 
     writeBitmap(frameBuffer,
-                (float32)playerPositionData.x,
-                (float32)playerPositionData.y,
+                playerPositionData.x,
+                playerPositionData.y,
                 (float32)playerBitmap.head.widthPx,
                 (float32)playerBitmap.head.heightPx,
                 -62.0f,

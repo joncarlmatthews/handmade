@@ -42,7 +42,7 @@ typedef struct Player {
 
     // The fixed position that we draw the player from if the game scroll type
     // is set to screen scrolling
-    xyuint fixedPosition;
+    struct Vector2 fixedPosition;
 
     // Last direction the player moved in (up, down, left, right)
     uint32 lastMoveDirections;
