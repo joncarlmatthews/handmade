@@ -17,7 +17,7 @@ void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
                             gameState->world.tilemap);
 }
 
-int64 metersToPixels(World world, float32 metres)
+uint32 metersToPixels(World world, float32 metres)
 {
     float32 pixels = (world.pixelsPerMeter * metres);
     return (int64)pixels;

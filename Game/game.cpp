@@ -52,10 +52,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert(gameState->world.worldWidthPx > frameBuffer->widthPx);
 
         // Character attributes
-        gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
-        gameState->player1.widthMeters   = ((float32)gameState->player1.heightMeters * 0.65f);
-        gameState->player1.heightPx  = (int16)metersToPixels(gameState->world, gameState->player1.heightMeters);
-        gameState->player1.widthPx   = (int16)metersToPixels(gameState->world, gameState->player1.widthMeters);
+        gameState->player1.heightMeters     = PLAYER_HEIGHT_METERS;
+        gameState->player1.widthMeters      = (gameState->player1.heightMeters * 0.65f);
+        gameState->player1.heightPx         = metersToPixels(gameState->world, gameState->player1.heightMeters);
+        gameState->player1.widthPx          = metersToPixels(gameState->world, gameState->player1.widthMeters);
 
         // A single tile should be bigger than the player.
         assert(gameState->world.tilemap.tileHeightPx > gameState->player1.heightPx);
@@ -579,19 +579,19 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     float32 pixelsPerPoint = 10.0f;
 
     // Y axis
-    writeRectangleInt(frameBuffer,
-        (FRAME_BUFFER_PIXEL_WIDTH / 2),
-        (FRAME_BUFFER_PIXEL_HEIGHT / 2) - 500,
-        1,
-        1000,
-        {1.0f, 1.0f, 1.0f});
+    writeRectangle(frameBuffer,
+        (float32)(FRAME_BUFFER_PIXEL_WIDTH / 2),
+        (float32)(FRAME_BUFFER_PIXEL_HEIGHT / 2) - 500,
+        1.0f,
+        1000.0f,
+        { 1.0f, 1.0f, 1.0f });
 
     // X axis
-    writeRectangleInt(frameBuffer,
-        (FRAME_BUFFER_PIXEL_WIDTH / 2) - 500,
-        (FRAME_BUFFER_PIXEL_HEIGHT / 2),
-        1000,
-        1,
+    writeRectangle(frameBuffer,
+        (float32)(FRAME_BUFFER_PIXEL_WIDTH / 2) - 500,
+        (float32)(FRAME_BUFFER_PIXEL_HEIGHT / 2),
+        1000.0f,
+        1.0f,
         {1.0f, 1.0f, 1.0f});
 
     // Vector 1
@@ -605,11 +605,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
             float32 x = ((float32)vox + ((float32)i*xfract));
             float32 y = ((float32)voy + ((float32)i*yfract));
-            writeRectangleInt(frameBuffer,
-                (uint64)x,
-                (uint64)y,
-                1,
-                1,
+            writeRectangle(frameBuffer,
+                x,
+                y,
+                1.0f,
+                1.0f,
                 {1.0f, 0.0f, 0.0f});
         }
     }
@@ -625,11 +625,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
             float32 x = ((float32)vox + ((float32)i*xfract));
             float32 y = ((float32)voy + ((float32)i*yfract));
-            writeRectangleInt(frameBuffer,
-                (uint64)x,
-                (uint64)y,
-                1,
-                1,
+            writeRectangle(frameBuffer,
+                x,
+                y,
+                1.0f,
+                1.0f,
                 {0.0f, 1.0f, 0.0f});
         }
     }
@@ -650,11 +650,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
             float32 x = ((float32)vox + ((float32)i*xfract));
             float32 y = ((float32)voy + ((float32)i*yfract));
-            writeRectangleInt(frameBuffer,
-                (uint64)x,
-                (uint64)y,
-                1,
-                1,
+            writeRectangle(frameBuffer,
+                x,
+                y,
+                1.0f,
+                1.0f,
                 {0.0f, 0.0f, 1.0f});
         }
     }
@@ -670,11 +670,11 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
             float32 x = ((float32)vox + ((float32)i*xfract));
             float32 y = ((float32)voy + ((float32)i*yfract));
-            writeRectangleInt(frameBuffer,
-                (uint64)x,
-                (uint64)y,
-                1,
-                1,
+            writeRectangle(frameBuffer,
+                x,
+                y,
+                1.0f,
+                1.0f,
                 {0.0f, 1.0f, 0.0f});
         }
     }

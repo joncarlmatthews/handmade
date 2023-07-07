@@ -16,10 +16,10 @@ void writeRectangle(GameFrameBuffer *buffer,
     assert(widthf >= 0.0f);
     assert(heightf >= 0.0f);
 
-    int32 xOffset = (int32)xOffsetf;
-    int32 yOffset = (int32)yOffsetf;
-    uint32 width = intrin_roundFloat32ToUInt32(widthf);
-    uint32 height = intrin_roundFloat32ToUInt32(heightf);
+    int32 xOffset   = intrin_roundF32ToUI32(xOffsetf);
+    int32 yOffset   = intrin_roundF32ToUI32(yOffsetf);
+    uint32 width    = intrin_roundF32ToUI32(widthf);
+    uint32 height   = intrin_roundF32ToUI32(heightf);
 
     // Bounds checking
     if (xOffset >= (int32)buffer->widthPx) {

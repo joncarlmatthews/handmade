@@ -74,12 +74,12 @@ assert(!"only 1 target compiler can be specified")
 // @see https://en.wikipedia.org/wiki/Display_resolution
 
 // WXGA (16:9)
-//#define FRAME_BUFFER_PIXEL_WIDTH  1280
-//#define FRAME_BUFFER_PIXEL_HEIGHT 720
+#define FRAME_BUFFER_PIXEL_WIDTH  1280
+#define FRAME_BUFFER_PIXEL_HEIGHT 720
 
 // FHD (16:9)
-#define FRAME_BUFFER_PIXEL_WIDTH  1920
-#define FRAME_BUFFER_PIXEL_HEIGHT 1080
+//#define FRAME_BUFFER_PIXEL_WIDTH  1920
+//#define FRAME_BUFFER_PIXEL_HEIGHT 1080
 
 // Maximum number of supported controllers
 // 1 keyboard, 4 gamepad controllers.

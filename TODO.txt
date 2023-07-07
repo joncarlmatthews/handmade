@@ -1,7 +1,8 @@
 Day 042:
- -x Fun with vectors!
- - Convert int to float, and abstract away the uint type casting when writing to the buffers?
- - Create vector classes for integers and floats. Refactor xyuint and xyint to new 2d vevtor classes.
+ -/ Fun with vectors!
+ - For position objects/attributes, refactor xyuint and xyint to new 2d vector class
+ - Migrate from writeRectangleInt to writeRectangle
+ / Player height and width is now no longer initialised as pixels but as metres. Need to adjust
  - Configure VS to format code as per my style
 
 Ongoing:
@@ -12,4 +13,5 @@ Ongoing:
  -x Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
  -x deprecate math.h
  -x Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
- -x Support for drawing bitmap at different size to that of the original asset. When the asset is drawn at the different size (via resizing the window) it tears.
+ -x Support for drawing bitmap at different size to that of the original asset.
+ -x Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.

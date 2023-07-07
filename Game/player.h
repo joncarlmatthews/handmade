@@ -39,20 +39,21 @@ typedef struct Player {
     // Which tilemap z-plane is the player on?
     uint32 zIndex;
 
-    // The fixed position that we draw the player from. @NOTE(JM) Should we move
-    // this to some place else other than the player?
+    // The fixed position that we draw the player from if the game scroll type
+    // is set to screen scrolling
     xyuint fixedPosition;
 
     // Last direction the player moved in (up, down, left, right)
     uint32 lastMoveDirections;
 
+    // Player bitmaps
     PlayerBitmap bitmaps[4];
     uint32 currentBitmapIndex;
 
     float32 heightMeters;
     float32 widthMeters;
-    uint16 heightPx;
-    uint16 widthPx;
+    uint32 heightPx;
+    uint32 widthPx;
     float32 movementSpeedMPS; // Metres per second
 
     // @NOTE(JM) old, temp jump code
