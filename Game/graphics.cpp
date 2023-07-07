@@ -212,14 +212,22 @@ void writeRectangleInt(GameFrameBuffer *buffer,
  * @param bitmapFile    The BitmapFile object
 */
 void writeBitmap(GameFrameBuffer *buffer,
-                    int64 xOffset,
-                    int64 yOffset,
-                    int64 width,
-                    int64 height,
-                    int64 alignX,
-                    int64 alignY,
+                    float32 xOffsetf,
+                    float32 yOffsetf,
+                    float32 widthf,
+                    float32 heightf,
+                    float32 alignXf,
+                    float32 alignYf,
                     BitmapFile bitmapFile)
 {
+
+    int64 xOffset   = (int64)intrin_roundF32ToI32(xOffsetf);
+    int64 yOffset   = (int64)intrin_roundF32ToI32(yOffsetf);
+    int64 width     = (int64)intrin_roundF32ToI32(widthf);
+    int64 height    = (int64)intrin_roundF32ToI32(heightf);
+    int64 alignX    = (int64)intrin_roundF32ToI32(alignXf);
+    int64 alignY    = (int64)intrin_roundF32ToI32(alignYf);
+    
     if (alignX < 0) {
         xOffset = (xOffset - (alignX * -1));
     }

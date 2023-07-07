@@ -539,34 +539,34 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 #if SCROLL_TYPE_SMOOTH
     xyuint playerPositionData = gameState->player1.fixedPosition;
 #elif SCROLL_TYPE_SCREEN
-    xyuint playerPositionData = gameState->player1.canonicalAbsolutePosition;
+    struct Vector2 playerPositionData = gameState->player1.canonicalAbsolutePosition;
 #endif
 
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,
-                playerBitmap.torso.widthPx,
-                playerBitmap.torso.heightPx,
-                -62,
-                -34,
+                (float32)playerBitmap.torso.widthPx,
+                (float32)playerBitmap.torso.heightPx,
+                -62.0f,
+                -34.0f,
                 playerBitmap.torso);
 
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,
-                playerBitmap.cape.widthPx,
-                playerBitmap.cape.heightPx,
-                -62,
-                -34,
+                (float32)playerBitmap.cape.widthPx,
+                (float32)playerBitmap.cape.heightPx,
+                -62.0f,
+                -34.0f,
                 playerBitmap.cape);
 
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,
-                playerBitmap.head.widthPx,
-                playerBitmap.head.heightPx,
-                -62,
-                -34,
+                (float32)playerBitmap.head.widthPx,
+                (float32)playerBitmap.head.heightPx,
+                -62.0f,
+                -34.0f,
                 playerBitmap.head);
 
     // Vector stuff...

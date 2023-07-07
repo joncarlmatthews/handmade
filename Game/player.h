@@ -35,7 +35,7 @@ typedef struct Player {
     xyuint gamePosition;
 
     // The absolute position normalised so it's relative to the screen.
-    xyuint canonicalAbsolutePosition;
+    struct Vector2 canonicalAbsolutePosition;
 
     // Which tilemap z-plane is the player on?
     uint32 zIndex;

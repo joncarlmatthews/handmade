@@ -310,17 +310,16 @@ void setPlayerPosition(float32 absX,
     gameState->player1.absolutePosition.y = absY;
     gameState->player1.zIndex = zIndex;
 
-    // Temp cast to (intrin_roundF32ToUI32) until canonicalAbsolutePosition becomes a vector
-    gameState->player1.canonicalAbsolutePosition.x = (intrin_floorF32ToI32(absX) % frameBuffer->widthPx);
-    gameState->player1.canonicalAbsolutePosition.y = (intrin_floorF32ToI32(absY) % frameBuffer->heightPx);
+    gameState->player1.canonicalAbsolutePosition.x = modF32(absX, (float32)frameBuffer->widthPx);
+    gameState->player1.canonicalAbsolutePosition.y = modF32(absY, (float32)frameBuffer->heightPx);
 
     // Consider the game position as the bottom middle. With a small inset up
     // from the bottom
     uint32 offsetX = (gameState->player1.widthPx / 2);
     uint32 offsetY = (uint32)(gameState->player1.heightPx * 0.15);
 
-    gameState->player1.gamePosition.x = (intrin_floorF32ToI32(gameState->player1.absolutePosition.x) + offsetX);
-    gameState->player1.gamePosition.y = intrin_floorF32ToI32(gameState->player1.absolutePosition.y) + offsetY;
+    gameState->player1.gamePosition.x = (intrin_roundF32ToI32(gameState->player1.absolutePosition.x) + offsetX);
+    gameState->player1.gamePosition.y = intrin_roundF32ToI32(gameState->player1.absolutePosition.y) + offsetY;
 
     gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - offsetX);
     gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - offsetY);
