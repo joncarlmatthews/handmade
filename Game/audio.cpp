@@ -78,6 +78,6 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
         audioSample++;
 
         // Write another 4 to the running byte group index.
-        byteGroupIndex = (uint32)((uint64)(byteGroupIndex + audioBuffer->bytesPerSample) % audioSampleGroupsPerCycle);
+        byteGroupIndex = (uint32)((byteGroupIndex + audioBuffer->bytesPerSample) % (uint32)audioSampleGroupsPerCycle);
     }
 }

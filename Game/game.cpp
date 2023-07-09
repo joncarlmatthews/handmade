@@ -580,18 +580,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     // Y axis
     writeRectangle(frameBuffer,
-        (float32)(FRAME_BUFFER_PIXEL_WIDTH / 2),
-        (float32)(FRAME_BUFFER_PIXEL_HEIGHT / 2) - 500,
-        1.0f,
-        1000.0f,
+        (FRAME_BUFFER_PIXEL_WIDTH / 2),
+        (FRAME_BUFFER_PIXEL_HEIGHT / 2) - 500,
+        1,
+        1000,
         { 1.0f, 1.0f, 1.0f });
 
     // X axis
     writeRectangle(frameBuffer,
-        (float32)(FRAME_BUFFER_PIXEL_WIDTH / 2) - 500,
-        (float32)(FRAME_BUFFER_PIXEL_HEIGHT / 2),
-        1000.0f,
-        1.0f,
+        (FRAME_BUFFER_PIXEL_WIDTH / 2) - 500,
+        (FRAME_BUFFER_PIXEL_HEIGHT / 2),
+        1000,
+        1,
         {1.0f, 1.0f, 1.0f});
 
     // Vector 1
@@ -602,14 +602,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         float32 xfract = (v1.x / v1mag);
         float32 yfract = (v1.y / v1mag);
 
-        for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
+        for (size_t i = 0; i < ((size_t)((float64)v1mag * (float64)pixelsPerPoint)); i++) {
             float32 x = ((float32)vox + ((float32)i*xfract));
             float32 y = ((float32)voy + ((float32)i*yfract));
             writeRectangle(frameBuffer,
                 x,
                 y,
-                1.0f,
-                1.0f,
+                1,
+                1,
                 {1.0f, 0.0f, 0.0f});
         }
     }
@@ -628,8 +628,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             writeRectangle(frameBuffer,
                 x,
                 y,
-                1.0f,
-                1.0f,
+                1,
+                1,
                 {0.0f, 1.0f, 0.0f});
         }
     }
@@ -653,8 +653,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             writeRectangle(frameBuffer,
                 x,
                 y,
-                1.0f,
-                1.0f,
+                1,
+                1,
                 {0.0f, 0.0f, 1.0f});
         }
     }
@@ -673,8 +673,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             writeRectangle(frameBuffer,
                 x,
                 y,
-                1.0f,
-                1.0f,
+                1,
+                1,
                 {0.0f, 1.0f, 0.0f});
         }
     }

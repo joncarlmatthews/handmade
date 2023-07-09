@@ -2,7 +2,14 @@
 #define HEADER_HH_GLOBAL_MARCOS
 
 #if HANDMADE_LOCAL_BUILD
-#define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
+#define assert(expression) \
+    if (!(expression)) { \
+        __pragma(warning(push)) \
+        __pragma(warning(disable: 6011)) \
+        int *address = 0x0; \
+        *address = 0; \
+        __pragma(warning(pop)) \
+    }
 #else
 #define assert(expression)
 #endif

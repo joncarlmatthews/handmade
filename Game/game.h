@@ -9,8 +9,8 @@
 // should reside in platform.h
 
 // Scroll type. Defaults to smooth
-//#define SCROLL_TYPE_SMOOTH 1
-#define SCROLL_TYPE_SCREEN 1
+#define SCROLL_TYPE_SMOOTH 1
+//#define SCROLL_TYPE_SCREEN 1
 
 #if (!defined(SCROLL_TYPE_SMOOTH))
 #define SCROLL_TYPE_SMOOTH 0

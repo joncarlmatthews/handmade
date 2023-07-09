@@ -9,17 +9,15 @@ uint32 f32ToUint32(float32 val)
 void writeRectangle(GameFrameBuffer *buffer,
                         float32 xOffsetf,
                         float32 yOffsetf,
-                        float32 widthf,
-                        float32 heightf,
+                        uint32 width,
+                        uint32 height,
                         Colour colour)
 {
-    assert(widthf >= 0.0f);
-    assert(heightf >= 0.0f);
+    assert(width >= 0.0f);
+    assert(height >= 0.0f);
 
     int32 xOffset   = intrin_roundF32ToUI32(xOffsetf);
     int32 yOffset   = intrin_roundF32ToUI32(yOffsetf);
-    uint32 width    = intrin_roundF32ToUI32(widthf);
-    uint32 height   = intrin_roundF32ToUI32(heightf);
 
     // Bounds checking
     if (xOffset >= (int32)buffer->widthPx) {
@@ -104,94 +102,14 @@ void writeRectangle(GameFrameBuffer *buffer,
     }
 }
 
-void writeRectangleInt(GameFrameBuffer *buffer,
-                        int64 xOffset,
-                        int64 yOffset,
-                        int64 width,
-                        int64 height,
+void writeRectangleInt(GameFrameBuffer* buffer,
+                        int32 xOffset,
+                        int32 yOffset,
+                        uint32 width,
+                        uint32 height,
                         Colour colour)
 {
-    // Bounds checking
-    if (xOffset >= buffer->widthPx) {
-        return;
-    }
-
-    if (yOffset >= buffer->heightPx) {
-        return;
-    }
-
-    // Min x
-    if (xOffset < 0) {
-        width = (width - (xOffset * -1));
-        if (width <= 0) {
-            return;
-        }
-        xOffset = 0;
-    }
-
-    // Min y
-    if (yOffset < 0) {
-        height = (height - (yOffset * -1));
-        if (height <= 0) {
-            return;
-        }
-        yOffset = 0;
-    }
-
-    // Max x
-    int64 maxX = (xOffset + width);
-
-    if (maxX > buffer->widthPx) {
-        maxX = (buffer->widthPx - xOffset);
-        if (width > maxX) {
-            width = maxX;
-        }
-    }
-
-    // Max y
-    int64 maxY = (yOffset + height);
-
-    if (maxY > buffer->heightPx) {
-        maxY = (buffer->heightPx - yOffset);
-        if (height > maxY) {
-            height = maxY;
-        }
-    }
-
-    // Set the colour
-    uint32 alpha    = ((uint32)(255.0f * colour.a) << 24);
-    uint32 red      = ((uint32)(255.0f * colour.r) << 16);
-    uint32 green    = ((uint32)(255.0f * colour.g) << 8);
-    uint32 blue     = ((uint32)(255.0f * colour.b) << 0);
-
-    uint32 hexColour = (alpha | red | green | blue);
-
-    // Write the memory
-    uint32 *row = (uint32*)buffer->memory;
-
-    // Move to last row as starting position (bottom left of axis)
-    row = (row + ((buffer->widthPx * buffer->heightPx) - buffer->widthPx));
-
-    // Move up to starting row
-    row = (row - (buffer->widthPx * yOffset));
-
-    // Move in from left to starting absolutePosition
-    row = (row + xOffset);
-
-    // Up (rows) y
-    for (int64 i = 0; i < height; i++) {
-
-        // Accross (columns) x
-        uint32 *pixel = (uint32*)row;
-        for (int64 x = 0; x < width; x++) {
-
-            *pixel = hexColour;
-            pixel = (pixel + 1);
-        }
-
-        // Move up one entire row
-        row = (row - buffer->widthPx);
-    }
+    writeRectangle(buffer, (float32)xOffset, (float32)yOffset, width, height, colour);
 }
 
 /**
