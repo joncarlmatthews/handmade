@@ -60,9 +60,9 @@ if %PlatformArg% == x64 (
     GOTO platform_usage
 )
 
-ECHO =========================
-ECHO "Building %Platform% on HostX64"
-ECHO =========================
+ECHO =============
+ECHO Building %Platform%
+ECHO =============
 
 REM Root build folder for Solution and Project
 SET ProjectFolder=%~dp0..\build\Windows\
@@ -113,8 +113,12 @@ REM for handy use in the link.exe call
 SET icf=%IntermediatesConfigurationFolder%
 
 REM Enabling Code Analysis. Command to match setting in Project > Properties > Code Analysis
-REM The /analyze:plugin value assumes a b4-bit host machine.
-SET codeAnalysisCompilerFlags=/analyze /analyze:ruleset"%VCInstallDir%..\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset" /analyze:plugin"%VCToolsInstallDir%bin\HostX64\%PlatformFolder%\EspXEngine.dll"
+SET codeAnalysisCompilerFlags=""
+if %Platform% == x86 (
+    SET codeAnalysisCompilerFlags=/analyze /analyze:ruleset"%VCInstallDir%..\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset" /analyze:plugin"%VCToolsInstallDir%bin\HostX86\x86\EspXEngine.dll"
+)else if %Platform% == x64 (
+    SET codeAnalysisCompilerFlags=/analyze /analyze:ruleset"%VCInstallDir%..\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset" /analyze:plugin"%VCToolsInstallDir%bin\HostX64\X64\EspXEngine.dll"
+) 
 
 SET CompilerFlags=""
 SET LinkerFlags=""
