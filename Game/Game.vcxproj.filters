@@ -51,13 +51,16 @@
     <ClInclude Include="intrinsics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="utility_shared.h">
+    <ClInclude Include="global_utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="global.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="global_macros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,7 +95,10 @@
     <ClCompile Include="intrinsics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="utility_shared.cpp">
+    <ClCompile Include="global_utility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

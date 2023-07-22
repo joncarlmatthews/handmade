@@ -8,7 +8,7 @@
 #include "..\Game\global.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
-#include "..\Game\utility_shared.cpp"
+#include "..\Game\global_utility.cpp"
 
 // Function stubs for functions provided by external DLL
 GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
@@ -232,6 +232,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             win32FixedFrameRate.timeOutIntervalMS = 1;
             win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
         }
+
+        // Get the handle to the monitor containing the window
+        HMONITOR hMonitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
+
+        // Get the monitor information
+        MONITORINFO monitorInfo;
+        monitorInfo.cbSize = sizeof(MONITORINFO);
+        GetMonitorInfo(hMonitor, &monitorInfo);
+
+        // Calculate the width and height of the monitor
+        uint32 monitorWidth = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+        uint32 monitorHeight = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+
+        // Get the height/width and ratio of the monitor
+        uint32 ratio = gcd(monitorHeight, monitorWidth);
+        uint32 ratioX = (max(monitorHeight, monitorWidth) / ratio);
+        uint32 ratioY = (min(monitorHeight, monitorWidth) / ratio);
+
+        win32State.monitorDims.x = monitorWidth;
+        win32State.monitorDims.y = monitorHeight;
+
+        win32State.monitorAspectRatio.x = ratioX;
+        win32State.monitorAspectRatio.y = ratioY;
 
         /*
          * Audio
@@ -973,19 +996,42 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
     uint32 destinationWidth = buffer.width;
     uint32 destinationHeight = buffer.height;
 
+    uint32 destinationMinWidth = (buffer.width / 2);
+    uint32 destinationMinHeight = (buffer.height / 2);
+
     // Draw the frame with margin?
-    int offsetX = 0;
-    int offsetY = 0;
+    int32 offsetX = 0;
+    int32 offsetY = 0;
 
     // @TODO(JM) Attempting to better support various window sizes for a best fit.
     // This needs lots more ifs/elses for maximum support.
     if ((buffer.width > clientWindowWidth)
             || (buffer.height > clientWindowHeight)) {
-        destinationWidth = buffer.width / 2;
-        destinationHeight = buffer.height / 2;
-    }else {
-        destinationWidth = buffer.width;
-        destinationHeight = buffer.height;
+
+        if (clientWindowHeight < buffer.height){
+
+            float32 co = percentageOfAnotherf((float32)clientWindowHeight,
+                                                (float32)buffer.height);
+
+            destinationHeight = (uint32)((float32)buffer.height * co);
+            destinationWidth = (uint32)((float32)buffer.width * co);
+            
+        }else if (clientWindowWidth < buffer.width){
+
+            float32 co = percentageOfAnotherf((float32)clientWindowWidth,
+                                                    (float32)buffer.width);
+
+            destinationHeight = (uint32)((float32)buffer.height * co);
+            destinationWidth = (uint32)((float32)buffer.width * co);
+
+        }
+    }
+
+    // Force a min width/height for the game
+    if ((destinationWidth < destinationMinWidth)
+            || (destinationHeight < destinationMinHeight)) {
+        destinationWidth = destinationMinWidth;
+        destinationHeight = destinationMinHeight;
     }
     
     // If the height and width of the window are at least twice as large as the

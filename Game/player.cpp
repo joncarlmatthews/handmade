@@ -20,9 +20,9 @@ void playerHandleMovement(GameState *gameState,
     float32 pixelsPerSecond = (gameState->world.pixelsPerMeter * gameState->player1.movementSpeedMPS);
     float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
 
-    // Ensure the player can at least move!
+    // Any movement to take?
     if (pixelsPerFrame < 1.0f){
-        pixelsPerFrame = 1.0f;
+        return;
     }
 
 #if 0
@@ -41,10 +41,19 @@ pixelsPerFrame);
     }
 #endif
 
-    xyint playerNewPosTmp = {0};
+    struct Vector2 playerNewPosTmp = {0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
     playerNewPosTmp.y = gameState->player1.absolutePosition.y;
 
+    // Handling diagonal movement
+    if ( (controller.dPadLeft.endedDown || controller.dPadRight.endedDown)
+            && (controller.dPadUp.endedDown || controller.dPadDown.endedDown) ) {
+        // The square root of "a half" is how much we need to move our player
+        // by if they're moving diagonally. The square root of 0.5 is approximately
+        // 0.70710678118. 
+        float32 sqrtOfHalf = 0.70710678118f;
+        pixelsPerFrame = (pixelsPerFrame * sqrtOfHalf);
+    }
 
     if (controller.dPadLeft.endedDown) {
         playerAttemptingMove = true;
@@ -54,7 +63,9 @@ pixelsPerFrame);
         playerAttemptingMove = true;
         playerNewPosTmp.x += (int32)pixelsPerFrame;
         gameState->player1.currentBitmapIndex = 1;
-    }else if (controller.dPadUp.endedDown) {
+    }
+
+    if (controller.dPadUp.endedDown) {
         playerAttemptingMove = true;
         playerNewPosTmp.y += (int32)pixelsPerFrame;
         gameState->player1.currentBitmapIndex = 0;
@@ -62,12 +73,6 @@ pixelsPerFrame);
         playerAttemptingMove = true;
         playerNewPosTmp.y += (int32)(pixelsPerFrame * -1.0f);
         gameState->player1.currentBitmapIndex = 2;
-    }
-
-    if (controller.up.endedDown) {
-        gameState->player1.zIndex = 1;
-    }else if (controller.down.endedDown) {
-        gameState->player1.zIndex = 0;
     }
 
     if (controller.isAnalog) {
@@ -92,9 +97,10 @@ pixelsPerFrame);
 
     if (playerAttemptingMove) {
 
-        xyuint playerNewPos = { 0 };
-        playerNewPos.x = (playerNewPosTmp.x % gameState->world.worldWidthPx);
-        playerNewPos.y = (playerNewPosTmp.y % gameState->world.worldHeightPx);
+        // Wrap the player movement for toroidal world
+        struct Vector2 playerNewPos = { 0 };
+        playerNewPos.x = modF32(playerNewPosTmp.x, (float32)gameState->world.worldWidthPx);
+        playerNewPos.y = modF32(playerNewPosTmp.y, (float32)gameState->world.worldHeightPx);
 
         // Player movement direction
         uint32 movedUp = 0;
@@ -248,7 +254,7 @@ gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRe
         gameState->player1.jumpRunningFrameCtr++;
 
         jumpPercentageOfAngle = percentageOfAnotherf(gameState->player1.jumpRunningFrameCtr, gameState->player1.jumpDuration);
-        jumpAngle = (360.0f * (jumpPercentageOfAngle / 100.0f));
+        jumpAngle = (360.0f * jumpPercentageOfAngle);
         jumpRadians = (jumpAngle * ((float32)M_PI / 180.0f));
         jumpSine = sinf(jumpRadians);
 
@@ -294,25 +300,29 @@ gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRe
  * @param gameState 
  * @return 
 */
-void setPlayerPosition(uint32 absX, uint32 absY, uint32 zIndex, GameState *gameState, GameFrameBuffer *frameBuffer)
+void setPlayerPosition(float32 absX,
+                        float32 absY,
+                        uint32 zIndex,
+                        GameState *gameState,
+                        GameFrameBuffer *frameBuffer)
 {
     gameState->player1.absolutePosition.x = absX;
     gameState->player1.absolutePosition.y = absY;
     gameState->player1.zIndex = zIndex;
 
-    gameState->player1.canonicalAbsolutePosition.x = (absX % frameBuffer->widthPx);
-    gameState->player1.canonicalAbsolutePosition.y = (absY % frameBuffer->heightPx);
+    gameState->player1.canonicalAbsolutePosition.x = modF32(absX, (float32)frameBuffer->widthPx);
+    gameState->player1.canonicalAbsolutePosition.y = modF32(absY, (float32)frameBuffer->heightPx);
 
     // Consider the game position as the bottom middle. With a small inset up
     // from the bottom
-    uint32 offsetX = (gameState->player1.widthPx / 2);
-    uint32 offsetY = (uint32)(gameState->player1.heightPx * 0.15);
+    float32 offsetX = ((float32)gameState->player1.widthPx / 2.0f);
+    float32 offsetY = ((float32)gameState->player1.heightPx * 0.15f);
 
-    gameState->player1.gamePosition.x = (gameState->player1.absolutePosition.x + offsetX);
+    gameState->player1.gamePosition.x = gameState->player1.absolutePosition.x + offsetX;
     gameState->player1.gamePosition.y = gameState->player1.absolutePosition.y + offsetY;
 
-    gameState->player1.fixedPosition.x = ((frameBuffer->widthPx / 2) - offsetX);
-    gameState->player1.fixedPosition.y = ((frameBuffer->heightPx / 2) - offsetY);
+    gameState->player1.fixedPosition.x = ((float32)(frameBuffer->widthPx / 2.0f) - offsetX);
+    gameState->player1.fixedPosition.y = ((float32)(frameBuffer->heightPx / 2.0f) - offsetY);
 
     return;
 }
@@ -325,14 +335,14 @@ void setPlayerPosition(uint32 absX, uint32 absY, uint32 zIndex, GameState *gameS
 * @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
 */
 void getPositionDataForPlayer(PlayerPositionData *positionData,
-                                xyuint playerPixelPos,
+                                struct Vector2 playerPixelPos,
                                 uint32 zIndex,
                                 PLAYER_POINT_POS pointPos,
                                 GameState *gameState)
 {
-    uint32 yInset = 0;
-    uint32 x = 0;
-    uint32 y = 0;
+    float32 yInset = 0;
+    float32 x = 0;
+    float32 y = 0;
 
     // Apply point the offsets...
     switch (pointPos)
@@ -346,27 +356,27 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
         y = playerPixelPos.y;
         break;
     case PLAYER_POINT_POS::TOP_MIDDLE:
-        x = (playerPixelPos.x + gameState->player1.widthPx / 2);
-        y = (playerPixelPos.y + gameState->player1.heightPx - yInset);
+        x = (playerPixelPos.x + (float32)gameState->player1.widthPx / 2);
+        y = (playerPixelPos.y + (float32)gameState->player1.heightPx - yInset);
         break;
     case PLAYER_POINT_POS::MIDDLE_LEFT:
         x = playerPixelPos.x;
-        y = (playerPixelPos.y + (gameState->player1.heightPx / 2) - yInset);
+        y = (playerPixelPos.y + ((float32)gameState->player1.heightPx / 2) - yInset);
         break;
     case PLAYER_POINT_POS::MIDDLE:
-        x = playerPixelPos.x + (gameState->player1.widthPx / 2);
-        y = playerPixelPos.y + (gameState->player1.heightPx / 2);
+        x = playerPixelPos.x + ((float32)gameState->player1.widthPx / 2);
+        y = playerPixelPos.y + ((float32)gameState->player1.heightPx / 2);
         break;
     case PLAYER_POINT_POS::MIDDLE_RIGHT:
-        x = (playerPixelPos.x + gameState->player1.widthPx - yInset);
-        y = (playerPixelPos.y + (gameState->player1.heightPx / 2) - yInset);
+        x = (playerPixelPos.x + (float32)gameState->player1.widthPx - yInset);
+        y = (playerPixelPos.y + ((float32)gameState->player1.heightPx / 2) - yInset);
         break;
     case PLAYER_POINT_POS::BOTTOM_MIDDLE:
-        x = (playerPixelPos.x + gameState->player1.widthPx / 2);
+        x = (playerPixelPos.x + (float32)gameState->player1.widthPx / 2);
         y = (playerPixelPos.y + yInset);
         break;
     case PLAYER_POINT_POS::BOTTOM_RIGHT:
-        x = (playerPixelPos.x + gameState->player1.widthPx - yInset);
+        x = (playerPixelPos.x + (float32)gameState->player1.widthPx - yInset);
         y = (playerPixelPos.y + yInset);
         break;
     case PLAYER_POINT_POS::BOTTOM_LEFT:
@@ -381,8 +391,8 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     positionData->pointPosition = pointPos;
 
     setTilemapPositionData(&positionData->tilemapPosition,
-                            x,
-                            y,
+                            intrin_roundF32ToUI32(x),
+                            intrin_roundF32ToUI32(y),
                             zIndex,
                             gameState->world.tilemap);
 }
@@ -391,8 +401,8 @@ internal_func bool playerHasSwitchedActiveTile(GameState *gameState)
 {
     TilemapPosition posData = {0};
     setTilemapPositionData(&posData,
-                            gameState->player1.gamePosition.x,
-                            gameState->player1.gamePosition.y,
+                            intrin_roundF32ToUI32(gameState->player1.gamePosition.x),
+                            intrin_roundF32ToUI32(gameState->player1.gamePosition.y),
                             gameState->player1.zIndex,
                             gameState->world.tilemap);
 

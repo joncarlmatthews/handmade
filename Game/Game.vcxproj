@@ -25,6 +25,7 @@
     <ClInclude Include="global_macros.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="intrinsics.h" />
+    <ClInclude Include="math.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="player.h" />
@@ -32,7 +33,7 @@
     <ClInclude Include="tilemap.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
-    <ClInclude Include="utility_shared.h" />
+    <ClInclude Include="global_utility.h" />
     <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
@@ -41,11 +42,12 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="intrinsics.cpp" />
+    <ClCompile Include="math.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="tilemap.cpp" />
     <ClCompile Include="utility.cpp" />
-    <ClCompile Include="utility_shared.cpp" />
+    <ClCompile Include="global_utility.cpp" />
     <ClCompile Include="world.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -110,21 +112,29 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\Windows\x86\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\x86\$(Configuration)\</IntDir>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\Windows\x86\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\x86\$(Configuration)\</IntDir>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\Windows\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\Windows\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -144,6 +154,13 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
+    <PreBuildEvent>
+      <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR
+IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Copying assets...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -167,6 +184,13 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
+    <PreBuildEvent>
+      <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR
+IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Copying assets...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -224,6 +248,13 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
+    <PreBuildEvent>
+      <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR
+IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Copying assets...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

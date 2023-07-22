@@ -2,7 +2,14 @@
 #define HEADER_HH_GLOBAL_MARCOS
 
 #if HANDMADE_LOCAL_BUILD
-#define assert(expression) if (!(expression)){ int *address = 0x0; *address = 0; }
+#define assert(expression) \
+    if (!(expression)) { \
+        __pragma(warning(push)) \
+        __pragma(warning(disable: 6011)) \
+        int *address = 0x0; \
+        *address = 0; \
+        __pragma(warning(pop)) \
+    }
 #else
 #define assert(expression)
 #endif
@@ -74,12 +81,12 @@ assert(!"only 1 target compiler can be specified")
 // @see https://en.wikipedia.org/wiki/Display_resolution
 
 // WXGA (16:9)
-//#define FRAME_BUFFER_PIXEL_WIDTH  1280
-//#define FRAME_BUFFER_PIXEL_HEIGHT 720
+#define FRAME_BUFFER_PIXEL_WIDTH  1280
+#define FRAME_BUFFER_PIXEL_HEIGHT 720
 
 // FHD (16:9)
-#define FRAME_BUFFER_PIXEL_WIDTH  1920
-#define FRAME_BUFFER_PIXEL_HEIGHT 1080
+//#define FRAME_BUFFER_PIXEL_WIDTH  1920
+//#define FRAME_BUFFER_PIXEL_HEIGHT 1080
 
 // Maximum number of supported controllers
 // 1 keyboard, 4 gamepad controllers.

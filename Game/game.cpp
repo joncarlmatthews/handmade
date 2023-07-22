@@ -52,10 +52,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert(gameState->world.worldWidthPx > frameBuffer->widthPx);
 
         // Character attributes
-        gameState->player1.heightMeters  = PLAYER_HEIGHT_METERS;
-        gameState->player1.widthMeters   = ((float32)gameState->player1.heightMeters * 0.65f);
-        gameState->player1.heightPx  = (int16)metersToPixels(gameState->world, gameState->player1.heightMeters);
-        gameState->player1.widthPx   = (int16)metersToPixels(gameState->world, gameState->player1.widthMeters);
+        gameState->player1.heightMeters     = PLAYER_HEIGHT_METERS;
+        gameState->player1.widthMeters      = (gameState->player1.heightMeters * 0.65f);
+        gameState->player1.heightPx         = metersToPixels(gameState->world, gameState->player1.heightMeters);
+        gameState->player1.widthPx          = metersToPixels(gameState->world, gameState->player1.widthMeters);
 
         // A single tile should be bigger than the player.
         assert(gameState->world.tilemap.tileHeightPx > gameState->player1.heightPx);
@@ -437,10 +437,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     uint32 absTileIndexZ = gameState->player1.zIndex;
 
-#if SCROLL_TYPE == SCROLL_TYPE_SMOOTH
+#if SCROLL_TYPE_SMOOTH
     xyzuint centerTileIndex = gameState->worldPosition.tileIndex;
     xyuint tileRelPos = gameState->worldPosition.tileRelativePixelPos;
-#elif SCROLL_TYPE == SCROLL_TYPE_SCREEN
+#elif SCROLL_TYPE_SCREEN
     xyzuint centerTileIndex = gameState->cameraPosition.tileIndex;
     xyuint tileRelPos = gameState->cameraPosition.tileRelativePixelPos;
 #endif
@@ -473,7 +473,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             // Is this tile chunk out of the sparse storage memory bounds?
             if ((tileChunkIndex.x > (tilemap.tileChunkDimensions - 1))
                     || (tileChunkIndex.y > (tilemap.tileChunkDimensions - 1))) {
-                writeRectangle(frameBuffer,
+                writeRectangleInt(frameBuffer,
                             startPixelPos.x,
                             startPixelPos.y,
                             tilemap.tileWidthPx,
@@ -498,7 +498,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||
                     ((uint8*)tileValue > gameState->tilesMemoryBlock.lastAddressReserved
                         || (uint8*)tileValue < gameState->tilesMemoryBlock.startingAddress)) {
-                writeRectangle(frameBuffer,
+                writeRectangleInt(frameBuffer,
                             startPixelPos.x,
                             startPixelPos.y,
                             tilemap.tileWidthPx,
@@ -524,7 +524,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             }
 #endif
 
-            writeRectangle(frameBuffer,
+            writeRectangleInt(frameBuffer,
                             startPixelPos.x,
                             startPixelPos.y,
                             tilemap.tileWidthPx,
@@ -536,43 +536,153 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     // Draw player
     PlayerBitmap playerBitmap = gameState->player1.bitmaps[gameState->player1.currentBitmapIndex];
 
-#if SCROLL_TYPE == SCROLL_TYPE_SMOOTH
-    xyuint playerPositionData = gameState->player1.fixedPosition;
-#elif SCROLL_TYPE == SCROLL_TYPE_SCREEN
-    xyuint playerPositionData = gameState->player1.canonicalAbsolutePosition;
+#if SCROLL_TYPE_SMOOTH
+    struct Vector2 playerPositionData = gameState->player1.fixedPosition;
+#elif SCROLL_TYPE_SCREEN
+    struct Vector2 playerPositionData = gameState->player1.canonicalAbsolutePosition;
 #endif
 
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,
-                playerBitmap.torso.widthPx,
-                playerBitmap.torso.heightPx,
-                -62,
-                -34,
+                (float32)playerBitmap.torso.widthPx,
+                (float32)playerBitmap.torso.heightPx,
+                -62.0f,
+                -34.0f,
                 playerBitmap.torso);
 
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,
-                playerBitmap.cape.widthPx,
-                playerBitmap.cape.heightPx,
-                -62,
-                -34,
+                (float32)playerBitmap.cape.widthPx,
+                (float32)playerBitmap.cape.heightPx,
+                -62.0f,
+                -34.0f,
                 playerBitmap.cape);
 
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,
-                playerBitmap.head.widthPx,
-                playerBitmap.head.heightPx,
-                -62,
-                -34,
+                (float32)playerBitmap.head.widthPx,
+                (float32)playerBitmap.head.heightPx,
+                -62.0f,
+                -34.0f,
                 playerBitmap.head);
+
+    // Vector stuff...
+
+    // Vector origins
+    uint32 vox = (FRAME_BUFFER_PIXEL_WIDTH / 2);
+    uint32 voy = (FRAME_BUFFER_PIXEL_HEIGHT / 2);
+
+    // Pixels per point
+    float32 pixelsPerPoint = 10.0f;
+
+    // Y axis
+    writeRectangle(frameBuffer,
+        (FRAME_BUFFER_PIXEL_WIDTH / 2),
+        (FRAME_BUFFER_PIXEL_HEIGHT / 2) - 500,
+        1,
+        1000,
+        { 1.0f, 1.0f, 1.0f });
+
+    // X axis
+    writeRectangle(frameBuffer,
+        (FRAME_BUFFER_PIXEL_WIDTH / 2) - 500,
+        (FRAME_BUFFER_PIXEL_HEIGHT / 2),
+        1000,
+        1,
+        {1.0f, 1.0f, 1.0f});
+
+    // Vector 1
+    {
+        Vector2 v1 = {5.0f, 10.0f}; // "points"
+        float32 v1mag = getVectorMagnitude(v1);
+
+        float32 xfract = (v1.x / v1mag);
+        float32 yfract = (v1.y / v1mag);
+
+        for (size_t i = 0; i < ((size_t)((float64)v1mag * (float64)pixelsPerPoint)); i++) {
+            float32 x = ((float32)vox + ((float32)i*xfract));
+            float32 y = ((float32)voy + ((float32)i*yfract));
+            writeRectangle(frameBuffer,
+                x,
+                y,
+                1,
+                1,
+                {1.0f, 0.0f, 0.0f});
+        }
+    }
+
+    // Vector 2
+    {
+        Vector2 v1 = {15.0f, 6.0f}; // "points"
+        float32 v1mag = getVectorMagnitude(v1);
+
+        float32 xfract = (v1.x / v1mag);
+        float32 yfract = (v1.y / v1mag);
+
+        for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
+            float32 x = ((float32)vox + ((float32)i*xfract));
+            float32 y = ((float32)voy + ((float32)i*yfract));
+            writeRectangle(frameBuffer,
+                x,
+                y,
+                1,
+                1,
+                {0.0f, 1.0f, 0.0f});
+        }
+    }
+
+    // Vector 3
+    {
+        Vector2 v2 = {5.0f, 10.0f}; // "points"
+        Vector2 v3 = {15.0f, 6.0f}; // "points"
+
+        Vector2 v1 = {0.0f, 0.0f}; // "points"
+        v1 += v2;
+        v1 += v3;
+        float32 v1mag = getVectorMagnitude(v1);
+
+        float32 xfract = (v1.x / v1mag);
+        float32 yfract = (v1.y / v1mag);
+
+        for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
+            float32 x = ((float32)vox + ((float32)i*xfract));
+            float32 y = ((float32)voy + ((float32)i*yfract));
+            writeRectangle(frameBuffer,
+                x,
+                y,
+                1,
+                1,
+                {0.0f, 0.0f, 1.0f});
+        }
+    }
+
+    // Vector 4
+    {
+        Vector2 v1 = {-8.0f, -16.0f}; // "points"
+        float32 v1mag = getVectorMagnitude(v1);
+
+        float32 xfract = (v1.x / v1mag);
+        float32 yfract = (v1.y / v1mag);
+
+        for (size_t i = 0; i < ((size_t)(v1mag * pixelsPerPoint)); i++) {
+            float32 x = ((float32)vox + ((float32)i*xfract));
+            float32 y = ((float32)voy + ((float32)i*yfract));
+            writeRectangle(frameBuffer,
+                x,
+                y,
+                1,
+                1,
+                {0.0f, 1.0f, 0.0f});
+        }
+    }
 
 #if 0
     // Mouse input testing
     if (inputInstances->mouse.leftClick.endedDown) {
-        writeRectangle(frameBuffer,
+        writeRectangleInt(frameBuffer,
                         inputInstances->mouse.position.x,
                         inputInstances->mouse.position.y,
                         50,
@@ -589,10 +699,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
 void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
 {
-    uint32 indexX = (gameState->player1.absolutePosition.x / frameBuffer->widthPx);
+    uint32 indexX = (intrin_roundF32ToUI32(gameState->player1.absolutePosition.x) / frameBuffer->widthPx);
     uint32 cameraPosX = (frameBuffer->widthPx / 2) + (indexX * frameBuffer->widthPx);
 
-    uint32 indexY = (gameState->player1.absolutePosition.y / frameBuffer->heightPx);
+    uint32 indexY = (intrin_roundF32ToUI32(gameState->player1.absolutePosition.y) / frameBuffer->heightPx);
     uint32 cameraPosY = (frameBuffer->heightPx / 2) + (indexY * frameBuffer->heightPx);
 
     gameState->cameraPosition.absPixelPos.x = cameraPosX;

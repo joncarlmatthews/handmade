@@ -18,11 +18,18 @@
 * @return void
 */
 typedef struct GameFrameBuffer GameFrameBuffer;
+void writeRectangleInt(GameFrameBuffer *buffer,
+                        int32 xOffset,
+                        int32 yOffset,
+                        uint32 width,
+                        uint32 height,
+                        Colour colour);
+
 void writeRectangle(GameFrameBuffer *buffer,
-                    int64 xOffset,
-                    int64 yOffset,
-                    int64 width,
-                    int64 height,
+                    float32 xOffsetf,
+                    float32 yOffsetf,
+                    uint32 width,
+                    uint32 height,
                     Colour colour);
 
 /**
@@ -37,13 +44,13 @@ void writeRectangle(GameFrameBuffer *buffer,
  * @param alignY        Move the bitmap N number of pixels up/down on the y axis
  * @param bitmapFile    The BitmapFile object
 */
-void writeBitmap(GameFrameBuffer *buffer,
-                    int64 xOffset,
-                    int64 yOffset,
-                    int64 width,
-                    int64 height,
-                    int64 alignX,
-                    int64 alignY,
+void writeBitmap(GameFrameBuffer* buffer,
+                    float32 xOffsetf,
+                    float32 yOffsetf,
+                    float32 widthf,
+                    float32 heightf,
+                    float32 alignXf,
+                    float32 alignYf,
                     BitmapFile bitmapFile);
 
 #endif

@@ -8,21 +8,35 @@
 // Definitons that both the game layer and the platform layer need access to
 // should reside in platform.h
 
-// Scroll type
+// Scroll type. Defaults to smooth
 #define SCROLL_TYPE_SMOOTH 1
-#define SCROLL_TYPE_SCREEN 2
+//#define SCROLL_TYPE_SCREEN 1
 
-#define SCROLL_TYPE SCROLL_TYPE_SCREEN
+#if (!defined(SCROLL_TYPE_SMOOTH))
+#define SCROLL_TYPE_SMOOTH 0
+#endif
 
-#if (SCROLL_TYPE != SCROLL_TYPE_SMOOTH && SCROLL_TYPE != SCROLL_TYPE_SCREEN)
-#error "Invalid SCROLL_TYPE value"
+#if (!defined(SCROLL_TYPE_SCREEN))
+#define SCROLL_TYPE_SCREEN 0
+#endif
+
+#if (!SCROLL_TYPE_SMOOTH) && (!SCROLL_TYPE_SCREEN)
+
+#undef SCROLL_TYPE_SMOOTH
+#define SCROLL_TYPE_SMOOTH 1
+
+#endif
+
+#if (SCROLL_TYPE_SMOOTH) && (SCROLL_TYPE_SCREEN)
+    assert(!"Both scroll types cannot be enabled at the same time")
 #endif
 
 #include "global_macros.h"
 #include "types.h"
+#include "math.h"
 #include "global.h"
 #include "intrinsics.h"
-#include "utility_shared.h"
+#include "global_utility.h"
 #include "utility.h"
 #include "filesystem.h"
 #include "random.h"

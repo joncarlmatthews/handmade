@@ -1,4 +1,4 @@
-#include "utility_shared.h"
+#include "global_utility.h"
 
 /**
 * 1 KiB = 1,024 bytes
@@ -27,4 +27,26 @@ uint64 utilGibibytesToBytes(uint8 gibibytes)
 uint64 utilTebibyteToBytes(uint8 tebibytes)
 {
     return (uint64)(((uint64)1024 * utilGibibytesToBytes(1)) * tebibytes);
+}
+
+/**
+ * Greatest common divisor
+ */
+uint32 gcd(uint32 a, uint32 b)
+{
+    if (b == 0) {
+        return a;
+    }
+    else {
+        return gcd(b, a % b);
+    }
+}
+
+float32 percentageOfAnotherf(float32 a, float32 b)
+{
+    if (b <= 0) {
+        return 0.0f;
+    }
+
+    return (a / b);
 }

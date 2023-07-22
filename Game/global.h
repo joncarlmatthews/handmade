@@ -11,6 +11,7 @@
 
 #include "global_macros.h"
 #include "types.h"
+#include "global_utility.h"
 #include "memory.h"
 #include "filesystem.h"
 

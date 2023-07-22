@@ -1,19 +1,30 @@
 #include "graphics.h"
 #include "game.h"
 
-void writeRectangle(GameFrameBuffer *buffer,
-                    int64 xOffset,
-                    int64 yOffset,
-                    int64 width,
-                    int64 height,
-                    Colour colour)
+uint32 f32ToUint32(float32 val)
 {
+    return (uint32)val;
+}
+
+void writeRectangle(GameFrameBuffer *buffer,
+                        float32 xOffsetf,
+                        float32 yOffsetf,
+                        uint32 width,
+                        uint32 height,
+                        Colour colour)
+{
+    assert(width >= 0.0f);
+    assert(height >= 0.0f);
+
+    int32 xOffset   = intrin_roundF32ToUI32(xOffsetf);
+    int32 yOffset   = intrin_roundF32ToUI32(yOffsetf);
+
     // Bounds checking
-    if (xOffset >= buffer->widthPx) {
+    if (xOffset >= (int32)buffer->widthPx) {
         return;
     }
 
-    if (yOffset >= buffer->heightPx) {
+    if (yOffset >= (int32)buffer->heightPx) {
         return;
     }
 
@@ -36,7 +47,7 @@ void writeRectangle(GameFrameBuffer *buffer,
     }
 
     // Max x
-    int64 maxX = (xOffset + width);
+    uint32 maxX = (xOffset + width);
 
     if (maxX > buffer->widthPx) {
         maxX = (buffer->widthPx - xOffset);
@@ -46,7 +57,7 @@ void writeRectangle(GameFrameBuffer *buffer,
     }
 
     // Max y
-    int64 maxY = (yOffset + height);
+    uint32 maxY = (yOffset + height);
 
     if (maxY > buffer->heightPx) {
         maxY = (buffer->heightPx - yOffset);
@@ -76,11 +87,11 @@ void writeRectangle(GameFrameBuffer *buffer,
     row = (row + xOffset);
 
     // Up (rows) y
-    for (int64 i = 0; i < height; i++) {
+    for (uint32 i = 0; i < height; i++) {
 
         // Accross (columns) x
         uint32 *pixel = (uint32*)row;
-        for (int64 x = 0; x < width; x++) {
+        for (uint32 x = 0; x < width; x++) {
 
             *pixel = hexColour;
             pixel = (pixel + 1);
@@ -89,6 +100,16 @@ void writeRectangle(GameFrameBuffer *buffer,
         // Move up one entire row
         row = (row - buffer->widthPx);
     }
+}
+
+void writeRectangleInt(GameFrameBuffer* buffer,
+                        int32 xOffset,
+                        int32 yOffset,
+                        uint32 width,
+                        uint32 height,
+                        Colour colour)
+{
+    writeRectangle(buffer, (float32)xOffset, (float32)yOffset, width, height, colour);
 }
 
 /**
@@ -109,14 +130,24 @@ void writeRectangle(GameFrameBuffer *buffer,
  * @param bitmapFile    The BitmapFile object
 */
 void writeBitmap(GameFrameBuffer *buffer,
-                    int64 xOffset,
-                    int64 yOffset,
-                    int64 width,
-                    int64 height,
-                    int64 alignX,
-                    int64 alignY,
+                    float32 xOffsetf,
+                    float32 yOffsetf,
+                    float32 widthf,
+                    float32 heightf,
+                    float32 alignXf,
+                    float32 alignYf,
                     BitmapFile bitmapFile)
 {
+    assert(widthf >= 1.0f);
+    assert(heightf >= 1.0f);
+
+    int32 xOffset   = intrin_roundF32ToI32(xOffsetf);
+    int32 yOffset   = intrin_roundF32ToI32(yOffsetf);
+    int32 width     = intrin_roundF32ToI32(widthf);
+    int32 height    = intrin_roundF32ToI32(heightf);
+    int32 alignX    = intrin_roundF32ToI32(alignXf);
+    int32 alignY    = intrin_roundF32ToI32(alignYf);
+    
     if (alignX < 0) {
         xOffset = (xOffset - (alignX * -1));
     }
@@ -131,16 +162,16 @@ void writeBitmap(GameFrameBuffer *buffer,
         yOffset = (yOffset + alignY);
     }
 
-    int64 originalXOffset = xOffset;
-    int64 originalYOffset = yOffset;
-    int64 originalWidth = width;
+    int32 originalXOffset = xOffset;
+    int32 originalYOffset = yOffset;
+    int32 originalWidth = width;
 
     // Bounds checking
-    if (xOffset >= buffer->widthPx) {
+    if (xOffset >= (int32)buffer->widthPx) {
         return;
     }
 
-    if (yOffset >= buffer->heightPx) {
+    if (yOffset >= (int32)buffer->heightPx) {
         return;
     }
 
@@ -163,20 +194,20 @@ void writeBitmap(GameFrameBuffer *buffer,
     }
 
     // Max x
-    int64 maxX = (xOffset + width);
+    int32 maxX = (xOffset + width);
 
-    if (maxX > buffer->widthPx) {
-        maxX = (buffer->widthPx - xOffset);
+    if (maxX > (int32)buffer->widthPx) {
+        maxX = ((int32)buffer->widthPx - xOffset);
         if (width > maxX) {
             width = maxX;
         }
     }
 
     // Max y
-    int64 maxY = (yOffset + height);
+    int32 maxY = (yOffset + height);
 
-    if (maxY > buffer->heightPx) {
-        maxY = (buffer->heightPx - yOffset);
+    if (maxY > (int32)buffer->heightPx) {
+        maxY = ((int32)buffer->heightPx - yOffset);
         if (height > maxY) {
             height = maxY;
         }
@@ -205,32 +236,32 @@ void writeBitmap(GameFrameBuffer *buffer,
     }
 
     // Fetch the RGBA shifts from the bitmap's masks...
-    bitScanResult redShift = intrinBitScanForward(bitmapFile.redMask);
+    bitScanResult redShift = intrin_bitScanForward(bitmapFile.redMask);
     if (!redShift.found){
         assert(!"Error finding red mask bit shift");
     }
 
-    bitScanResult greenShift = intrinBitScanForward(bitmapFile.greenMask);
+    bitScanResult greenShift = intrin_bitScanForward(bitmapFile.greenMask);
     if (!greenShift.found){
         assert(!"Error finding green mask bit shift");
     }
 
-    bitScanResult blueShift = intrinBitScanForward(bitmapFile.blueMask);
+    bitScanResult blueShift = intrin_bitScanForward(bitmapFile.blueMask);
     if (!blueShift.found){
         assert(!"Error finding blue mask bit shift");
     }
 
-    bitScanResult alphaShift = intrinBitScanForward(bitmapFile.alphaMask);
+    bitScanResult alphaShift = intrin_bitScanForward(bitmapFile.alphaMask);
     if (!alphaShift.found){
         assert(!"Error finding alpha mask bit shift");
     }
 
     // Up (rows) y
-    for (int64 y = 0; y < height; y++) {
+    for (int32 y = 0; y < height; y++) {
 
         // Accross (columns) x
         uint32 *pixel = (uint32*)row;
-        for (int64 x = 0; x < width; x++) {
+        for (int32 x = 0; x < width; x++) {
 
             // Extract RGBA values from bitmap.
             uint8 red       = (((*imagePixel & bitmapFile.redMask) >> redShift.index) & 0xFF);
@@ -271,7 +302,7 @@ void writeBitmap(GameFrameBuffer *buffer,
 
         if (originalXOffset < 0) {
             imagePixel = (imagePixel + (originalXOffset*-1));
-        }else if ((originalXOffset + originalWidth) > buffer->widthPx) {
+        }else if ((originalXOffset + originalWidth) > (int32)buffer->widthPx) {
             imagePixel = (imagePixel + ((originalWidth + originalXOffset) - buffer->widthPx));
         }
     }
