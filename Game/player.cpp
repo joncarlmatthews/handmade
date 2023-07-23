@@ -25,10 +25,9 @@ void playerHandleMovement(GameState *gameState,
         return;
     }
 
-#if 0
     {
         char buff[400] = {};
-        sprintf_s(buff, sizeof(buff),
+        memory->DEBUG_platformLog(buff, sizeof(buff),
             "MS per frame: %f. \
 FPS: %f. \
 Pixels per second: %f. \
@@ -37,9 +36,7 @@ gameInput->msPerFrame,
 gameInput->fps,
 pixelsPerSecond,
 pixelsPerFrame);
-        memory->DEBUG_platformLog(buff);
     }
-#endif
 
     struct Vector2 playerNewPosTmp = {0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
