@@ -1817,7 +1817,16 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
 
 DEBUG_PLATFORM_LOG(DEBUG_platformLog)
 {
-    OutputDebugStringA(buff);
+    va_list args;
+    va_start(args, format);
+
+    int res = vsnprintf(buffer, sizeOfBuffer, format, args);
+
+    va_end(args);
+
+    OutputDebugStringA(buffer);
+
+    return res;
 }
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)

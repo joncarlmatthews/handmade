@@ -1,9 +1,4 @@
-Day 042:
- -/ Fun with vectors!
- -/ For position objects/attributes, refactor xyuint and xyint to new 2d vector class
- -/ Migrate from writeRectangleInt to writeRectangle
- -/ Player height and width is now no longer initialised as pixels but as metres. Need to adjust
- -/ Copy 32-bit analyze compiler flags from VS to batch file
+Day 043
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?

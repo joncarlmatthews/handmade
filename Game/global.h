@@ -17,7 +17,7 @@
 
 #if HANDMADE_LOCAL_BUILD
 
-#define DEBUG_PLATFORM_LOG(name) void name(char *buff)
+#define DEBUG_PLATFORM_LOG(name) int name(char* const buffer, sizet const sizeOfBuffer, char const* const format, ...)
 typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
 
 #endif
