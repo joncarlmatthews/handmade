@@ -304,7 +304,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Assign the mouse object to the game input
         gameInput->mouse = mouse;
-        gameInput->targetFPS = TARGET_FPS;
 
         // Keyboard support
         GameControllerInput keyboard = { 0 };
@@ -321,10 +320,44 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         PostMessage(window, WM_HANDMADE_HERO_READY, 0, 0);
 
+        // Time delta is defined as "the time elapsed between the last frame and the one preceding it."
+        // Hold the last three frames worth of times
+        LARGE_INTEGER preGameLoopTime = win32GetTime();
+        LARGE_INTEGER frameTimes[3] = { preGameLoopTime };
+        frameTimes[0] = preGameLoopTime;
+        frameTimes[1] = preGameLoopTime;
+        frameTimes[2] = preGameLoopTime;
+
+        // Current frame index
+        sizet frameIndex = 0;
+
         /**
          * MAIN GAME LOOP
          */
         while (running) {
+
+            uint8 deltaFrameIndex = (frameIndex % 3);
+
+            // What was the previous frame's frame time index?
+            int8 prevFrameIndex = (deltaFrameIndex - 1);
+            if (prevFrameIndex < 0) {
+                prevFrameIndex = 2;
+            }
+
+            // What was the frame preceding the previous frame time's index?
+            uint8 precedingPrevFrameIndex = ((deltaFrameIndex + 1) % 3);
+
+            // Calculate the delta time for the frame.
+            gameInput->deltaTime = win32GetElapsedTimeS(frameTimes[precedingPrevFrameIndex], frameTimes[prevFrameIndex], globalQPCFrequency);
+
+            if(false){
+                char output[100] = { 0 };
+                sprintf_s(output, sizeof(output),
+                            "Delta time frame %zu: %f seconds\n",
+                            frameIndex,
+                            gameInput->deltaTime);
+                OutputDebugStringA(output);
+            }
 
             // Get the current time for profiling FPS
             LARGE_INTEGER netFrameTime = win32GetTime();
@@ -617,31 +650,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                     &controllerCounts);
             }
 
-
-#ifdef HANDMADE_LIVE_LOOP_EDITING
-            win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
-#endif
-
-            // Output the audio buffer in Windows.
-            win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
-
-            // Take a copy of this frame's controller inputs
-            gameInputOld->mouse = gameInput->mouse;
-            gameInputOld->controllers[0] = gameInput->controllers[0];
-
-            // Display the frame buffer in Windows. AKA "flip the frame" or "page flip".
-
-            // Get the window's height and width
-            win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-
-            // Display the buffer to the screen
-            win32DisplayFrameBuffer(deviceHandleForWindow,
-                                    win32FrameBuffer,
-                                    clientDimensions.width,
-                                    clientDimensions.height);
-
-            // How long did this game loop (frame) take? (E.g. 2ms)
+            // Save how long this frame look to compute (excluding rendering and auido
+            // which is handled by the OS and we dont have control over)
             LARGE_INTEGER gameLoopTime = win32GetTime();
+
+            frameTimes[deltaFrameIndex] = gameLoopTime;
 
             float32 millisecondsElapsedForFrame = win32GetElapsedTimeMS(netFrameTime, gameLoopTime, globalQPCFrequency);
 
@@ -735,48 +748,67 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             }
 
             // Calculate the net frame time (E.g. 33.33ms or 16.66ms)
-
-            // Set the ms per frame to the game input object so we can regulate movement speed
-            gameInput->msPerFrame = millisecondsElapsedForFrame;
-            gameInput->fps = (1000.0f / gameInput->msPerFrame);
-
             #if defined(HANDMADE_DEBUG_FPS)
-                {
-                    char output[100] = { 0 };
-                    sprintf_s(output, sizeof(output),
-                                "Net time for frame to complete: %f milliseconds\n\n",
-                                millisecondsElapsedForFrame);
+            {
+                char output[100] = { 0 };
+                sprintf_s(output, sizeof(output),
+                            "Net time for frame to complete: %f milliseconds\n\n",
+                            millisecondsElapsedForFrame);
 
-                    OutputDebugStringA(output);
-                }
+                OutputDebugStringA(output);
+            }
             #endif
 
             #if defined(HANDMADE_DEBUG_CLOCKCYCLES)
-                {
-                    // Calculate how many processor clock cycles elapsed for this frame.
-                    // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
-                    uint64 processorClockCyclesAfterFrame = __rdtsc();
-                    int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
-                    float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
+            {
+                // Calculate how many processor clock cycles elapsed for this frame.
+                // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
+                uint64 processorClockCyclesAfterFrame = __rdtsc();
+                int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
+                float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
 
-                    // Calculate the FPS given the speed of this current frame.
-                    float32 fps = (1000.0f / (float32)millisecondsElapsedForFrame);
+                // Calculate the FPS given the speed of this current frame.
+                float32 fps = (1000.0f / (float32)millisecondsElapsedForFrame);
 
-                    // Calculate the processor running speed in GHz
-                    float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
+                // Calculate the processor running speed in GHz
+                float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
 
-                    // Reset the running clock cycles.
-                    runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
+                // Reset the running clock cycles.
+                runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
 
-                    // Console log the speed:
-                    char output[100] = { 0 };
-                    sprintf_s(output, sizeof(output),
-                                "Cycles: %.1fm (%.2f GHz).\n",
-                                clockCycles_mega, processorSpeed);
-                    OutputDebugStringA(output);
-                }
+                // Console log the speed:
+                char output[100] = { 0 };
+                sprintf_s(output, sizeof(output),
+                            "Cycles: %.1fm (%.2f GHz).\n",
+                            clockCycles_mega, processorSpeed);
+                OutputDebugStringA(output);
+            }
             #endif
 
+            // Output the audio buffer in Windows.
+            win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
+
+            // Display the frame buffer in Windows. AKA "flip the frame" or "page flip"...
+
+            // Get the window's height and width
+            win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
+
+            // Display the buffer to the screen
+            win32DisplayFrameBuffer(deviceHandleForWindow,
+                                    win32FrameBuffer,
+                                    clientDimensions.width,
+                                    clientDimensions.height);
+
+            // Take a copy of this frame's controller inputs
+            gameInputOld->mouse = gameInput->mouse;
+            gameInputOld->controllers[0] = gameInput->controllers[0];
+
+            // Increment frame index
+            frameIndex++;
+
+#ifdef HANDMADE_LIVE_LOOP_EDITING
+            win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
+#endif
 
         } // game loop
 

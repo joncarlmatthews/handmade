@@ -17,24 +17,20 @@ void playerHandleMovement(GameState *gameState,
     // Normalise pixel movement regardless of framerate
     // @NOTE(JM) The truncated fractions cause issues with different framerates.
     // Not sure how to resolve at this point.
-    float32 pixelsPerSecond = (gameState->world.pixelsPerMeter * gameState->player1.movementSpeedMPS);
-    float32 pixelsPerFrame = (pixelsPerSecond / gameInput->fps);
+    float32 speed = (gameState->player1.movementSpeedMPS * gameInput->deltaTime);
+    float32 pixelsPerFrame = (speed * gameState->world.pixelsPerMeter);
 
     // Any movement to take?
     if (pixelsPerFrame < 1.0f){
         return;
     }
 
-    {
+    if (true){
         char buff[400] = {};
         memory->DEBUG_platformLog(buff, sizeof(buff),
-            "MS per frame: %f. \
-FPS: %f. \
-Pixels per second: %f. \
+            "Delta time (s): %f. \
 Pixels per frame: %f\n",
-gameInput->msPerFrame,
-gameInput->fps,
-pixelsPerSecond,
+gameInput->deltaTime,
 pixelsPerFrame);
     }
 

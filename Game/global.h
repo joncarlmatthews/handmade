@@ -241,9 +241,7 @@ typedef struct GameInput
 {
     GameMouseInput mouse;
     GameControllerInput controllers[MAX_CONTROLLERS];
-    float32 msPerFrame; // How many miliseconds are we taking per frame? E.g. 16.6 or 33.3
-    uint8 targetFPS; // Our target FPS
-    float32 fps; // What is our actual FPS
+    float32 deltaTime; // The time elapsed between the last frame and the one preceding it express in seconds
 } GameInput;
 
 //
