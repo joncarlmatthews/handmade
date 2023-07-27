@@ -11,6 +11,8 @@ struct Vector2 {
     float32 x;
     float32 y;
 
+#if 0
+
     /**
      * Adds another vector to this instance's vector via overloading the
      * += operator.
@@ -104,10 +106,17 @@ struct Vector2 {
      * @param scalar The scalar multiplier.
     */
     Vector2& operator*=(float scalar);
+#endif
+
 } ;
 
-float32 getVectorMagnitude(Vector2 v);
 
 float32 modF32(float32 dividend, float32 divisor);
+
+float32 getVectorMagnitude(Vector2 v);
+void vector2Add(Vector2 *v1, Vector2 v2);
+void vector2Multiply(Vector2 *v1, Vector2 v2);
+void vector2Subtract(Vector2 *v1, Vector2 v2);
+void vector2MultiplyScalar(Vector2 *v1, float32 scalar);
 
 #endif

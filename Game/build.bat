@@ -27,7 +27,6 @@ IF [%2]==[] GOTO usage
 
 SET ConfigurationArg=%1
 SET PlatformArg=%2
-SET CopyAssetsArg=%3
 
 if %ConfigurationArg% == Release (
     SET Configuration=Release
@@ -38,9 +37,18 @@ if %ConfigurationArg% == Release (
 )
 
 if "%3"=="1" (
-    ECHO "COPY ASSETS"
+    ECHO RUNNING CODE ANALYSIS
+    SET CodeAnalysis=true
+)else (
+    ECHO SKIPPING CODE ANALYSIS
+    SET CodeAnalysis=false
+)
+
+if "%4"=="1" (
+    ECHO COPYING ASSETS
     SET CopyAssets=true
 )else (
+    ECHO NOT COPYING ASSETS
     SET CopyAssets=false
 )
 
@@ -114,11 +122,13 @@ SET icf=%IntermediatesConfigurationFolder%
 
 REM Enabling Code Analysis. Command to match setting in Project > Properties > Code Analysis
 SET codeAnalysisCompilerFlags=""
-if %Platform% == x86 (
-    SET codeAnalysisCompilerFlags=/analyze /analyze:ruleset"%VCInstallDir%..\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset" /analyze:plugin"%VCToolsInstallDir%bin\HostX86\x86\EspXEngine.dll"
-)else if %Platform% == x64 (
-    SET codeAnalysisCompilerFlags=/analyze /analyze:ruleset"%VCInstallDir%..\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset" /analyze:plugin"%VCToolsInstallDir%bin\HostX64\X64\EspXEngine.dll"
-) 
+if %CodeAnalysis% == true (
+    if %Platform% == x86 (
+        SET codeAnalysisCompilerFlags=/analyze /analyze:ruleset"%VCInstallDir%..\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset" /analyze:plugin"%VCToolsInstallDir%bin\HostX86\x86\EspXEngine.dll"
+    )else if %Platform% == x64 (
+        SET codeAnalysisCompilerFlags=/analyze /analyze:ruleset"%VCInstallDir%..\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset" /analyze:plugin"%VCToolsInstallDir%bin\HostX64\X64\EspXEngine.dll"
+    )
+)
 
 SET CompilerFlags=""
 SET LinkerFlags=""

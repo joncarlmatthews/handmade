@@ -677,7 +677,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             }
 #endif
                 
-            // Cap frame rate to target FPS if we're running ahead.
+            // Cap frame rate to target FPS if we're running ahead. We do this before rendering
+            // and audio intentionally.
             if (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame){
 
                 float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - millisecondsElapsedForFrame);
@@ -807,6 +808,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             frameIndex++;
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
+            // Reload game code
             win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 #endif
 
@@ -1619,17 +1621,27 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
     wcscat_s(gameDLLFilePath, countArray(gameDLLFilePath), absPath);
     wcscat_s(gameDLLFilePath, countArray(gameDLLFilePath), L"Game.dll");
 
-    // Calculate absolute path to the Game_copy.dll
-    wchar_t gameCopyDLLFilePath[MAX_PATH] = {0};
-    wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), absPath);
-    wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), L"Game_copy.dll");
-
-
 #if !defined(HANDMADE_LIVE_LOOP_EDITING)
     win32LoadGameDLLFunctionsFromFile(gameDLLFilePath, gameCode);
     return;
 #endif
 
+    // ================ //
+    // Live loop editing:
+    // ================ //
+
+    // Automatically load the game code if it hasnt yet been loaded
+    if (gameCode->dllHandle == 0x0) {
+        win32LoadGameDLLFunctionsFromFile(gameDLLFilePath, gameCode);
+        return;
+    }
+
+    // Calculate absolute path to the Game_copy.dll
+    wchar_t gameCopyDLLFilePath[MAX_PATH] = { 0 };
+    wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), absPath);
+    wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), L"Game_copy.dll");
+
+    // Do we need to reload the game code?
     BOOL loadGameCode = false;
 
     // Does the copy yet exist?
@@ -1654,8 +1666,6 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
             #endif
         }
 
-        loadGameCode = true;
-
     } else {
 
         // File already exists...
@@ -1675,7 +1685,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
                 if (!res) {
                 #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
                         wchar_t buff[500] = { 0 };
-                        swprintf_s(buff, 500, L"Could not free DLL handle lock: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
+                        swprintf_s(buff, 500, L"Could not free DLL handle lock: 0x%X. Will try again next loop.\n", GetLastError()); // 0x7E == The specified module could not be found.
                         OutputDebugString(buff);
                     #endif
                 }
@@ -1698,15 +1708,15 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 #endif
             loadGameCode = true;
 
-        } else {
-
-            if (gameCode->dllHandle == 0x0) {
-                loadGameCode = true;
-            }
         }
     }
 
     if (loadGameCode) {
+#ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
+        wchar_t buff[500] = { 0 };
+        swprintf_s(buff, 500, L"Reloading game code from DLL\n");
+        OutputDebugString(buff);
+#endif
         win32LoadGameDLLFunctionsFromFile(gameCopyDLLFilePath, gameCode);
     }
 }
