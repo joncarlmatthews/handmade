@@ -46,7 +46,7 @@ void initTilemap(MemoryRegion *memoryRegion,
     gameState->world.tilemap.tileChunks = memoryBlockReserveArray(memoryRegion,
                                                                     memoryBlock,
                                                                     TileChunk,
-                                                                    (sizet)((gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions) * tilemapTotalZPlanes));
+                                                                    (sizet)(((size_t)gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions) * tilemapTotalZPlanes));
 }
 
 /**
@@ -103,7 +103,7 @@ void setTilemapPositionData(TilemapPosition *tilemapPosition,
 
     // Get the active tile
     uint32 *tile = tilemapPosition->tileChunk->tiles;
-    tile += (chunkRelativeTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelativeTileIndex.x;
+    tile += ((sizet)chunkRelativeTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelativeTileIndex.x;
     tilemapPosition->activeTile = tile;
 
     return;
@@ -137,7 +137,7 @@ TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTi
 TileChunk *getTileChunkFromTileChunkIndex(xyzuint tileChunkIndex, Tilemap tilemap)
 {
     TileChunk *tileChunk = tilemap.tileChunks;
-    tileChunk = tileChunk + (tileChunkIndex.z * (tilemap.tileChunkDimensions * tilemap.tileChunkDimensions)) + (tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x;
+    tileChunk = tileChunk + (tileChunkIndex.z * ((sizet)tilemap.tileChunkDimensions * tilemap.tileChunkDimensions)) + ((sizet)tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x;
     return tileChunk;
 }
 
@@ -185,14 +185,14 @@ void setTileValue(MemoryRegion memoryRegion,
         tileChunk->tiles = memoryBlockReserveArray(&memoryRegion,
                                                     &gameState->tilesMemoryBlock,
                                                     uint32,
-                                                    (sizet)(tilemap.tileChunkTileDimensions * tilemap.tileChunkTileDimensions));
+                                                    (sizet)((sizet)tilemap.tileChunkTileDimensions * tilemap.tileChunkTileDimensions));
 
     }
 
     xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileX, absTileY, tilemap);
 
     uint32 *tile = tileChunk->tiles;
-    tile += (chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x;
+    tile += ((sizet)chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x;
     *tile = value;
 }
 

@@ -2,15 +2,12 @@ Day 043
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?
- -x Fix player speed/frame rate consistency? Not sure how to resolve this atm. Will revisit.
  -x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
  -x Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
  -x deprecate math.h
  -x Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
  -x Support for drawing bitmap at different size to that of the original asset.
  -x Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
- -x Configure VS to format code as per my style
-    -x https://stackoverflow.com/questions/70460978/format-code-and-sort-using-on-save-in-visual-studio-2022
+ -x Add linter as part of pre-commit hook. Something like Stylecop?
 
 Thoughts
- -x Remove operator overloading of Vector to make it C, not C++?

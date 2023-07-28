@@ -16,8 +16,8 @@ void writeRectangle(GameFrameBuffer *buffer,
     assert(width >= 0.0f);
     assert(height >= 0.0f);
 
-    int32 xOffset   = intrin_roundF32ToUI32(xOffsetf);
-    int32 yOffset   = intrin_roundF32ToUI32(yOffsetf);
+    int32 xOffset   = intrin_roundF32ToI32(xOffsetf);
+    int32 yOffset   = intrin_roundF32ToI32(yOffsetf);
 
     // Bounds checking
     if (xOffset >= (int32)buffer->widthPx) {
@@ -78,10 +78,10 @@ void writeRectangle(GameFrameBuffer *buffer,
     uint32 *row = (uint32*)buffer->memory;
 
     // Move to last row as starting position (bottom left of axis)
-    row = (row + ((buffer->widthPx * buffer->heightPx) - buffer->widthPx));
+    row = (row + (((sizet)buffer->widthPx * buffer->heightPx) - buffer->widthPx));
 
     // Move up to starting row
-    row = (row - (buffer->widthPx * yOffset));
+    row = (row - (uint32)((sizet)buffer->widthPx * (sizet)yOffset));
 
     // Move in from left to starting absolutePosition
     row = (row + xOffset);
@@ -217,10 +217,10 @@ void writeBitmap(GameFrameBuffer *buffer,
     uint32 *row = (uint32*)buffer->memory;
 
     // Move to last row as starting position (bottom left of axis)
-    row = (row + ((buffer->widthPx * buffer->heightPx) - buffer->widthPx));
+    row = (row + (((sizet)buffer->widthPx * buffer->heightPx) - buffer->widthPx));
 
     // Move up to starting row
-    row = (row - (buffer->widthPx * yOffset));
+    row = (row - ((sizet)buffer->widthPx * (sizet)yOffset));
 
     // Move in from left to starting absolutePosition
     row = (row + xOffset);
@@ -228,11 +228,11 @@ void writeBitmap(GameFrameBuffer *buffer,
     uint32 *imagePixel = (uint32 *)bitmapFile.memory;
 
     if (originalXOffset < 0) {
-        imagePixel = (imagePixel + (originalXOffset*-1));
+        imagePixel = (imagePixel + ((int64)originalXOffset*-1));
     }
 
     if (originalYOffset < 0) {
-        imagePixel = (imagePixel + ((originalYOffset*-1) * originalWidth));
+        imagePixel = (imagePixel + (((int64)originalYOffset*-1) * originalWidth));
     }
 
     // Fetch the RGBA shifts from the bitmap's masks...
@@ -301,9 +301,9 @@ void writeBitmap(GameFrameBuffer *buffer,
         row = (row - buffer->widthPx);
 
         if (originalXOffset < 0) {
-            imagePixel = (imagePixel + (originalXOffset*-1));
+            imagePixel = (imagePixel + ((int64)originalXOffset*-1));
         }else if ((originalXOffset + originalWidth) > (int32)buffer->widthPx) {
-            imagePixel = (imagePixel + ((originalWidth + originalXOffset) - buffer->widthPx));
+            imagePixel = (imagePixel + (((sizet)originalWidth + originalXOffset) - buffer->widthPx));
         }
     }
 }

@@ -494,7 +494,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                                                                     tilemap);
 
             // Get the individual tile
-            uint32 *tileValue = (tileChunk->tiles + ((chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
+            uint32 *tileValue = (tileChunk->tiles + (((sizet)chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
 
             // Is this tile out of the sparse storage memory bounds?
             if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||
