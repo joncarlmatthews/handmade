@@ -1650,9 +1650,11 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
     if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))) {
 
 #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
-        wchar_t buff[500] = { 0 };
-        swprintf_s(buff, 500, L"Game_copy.dll doesnt exist, going to copy...\n");
-        OutputDebugString(buff);
+        {
+            wchar_t buff[500] = { 0 };
+            swprintf_s(buff, 500, L"Game_copy.dll doesnt exist, going to copy...\n");
+            OutputDebugString(buff);
+        }
 #endif
 
         BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);

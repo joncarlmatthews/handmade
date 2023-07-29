@@ -115,5 +115,6 @@
     <None Include="static_checker.bat">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="compile_commands.json" />
   </ItemGroup>
 </Project>

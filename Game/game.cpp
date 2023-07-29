@@ -161,8 +161,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 #endif
 
         // Spam some tile values into the tilemap...      
-        World world         = gameState->world;
-        Tilemap tilemap     = world.tilemap;
         uint32 randomNumberIndex = 0;
 
         uint32 rooms = 20;
@@ -277,7 +275,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         if (0 == x) {
                             if (doorLeft){
                                 // Half way up?
-                                if ((y == (roomTileDims / 2))){
+                                if (y == (roomTileDims / 2)){
                                     tileValue = 3; // Passageway
                                 }
                             }
@@ -287,7 +285,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         if (x == (roomTileDims -1)) {
                             if (doorRight){
                                 // Half way up?
-                                if ((y == (roomTileDims / 2))){
+                                if (y == (roomTileDims / 2)){
                                     tileValue = 3; // Passageway
                                 }
                             }
@@ -297,7 +295,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         if (0 == y) {
                             if (doorBottom){
                                 // Half way along?
-                                if ((x == (roomTileDims / 2))){
+                                if (x == (roomTileDims / 2)){
                                     tileValue = 3; // Passageway
                                 }
                             }
@@ -307,7 +305,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         if (y == (roomTileDims -1)) {
                             if (doorTop){
                                 // Half way along?
-                                if ((x == (roomTileDims / 2))){
+                                if (x == (roomTileDims / 2)){
                                     tileValue = 3; // Passageway
                                 }
                             }
@@ -494,7 +492,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                                                                     tilemap);
 
             // Get the individual tile
-            uint32 *tileValue = (tileChunk->tiles + (((sizet)chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
+            uint32 *tileValue = (tileChunk->tiles + ((chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x));
 
             // Is this tile out of the sparse storage memory bounds?
             if ((gameState->tilesMemoryBlock.bytesUsed <= 0) ||
@@ -579,7 +577,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         (FRAME_BUFFER_PIXEL_HEIGHT / 2) - 500,
         1,
         1000,
-        { 1.0f, 1.0f, 1.0f });
+        { 1.0f, 1.0f, 1.0f, 1.0f });
 
     // X axis
     writeRectangle(frameBuffer,
@@ -587,18 +585,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         (FRAME_BUFFER_PIXEL_HEIGHT / 2),
         1000,
         1,
-        {1.0f, 1.0f, 1.0f});
+        {1.0f, 1.0f, 1.0f, 1.0f });
 
     Vector2 redVector = { 10.0f, 10.0f };
     Vector2 greenVector = { 5.0f, 3.0f };
     Vector2 blueVector = {-10.0f, 10.0f};
 
-    drawVector(frameBuffer, redVector, {1.0f, 0.0f, 0.0f});
-    drawVector(frameBuffer, greenVector, {0.0f, 1.0f, 0.0f});
+    drawVector(frameBuffer, redVector, {1.0f, 0.0f, 0.0f, 1.0f });
+    drawVector(frameBuffer, greenVector, {0.0f, 1.0f, 0.0f, 1.0f });
 
     //vector2Multiply(&blueVector, greenVector);
 
-    drawVector(frameBuffer, blueVector, { 1.0f, 0.0f, 0.0f });
+    drawVector(frameBuffer, blueVector, { 1.0f, 0.0f, 0.0f, 1.0f });
 
 
 #if 0

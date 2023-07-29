@@ -32,7 +32,7 @@ gameInput->deltaTime,
 pixelsPerFrame);
     }
 
-    struct Vector2 playerNewPosTmp = {0};
+    struct Vector2 playerNewPosTmp = {0, 0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
     playerNewPosTmp.y = gameState->player1.absolutePosition.y;
 
@@ -89,7 +89,7 @@ pixelsPerFrame);
     if (playerAttemptingMove) {
 
         // Wrap the player movement for toroidal world
-        struct Vector2 playerNewPos = { 0 };
+        struct Vector2 playerNewPos = { 0, 0 };
         playerNewPos.x = modF32(playerNewPosTmp.x, (float32)gameState->world.worldWidthPx);
         playerNewPos.y = modF32(playerNewPosTmp.y, (float32)gameState->world.worldHeightPx);
 
@@ -390,7 +390,7 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
 
 internal_func bool playerHasSwitchedActiveTile(GameState *gameState)
 {
-    TilemapPosition posData = {0};
+    TilemapPosition posData;
     setTilemapPositionData(&posData,
                             intrin_roundF32ToUI32(gameState->player1.gamePosition.x),
                             intrin_roundF32ToUI32(gameState->player1.gamePosition.y),

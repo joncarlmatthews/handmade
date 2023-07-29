@@ -36,22 +36,6 @@ if %ConfigurationArg% == Release (
     GOTO configuration_usage
 )
 
-if "%3"=="1" (
-    ECHO RUNNING CODE ANALYSIS
-    SET CodeAnalysis=true
-)else (
-    ECHO SKIPPING CODE ANALYSIS
-    SET CodeAnalysis=false
-)
-
-if "%4"=="1" (
-    ECHO COPYING ASSETS
-    SET CopyAssets=true
-)else (
-    ECHO NOT COPYING ASSETS
-    SET CopyAssets=false
-)
-
 SET Timestamp=%date:~6,4%-%date:~3,2%-%date:~0,2%-%time:~0,2%-%time:~3,2%-%time:~6,2%
 
 REM PlatformFolder to match Visual Studio's build directory structures
@@ -70,6 +54,26 @@ if %PlatformArg% == x64 (
 
 ECHO =============
 ECHO Building %Platform%
+
+if "%3"=="1" (
+    ECHO  - running clang-tidy code analysis
+    SET CodeAnalysis=false
+)else if "%3"=="2" (
+    ECHO  - running Windows code analysis
+    SET CodeAnalysis=true
+)else (
+    ECHO  - skipping code analysis
+    SET CodeAnalysis=false
+)
+
+if "%4"=="1" (
+    ECHO  - copying assets
+    SET CopyAssets=true
+)else (
+    ECHO  - skipping asset copy
+    SET CopyAssets=false
+)
+
 ECHO =============
 
 REM Root build folder for Solution and Project
@@ -101,7 +105,7 @@ IF not exist %IntermediatesConfigurationFolder% ( mkdir %IntermediatesConfigurat
 REM delete any old PDB files from any previous build
 del %BuildConfigurationFolder%Game_*.pdb
 
-REM double backslash directories (cl.exe and link.exe need the directories to be double backslashed)
+REM double backslash directories. (cl.exe and link.exe need the directories to be double backslashed)
 SET ProjectFolder=%ProjectFolder:\=\\%
 SET SolutionFolder=%SolutionFolder:\=\\%
 SET DataFolder=%DataFolder:\=\\%
@@ -138,7 +142,7 @@ IF %Platform% == x86 (
 
     IF %Configuration% == Debug (
 
-        SET CompilerFlags=/c /ZI /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /Oy- /D WIN32 /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb" %codeAnalysisCompilerFlags% /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
+        SET CompilerFlags=/c /Zi /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /Oy- /D WIN32 /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb" %codeAnalysisCompilerFlags% /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
 
         SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /DLL
     )
@@ -155,7 +159,7 @@ IF %Platform% == x64 (
 
     IF %Configuration% == Debug (
 
-        SET CompilerFlags=/c /ZI /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb" %codeAnalysisCompilerFlags% /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
+        SET CompilerFlags=/c /Zi /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb" %codeAnalysisCompilerFlags% /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1
 
         SET LinkerFlags=/ERRORREPORT:PROMPT /OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X64 /DLL
     )

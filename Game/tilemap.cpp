@@ -46,7 +46,7 @@ void initTilemap(MemoryRegion *memoryRegion,
     gameState->world.tilemap.tileChunks = memoryBlockReserveArray(memoryRegion,
                                                                     memoryBlock,
                                                                     TileChunk,
-                                                                    (sizet)(((size_t)gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions) * tilemapTotalZPlanes));
+                                                                    (sizet)((gameState->world.tilemap.tileChunkDimensions * gameState->world.tilemap.tileChunkDimensions) * tilemapTotalZPlanes));
 }
 
 /**
@@ -103,7 +103,7 @@ void setTilemapPositionData(TilemapPosition *tilemapPosition,
 
     // Get the active tile
     uint32 *tile = tilemapPosition->tileChunk->tiles;
-    tile += ((sizet)chunkRelativeTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelativeTileIndex.x;
+    tile += (chunkRelativeTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelativeTileIndex.x;
     tilemapPosition->activeTile = tile;
 
     return;
@@ -119,7 +119,7 @@ xyuint geAbsTileIndexFromAbsPixel(uint32 pixelX, uint32 pixelY, Tilemap tilemap)
 
 xyzuint getTileChunkIndexForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTileZ, Tilemap tilemap)
 {
-    xyzuint tileChunkIndex = { 0 };
+    xyzuint tileChunkIndex = { 0, 0, 0 };
 
     tileChunkIndex.x = (absTileX / tilemap.tileChunkTileDimensions);
     tileChunkIndex.y = (absTileY / tilemap.tileChunkTileDimensions);
@@ -137,14 +137,14 @@ TileChunk *getTileChunkForAbsTile(uint32 absTileX, uint32 absTileY, uint32 absTi
 TileChunk *getTileChunkFromTileChunkIndex(xyzuint tileChunkIndex, Tilemap tilemap)
 {
     TileChunk *tileChunk = tilemap.tileChunks;
-    tileChunk = tileChunk + (tileChunkIndex.z * ((sizet)tilemap.tileChunkDimensions * tilemap.tileChunkDimensions)) + ((sizet)tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x;
+    tileChunk = tileChunk + (tileChunkIndex.z * (tilemap.tileChunkDimensions * tilemap.tileChunkDimensions)) + ((sizet)tileChunkIndex.y * tilemap.tileChunkDimensions) + tileChunkIndex.x;
     return tileChunk;
 }
 
 
 xyuint getChunkRelativeTileIndex(uint32 absTileX, uint32 absTileY, Tilemap tilemap)
 {
-    xyuint index = { 0 };
+    xyuint index = { 0, 0 };
 
     index.x = (absTileX % tilemap.tileChunkTileDimensions);
     index.y = (absTileY % tilemap.tileChunkTileDimensions);
@@ -192,7 +192,7 @@ void setTileValue(MemoryRegion memoryRegion,
     xyuint chunkRelTileIndex = getChunkRelativeTileIndex(absTileX, absTileY, tilemap);
 
     uint32 *tile = tileChunk->tiles;
-    tile += ((sizet)chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x;
+    tile += (chunkRelTileIndex.y * tilemap.tileChunkTileDimensions) + chunkRelTileIndex.x;
     *tile = value;
 }
 
@@ -238,47 +238,47 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
     switch (tileValue) {
     default:
         // Allocated tile memory, but no value set. (Yellow)
-        *tileColour =  { (255.0f/255.0f), (255.0f/255.0f), (0.0f/255.0f) };
+        *tileColour =  { (255.0f/255.0f), (255.0f/255.0f), (0.0f/255.0f), 1.0f };
         break;
 
     case 1:
         // stone floor
-        *tileColour = { (89.0f/255.0f), (89.0f/255.0f), (89.0f/255.0f) }; 
+        *tileColour = { (89.0f/255.0f), (89.0f/255.0f), (89.0f/255.0f), 1.0f };
         break;
 
     case 2:
         // stone wall
-        *tileColour = { (38.0f/255.0f), (38.0f/255.0f), (38.0f/255.0f) }; 
+        *tileColour = { (38.0f/255.0f), (38.0f/255.0f), (38.0f/255.0f), 1.0f };
         break;
 
     case 3:
         // passageway
-        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f) }; 
+        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f), 1.0f };
         break;
 
     case 4:
         // earth/grass
-        *tileColour = { (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f) }; 
+        *tileColour = { (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f), 1.0f };
         break;
 
     case 5:
         // stairwell up
-        *tileColour = { (57.0f/255.0f), (57.0f/255.0f), (57.0f/255.0f) }; 
+        *tileColour = { (57.0f/255.0f), (57.0f/255.0f), (57.0f/255.0f), 1.0f };
         break;
 
     case 6:
         // stairwell down
-        *tileColour = { (0/255.0f), (0/255.0f), (0/255.0f) }; 
+        *tileColour = { (0/255.0f), (0/255.0f), (0/255.0f), 1.0f };
         break;
     }
 }
 
 Colour getOutOfTileChunkMemoryBoundsColour()
 {
-    return { (1.0f/255.0f), (2.0f/255.0f), (172.0f/255.0f) }; // blue
+    return { (1.0f/255.0f), (2.0f/255.0f), (172.0f/255.0f), 1.0f }; // blue
 }
 
 Colour getUninitialisedTileChunkTilesColour()
 {
-    return { (204.0f/255.0f), (51.0f/255.0f), 0.0f }; // red
+    return { (204.0f/255.0f), (51.0f/255.0f), 0.0f, 1.0f }; // red
 }

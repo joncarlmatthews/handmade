@@ -15,6 +15,9 @@ trim_trailing_whitespace = true
 insert_final_newline = false
 end_of_line = crlf
 
+[*.json]
+indent_size = 2
+
 [*.{c++,cc,cpp,cppm,cxx,h,h++,hh,hpp,hxx,inl,ipp,ixx,tlh,tli}]
 guidelines = 80
 

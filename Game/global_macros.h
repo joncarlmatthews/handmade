@@ -2,6 +2,7 @@
 #define HEADER_HH_GLOBAL_MARCOS
 
 #if HANDMADE_LOCAL_BUILD
+// NOLINTBEGIN
 #define assert(expression) \
     if (!(expression)) { \
         __pragma(warning(push)) \
@@ -10,6 +11,7 @@
         *address = 0; \
         __pragma(warning(pop)) \
     }
+// NOLINTEND
 #else
 #define assert(expression)
 #endif
