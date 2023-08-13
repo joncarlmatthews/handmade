@@ -3,10 +3,11 @@
 
 #include "startup.h"
 
-
 //
 // Game types...
 //====================================================
+// Temp. Being replaced by vectors
+
 typedef struct xyint {
     int32 x;
     int32 y;

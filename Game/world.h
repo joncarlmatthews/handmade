@@ -1,7 +1,6 @@
 #ifndef HEADER_HH_WORLD
 #define HEADER_HH_WORLD
 
-#include "game_types.h"
 #include "tilemap.h"
 
 // How many pixels to represent 1 meter?

@@ -1,7 +1,6 @@
 #ifndef HEADER_HH_FILESYSTEM
 #define HEADER_HH_FILESYSTEM
 
-#include "global_macros.h"
 #include "game_types.h"
 
 #define BITMAP_FILE_ID 0x4D42

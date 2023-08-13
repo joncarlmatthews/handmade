@@ -1,4 +1,5 @@
 #include "utility.h"
+#include "intrinsics.h"
 
 uint32 u32RoundUpDivide(uint32 dividend, uint32 divisor)
 {

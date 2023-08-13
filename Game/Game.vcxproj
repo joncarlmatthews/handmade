@@ -22,18 +22,15 @@
     <ClInclude Include="audio.h" />
     <ClInclude Include="filesystem.h" />
     <ClInclude Include="game.h" />
-    <ClInclude Include="global_macros.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="intrinsics.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="memory.h" />
-    <ClInclude Include="global.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="tilemap.h" />
     <ClInclude Include="game_types.h" />
     <ClInclude Include="utility.h" />
-    <ClInclude Include="global_utility.h" />
     <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
@@ -47,7 +44,6 @@
     <ClCompile Include="player.cpp" />
     <ClCompile Include="tilemap.cpp" />
     <ClCompile Include="utility.cpp" />
-    <ClCompile Include="global_utility.cpp" />
     <ClCompile Include="world.cpp" />
   </ItemGroup>
   <ItemGroup>

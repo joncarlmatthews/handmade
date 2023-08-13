@@ -1,6 +1,0 @@
-#ifndef HEADER_HH_GLOBAL_UTILITY
-#define HEADER_HH_GLOBAL_UTILITY
-
-
-
-#endif
