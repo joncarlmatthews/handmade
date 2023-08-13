@@ -6,6 +6,7 @@
 //====================================================
 // Root.
 
+// Project includes
 #include "startup.h"
 #include "game_types.h"
 #include "math.h"
@@ -20,14 +21,19 @@
 #include "tilemap.h"
 #include "player.h"
 
+// Compiler/OS includes
 #if COMPILER_MSVC
 #include <intrin.h>
 #pragma intrinsic(_BitScanForward)
 #endif
 
+/**
+ * Preprocessor definitions
+ */
+
 // Scroll type. Defaults to smooth
-#define SCROLL_TYPE_SMOOTH 1
-//#define SCROLL_TYPE_SCREEN 1
+//#define SCROLL_TYPE_SMOOTH 1
+#define SCROLL_TYPE_SCREEN 1
 
 #if (!defined(SCROLL_TYPE_SMOOTH))
 #define SCROLL_TYPE_SMOOTH 0
@@ -47,8 +53,6 @@
 #if (SCROLL_TYPE_SMOOTH) && (SCROLL_TYPE_SCREEN)
     assert(!"Both scroll types cannot be enabled at the same time")
 #endif
-
-
 
 #if HANDMADE_LOCAL_BUILD
 

@@ -1,5 +1,6 @@
 Day 043
--x Switch build.bat to use clang-tidy.exe. Will have to migrate away from batch file to Powershell script it seems for this.
+ -x build.bat needs to be updated now I have refactored project
+ -x Switch build.bat to use clang-tidy.exe. Will have to migrate away from batch file to Powershell script it seems for this.
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?

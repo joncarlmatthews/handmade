@@ -145,14 +145,14 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;GAME_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;GAME_EXPORTS;_WINDOWS;_USRDLL;HANDMADE_LOCAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile />
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4201 /wd4100 /wd4505</AdditionalOptions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>$(SolutionDir)Startup\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -184,7 +184,7 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       </PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile />
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/wd4201 /wd4100 /wd4505 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4201 /wd4100 /wd4505</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir)Startup\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -208,14 +208,14 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;GAME_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;GAME_EXPORTS;_WINDOWS;_USRDLL;HANDMADE_LOCAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile />
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4201 /wd4100 /wd4505</AdditionalOptions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>$(SolutionDir)Startup\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -255,7 +255,7 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       </PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile />
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>/wd4201 /wd4100 /wd4505 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/wd4201 /wd4100 /wd4505</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir)Startup\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
