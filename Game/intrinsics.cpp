@@ -3,8 +3,9 @@
 * and remove math.h
 */
 
+#include "game.h"
 #include "global_macros.h"
-#include "types.h"
+#include "game_types.h"
 #include "intrinsics.h"
 #include <math.h> // @see https://www.cplusplus.com/reference/cmath/
 

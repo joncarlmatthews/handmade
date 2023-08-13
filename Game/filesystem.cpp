@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "filesystem.h"
 
 #if HANDMADE_LOCAL_BUILD

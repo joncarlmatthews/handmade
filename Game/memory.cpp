@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "memory.h"
 
 void memoryRegionReserveBlock(MemoryRegion memoryRegion,

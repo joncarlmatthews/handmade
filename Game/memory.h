@@ -2,7 +2,7 @@
 #define HEADER_HH_MEMORY
 
 #include "global_macros.h"
-#include "types.h"
+#include "game_types.h"
 
 /**
  * @NOTE(JM)

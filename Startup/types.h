@@ -39,32 +39,6 @@ typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
 
-//
-// Game types...
-//====================================================
-typedef struct xyint {
-    int32 x;
-    int32 y;
-} xyint;
-
-typedef struct xyuint {
-    uint32 x;
-    uint32 y;
-} xyuint;
-
-typedef struct xyzuint {
-    uint32 x;
-    uint32 y;
-    uint32 z;
-} xyzuint;
-
-typedef struct Colour {
-    float32 r; // Between 0.0f and 1.0f
-    float32 g; // Between 0.0f and 1.0f
-    float32 b; // Between 0.0f and 1.0f
-    float32 a; // Between 0.0f and 1.0f
-} Colour;
-
 // @NOTE(JM) Putting these here for reference.
 // The following useful types are defined in the Win32 API
 // https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types

@@ -1,7 +1,7 @@
 #ifndef HEADER_HH_AUDIO
 #define HEADER_HH_AUDIO
 
-#include "types.h"
+#include "game_types.h"
 #include "intrinsics.h"
 
 typedef struct GameState GameState;

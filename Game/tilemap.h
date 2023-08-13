@@ -1,7 +1,7 @@
 #ifndef HEADER_HH_TILEMAP
 #define HEADER_HH_TILEMAP
 
-#include "types.h"
+#include "game_types.h"
 #include "utility.h"
 #include "memory.h"
 

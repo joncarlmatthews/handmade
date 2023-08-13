@@ -23,7 +23,8 @@ void playerHandleMovement(GameState *gameState,
         return;
     }
 
-    if (false){
+#if 0
+    {
         char buff[400] = {};
         memory->DEBUG_platformLog(buff, sizeof(buff),
             "Delta time (s): %f. \
@@ -31,6 +32,7 @@ Pixels per frame: %f\n",
 gameInput->deltaTime,
 pixelsPerFrame);
     }
+#endif
 
     struct Vector2 playerNewPosTmp = {0, 0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
@@ -244,7 +246,7 @@ gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRe
 
         gameState->player1.jumpRunningFrameCtr++;
 
-        jumpPercentageOfAngle = percentageOfAnotherf(gameState->player1.jumpRunningFrameCtr, gameState->player1.jumpDuration);
+        jumpPercentageOfAngle = (gameState->player1.jumpRunningFrameCtr / gameState->player1.jumpDuration);
         jumpAngle = (360.0f * jumpPercentageOfAngle);
         jumpRadians = (jumpAngle * ((float32)M_PI / 180.0f));
         jumpSine = sinf(jumpRadians);

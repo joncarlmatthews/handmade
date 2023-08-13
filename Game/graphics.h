@@ -1,7 +1,7 @@
 #ifndef HEADER_HH_GRAPHICS
 #define HEADER_HH_GRAPHICS
 
-#include "types.h"
+#include "game_types.h"
 #include "filesystem.h"
 
 //

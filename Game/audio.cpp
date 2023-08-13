@@ -58,7 +58,7 @@ void audioBufferWriteSineWave(GameState* gameState, GameAudioBuffer* audioBuffer
     // Iterate over each 2 - bytes and write the same data for both...
     for (uint32 i = 0; i < audioBuffer->noOfSamplesToWrite; i++) {
 
-        percentageOfAngle = percentageOfAnotherf((float32)byteGroupIndex, (float32)audioSampleGroupsPerCycle);
+        percentageOfAngle = ((float32)byteGroupIndex / (float32)audioSampleGroupsPerCycle);
         angle = (360.0f * percentageOfAngle);
         radians = (angle * ((float32)GAME_PI / 180.0f));
         sine = intrin_sin(radians);

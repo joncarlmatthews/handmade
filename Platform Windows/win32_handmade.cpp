@@ -5,10 +5,9 @@
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
 
-#include "..\Game\global.h" // Game layer specific function signatures
+#include "startup.h" // Startup stuff
+#include "game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
-
-#include "..\Game\global_utility.cpp"
 
 // Function stubs for functions provided by external DLL
 GAME_INIT_AUDIO_BUFFER(gameInitAudioBufferStub) { return 0; }
@@ -1044,16 +1043,14 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
 
         if (clientWindowHeight < buffer.height){
 
-            float32 co = percentageOfAnotherf((float32)clientWindowHeight,
-                                                (float32)buffer.height);
+            float32 co = ((float32)clientWindowHeight / (float32)buffer.height);
 
             destinationHeight = (uint32)((float32)buffer.height * co);
             destinationWidth = (uint32)((float32)buffer.width * co);
             
         }else if (clientWindowWidth < buffer.width){
 
-            float32 co = percentageOfAnotherf((float32)clientWindowWidth,
-                                                    (float32)buffer.width);
+            float32 co = ((float32)clientWindowWidth / (float32)buffer.width);
 
             destinationHeight = (uint32)((float32)buffer.height * co);
             destinationWidth = (uint32)((float32)buffer.width * co);
@@ -1508,17 +1505,17 @@ internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, con
     return ((float32)(endCounter.QuadPart - startCounter.QuadPart) / (float32)countersPerSecond);
 }
 
+internal_func uint32 win32TruncateToUint32Safe(uint64 value)
+{
+    assert((value <= 0xffffffff));
+    return (uint32)value;
+}
+
 internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit)
 {
     (*currentState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
-}
-
-internal_func uint32 win32TruncateToUint32Safe(uint64 value)
-{
-    assert((value <= 0xffffffff));
-    return (uint32)value;
 }
 
 //=======================================
@@ -1708,6 +1705,8 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
                 OutputDebugString(buff);
             }
 #endif
+            assert(res);
+
             loadGameCode = true;
 
         }

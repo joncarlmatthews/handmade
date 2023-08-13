@@ -31,7 +31,7 @@
     <ClInclude Include="player.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="tilemap.h" />
-    <ClInclude Include="types.h" />
+    <ClInclude Include="game_types.h" />
     <ClInclude Include="utility.h" />
     <ClInclude Include="global_utility.h" />
     <ClInclude Include="world.h" />
@@ -111,8 +111,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Windows\x86\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\x86\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(PlatformShortname)\$(Configuration)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
@@ -120,8 +120,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Windows\x86\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\x86\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(PlatformShortname)\$(Configuration)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
@@ -129,8 +129,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Windows\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(PlatformShortname)\$(Configuration)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
@@ -138,8 +138,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)build\Windows\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\Windows\intermediates\$(ProjectName)\$(PlatformShortname)\$(Configuration)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
@@ -158,11 +158,14 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1 %(AdditionalOptions)</AdditionalOptions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(SolutionDir)Startup\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>startup.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR
@@ -186,6 +189,7 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <PrecompiledHeaderOutputFile />
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/wd4201 /wd4100 /wd4505 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(SolutionDir)Startup\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -193,6 +197,8 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>startup.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR
@@ -215,11 +221,14 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/wd4201 /wd4100 /wd4505 /D HANDMADE_LOCAL_BUILD=1 %(AdditionalOptions)</AdditionalOptions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(SolutionDir)Startup\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>startup.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -251,6 +260,7 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <PrecompiledHeaderOutputFile />
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/wd4201 /wd4100 /wd4505 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(SolutionDir)Startup\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -258,6 +268,8 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>startup.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR

@@ -1,7 +1,7 @@
 #ifndef HEADER_HH_INTRINSICS
 #define HEADER_HH_INTRINSICS
 
-#include "types.h"
+#include "game_types.h"
 
 typedef struct bitScanResult
 {

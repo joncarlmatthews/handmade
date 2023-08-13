@@ -1,7 +1,8 @@
 #ifndef HEADER_HH_PLAYER
 #define HEADER_HH_PLAYER
 
-#include "types.h"
+#include "startup.h"
+#include "game_types.h"
 #include "utility.h"
 #include "world.h"
 #include "filesystem.h"

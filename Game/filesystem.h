@@ -2,7 +2,7 @@
 #define HEADER_HH_FILESYSTEM
 
 #include "global_macros.h"
-#include "types.h"
+#include "game_types.h"
 
 #define BITMAP_FILE_ID 0x4D42
 #define BITMAP_INFO_HEADER_V5_SIZE 124

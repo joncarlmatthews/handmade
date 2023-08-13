@@ -1,7 +1,7 @@
 #ifndef HEADER_HH_MATH
 #define HEADER_HH_MATH
 
-#include "types.h"
+#include "game_types.h"
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
