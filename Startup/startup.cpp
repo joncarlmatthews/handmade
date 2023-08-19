@@ -36,8 +36,7 @@ uint32 gcd(uint32 a, uint32 b)
 {
     if(b == 0) {
         return a;
-    }
-    else {
+    }else{
         return gcd(b, a % b);
     }
 }
