@@ -164,7 +164,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         uint32 randomNumberIndex = 0;
 
         uint32 rooms = 20;
-        uint32 roomTileDims = 18;
+
+        // Make each room nicely fit the window size
+        uint32 roomTileDims_x = (uint32)(FRAME_BUFFER_PIXEL_WIDTH / gameState->world.tilemap.tileHeightPx);
+        uint32 roomTileDims_y = (uint32)(FRAME_BUFFER_PIXEL_HEIGHT / gameState->world.tilemap.tileWidthPx);
 
         uint32 absTileX = 0;
         uint32 absTileY = 0;
@@ -191,10 +194,10 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
             // What was the state of the last room?
             if (shiftRight) { // Did the last room have a door right?
-                roomStartTileX = roomStartTileX + roomTileDims;
+                roomStartTileX = roomStartTileX + roomTileDims_x;
                 doorLeft = true;
             }else if (shiftTop) { // Did the last room have a door top?
-                roomStartTileY = roomStartTileY + roomTileDims;
+                roomStartTileY = roomStartTileY + roomTileDims_y;
                 doorBottom = true;
             }else if (shiftUp) { // Did the last room have a door up?
                 doorDown = true;
@@ -249,14 +252,14 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 doorRight       = false;
             }
 
-            for (uint32 y = 0; y < roomTileDims; y++) {
-                for (uint32 x = 0; x < roomTileDims; x++) {
+            for (uint32 y = 0; y < roomTileDims_y; y++) {
+                for (uint32 x = 0; x < roomTileDims_x; x++) {
 
                     // Floor
                     uint32 tileValue = 1;
 
                     // Middle?
-                    if ( ((roomTileDims / 2) == x) && ((roomTileDims / 2) == y) ){
+                    if ( ((roomTileDims_x / 2) == x) && ((roomTileDims_y / 2) == y) ){
                         // Stairwell
                         if (doorUp){
                             tileValue = 5;
@@ -266,7 +269,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     }
 
                     // Edge?
-                    if (0 == x || y == 0 || x == (roomTileDims -1) || y == (roomTileDims -1)) {
+                    if (0 == x || y == 0 || x == (roomTileDims_x -1) || y == (roomTileDims_y -1)) {
 
                         // Wall
                         tileValue = 2;
@@ -275,17 +278,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         if (0 == x) {
                             if (doorLeft){
                                 // Half way up?
-                                if (y == (roomTileDims / 2)){
+                                if (y == (roomTileDims_y / 2)){
                                     tileValue = 3; // Passageway
                                 }
                             }
                         }
 
                         // Right edge, up
-                        if (x == (roomTileDims -1)) {
+                        if (x == (roomTileDims_x -1)) {
                             if (doorRight){
                                 // Half way up?
-                                if (y == (roomTileDims / 2)){
+                                if (y == (roomTileDims_y / 2)){
                                     tileValue = 3; // Passageway
                                 }
                             }
@@ -295,17 +298,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                         if (0 == y) {
                             if (doorBottom){
                                 // Half way along?
-                                if (x == (roomTileDims / 2)){
+                                if (x == (roomTileDims_x / 2)){
                                     tileValue = 3; // Passageway
                                 }
                             }
                         }
 
                         // Top edge, along
-                        if (y == (roomTileDims -1)) {
+                        if (y == (roomTileDims_y -1)) {
                             if (doorTop){
                                 // Half way along?
-                                if (x == (roomTileDims / 2)){
+                                if (x == (roomTileDims_x / 2)){
                                     tileValue = 3; // Passageway
                                 }
                             }

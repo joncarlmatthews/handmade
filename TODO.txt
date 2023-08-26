@@ -1,6 +1,7 @@
 Day 043
  -x build.bat needs to be updated now I have refactored project
- -x Switch build.bat to use clang-tidy.exe. Will have to migrate away from batch file to Powershell script it seems for this.
+ -x algebra refresher
+ -x Gustavo course (game-physics-engine-programming)
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?
@@ -11,5 +12,6 @@ Ongoing:
  -x Support for drawing bitmap at different size to that of the original asset.
  -x Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
  -x Add linter as part of pre-commit hook. Something like Stylecop?
+  -x Switch build.bat to use clang-tidy.exe. Will have to migrate away from batch file to Powershell script it seems for this.
 
 Random Thoughts:
