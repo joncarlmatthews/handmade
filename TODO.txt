@@ -1,7 +1,11 @@
 Day 043
- -x build.bat needs to be updated now I have refactored project
- -x algebra refresher
+ -x Distributive property
+ -x Algebra
  -x Gustavo course (game-physics-engine-programming)
+ -x build.bat needs to be updated now I have refactored project
+ -x zero platform memory immediately after allocation
+ -x // Bug! Should be left shift, not bitwise OR
+    uint32 hexColour = ( (alpha << 24) | (red << 16) | (green << 8) | blue);
 
 Ongoing:
  -x shift and mask to store chunk and tile in the same 32 bit integer?

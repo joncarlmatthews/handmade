@@ -1,7 +1,5 @@
 #include "game.h"
 
-void drawVector(GameFrameBuffer* frameBuffer, Vector2 vector, Colour colour);
-
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     /**
@@ -572,6 +570,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 -34.0f,
                 playerBitmap.head);
 
+#if 0
     // Vector stuff...
 
     // Y axis
@@ -600,6 +599,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     //vector2Multiply(&blueVector, greenVector);
 
     drawVector(frameBuffer, blueVector, { 1.0f, 0.0f, 0.0f, 1.0f });
+#endif
 
 
 #if 0
@@ -618,50 +618,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     frameBufferWriteAudioDebug(gameState, frameBuffer, audioBuffer);
 #endif
 
-}
-
-void drawVector(GameFrameBuffer *frameBuffer, Vector2 vector, Colour colour)
-{
-    // Vector origins
-    uint32 vox = (FRAME_BUFFER_PIXEL_WIDTH / 2);
-    uint32 voy = (FRAME_BUFFER_PIXEL_HEIGHT / 2);
-
-    // Pixels per point
-    float32 pixelsPerPoint = 10.0f;
-
-    float32 v1mag = getVectorMagnitude(vector);
-
-    float32 xfract = (vector.x / v1mag);
-    float32 yfract = (vector.y / v1mag);
-
-    for (size_t i = 0; i < ((size_t)((float64)v1mag * (float64)pixelsPerPoint)); i++) {
-        float32 x = ((float32)vox + ((float32)i * xfract));
-        float32 y = ((float32)voy + ((float32)i * yfract));
-        writeRectangle(frameBuffer,
-            x,
-            y,
-            1,
-            1,
-            colour);
-    }
-}
-
-void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
-{
-    uint32 indexX = (intrin_roundF32ToUI32(gameState->player1.absolutePosition.x) / frameBuffer->widthPx);
-    uint32 cameraPosX = (frameBuffer->widthPx / 2) + (indexX * frameBuffer->widthPx);
-
-    uint32 indexY = (intrin_roundF32ToUI32(gameState->player1.absolutePosition.y) / frameBuffer->heightPx);
-    uint32 cameraPosY = (frameBuffer->heightPx / 2) + (indexY * frameBuffer->heightPx);
-
-    gameState->cameraPosition.absPixelPos.x = cameraPosX;
-    gameState->cameraPosition.absPixelPos.y = cameraPosY;
-
-    setTilemapPositionData(&gameState->cameraPosition,
-                            cameraPosX,
-                            cameraPosY,
-                            gameState->player1.zIndex,
-                            gameState->world.tilemap);
 }
 
 EXTERN_DLL_EXPORT GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer)

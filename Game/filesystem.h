@@ -113,7 +113,7 @@ typedef struct DEBUG_file
 *
 * @note call DEBUG_platformFreeFileMemory in a subsequent call.
 */
-#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, const char *absPath, const char *filename)
+#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, const char *exeAbsPath, const char *filename)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
 
 /*
@@ -125,7 +125,11 @@ typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
 /*
 * Write bytes into a new file
 */
-#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(PlatformThreadContext *thread, char *filename, void *memory, uint32 memorySizeInBytes)
+#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(PlatformThreadContext *thread, \
+                                                            const char *exeAbsPath, \
+                                                            const char *filename, \
+                                                            void *memory, \
+                                                            uint32 memorySizeInBytes)
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
 
 

@@ -1874,10 +1874,10 @@ DEBUG_PLATFORM_LOG(DEBUG_platformLog)
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
 {
+    // Concatenate the exe abs path and the relative filename into fullFilename
     char fullFilename[MAX_PATH] = {0};
 
-    // Concatenate str1 and str2 into result
-    if (strcat_s(fullFilename, sizeof(fullFilename), absPath) != 0 ||
+    if (strcat_s(fullFilename, sizeof(fullFilename), exeAbsPath) != 0 ||
         strcat_s(fullFilename, sizeof(fullFilename), filename) != 0) {
         assert(!"Error concatenating file paths")
     }
@@ -1946,17 +1946,25 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
 
 DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
 {
+    // Concatenate the exe abs path and the relative filename into fullFilename
+    char fullFilename[MAX_PATH] = { 0 };
+
+    if(strcat_s(fullFilename, sizeof(fullFilename), exeAbsPath) != 0 ||
+        strcat_s(fullFilename, sizeof(fullFilename), filename) != 0){
+        assert(!"Error concatenating file paths")
+    }
+
     bool32 res;
 
     // Open the file for writing.
-    HANDLE handle = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE handle = CreateFileA(fullFilename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (INVALID_HANDLE_VALUE == handle) {
         OutputDebugStringA("Cannot read file");
         return false;
     }
 
-    // Read the file into the memory.
+    // Write the bytes.
     DWORD bytesWritten;
     res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
 

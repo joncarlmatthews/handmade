@@ -1,11 +1,6 @@
 #include "graphics.h"
 #include "game.h"
 
-uint32 f32ToUint32(float32 val)
-{
-    return (uint32)val;
-}
-
 void writeRectangle(GameFrameBuffer *buffer,
                         float32 xOffsetf,
                         float32 yOffsetf,
@@ -305,5 +300,31 @@ void writeBitmap(GameFrameBuffer *buffer,
         }else if ((originalXOffset + originalWidth) > (int32)buffer->widthPx) {
             imagePixel = (imagePixel + ((originalWidth + originalXOffset) - buffer->widthPx));
         }
+    }
+}
+
+void drawVector(GameFrameBuffer *frameBuffer, Vector2 vector, Colour colour)
+{
+    // Vector origins
+    uint32 vox = (FRAME_BUFFER_PIXEL_WIDTH / 2);
+    uint32 voy = (FRAME_BUFFER_PIXEL_HEIGHT / 2);
+
+    // Pixels per point
+    float32 pixelsPerPoint = 10.0f;
+
+    float32 v1mag = getVectorMagnitude(vector);
+
+    float32 xfract = (vector.x / v1mag);
+    float32 yfract = (vector.y / v1mag);
+
+    for(size_t i = 0; i < ((size_t)((float64)v1mag * (float64)pixelsPerPoint)); i++){
+        float32 x = ((float32)vox + ((float32)i * xfract));
+        float32 y = ((float32)voy + ((float32)i * yfract));
+        writeRectangle(frameBuffer,
+            x,
+            y,
+            1,
+            1,
+            colour);
     }
 }

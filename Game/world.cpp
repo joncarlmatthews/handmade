@@ -17,6 +17,24 @@ void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
                             gameState->world.tilemap);
 }
 
+void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer)
+{
+    uint32 indexX = (intrin_roundF32ToUI32(gameState->player1.absolutePosition.x) / frameBuffer->widthPx);
+    uint32 cameraPosX = (frameBuffer->widthPx / 2) + (indexX * frameBuffer->widthPx);
+
+    uint32 indexY = (intrin_roundF32ToUI32(gameState->player1.absolutePosition.y) / frameBuffer->heightPx);
+    uint32 cameraPosY = (frameBuffer->heightPx / 2) + (indexY * frameBuffer->heightPx);
+
+    gameState->cameraPosition.absPixelPos.x = cameraPosX;
+    gameState->cameraPosition.absPixelPos.y = cameraPosY;
+
+    setTilemapPositionData(&gameState->cameraPosition,
+                            cameraPosX,
+                            cameraPosY,
+                            gameState->player1.zIndex,
+                            gameState->world.tilemap);
+}
+
 uint32 metersToPixels(World world, float32 metres)
 {
     float32 pixels = (world.pixelsPerMeter * metres);

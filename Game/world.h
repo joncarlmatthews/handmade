@@ -23,6 +23,9 @@ typedef struct GameFrameBuffer GameFrameBuffer;
 
 void setWorldPosition(GameState *gameState, GameFrameBuffer *frameBuffer);
 
+void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer);
+
 uint32 metersToPixels(World world, float32 metres);
+
 
 #endif

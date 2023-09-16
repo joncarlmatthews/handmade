@@ -449,6 +449,4 @@ typedef struct GameState
 
 } GameState;
 
-void setCameraPosition(GameState *gameState, GameFrameBuffer *frameBuffer);
-
 #endif

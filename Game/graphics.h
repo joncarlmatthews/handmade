@@ -2,6 +2,7 @@
 #define HEADER_HH_GRAPHICS
 
 #include "game_types.h"
+#include "math.h"
 #include "filesystem.h"
 
 //
@@ -52,5 +53,7 @@ void writeBitmap(GameFrameBuffer* buffer,
                     float32 alignXf,
                     float32 alignYf,
                     BitmapFile bitmapFile);
+
+void drawVector(GameFrameBuffer *frameBuffer, Vector2 vector, Colour colour);
 
 #endif
