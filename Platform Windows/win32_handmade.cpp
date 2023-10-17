@@ -737,6 +737,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 #if defined(HANDMADE_DEBUG_FPS)
                     {
+                        assert("missed framerate");
                         char output[500] = { 0 };
                         sprintf_s(output, sizeof(output),
                                     "======================================MISSED================================ (%f > %f)\n",
@@ -1561,7 +1562,7 @@ internal_func void win32LoadXInputDLLFunctions(void)
 
 internal_func void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, GameCode *gameCode)
 {
-    // Load code from Game_copy.dll
+    // Load code from given DLL
     HMODULE libHandle = LoadLibrary(absPathToDLL);
 
     bool8 valid = 1;
@@ -1595,6 +1596,14 @@ internal_func void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, Game
             valid = 0;
         }
 
+        #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+        {
+            wchar_t buff[500] = { 0 };
+            swprintf_s(buff, 500, L"Loading library complete\n");
+            OutputDebugString(buff);
+        }
+        #endif
+
     } else {
         assert(!"unable to load game code");
         valid = 0;
@@ -1623,53 +1632,61 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
     return;
 #endif
 
-    // ================ //
-    // Live loop editing:
-    // ================ //
+    // ================= //
+    // Live loop editing //
+    // ================= //
 
-    // Automatically load the game code if it hasnt yet been loaded
-    if (gameCode->dllHandle == 0x0) {
-        win32LoadGameDLLFunctionsFromFile(gameDLLFilePath, gameCode);
-        return;
-    }
+    // @NOTE(JM)
+    // When compiling with HANDMADE_LIVE_LOOP_EDITING, we load our game code
+    // from Game_copy.dll, not Game.dll.
+    // 
+    // build.bat writes to Game.dll. We compare that file's timestamp against
+    // Game_copy.dll. If Game.dll is newer, we overwrite Game_copy.dll
+    // with Game.dll and then reload the library to get the updated code
 
     // Calculate absolute path to the Game_copy.dll
     wchar_t gameCopyDLLFilePath[MAX_PATH] = { 0 };
     wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), absPath);
     wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), L"Game_copy.dll");
 
+    // Does the copy exist yet?
+    DWORD dwAttrib = GetFileAttributes(gameCopyDLLFilePath);
+
+    if(!(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))){
+
+        // Game_copy.dll does not yet exist...
+
+        #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+            win32PlatformLog(L"Game_copy.dll doesnt exist, going to create it...\n");
+        #endif
+
+        BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
+        
+        #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+            if(res){
+                win32PlatformLog(L"Game_copy.dll successfully created.\n");
+            } else{
+                win32PlatformLog(L"Could not create Game_copy.dll: %d", GetLastError());
+            }
+        #endif
+    }
+
     // Do we need to reload the game code?
     BOOL loadGameCode = false;
 
-    // Does the copy yet exist?
-    DWORD dwAttrib = GetFileAttributes(gameCopyDLLFilePath);
+    // Always load the game code if it hasnt yet been loaded
+    if (gameCode->dllHandle == 0x0) {
 
-    if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))) {
+        loadGameCode = true;
 
-#if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
-        {
-            wchar_t buff[500] = { 0 };
-            swprintf_s(buff, 500, L"Game_copy.dll doesnt exist, going to copy...\n");
-            OutputDebugString(buff);
-        }
-#endif
+        #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+            win32PlatformLog(L"No game code loaded. Performing first load from Game_copy.dll\n");
+        #endif
 
-        BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
+    }else{
 
-        if (!res) {
-            #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
-                wchar_t buff[500] = { 0 };
-                swprintf_s(buff, 500, L"Game_copy.dll doesnt exist, but could not copy: 0x%X\n", GetLastError()); // 0x7E == The specified module could not be found.
-                OutputDebugString(buff);
-                assert(!"Game code can not be loaded");
-            #endif
-        }
+        // Check to see if we need to overwrite Game_copy.dll...
 
-    } else {
-
-        // File already exists...
-
-        // Check to see if we actually need to do the copy.
         FILETIME lastWriteTimeGame = {};
         lastWriteTimeGame = win32GetFileLastWriteDate(gameDLLFilePath);
         FILETIME lastWriteTimeGameCopy = {};
@@ -1677,47 +1694,67 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 
         if (CompareFileTime(&lastWriteTimeGame, &lastWriteTimeGameCopy) != 0) {
 
-            // Free a lock if there is one...
+            #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+                win32PlatformLog(L"Game_copy.dll needs to be overwritten by Game.dll as Game.dll is newer.\n");
+            #endif
+
+            // If the current gameCode object has a handle to Game_copy.dll, then
+            // free the lock...
             if (gameCode->dllHandle != 0x0) {
+
+                #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+                    win32PlatformLog(L"Freeing Game_copy.dll library before doing the copy\n");
+                #endif
+
                 BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
 
-                if (!res) {
-                #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
-                        wchar_t buff[500] = { 0 };
-                        swprintf_s(buff, 500, L"Could not free DLL handle lock: 0x%X. Will try again next loop.\n", GetLastError()); // 0x7E == The specified module could not be found.
-                        OutputDebugString(buff);
+                if(!res){
+                    #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+                        win32PlatformLog(L"Could not free DLL handle lock: %d. Will try again next loop.\n", GetLastError());
                     #endif
+                    return;
                 }
-
             }
 
-            // Copy file contents from Game.dll to Game_copy.dll
+            // Copy file contents of Game.dll to Game_copy.dll.
+            // @NOTE(JM) The copy can fail for a few game loops as it takes a second
+            // or two for the OS to actually release the lock on the DLL (even though
+            // the gameCode->dllHandle will show as empty instantly)
             BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
 
-#ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
             if (!res) {
-                wchar_t buff[500] = { 0 };
-                swprintf_s(buff, 500, L"DLL copy failed: 0x%X\n", GetLastError()); // 0x20 = The process cannot access the file because it is being used by another process.
-                OutputDebugString(buff);
+
+                // If the copy fails, we still need to reload the game code
+                // as we freed the libray above. Therefore if we dont reload
+                // the code from the DLL the next game loop with fail with pointers
+                // to addresses that no longer exist
+                loadGameCode = true;
+
+                #ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
+                    // 32L = "The process cannot access the file because it is being used by another process."
+                    // See winerror.h for full list of errors.
+                    win32PlatformLog(L"DLL copy failed: %d. Will retry copy on next loop\n", GetLastError());
+                #endif
+
             }else {
-                wchar_t buff[500] = { 0 };
-                swprintf_s(buff, 500, L"DLL copy succeeded\n");
-                OutputDebugString(buff);
+
+                loadGameCode = true;
+
+                #ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
+                    win32PlatformLog(L"DLL copy succeeded <-----------\n");
+                #endif
             }
-#endif
-            assert(res);
-
-            loadGameCode = true;
-
         }
+
     }
+    
 
     if (loadGameCode) {
-#ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
-        wchar_t buff[500] = { 0 };
-        swprintf_s(buff, 500, L"Reloading game code from DLL\n");
-        OutputDebugString(buff);
-#endif
+
+        #ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
+            win32PlatformLog(L"About to load game code from Game_copy.dll\n");
+        #endif
+
         win32LoadGameDLLFunctionsFromFile(gameCopyDLLFilePath, gameCode);
     }
 }
@@ -1854,6 +1891,25 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
     pVibration.wLeftMotorSpeed = motor2Speed;
 
     XInputSetState(controllerIndex, &pVibration);
+}
+
+internal_func
+void win32PlatformLog(const wchar_t *str, ...)
+{
+    // Reserve a buffer for the formatted string
+    wchar_t buffer[500] = { 0 };
+
+    // Use a variable argument list
+    va_list args;
+    va_start(args, str);
+
+    // Format the string
+    vswprintf_s(buffer, sizeof(buffer) / sizeof(wchar_t), str, args);
+
+    va_end(args);
+
+    // Output to the debugger
+    OutputDebugString(buffer);
 }
 
 #if HANDMADE_LOCAL_BUILD

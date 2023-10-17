@@ -213,6 +213,9 @@ internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
 
 internal_func void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 
+internal_func
+void win32PlatformLog(const wchar_t *str, ...);
+
 //===========================================
 // Game-required platform layer signatures
 //===========================================

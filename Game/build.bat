@@ -6,6 +6,9 @@ REM Builds the Game DLL
 REM 
 REM You need to set the shell environment by running shell_x64.bat or shell_x86.bat once per
 REM shell before running this build script.
+REM
+REM You will also need to have Startup project built as this compiler relies on the
+REM startup.lib static library. 
 REM 
 REM Usage: build.bat <Configuration> <Platform>
 REM E.g. build.bat Release x86
@@ -164,8 +167,6 @@ IF %Platform% == x86 (
 IF %Platform% == x64 (
 
     IF %Configuration% == Debug (
-
-        REM updated.
 
         SET CompilerFlags=/c /Zi /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /D HANDMADE_LOCAL_BUILD /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /external:W4 /Gd /TP /FC /errorReport:prompt /wd4201 /wd4100 /wd4505 /I"%StartupProjectFolder%" /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb" %codeAnalysisCompilerFlags%
 

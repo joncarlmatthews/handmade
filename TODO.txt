@@ -1,21 +1,22 @@
 Day 043
- -x Distributive property
- -x Algebra
- -x Gustavo course (game-physics-engine-programming)
- -x build.bat needs to be updated now I have refactored project
- -x zero platform memory immediately after allocation
- -x // Bug! Should be left shift, not bitwise OR
-    uint32 hexColour = ( (alpha << 24) | (red << 16) | (green << 8) | blue);
+=======
+- [ ] Algebra
+- [ ] Gustavo (game-physics-engine-programming)
+- [ ] zero platform memory immediately after allocation
+- [x] Bug! Should be left shift, not bitwise OR for writing colour
 
 Ongoing:
- -x shift and mask to store chunk and tile in the same 32 bit integer?
- -x Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
- -x Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
- -x deprecate math.h
- -x Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
- -x Support for drawing bitmap at different size to that of the original asset.
- -x Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
- -x Add linter as part of pre-commit hook. Something like Stylecop?
-  -x Switch build.bat to use clang-tidy.exe. Will have to migrate away from batch file to Powershell script it seems for this.
+=======
+- [ ] shift and mask to store chunk and tile in the same 32 bit integer?
+- [ ] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
+- [ ] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
+- [ ] deprecate math.h
+- [ ] Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
+- [ ] Support for drawing bitmap at different size to that of the original asset.
+- [ ] Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
+- [ ] Add linter as part of pre-commit hook. Something like Stylecop?
+- [ ] Revisit build.bat code analysis crap. Think I can rip all of this out as I only use built.bat as a convenient utility to enable hot-reloading in certain scenarios. Not for my main build pipeline (where i would want to catch those types of errors)
 
 Random Thoughts:
+================
+- [ ] As per common wisdom, I blit to screen after calculating frame time. Is this blit causing the frame rate jerkiness? Won't refactor as waitng for writing a renderer.
