@@ -2,8 +2,7 @@ Day 043
 =======
 - [ ] Algebra
 - [ ] Gustavo (game-physics-engine-programming)
-- [ ] zero platform memory immediately after allocation
-- [x] Bug! Should be left shift, not bitwise OR for writing colour
+- [ ] Rename Startup to Core?? Shared??
 
 Ongoing:
 =======
