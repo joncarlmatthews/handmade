@@ -737,7 +737,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
                 #if defined(HANDMADE_DEBUG_FPS)
                     {
-                        assert("missed framerate");
+                        //assert("missed framerate");
                         char output[500] = { 0 };
                         sprintf_s(output, sizeof(output),
                                     "======================================MISSED================================ (%f > %f)\n",
@@ -1597,11 +1597,7 @@ internal_func void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, Game
         }
 
         #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
-        {
-            wchar_t buff[500] = { 0 };
-            swprintf_s(buff, 500, L"Loading library complete\n");
-            OutputDebugString(buff);
-        }
+            win32PlatformLog(L"Loading library complete\n");
         #endif
 
     } else {

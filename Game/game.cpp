@@ -163,10 +163,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         uint32 rooms = 20;
 
-        // Make each room nicely fit the window size
-        uint32 roomTileDims_x = (uint32)(FRAME_BUFFER_PIXEL_WIDTH / gameState->world.tilemap.tileHeightPx);
-        uint32 roomTileDims_y = (uint32)(FRAME_BUFFER_PIXEL_HEIGHT / gameState->world.tilemap.tileWidthPx);
+        bool32 roomsFillScreen = true;
 
+        uint32 roomTileDims_x = 10;
+        uint32 roomTileDims_y = 10;
+
+        if (roomsFillScreen){
+            // Make each room nicely fit the window size
+            roomTileDims_x = (uint32)(FRAME_BUFFER_PIXEL_WIDTH / gameState->world.tilemap.tileHeightPx);
+            roomTileDims_y = (uint32)(FRAME_BUFFER_PIXEL_HEIGHT / gameState->world.tilemap.tileWidthPx);
+        }
+        
         uint32 absTileX = 0;
         uint32 absTileY = 0;
         uint32 absTileZ = 0;

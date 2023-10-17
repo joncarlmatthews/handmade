@@ -238,22 +238,22 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
     switch (tileValue) {
     default:
         // Allocated tile memory, but no value set. (Yellow)
-        *tileColour =  { (255.0f/255.0f), (255.0f/255.0f), (0.0f/255.0f), 1.0f };
+        tileColour->hex = 0xFFFA00;
         break;
 
     case 1:
         // stone floor
-        *tileColour = { (89.0f/255.0f), (89.0f/255.0f), (89.0f/255.0f), 1.0f };
+        tileColour->hex = 0x999393;
         break;
 
     case 2:
         // stone wall
-        *tileColour = { (38.0f/255.0f), (38.0f/255.0f), (38.0f/255.0f), 1.0f };
+        tileColour->hex = 0x6B5B5B;
         break;
 
     case 3:
         // passageway
-        *tileColour = { (77.0f/255.0f), (77.0f/255.0f), (77.0f/255.0f), 1.0f };
+        tileColour->hex = 0x8A7E7E;
         break;
 
     case 4:
@@ -263,22 +263,27 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
 
     case 5:
         // stairwell up
-        *tileColour = { (57.0f/255.0f), (57.0f/255.0f), (57.0f/255.0f), 1.0f };
+        tileColour->hex = 0xEEEEEE;
         break;
 
     case 6:
         // stairwell down
-        *tileColour = { (0/255.0f), (0/255.0f), (0/255.0f), 1.0f };
+        tileColour->hex = 0x504747;
         break;
     }
 }
 
 Colour getOutOfTileChunkMemoryBoundsColour()
 {
-    return { (1.0f/255.0f), (2.0f/255.0f), (172.0f/255.0f), 1.0f }; // blue
+    Colour c;
+    c.hex = 0x0827F5;
+    //c.hex = 0x00FF00;
+    return c; // blue screen of death
 }
 
 Colour getUninitialisedTileChunkTilesColour()
 {
-    return { (204.0f/255.0f), (51.0f/255.0f), 0.0f, 1.0f }; // red
+    Colour c;
+    c.hex = 0xFF0000;
+    return c; // red
 }

@@ -62,12 +62,22 @@ void writeRectangle(GameFrameBuffer *buffer,
     }
 
     // Set the colour
-    uint32 alpha    = ((uint32)(255.0f * colour.a) << 24);
-    uint32 red      = ((uint32)(255.0f * colour.r) << 16);
-    uint32 green    = ((uint32)(255.0f * colour.g) << 8);
-    uint32 blue     = ((uint32)(255.0f * colour.b) << 0);
+    uint32 alpha, red, green, blue = 0;
 
-    uint32 hexColour = (alpha | red | green | blue);
+    // Set the colour
+    if(colour.mode > 0){
+        alpha   = ((uint32)(255.0f * colour.a) << 24);
+        red     = ((uint32)(255.0f * colour.r) << 16);
+        green   = ((uint32)(255.0f * colour.g) << 8);
+        blue    = ((uint32)(255.0f * colour.b) << 0);
+    } else{
+        blue    = (uint32)colour.hex & 0xFF;
+        green   = ((uint32)colour.hex >> 8) & 0xFF;
+        red     = ((uint32)colour.hex >> 16) & 0xFF;
+        alpha   = ((uint32)colour.hex >> 24) & 0xFF;
+    }
+
+    uint32 hexColour = ((alpha << 24) | (red << 16) | (green << 8) | blue);
 
     // Write the memory
     uint32 *row = (uint32*)buffer->memory;
@@ -97,6 +107,9 @@ void writeRectangle(GameFrameBuffer *buffer,
     }
 }
 
+/**
+ * @NOTE(JM) Deprecated
+*/
 void writeRectangleInt(GameFrameBuffer* buffer,
                         int32 xOffset,
                         int32 yOffset,

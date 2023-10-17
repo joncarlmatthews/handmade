@@ -28,7 +28,7 @@ typedef struct MemoryRegion
 
 /**
  * Memory Blocks are used to reserve sections of a Memory Region for a particular
- * use. E.g. use 1MB of this Memory Region for enemies. Or, use 5MB of this Memory
+ * use. E.g. use 1MB of this Memory Region for NPCs. Or, use 5MB of this Memory
  * Region for tile data. Etc etc.
  *
  * Using blocks of memory allows you to carve up the Memory Region into sections

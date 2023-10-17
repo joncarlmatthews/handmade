@@ -25,6 +25,8 @@ typedef struct xyzuint {
 } xyzuint;
 
 typedef struct Colour {
+    float32 mode; // > 0 = rgba, else assumed hexidecimal
+    float32 hex;
     float32 r; // Between 0.0f and 1.0f
     float32 g; // Between 0.0f and 1.0f
     float32 b; // Between 0.0f and 1.0f
