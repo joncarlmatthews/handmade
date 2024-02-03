@@ -29,9 +29,29 @@ To develop or build the game's source code first install [Visual Studio Communit
 
 ### Project Structure
 
-There are two distinct parts to the project, the Platform layers and the Game layer. At the time of writing, only the Windows platform layer has been prototyped. The code resides within the `Platform Windows\` directory. Future platform layers will reside in the `Platform Linux\` and `Platform macOS\` directories respectively. All of the game layer code resides within the `Game\` directory. 
+There are three distinct parts to the project.
 
-There is a single Visual Studio Solution for the entire codebase. Within the Solution there is a Project for the Windows platform layer and a separate Project for the Game layer. Building the solution compiles both projects. The platform and game layers are built into the same build directory. The platform code is built as an executable and the game code is built as a DLL.
+1. The platform layer
+2. The game layer
+3. Shared utilities and definitions ("startup")
+
+Each part is a separate Visual Studio [solution])(https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#solutions). All three are held within a single [project](https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#projects).
+
+The solution's build order is: `Startup` > `Game` > `Platform`.
+
+Building the solution compiles all three projects. The platform layer, game layer and startup code are all built into the same build directory. The platform code is built as an executable, the game code is built as a DLL and the startup code is built as a static library (.lib)
+
+#### Shared code
+
+The starup code is built as a static library (.lib). The library file is output into the same directory that the `Game` and `Platform` solutions are built into. `Startup.lib` is then explicitly defined as an additional dependancy of both `Game` and `Platform`.
+
+#### Platform layer
+
+At the time of writing, only the Windows platform layer has been prototyped. The code resides within the `Platform Windows\` directory. Future platform layers will reside in the `Platform Linux\` and `Platform macOS\` directories respectively.
+
+#### Game layer
+
+All of the game layer code resides within the `Game\` directory. 
 
 ### Coding Style
 
