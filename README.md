@@ -1,6 +1,6 @@
 # "Handmade Hero"
 
-Low level game & game engine programming in C flavoured C++. No frameworks or libraries are used for the game layer (except `math.h`). Everything written from scratch. Masochist.
+Low level game engine programming in C flavoured C++. No frameworks or libraries are used for the game layer (except `math.h`). Everything written from scratch. Masochist.
 
 ## Current Progress
 
