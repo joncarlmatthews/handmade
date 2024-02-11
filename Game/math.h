@@ -1,6 +1,7 @@
 #ifndef HEADER_HH_MATH
 #define HEADER_HH_MATH
 
+#include <math.h>
 #include "game_types.h"
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -108,10 +109,7 @@ struct Vector2 {
     Vector2& operator*=(float scalar);
 #endif
 
-} ;
-
-
-float32 modF32(float32 dividend, float32 divisor);
+};
 
 float32 getVectorMagnitude(Vector2 v);
 void vector2Add(Vector2 *v1, Vector2 v2);
