@@ -38,10 +38,10 @@ void vector2Add(Vector2 *v1, Vector2 v2)
     v1->y = (v1->y + v2.y);
 }
 
-void vector2Subtract(Vector2 *v1, Vector2 v2)
+void vector2Subtract(Vector2 *rv, Vector2 v1, Vector2 v2)
 {
-    v1->x = (v1->x - v2.x);
-    v1->y = (v1->y - v2.y);
+    rv->x = (v1.x + (v2.x * -1));
+    rv->y = (v1.y + (v2.y * -1));
 }
 
 void vector2Multiply(Vector2 *v1, Vector2 v2)

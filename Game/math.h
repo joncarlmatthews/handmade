@@ -114,7 +114,15 @@ struct Vector2 {
 float32 getVectorMagnitude(Vector2 v);
 void vector2Add(Vector2 *v1, Vector2 v2);
 void vector2Multiply(Vector2 *v1, Vector2 v2);
-void vector2Subtract(Vector2 *v1, Vector2 v2);
+
+/**
+ * @brief Subtracts v1 from v2 and writes the result into rv
+ * 
+ * @param rv The resulting vector
+ * @param v1 
+ * @param v2 
+*/
+void vector2Subtract(Vector2 *rv, Vector2 v1, Vector2 v2);
 void vector2MultiplyScalar(Vector2 *v1, float32 scalar);
 
 #endif
