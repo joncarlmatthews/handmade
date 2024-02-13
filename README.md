@@ -12,7 +12,7 @@ Within the `dist/` folder open the sub-folder relevant to your machine. E.g. `Wi
 
 Note: I have only written the platform layer for Windows thus far, meaning there are currently no playable versions for Mac or Linux (yet)
 
-## To develop the game
+## Development
 
 ### Development Environment
 
@@ -32,12 +32,12 @@ To develop or build the game's source code first install [Visual Studio Communit
 There are three distinct parts to the code.
 
 1. The Platform Layer (handles the creation of the window, loading assets etc)
-2. The Game Layer (handles the platform agnositc game logic)
+2. The Game Layer (handles the platform agnositc game engine and gameplay code)
 3. Startup Library (Provided shared utilities and definitions)
 
-Each distinct part is a separate Visual Studio [project])(https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#solutions). All three projects are held within a single [solution](https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#projects).
+Each distinct part is a separate Visual Studio [project](https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#solutions). All three projects are held within a single [solution](https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#projects).
 
-The solution's build order is: `Startup` > `Game` > `Platform`, as `Platform` depends on both `Game` and `Startup` and `Game` depends on `Startup`
+The solution's build order is: `Startup` > `Game` > `Platform`, as `Platform` depends on both `Game` and `Startup` and `Game` depends on `Startup`.
 
 Building the solution compiles all three projects automatically, in the order defined above. The platform layer, game layer and startup library are all built into the same build directory (`build/<platform>/<arch>/<buildmode>/`). The platform code is built as an executable, the game layer is built as a [dynamic link library](https://learn.microsoft.com/en-us/troubleshoot/windows-client/deployment/dynamic-link-library) (.dll) and the startup library is built as a [static library](https://en.wikipedia.org/wiki/Static_library) (.lib)
 
@@ -45,13 +45,13 @@ Building the solution compiles all three projects automatically, in the order de
 
 The platform layer code resides within the `Platform Windows/` directory and associated VS project. The platform code is built as an executable (.exe) and is the main entry point for the game.
 
-At the time of writing, only the Windows platform layer has been prototyped. Future platform layers will reside in the `Platform Linux/` and `Platform macOS/` directories respectively.
+> At the time of writing, only the Windows platform layer has been prototyped. Future platform layers will reside in the `Platform Linux/` and `Platform macOS/` directories respectively.
 
 #### Game Layer
 
-All of the game layer code resides within the `Game/` directory and associated VS project. 
+The game layer (which includes the game engine and gameplay code) resides within the `Game/` directory and associated VS project. 
 
-The game layer is built as a dynamic link library (.dll). The resulting DLL is loaded into the platform executable at run time.
+The game layer is built as a dynamic link library (.dll). The resulting DLL code is loaded into the platform executable at run time.
 
 #### Startup Library
 
@@ -63,7 +63,9 @@ The starup code is built as a static library (.lib). The resulting .lib file is 
 
 ### Coding Style
 
-I recommend installing the [Editor Guidelines](https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview) Visual Studio plugin. I have yet to install and configure a Linter. It's on the list!
+I recommend installing the [Editor Guidelines](https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview) Visual Studio plugin.
+
+I have yet to install and configure a Linter. It's on the list!
 
 ### Building the source code
 
@@ -71,11 +73,11 @@ To build and/or run the program whilst developing, use Visual Studio.
 
 To just build the program, hit **Ctrl** + **Shift** + **B**
 
-All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build\Windows\<arch>\<config>\` E.g. `build\Windows\x86\Debug\`, or `build\Windows\x64\Release\`
+All build files (including the binary executables) are placed into the `build` directory under their target architecture and build configuration, defined in this format: `build/<platform>/<arch>/<buildmode>/` E.g. `build/Windows/x86/Debug/`, or `build/Windows/x64/Release/`
 
 ### Running the program
 
-To run the executable, open the built .exe binary within the relevant `build\Windows\<arch>\<config>\` directory
+To run the executable, open the built .exe binary within the relevant `build/<platform>/<arch>/<buildmode>/` directory
 
 To run the program from directly within Visual Studio, hit **Ctrl** + **F5**.
 
@@ -89,7 +91,7 @@ The game code is built as a DLL to enable dynamic reloading of (just) the game c
 
 Click: **Tools** > **Command Line** > **Developer Command Prompt**
 
-Move into the `Game\` directory
+Move into the `Game/` directory
 
 ```
 > cd Game
