@@ -10,6 +10,25 @@
 // the app ready.
 #define WM_HANDMADE_HERO_READY (WM_APP + 1)
 
+// @NOTE(JM) Putting these here for reference.
+// The following useful types are defined in the Win32 API
+// https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
+/*
+typedef unsigned short      WORD;   (uint16)
+typedef unsigned long       DWORD;  (uint32)
+typedef unsigned long long  QWORD;  (uint64)
+typedef int                 BOOL;
+typedef unsigned char       BYTE;
+typedef char                CHAR;
+typedef unsigned char       UCHAR;
+typedef short               SHORT;
+typedef unsigned short      USHORT;
+typedef int                 INT;
+typedef unsigned int        UINT;
+typedef long                LONG;   (int32)
+typedef unsigned long       ULONG;
+*/
+
 /**
  * Struct for the Win32 screen buffer
  */

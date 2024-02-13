@@ -1,7 +1,21 @@
 #ifndef HEADER_HH_TYPES
 #define HEADER_HH_TYPES
 
-// Typedefs that specify exact-width integer types for increased code portability.
+//
+// TYPES.H
+//==============================================================================
+// Use type definitions that can be shared across the platform and game layers.
+
+
+// Useful definitions from the C Standard Library.
+// -----------------------------------------------------------------------------
+#include <stddef.h> // size_t
+#include <stdbool.h> // true, false, bool
+
+
+// Custom typedefs that specify exact-width types for increased code portability.
+// -----------------------------------------------------------------------------
+
 /*
  * char:                                (1)     int8   (-128 127)
  * short:                               (2)     int16  (-32,768 32,767)
@@ -27,35 +41,14 @@ typedef unsigned long long  uint64;     // 8 bytes
 typedef float               float32;    // 4 bytes
 typedef double              float64;    // 8 bytes
 
-typedef size_t              sizet;      // To represent the size or count of something
+typedef size_t              sizet;      // Guaranteed to be able to represent
+                                        // the size of the largest object that
+                                        // can exist in the memory of the system
 
 // Boolean
-// @NOTE(JM) The type "bool" is now part of the C++ fundamental
-// types. It can have values of either "true" or "false"
-// @see https://en.cppreference.com/w/cpp/language/types
-#include <stdbool.h>
 typedef int8                bool8;
 typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
-
-// @NOTE(JM) Putting these here for reference.
-// The following useful types are defined in the Win32 API
-// https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
-/*
-    typedef unsigned short      WORD;   (uint16)
-    typedef unsigned long       DWORD;  (uint32)
-    typedef unsigned long long  QWORD;  (uint64)
-    typedef int                 BOOL;
-    typedef unsigned char       BYTE;
-    typedef char                CHAR;
-    typedef unsigned char       UCHAR;
-    typedef short               SHORT;
-    typedef unsigned short      USHORT;
-    typedef int                 INT;
-    typedef unsigned int        UINT;
-    typedef long                LONG;   (int32)
-    typedef unsigned long       ULONG;
-*/
 
 #endif

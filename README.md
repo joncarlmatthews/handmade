@@ -59,8 +59,6 @@ The startup library code resides within the `Startup/` directory and associated 
 
 The starup code is built as a static library (.lib). The resulting .lib file is automatically copied into the code during the build process by the linker. `Startup.lib` is explicitly defined as an additional dependancy of both `Game` and `Platform`. 
 
-
-
 ### Coding Style
 
 I recommend installing the [Editor Guidelines](https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview) Visual Studio plugin.
@@ -133,3 +131,9 @@ With the program running, execute the build script with the relevant **Configura
 The platform layer will then dynamically reload the game code without the need to rebuild the platform code. You can safely run `build.bat` with (a) the Visual Studio debugger running the platform layer or (b) when simply running primary the .exe
 
 This `build.bat` build script has been coded to match the Visual Studio build commands and so all files generated are placed in the usual directories.
+
+### Useful links
+
+ - [C-runtime library reference (MSVC)](https://learn.microsoft.com/en-us/cpp/c-runtime-library/c-run-time-library-reference)
+ - C types: en.cppreference.com/w/c/types/**<type>** E.g. [https://en.cppreference.com/w/c/types/size_t](https://en.cppreference.com/w/c/types/size_t)
+ - [C standard library header files](https://en.cppreference.com/w/c/header)

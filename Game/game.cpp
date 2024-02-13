@@ -585,7 +585,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         (FRAME_BUFFER_PIXEL_HEIGHT / 2) - 500,
         1,
         1000,
-        { 1.0f, 1.0f, 1.0f, 1.0f });
+        { 0.0f });
 
     // X axis
     writeRectangle(frameBuffer,
@@ -593,18 +593,18 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         (FRAME_BUFFER_PIXEL_HEIGHT / 2),
         1000,
         1,
-        {1.0f, 1.0f, 1.0f, 1.0f });
+        { 0.0f });
 
     Vector2 redVector = { 10.0f, 10.0f };
     Vector2 greenVector = { 12.0f, 6.0f };
     Vector2 blueVector = {0.0f};
 
-    drawVector(frameBuffer, redVector, {0.0f, 0xFF0000 });
-    drawVector(frameBuffer, greenVector, { 0.0f, 0x00FF00 });
+    drawVector(frameBuffer, redVector, {0xFF0000});
+    drawVector(frameBuffer, greenVector, {0x00FF00});
 
-    vector2Subtract(&blueVector, greenVector, redVector);
+    vector2Subtract(&blueVector, redVector, greenVector);
 
-    drawVector(frameBuffer, blueVector, { 0.0f, 0x0000FF });
+    drawVector(frameBuffer, blueVector, {0x0000FF});
 
 
 #if 0

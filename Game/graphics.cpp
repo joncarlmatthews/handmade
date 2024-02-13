@@ -64,12 +64,12 @@ void writeRectangle(GameFrameBuffer *buffer,
     // Set the colour
     uint32 alpha, red, green, blue = 0;
 
-    // Set the colour
-    if(colour.mode > 0){
-        alpha   = ((uint32)(255.0f * colour.a) << 24);
-        red     = ((uint32)(255.0f * colour.r) << 16);
-        green   = ((uint32)(255.0f * colour.g) << 8);
+    // If the hex part is 0.0, then try and take from the rgb
+    if(colour.hex == 0.0f){
         blue    = ((uint32)(255.0f * colour.b) << 0);
+        green   = ((uint32)(255.0f * colour.g) << 8);
+        red     = ((uint32)(255.0f * colour.r) << 16);
+        alpha   = ((uint32)(255.0f * colour.a) << 24);
     } else{
         blue    = (uint32)colour.hex & 0xFF;
         green   = ((uint32)colour.hex >> 8) & 0xFF;
@@ -77,7 +77,7 @@ void writeRectangle(GameFrameBuffer *buffer,
         alpha   = ((uint32)colour.hex >> 24) & 0xFF;
     }
 
-    uint32 hexColour = ((alpha << 24) | (red << 16) | (green << 8) | blue);
+    uint32 colourBytes = ((alpha << 24) | (red << 16) | (green << 8) | blue);
 
     // Write the memory
     uint32 *row = (uint32*)buffer->memory;
@@ -98,7 +98,7 @@ void writeRectangle(GameFrameBuffer *buffer,
         uint32 *pixel = (uint32*)row;
         for (uint32 x = 0; x < width; x++) {
 
-            *pixel = hexColour;
+            *pixel = colourBytes;
             pixel = (pixel + 1);
         }
 

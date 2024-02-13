@@ -258,7 +258,7 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
 
     case 4:
         // earth/grass
-        *tileColour = { (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f), 1.0f };
+        *tileColour = { 0.0f, (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f), 1.0f };
         break;
 
     case 5:
@@ -275,7 +275,7 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
 
 Colour getOutOfTileChunkMemoryBoundsColour()
 {
-    Colour c;
+    Colour c = {0};
     c.hex = 0x0827F5;
     //c.hex = 0x00FF00;
     return c; // blue screen of death
@@ -283,7 +283,7 @@ Colour getOutOfTileChunkMemoryBoundsColour()
 
 Colour getUninitialisedTileChunkTilesColour()
 {
-    Colour c;
+    Colour c = {0};
     c.hex = 0xFF0000;
     return c; // red
 }
