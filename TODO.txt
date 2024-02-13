@@ -2,11 +2,11 @@ Day 043
 =======
 - [ ] Algebra
 - [ ] Gustavo (game-physics-engine-programming)
-- [ ] Rename Startup to Core?? Shared??
 - [ ] Complete day 43
 
 Ongoing:
 =======
+- [ ] Rename Startup to Core?? Shared??
 - [ ] shift and mask to store chunk and tile in the same 32 bit integer?
 - [ ] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
 - [ ] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
