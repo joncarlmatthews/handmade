@@ -69,6 +69,7 @@ bitScanResult intrin_bitScanForward(uint32 mask)
     return result;
 #else
 
+    // Generic support
     for (uint32 testBit = 0; testBit <= 32; testBit++){
         uint32 testShift = (1 << testBit);
         uint32 res = (mask & testShift);

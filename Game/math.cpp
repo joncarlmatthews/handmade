@@ -38,10 +38,10 @@ void vector2Add(Vector2 *v1, Vector2 v2)
     v1->y = (v1->y + v2.y);
 }
 
-void vector2Subtract(Vector2 *v1, Vector2 v2)
+void vector2Subtract(Vector2 *rv, Vector2 v1, Vector2 v2)
 {
-    v1->x = (v1->x - v2.x);
-    v1->y = (v1->y - v2.y);
+    rv->x = (v1.x + (v2.x * -1));
+    rv->y = (v1.y + (v2.y * -1));
 }
 
 void vector2Multiply(Vector2 *v1, Vector2 v2)
@@ -59,8 +59,4 @@ void vector2MultiplyScalar(Vector2 *v1, float32 scalar)
 float32 getVectorMagnitude(Vector2 v)
 {
     return intrin_sqrtf((v.x * v.x) + (v.y * v.y));
-}
-
-float32 modF32(float32 dividend, float32 divisor) {
-    return (dividend - ((int)(dividend / divisor) * divisor));
 }

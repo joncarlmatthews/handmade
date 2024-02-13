@@ -1,6 +1,7 @@
 #ifndef HEADER_HH_MATH
 #define HEADER_HH_MATH
 
+#include <math.h>
 #include "game_types.h"
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -108,15 +109,20 @@ struct Vector2 {
     Vector2& operator*=(float scalar);
 #endif
 
-} ;
-
-
-float32 modF32(float32 dividend, float32 divisor);
+};
 
 float32 getVectorMagnitude(Vector2 v);
 void vector2Add(Vector2 *v1, Vector2 v2);
 void vector2Multiply(Vector2 *v1, Vector2 v2);
-void vector2Subtract(Vector2 *v1, Vector2 v2);
+
+/**
+ * @brief Subtracts v1 from v2 and writes the result into rv
+ * 
+ * @param rv The resulting vector
+ * @param v1 
+ * @param v2 
+*/
+void vector2Subtract(Vector2 *rv, Vector2 v1, Vector2 v2);
 void vector2MultiplyScalar(Vector2 *v1, float32 scalar);
 
 #endif

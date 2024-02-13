@@ -577,7 +577,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 -34.0f,
                 playerBitmap.head);
 
-#if 0
     // Vector stuff...
 
     // Y axis
@@ -597,16 +596,15 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         {1.0f, 1.0f, 1.0f, 1.0f });
 
     Vector2 redVector = { 10.0f, 10.0f };
-    Vector2 greenVector = { 5.0f, 3.0f };
-    Vector2 blueVector = {-10.0f, 10.0f};
+    Vector2 greenVector = { 12.0f, 6.0f };
+    Vector2 blueVector = {0.0f};
 
-    drawVector(frameBuffer, redVector, {1.0f, 0.0f, 0.0f, 1.0f });
-    drawVector(frameBuffer, greenVector, {0.0f, 1.0f, 0.0f, 1.0f });
+    drawVector(frameBuffer, redVector, {0.0f, 0xFF0000 });
+    drawVector(frameBuffer, greenVector, { 0.0f, 0x00FF00 });
 
-    //vector2Multiply(&blueVector, greenVector);
+    vector2Subtract(&blueVector, greenVector, redVector);
 
-    drawVector(frameBuffer, blueVector, { 1.0f, 0.0f, 0.0f, 1.0f });
-#endif
+    drawVector(frameBuffer, blueVector, { 0.0f, 0x0000FF });
 
 
 #if 0

@@ -92,8 +92,8 @@ pixelsPerFrame);
 
         // Wrap the player movement for toroidal world
         struct Vector2 playerNewPos = { 0, 0 };
-        playerNewPos.x = modF32(playerNewPosTmp.x, (float32)gameState->world.worldWidthPx);
-        playerNewPos.y = modF32(playerNewPosTmp.y, (float32)gameState->world.worldHeightPx);
+        playerNewPos.x = fmodf(playerNewPosTmp.x, (float32)gameState->world.worldWidthPx);
+        playerNewPos.y = fmodf(playerNewPosTmp.y, (float32)gameState->world.worldHeightPx);
 
         // Player movement direction
         uint32 movedUp = 0;
@@ -281,17 +281,17 @@ gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRe
 }
 
 /**
- * The absolute player position within the game state is the absolute
- * position where we start drawing the player from (bottom left). It's not
- * necessarily where we consider the player to "be" in terms of the game play.
- * This function is used when we want to get what the game considers the position
- * of the player to be.
+ * Sets the position of the player based on absolute x and y coords.
+ * This is the bottom left of the player. (Where we start drawing from)
+ *
+ * From these values, the function the sets the "game position", which
+ * is where the engine considers the player to "be". Where we consider
+ * the player to be is currently a pixel point. This will need to be
+ * refactored later to something more sophisticated.
  *
  * We also set the fixed position (for where to draw the player on screen) within
  * this function, as it needs to be relative to the game position offsets
  * 
- * @param gameState 
- * @return 
 */
 void setPlayerPosition(float32 absX,
                         float32 absY,
@@ -303,8 +303,8 @@ void setPlayerPosition(float32 absX,
     gameState->player1.absolutePosition.y = absY;
     gameState->player1.zIndex = zIndex;
 
-    gameState->player1.canonicalAbsolutePosition.x = modF32(absX, (float32)frameBuffer->widthPx);
-    gameState->player1.canonicalAbsolutePosition.y = modF32(absY, (float32)frameBuffer->heightPx);
+    gameState->player1.canonicalAbsolutePosition.x = fmodf(absX, (float32)frameBuffer->widthPx);
+    gameState->player1.canonicalAbsolutePosition.y = fmodf(absY, (float32)frameBuffer->heightPx);
 
     // Consider the game position as the bottom middle. With a small inset up
     // from the bottom
