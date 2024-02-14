@@ -43,6 +43,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     frameBuffer);
 
         // Init the World
+        gameState->v1 = {10.0f, 10.f};
         gameState->world.pixelsPerMeter  = (uint16)WORLD_PIXELS_PER_METER;
         gameState->world.worldHeightPx   = (gameState->world.tilemap.tileHeightPx * gameState->world.tilemap.tileDimensions);
         gameState->world.worldWidthPx    = gameState->world.worldHeightPx;
@@ -390,7 +391,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
             doorDown        = false;
 
             randomNumberIndex++;
-        }        
+        }
 
         memory->initialised = true;
     } // initialisation
@@ -578,7 +579,13 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.head);
 
     // Vector stuff...
+    Vector2 v2 = {1.0f, 1.0f};
 
+    vector2Add(&gameState->v1, gameState->v1, v2);
+
+    drawVector(frameBuffer, gameState->v1, { 0xFF0000 });
+
+    #if 0
     // Y axis
     writeRectangle(frameBuffer,
         (FRAME_BUFFER_PIXEL_WIDTH / 2),
@@ -605,6 +612,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     vector2Subtract(&blueVector, redVector, greenVector);
 
     drawVector(frameBuffer, blueVector, {0x0000FF});
+    #endif
 
 
 #if 0

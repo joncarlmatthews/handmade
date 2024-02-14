@@ -447,6 +447,8 @@ typedef struct GameState
 
     SineWave sineWave;
 
+    Vector2 v1;
+
 } GameState;
 
 #endif

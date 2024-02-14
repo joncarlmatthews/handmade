@@ -1,6 +1,6 @@
 Day 043
 =======
-- [ ] Algebra
+- [x] Algebra
 - [ ] Gustavo (game-physics-engine-programming)
 - [ ] Complete day 43
 
