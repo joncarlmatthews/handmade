@@ -161,6 +161,6 @@ void v2ScalarMultiply(Vec2 *rv, Vec2 v1, float32 scalar);
  */
 float32 v2GetDotProduct(Vec2 v1, Vec2 v2);
 
-void v3CrossProduct(Vec3 *rv, Vec3 v1, Vec3 v2);
+Vec3 v3VectorFromCrossProduct(Vec3 v1, Vec3 v2);
 
 #endif

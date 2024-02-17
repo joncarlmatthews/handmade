@@ -592,10 +592,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     drawVector(frameBuffer, v1, { 0x00FF00 });
     drawVector(frameBuffer, v2, { 0xFF0000 });
 
-    Vec3 v3 = {0.0f};
     Vec3 v3_2 = {0.0f};
     Vec3 v3_3 = {0.0f};
-    v3CrossProduct(&v3, v3_2, v3_3);
+    Vec3 v3 =  v3VectorFromCrossProduct(v3_2, v3_3);
 
     #if 0
     // Y axis
