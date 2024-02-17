@@ -8,7 +8,7 @@
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
 // Our standard vector is 32-bit floating point.
-struct Vector2 {
+struct Vec2 {
     float32 x;
     float32 y;
 
@@ -20,22 +20,22 @@ struct Vector2 {
      *
      * E.g:
      *
-     * Vector2 v1 = {2.0f, 3.0f};
-     * Vector2 v2 = {5.0f, 6.0f};
+     * Vec2 v1 = {2.0f, 3.0f};
+     * Vec2 v2 = {5.0f, 6.0f};
      *
      * v1.x = (v1.x + v2.x);
      * v1.y = (v1.y + v2.y);
      *
      * Can be written as:
      *
-     * Vector2 v1 = {2.0f, 3.0f};
-     * Vector2 v2 = {5.0f, 6.0f};
+     * Vec2 v1 = {2.0f, 3.0f};
+     * Vec2 v2 = {5.0f, 6.0f};
      *
      * v1 += v2; # functionally the same as above.
      *
      * @param v The vector to add.
     */
-    Vector2& operator+=(Vector2 v);
+    Vec2& operator+=(Vec2 v);
 
     /**
      * Subtracys another vector from this instance's vector via overloading the
@@ -43,22 +43,22 @@ struct Vector2 {
      *
      * E.g:
      *
-     * Vector2 v1 = {2.0f, 3.0f};
-     * Vector2 v2 = {5.0f, 6.0f};
+     * Vec2 v1 = {2.0f, 3.0f};
+     * Vec2 v2 = {5.0f, 6.0f};
      *
      * v1.x = (v1.x - v2.x);
      * v1.y = (v1.y - v2.y);
      *
      * Can be written as:
      *
-     * Vector2 v1 = {2.0f, 3.0f};
-     * Vector2 v2 = {5.0f, 6.0f};
+     * Vec2 v1 = {2.0f, 3.0f};
+     * Vec2 v2 = {5.0f, 6.0f};
      *
      * v1 -= v2; # functionally the same as above.
      *
      * @param v The vector to subtract.
     */
-    Vector2& operator-=(Vector2 v);
+    Vec2& operator-=(Vec2 v);
 
     /**
      * Multiplies the instance's vector by another vector via overloading
@@ -66,22 +66,22 @@ struct Vector2 {
      *
      * E.g:
      *
-     * Vector2 v1 = {2.0f, 3.0f};
-     * Vector2 v2 = {5.0f, 6.0f};
+     * Vec2 v1 = {2.0f, 3.0f};
+     * Vec2 v2 = {5.0f, 6.0f};
      *
      * v1.x = (v1.x*v2.x);
      * v1.y = (v1.y*v2.y);
      *
      * Can be written as:
      *
-     * Vector2 v1 = {2.0f, 3.0f};
-     * Vector2 v2 = {5.0f, 6.0f};
+     * Vec2 v1 = {2.0f, 3.0f};
+     * Vec2 v2 = {5.0f, 6.0f};
      *
      * v1 *= v2; # functionally the same as above.
      *
      * @param v The vector to multiply by.
     */
-    Vector2& operator*=(Vector2 v);
+    Vec2& operator*=(Vec2 v);
 
     /**
      * Multiplies the instance's vector by a scalar multiplier via overloading
@@ -89,7 +89,7 @@ struct Vector2 {
      *
      * E.g:
      *
-     * Vector2 v = {2.0f, 3.0f};
+     * Vec2 v = {2.0f, 3.0f};
      * 
      * float32 scalar = 10.0f;
      *
@@ -98,7 +98,7 @@ struct Vector2 {
      *
      * Can be written as:
      *
-     * Vector2 v = {2.0f, 3.0f};
+     * Vec2 v = {2.0f, 3.0f};
      *
      * float32 scalar = 10.0f;
      *
@@ -106,10 +106,16 @@ struct Vector2 {
      *
      * @param scalar The scalar multiplier.
     */
-    Vector2& operator*=(float scalar);
+    Vec2& operator*=(float scalar);
 #endif
 
 };
+
+typedef struct Vec3 {
+    float32 x;
+    float32 y;
+    float32 z;
+} Vector3;
 
 /**
  * Computes the magnitude of vector v
@@ -117,7 +123,7 @@ struct Vector2 {
  * @param v vector
  * @return magnitude 
 */
-float32 getVectorMagnitude(Vector2 v);
+float32 v2GetMagnitude(Vec2 v);
 
 /**
 * Adds v2 to v1 and writes the resulting vector into rv
@@ -126,7 +132,7 @@ float32 getVectorMagnitude(Vector2 v);
 * @param v1 The initial vector
 * @param v2 The vector to add
 */
-void vector2Add(Vector2 *rv, Vector2 v1, Vector2 v2);
+void v2Add(Vec2 *rv, Vec2 v1, Vec2 v2);
 
 /**
  * Subtracts v2 from v1 and writes the resulting vector into rv
@@ -135,7 +141,7 @@ void vector2Add(Vector2 *rv, Vector2 v1, Vector2 v2);
  * @param v1 The initial vector
  * @param v2 The vector to subtract
  */
-void vector2Subtract(Vector2 *rv, Vector2 v1, Vector2 v2);
+void v2Subtract(Vec2 *rv, Vec2 v1, Vec2 v2);
 
 /**
 * Multiplies v1 by scalar and writes the resulting vector into rv
@@ -144,15 +150,17 @@ void vector2Subtract(Vector2 *rv, Vector2 v1, Vector2 v2);
 * @param v1 The initial vector
 * @param scalar The amount to multiply the vector by
 */
-void vector2MultiplyScalar(Vector2 *rv, Vector2 v1, float32 scalar);
+void v2ScalarMultiply(Vec2 *rv, Vec2 v1, float32 scalar);
 
 /**
- * Multiplies v1 by v2 and writes the resulting vector into rv
+ * Returns the dot product of v1.v2
  * 
- * @param rv The resulting vector
  * @param v1 The initial vector
  * @param v2 The vector to multiply by
+ * @return The scalar dot product value
  */
-void vector2Multiply(Vector2 *rv, Vector2 v1, Vector2 v2);
+float32 v2GetDotProduct(Vec2 v1, Vec2 v2);
+
+void v3CrossProduct(Vec3 *rv, Vec3 v1, Vec3 v2);
 
 #endif

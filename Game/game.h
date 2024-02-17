@@ -54,18 +54,23 @@
     assert(!"Both scroll types cannot be enabled at the same time")
 #endif
 
-#if HANDMADE_LOCAL_BUILD
-
-#define DEBUG_PLATFORM_LOG(name) int name(char* const buffer, sizet const sizeOfBuffer, char const* const format, ...)
-typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
-
-#endif
-
 //====================================================
 //====================================================
 // Services that the platform layer must provide
 //====================================================
 //====================================================
+
+#if HANDMADE_LOCAL_BUILD
+
+/*
+ * Useage:
+ * char buff[50] = {0};
+ * memory->DEBUG_platformLog(buff, sizeof(buff), "Hello world\n");
+ */
+#define DEBUG_PLATFORM_LOG(name) int name(char* const buffer, sizet const sizeOfBuffer, char const* const format, ...)
+typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
+
+#endif
 
 typedef struct PlatformThreadContext
 {
@@ -447,7 +452,7 @@ typedef struct GameState
 
     SineWave sineWave;
 
-    Vector2 v1;
+    Vec2 v1;
 
 } GameState;
 

@@ -34,7 +34,7 @@ pixelsPerFrame);
     }
 #endif
 
-    struct Vector2 playerNewPosTmp = {0, 0};
+    struct Vec2 playerNewPosTmp = {0, 0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
     playerNewPosTmp.y = gameState->player1.absolutePosition.y;
 
@@ -91,7 +91,7 @@ pixelsPerFrame);
     if (playerAttemptingMove) {
 
         // Wrap the player movement for toroidal world
-        struct Vector2 playerNewPos = { 0, 0 };
+        struct Vec2 playerNewPos = { 0, 0 };
         playerNewPos.x = fmodf(playerNewPosTmp.x, (float32)gameState->world.worldWidthPx);
         playerNewPos.y = fmodf(playerNewPosTmp.y, (float32)gameState->world.worldHeightPx);
 
@@ -328,7 +328,7 @@ void setPlayerPosition(float32 absX,
 * @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
 */
 void getPositionDataForPlayer(PlayerPositionData *positionData,
-                                struct Vector2 playerPixelPos,
+                                struct Vec2 playerPixelPos,
                                 uint32 zIndex,
                                 PLAYER_POINT_POS pointPos,
                                 GameState *gameState)

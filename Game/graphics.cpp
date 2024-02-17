@@ -316,7 +316,7 @@ void writeBitmap(GameFrameBuffer *buffer,
     }
 }
 
-void drawVector(GameFrameBuffer *frameBuffer, Vector2 vector, Colour colour)
+void drawVector(GameFrameBuffer *frameBuffer, Vec2 vector, Colour colour)
 {
     // Vector origins
     uint32 vox = (FRAME_BUFFER_PIXEL_WIDTH / 2);
@@ -325,7 +325,7 @@ void drawVector(GameFrameBuffer *frameBuffer, Vector2 vector, Colour colour)
     // Pixels per point
     float32 pixelsPerPoint = 1.0f;
 
-    float32 v1mag = getVectorMagnitude(vector);
+    float32 v1mag = v2GetMagnitude(vector);
 
     float32 xfract = (vector.x / v1mag);
     float32 yfract = (vector.y / v1mag);

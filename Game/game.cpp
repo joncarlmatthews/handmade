@@ -546,9 +546,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     PlayerBitmap playerBitmap = gameState->player1.bitmaps[gameState->player1.currentBitmapIndex];
 
 #if SCROLL_TYPE_SMOOTH
-    struct Vector2 playerPositionData = gameState->player1.fixedPosition;
+    struct Vec2 playerPositionData = gameState->player1.fixedPosition;
 #elif SCROLL_TYPE_SCREEN
-    struct Vector2 playerPositionData = gameState->player1.canonicalAbsolutePosition;
+    struct Vec2 playerPositionData = gameState->player1.canonicalAbsolutePosition;
 #endif
 
     writeBitmap(frameBuffer,
@@ -579,11 +579,23 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.head);
 
     // Vector stuff...
-    Vector2 v2 = {1.0f, 1.0f};
+    Vec2 v1 = {-10.0f, -5.0f};
+    Vec2 v2 = {2.0f, -3.0f};
 
-    vector2Add(&gameState->v1, gameState->v1, v2);
+    float32 dotproduct = (v2GetDotProduct(v1, v2));
 
-    drawVector(frameBuffer, gameState->v1, { 0xFF0000 });
+    char buff[50] = {0};
+    memory->DEBUG_platformLog(buff, sizeof(buff), "Dot product: %f\n", dotproduct);
+
+    //vector2Add(&gameState->v1, gameState->v1, v2);
+
+    drawVector(frameBuffer, v1, { 0x00FF00 });
+    drawVector(frameBuffer, v2, { 0xFF0000 });
+
+    Vec3 v3 = {0.0f};
+    Vec3 v3_2 = {0.0f};
+    Vec3 v3_3 = {0.0f};
+    v3CrossProduct(&v3, v3_2, v3_3);
 
     #if 0
     // Y axis
@@ -602,9 +614,9 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         1,
         { 0.0f });
 
-    Vector2 redVector = { 10.0f, 10.0f };
-    Vector2 greenVector = { 12.0f, 6.0f };
-    Vector2 blueVector = {0.0f};
+    Vec2 redVector = { 10.0f, 10.0f };
+    Vec2 greenVector = { 12.0f, 6.0f };
+    Vec2 blueVector = {0.0f};
 
     drawVector(frameBuffer, redVector, {0xFF0000});
     drawVector(frameBuffer, greenVector, {0x00FF00});

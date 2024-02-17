@@ -29,21 +29,21 @@ typedef struct PlayerBitmap {
 typedef struct Player {
     // Pixel position in relation to the entire tilemap.
     // This is the starting position that the player is drawn from (bottom left).
-    struct Vector2 absolutePosition;
+    struct Vec2 absolutePosition;
 
     // The pixel position of where we consider the player to be. Which isnt
     // necessarily the bottom left (which is where we start drawing from).
-    struct Vector2 gamePosition;
+    struct Vec2 gamePosition;
 
     // The absolute position normalised so it's relative to the screen.
-    struct Vector2 canonicalAbsolutePosition;
+    struct Vec2 canonicalAbsolutePosition;
 
     // Which tilemap z-plane is the player on?
     uint32 zIndex;
 
     // The fixed position that we draw the player from if the game scroll type
     // is set to screen scrolling
-    struct Vector2 fixedPosition;
+    struct Vec2 fixedPosition;
 
     // Last direction the player moved in (up, down, left, right)
     uint32 lastMoveDirections;
@@ -100,7 +100,7 @@ typedef struct PlayerPositionData {
 } PlayerPositionData;
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
-                                struct Vector2 playerPixelPos,
+                                struct Vec2 playerPixelPos,
                                 uint32 zIndex,
                                 PLAYER_POINT_POS pointPos,
                                 GameState *gameState);

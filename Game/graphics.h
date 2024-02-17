@@ -54,6 +54,6 @@ void writeBitmap(GameFrameBuffer* buffer,
                     float32 alignYf,
                     BitmapFile bitmapFile);
 
-void drawVector(GameFrameBuffer *frameBuffer, Vector2 vector, Colour colour);
+void drawVector(GameFrameBuffer *frameBuffer, Vec2 vector, Colour colour);
 
 #endif
