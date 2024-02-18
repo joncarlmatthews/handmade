@@ -56,7 +56,7 @@
 
 //====================================================
 //====================================================
-// Services that the platform layer must provide
+// Services that the platform layer must provide:
 //====================================================
 //====================================================
 
@@ -452,7 +452,7 @@ typedef struct GameState
 
     SineWave sineWave;
 
-    Vec2 v1;
+    Vec2 a;
 
 } GameState;
 

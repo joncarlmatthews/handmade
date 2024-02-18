@@ -137,3 +137,4 @@ This `build.bat` build script has been coded to match the Visual Studio build co
  - [C-runtime library reference (MSVC)](https://learn.microsoft.com/en-us/cpp/c-runtime-library/c-run-time-library-reference)
  - C types: en.cppreference.com/w/c/types/**<type>** E.g. [https://en.cppreference.com/w/c/types/size_t](https://en.cppreference.com/w/c/types/size_t)
  - [C standard library header files](https://en.cppreference.com/w/c/header)
+ - [GCC](https://gcc.gnu.org/onlinedocs/gcc-13.2.0/gcc/#SEC_Contents) and their [C preprocessor documentation](https://gcc.gnu.org/onlinedocs/cpp/index.html#SEC_Contents)

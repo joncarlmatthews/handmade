@@ -579,8 +579,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.head);
 
     // Vector stuff...
-    Vec2 v1 = {0.0f, 100.0f};
-    Vec2 v2 = { 100.0f, 100.0f };
+    Vec2 a = {0.0f, 100.0f};
+    Vec2 b = { 100.0f, 100.0f };
 
     Vec2 v3 = { 0 };
 
