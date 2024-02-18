@@ -579,22 +579,27 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.head);
 
     // Vector stuff...
-    Vec2 v1 = {-10.0f, -5.0f};
-    Vec2 v2 = {2.0f, -3.0f};
+    Vec2 v1 = {0.0f, 100.0f};
+    Vec2 v2 = { 100.0f, 100.0f };
 
-    float32 dotproduct = (v2GetDotProduct(v1, v2));
+    Vec2 v3 = { 0 };
 
-    char buff[50] = {0};
-    memory->DEBUG_platformLog(buff, sizeof(buff), "Dot product: %f\n", dotproduct);
-
-    //vector2Add(&gameState->v1, gameState->v1, v2);
+    v2PerpendicularVector(&v3, v2);
 
     drawVector(frameBuffer, v1, { 0x00FF00 });
     drawVector(frameBuffer, v2, { 0xFF0000 });
+    drawVector(frameBuffer, v3, { 0x0000FF });
 
+    float32 dotproduct = (v2GetDotProduct(v2, v3));
+
+    char buff[50] = { 0 };
+    memory->DEBUG_platformLog(buff, sizeof(buff), "Dot product: %f\n", dotproduct);
+
+    #if 0
     Vec3 v3_2 = {0.0f};
     Vec3 v3_3 = {0.0f};
     Vec3 v3 =  v3VectorFromCrossProduct(v3_2, v3_3);
+    #endif
 
     #if 0
     // Y axis

@@ -7,115 +7,13 @@
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
-// Our standard vector is 32-bit floating point.
+/**
+ * Standard 2D vector. Our standard vector is 32-bit floating point.
+ */
 struct Vec2 {
     float32 x;
     float32 y;
-
-#if 0
-
-    /**
-     * Adds another vector to this instance's vector via overloading the
-     * += operator.
-     *
-     * E.g:
-     *
-     * Vec2 v1 = {2.0f, 3.0f};
-     * Vec2 v2 = {5.0f, 6.0f};
-     *
-     * v1.x = (v1.x + v2.x);
-     * v1.y = (v1.y + v2.y);
-     *
-     * Can be written as:
-     *
-     * Vec2 v1 = {2.0f, 3.0f};
-     * Vec2 v2 = {5.0f, 6.0f};
-     *
-     * v1 += v2; # functionally the same as above.
-     *
-     * @param v The vector to add.
-    */
-    Vec2& operator+=(Vec2 v);
-
-    /**
-     * Subtracys another vector from this instance's vector via overloading the
-     * -= operator.
-     *
-     * E.g:
-     *
-     * Vec2 v1 = {2.0f, 3.0f};
-     * Vec2 v2 = {5.0f, 6.0f};
-     *
-     * v1.x = (v1.x - v2.x);
-     * v1.y = (v1.y - v2.y);
-     *
-     * Can be written as:
-     *
-     * Vec2 v1 = {2.0f, 3.0f};
-     * Vec2 v2 = {5.0f, 6.0f};
-     *
-     * v1 -= v2; # functionally the same as above.
-     *
-     * @param v The vector to subtract.
-    */
-    Vec2& operator-=(Vec2 v);
-
-    /**
-     * Multiplies the instance's vector by another vector via overloading
-     * the *= operator.
-     *
-     * E.g:
-     *
-     * Vec2 v1 = {2.0f, 3.0f};
-     * Vec2 v2 = {5.0f, 6.0f};
-     *
-     * v1.x = (v1.x*v2.x);
-     * v1.y = (v1.y*v2.y);
-     *
-     * Can be written as:
-     *
-     * Vec2 v1 = {2.0f, 3.0f};
-     * Vec2 v2 = {5.0f, 6.0f};
-     *
-     * v1 *= v2; # functionally the same as above.
-     *
-     * @param v The vector to multiply by.
-    */
-    Vec2& operator*=(Vec2 v);
-
-    /**
-     * Multiplies the instance's vector by a scalar multiplier via overloading
-     * the *= operator.
-     *
-     * E.g:
-     *
-     * Vec2 v = {2.0f, 3.0f};
-     * 
-     * float32 scalar = 10.0f;
-     *
-     * v.x = (scalar * v.x);
-     * v.y = (scalar * v.y);
-     *
-     * Can be written as:
-     *
-     * Vec2 v = {2.0f, 3.0f};
-     *
-     * float32 scalar = 10.0f;
-     *
-     * v *= scalar;
-     *
-     * @param scalar The scalar multiplier.
-    */
-    Vec2& operator*=(float scalar);
-#endif
-
 };
-
-typedef struct Vec3 {
-    float32 x;
-    float32 y;
-    float32 z;
-} Vector3;
 
 /**
  * Computes the magnitude of vector v
@@ -161,6 +59,32 @@ void v2ScalarMultiply(Vec2 *rv, Vec2 v1, float32 scalar);
  */
 float32 v2GetDotProduct(Vec2 v1, Vec2 v2);
 
+/**
+ * Calculates a vector that is perpendicular to vector v and writes the result
+ * to vector rv
+ *
+ * @param rv The resulting vector 
+ * @param v1 Vector to base calculation off of
+ * @return void
+*/
+void v2PerpendicularVector(Vec2 *rv, Vec2 v);
+
+/**
+ * Standard 3D vector. Our standard vector is 32-bit floating point.
+ */
+typedef struct Vec3 {
+    float32 x;
+    float32 y;
+    float32 z;
+} Vector3;
+
+/**
+ * Creates a 3D vector from the cross product of 3D vector v1 and 3D vector v2
+ * 
+ * @param v1 
+ * @param v2 
+ * @return The new vector
+*/
 Vec3 v3VectorFromCrossProduct(Vec3 v1, Vec3 v2);
 
 #endif
