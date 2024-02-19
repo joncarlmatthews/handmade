@@ -325,12 +325,12 @@ void drawVector(GameFrameBuffer *frameBuffer, Vec2 vector, Colour colour)
     // Pixels per point
     float32 pixelsPerPoint = 1.0f;
 
-    float32 v1mag = v2GetMagnitude(vector);
+    float32 vmag = v2GetMagnitude(vector);
 
-    float32 xfract = (vector.x / v1mag);
-    float32 yfract = (vector.y / v1mag);
+    float32 xfract = (vector.x / vmag);
+    float32 yfract = (vector.y / vmag);
 
-    for(size_t i = 0; i < ((size_t)((float64)v1mag * (float64)pixelsPerPoint)); i++){
+    for(size_t i = 0; i < ((size_t)((float64)vmag * (float64)pixelsPerPoint)); i++){
         float32 x = ((float32)vox + ((float32)i * xfract));
         float32 y = ((float32)voy + ((float32)i * yfract));
         writeRectangle(frameBuffer,

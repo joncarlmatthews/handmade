@@ -452,8 +452,6 @@ typedef struct GameState
 
     SineWave sineWave;
 
-    Vec2 a;
-
 } GameState;
 
 #endif

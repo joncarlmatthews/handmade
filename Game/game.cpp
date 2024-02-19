@@ -43,7 +43,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     frameBuffer);
 
         // Init the World
-        gameState->v1 = {10.0f, 10.f};
         gameState->world.pixelsPerMeter  = (uint16)WORLD_PIXELS_PER_METER;
         gameState->world.worldHeightPx   = (gameState->world.tilemap.tileHeightPx * gameState->world.tilemap.tileDimensions);
         gameState->world.worldWidthPx    = gameState->world.worldHeightPx;
@@ -579,26 +578,35 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.head);
 
     // Vector stuff...
-    Vec2 a = {0.0f, 100.0f};
+    Vec2 a = {100.0f, 10.0f};
     Vec2 b = { 100.0f, 100.0f };
+    Vec2 c = { 0 };
+    Vec3 d = { 1.0f ,6.0f,-8.0f };
+    Vec3 e = { 4.0f,-2.0f,-1.0f };
+    Vec3 f = { 0 };
+    Vec2 g = { 0 };
+    Vec2 h = { 0 };
+    Vec2 i = { 0 };
+    Vec3 j = { 10.0f, 20.0f, 3.0f };
 
-    Vec2 v3 = { 0 };
+    drawVector(frameBuffer, a, { 0x00FF00 });
+    drawVector(frameBuffer, b, { 0xFF0000 });
+    drawVector(frameBuffer, c, { 0x0000FF });
 
-    v2PerpendicularVector(&v3, v2);
+    v3CrossProduct(&f, d, e);
 
-    drawVector(frameBuffer, v1, { 0x00FF00 });
-    drawVector(frameBuffer, v2, { 0xFF0000 });
-    drawVector(frameBuffer, v3, { 0x0000FF });
+    v3GetNormal(j);
 
+    #if 0
+    char buff[50] = { 0 };
+    memory->DEBUG_platformLog(buff, sizeof(buff), "V3 dot product: x:%f y:%f z:%f \n", f.x, f.y, f.z);
+    #endif
+
+    #if 0
     float32 dotproduct = (v2GetDotProduct(v2, v3));
 
     char buff[50] = { 0 };
     memory->DEBUG_platformLog(buff, sizeof(buff), "Dot product: %f\n", dotproduct);
-
-    #if 0
-    Vec3 v3_2 = {0.0f};
-    Vec3 v3_3 = {0.0f};
-    Vec3 v3 =  v3VectorFromCrossProduct(v3_2, v3_3);
     #endif
 
     #if 0
