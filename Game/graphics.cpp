@@ -323,7 +323,7 @@ void drawVector(GameFrameBuffer *frameBuffer, Vec2 vector, Colour colour)
     uint32 voy = (FRAME_BUFFER_PIXEL_HEIGHT / 2);
 
     // Pixels per point
-    float32 pixelsPerPoint = 1.0f;
+    float32 pixelsPerPoint = 10.0f;
 
     float32 vmag = v2GetMagnitude(vector);
 

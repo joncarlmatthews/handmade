@@ -6,16 +6,17 @@ Day 043
 
 Ongoing:
 =======
-- [ ] Rename Startup to Core?? Shared??
-- [ ] shift and mask to store chunk and tile in the same 32 bit integer?
-- [ ] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
-- [ ] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
-- [ ] deprecate math.h
-- [ ] Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
-- [ ] Support for drawing bitmap at different size to that of the original asset.
-- [ ] Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
-- [ ] Add linter as part of pre-commit hook. Something like Stylecop?
-- [ ] Revisit build.bat code analysis crap. Think I can rip all of this out as I only use built.bat as a convenient utility to enable hot-reloading in certain scenarios. Not for my main build pipeline (where i would want to catch those types of errors)
+ -[] Rename Startup to Core?? Shared??
+ -[] Move 
+ -[] shift and mask to store chunk and tile in the same 32 bit integer?
+ -[] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
+ -[] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
+ -[] deprecate math.h
+ -[ ] Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
+ -[ ] Support for drawing bitmap at different size to that of the original asset.
+ -[ ] Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
+ -[ ] Add linter as part of pre-commit hook. Something like Stylecop?
+ -[ ] Revisit build.bat code analysis crap. Think I can rip all of this out as I only use built.bat as a convenient utility to enable hot-reloading in certain scenarios. Not for my main build pipeline (where i would want to catch those types of errors)
 
 Random Thoughts:
 ================

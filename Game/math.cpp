@@ -43,6 +43,19 @@ void v2PerpendicularVector(Vec2 *rv, Vec2 v)
     rv->y = (v.x)*-1;
 }
 
+void v2Normal(Vec2 *rv, Vec2 v)
+{
+    float32 mag = v2GetMagnitude(v);
+    rv->x = v.x / mag;
+    rv->y = v.y / mag;
+}
+
+void v2Rotate(Vec2 *rv, Vec2 v, float32 radians)
+{
+    rv->x = (v.x * intrin_cosf(radians)) - (v.y * intrin_sinf(radians));
+    rv->y = (v.x * intrin_sinf(radians)) + (v.y * intrin_cosf(radians));
+}
+
 // 3D vectors.
 // -----------------------------------------------------------------------------
 
@@ -84,11 +97,10 @@ void v3CrossProduct(Vec3 *rv, Vec3 a, Vec3 b)
     rv->z = (a.x * b.y) - (a.y * b.x);
 }
 
-float32 v3GetNormal(Vec3 v)
+void v3Normal(Vec3 *rv, Vec3 v)
 {
     float32 mag = v3GetMagnitude(v);
-    float32 a = v.x / mag;
-    float32 b = v.y / mag;
-    float32 c = v.z / mag;
-    return (a + b+ c);
+    rv->x = v.x / mag;
+    rv->y = v.y / mag;
+    rv->z = v.z / mag;
 }

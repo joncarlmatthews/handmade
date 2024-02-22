@@ -18,6 +18,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
 
+        gameState->angle = 0.0f;
+
         // Reserve a block of the memory region for the tile chunks
         memoryRegionReserveBlock(memory->permanentStorage,
                                     &gameState->tileChunksMemoryBlock,
@@ -578,7 +580,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.head);
 
     // Vector stuff...
-    Vec2 a = {100.0f, 10.0f};
+    Vec2 a = {20.0f, 20.0f};
     Vec2 b = { 100.0f, 100.0f };
     Vec2 c = { 0 };
     Vec3 d = { 1.0f ,6.0f,-8.0f };
@@ -589,13 +591,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     Vec2 i = { 0 };
     Vec3 j = { 10.0f, 20.0f, 3.0f };
 
+    #if 0
     drawVector(frameBuffer, a, { 0x00FF00 });
     drawVector(frameBuffer, b, { 0xFF0000 });
     drawVector(frameBuffer, c, { 0x0000FF });
+    #endif
 
-    v3CrossProduct(&f, d, e);
 
-    v3GetNormal(j);
+    v2Rotate(&a, a, gameState->angle);
+    drawVector(frameBuffer, a, { 0xFF0000 });
+
+    gameState->angle = (gameState->angle + 0.05f);
 
     #if 0
     char buff[50] = { 0 };

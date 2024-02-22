@@ -1,13 +1,22 @@
 #ifndef HEADER_HH_INTRINSICS
 #define HEADER_HH_INTRINSICS
 
-#include "game_types.h"
+#include "startup.h"
+
+// Compiler/OS includes
+#if COMPILER_MSVC
+#include <intrin.h>
+#pragma intrinsic(_BitScanForward)
+#endif
 
 typedef struct bitScanResult
 {
     bool32 found;
     uint32 index; // aka shift
 } bitScanResult;
+
+float32 intrin_cosf(float32 radians);
+float32 intrin_sinf(float32 radians);
 
 float64 intrin_sin(float64 radians);
 

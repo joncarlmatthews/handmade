@@ -7,7 +7,7 @@
 // Mathematical definitions and functions
 
 #include <math.h>
-#include "game_types.h"
+#include "startup.h"
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
@@ -90,6 +90,26 @@ void v2ScalarMultiply(Vec2 *rv, Vec2 a, float32 scalar);
  */
 void v2PerpendicularVector(Vec2 *rv, Vec2 v);
 
+/**
+ * From the given vector V, a new vector is written to RV that has the same
+ * direction as V but has a set length of 1 which is also known as its
+ * "unit normal" or "normalized vector." 
+ * 
+ * @param rv 
+ * @param v 
+ */
+void v2Normal(Vec2 *rv, Vec2 v);
+
+/**
+ * From the given vector V, a new vector is written to RV that has the same
+ * direction as V but has a set length of 1 which is also known as its
+ * "unit normal" or "normalized vector." 
+ * 
+ * @param rv 
+ * @param v 
+ */
+void v2Rotate(Vec2 *rv, Vec2 v, float32 radians);
+
 // 3D vectors.
 // -----------------------------------------------------------------------------
 
@@ -159,6 +179,14 @@ void v3ScalarMultiply(Vec3 *rv, Vec3 a, float32 scalar);
  */
 void v3CrossProduct(Vec3 *rv, Vec3 a, Vec3 b);
 
-float32 v3GetNormal(Vec3 v);
+/**
+ * From the given vector V, a new vector is written to RV that has the same
+ * direction as V but has a set length of 1 which is also known as its
+ * "unit normal" or "normalized vector." 
+ * 
+ * @param rv 
+ * @param v 
+ */
+void v3Normal(Vec3 *rv, Vec3 v);
 
 #endif

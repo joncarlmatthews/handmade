@@ -3,9 +3,19 @@
 * and remove math.h
 */
 
-#include "game.h"
-#include "intrinsics.h"
 #include <math.h> // @see https://www.cplusplus.com/reference/cmath/
+#include "startup.h"
+#include "intrinsics.h"
+
+float32 intrin_cosf(float32 radians)
+{
+    return cosf(radians);
+}
+
+float32 intrin_sinf(float32 radians)
+{
+    return sinf(radians);
+}
 
 float64 intrin_sin(float64 radians)
 {

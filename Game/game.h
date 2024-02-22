@@ -21,12 +21,6 @@
 #include "tilemap.h"
 #include "player.h"
 
-// Compiler/OS includes
-#if COMPILER_MSVC
-#include <intrin.h>
-#pragma intrinsic(_BitScanForward)
-#endif
-
 /**
  * Preprocessor definitions
  */
@@ -451,6 +445,8 @@ typedef struct GameState
     TilemapPosition cameraPosition;
 
     SineWave sineWave;
+
+    float32 angle;
 
 } GameState;
 
