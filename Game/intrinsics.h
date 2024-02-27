@@ -5,8 +5,8 @@
 
 // Compiler/OS includes
 #if COMPILER_MSVC
-#include <intrin.h>
-#pragma intrinsic(_BitScanForward)
+    #include <intrin.h>
+    #pragma intrinsic(_BitScanForward)
 #endif
 
 typedef struct bitScanResult

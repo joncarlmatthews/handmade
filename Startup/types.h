@@ -1,5 +1,5 @@
-#ifndef HEADER_HH_TYPES
-#define HEADER_HH_TYPES
+#ifndef HEADER_SHARED_TYPES
+#define HEADER_SHARED_TYPES
 
 //
 // TYPES.H
@@ -45,7 +45,6 @@ typedef size_t              sizet;      // Guaranteed to be able to represent
                                         // the size of the largest object that
                                         // can exist in the memory of the system
 
-// Boolean
 typedef int8                bool8;
 typedef int16               bool16;
 typedef int32               bool32;

@@ -154,6 +154,7 @@
     <ClInclude Include="macros.h" />
     <ClInclude Include="startup.h" />
     <ClInclude Include="types.h" />
+    <ClInclude Include="utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="startup.cpp" />

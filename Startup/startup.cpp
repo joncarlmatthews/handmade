@@ -1,37 +1,25 @@
 #include "startup.h"
 
-/**
- * 1 KiB = 1,024 bytes
- */
-uint64 utilKibibytesToBytes(uint8 kibibytes)
+size_t utilKibibytesToBytes(uint32 kibibytes)
 {
-    return (uint64)((uint64)1024 * (uint64)kibibytes);
+    return (size_t)((uint32)1024 * kibibytes);
 }
 
-/**
- * 1 MiB = 1,048,576 bytes
- */
-uint64 utilMebibytesToBytes(uint8 mebibytes)
+size_t utilMebibytesToBytes(uint32 mebibytes)
 {
-    return (uint64)(((uint64)1024 * utilKibibytesToBytes(1)) * mebibytes);
+    return (size_t)(((uint32)1024 * utilKibibytesToBytes(1)) * mebibytes);
 }
 
-/**
- * 1 GiB = 1,073,741,824 bytes
- */
-uint64 utilGibibytesToBytes(uint8 gibibytes)
+size_t utilGibibytesToBytes(uint32 gibibytes)
 {
-    return (uint64)(((uint64)1024 * utilMebibytesToBytes(1)) * gibibytes);
+    return (size_t)(((uint32)1024 * utilMebibytesToBytes(1)) * gibibytes);
 }
 
-uint64 utilTebibyteToBytes(uint8 tebibytes)
+size_t utilTebibyteToBytes(uint32 tebibytes)
 {
-    return (uint64)(((uint64)1024 * utilGibibytesToBytes(1)) * tebibytes);
+    return (size_t)(((uint32)1024 * utilGibibytesToBytes(1)) * tebibytes);
 }
 
-/**
- * Greatest common divisor
- */
 uint32 gcd(uint32 a, uint32 b)
 {
     if(b == 0) {
