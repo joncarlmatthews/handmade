@@ -1,7 +1,12 @@
 #ifndef HEADER_HH_GAMETYPES
 #define HEADER_HH_GAMETYPES
 
-#include "startup.h"
+//
+// GAME_TYPES.H
+//==============================================================================
+// This file is soon to be deleted.
+
+#include "types.h"
 
 //
 // Game types...

@@ -7,7 +7,8 @@
 // Public header file for game layer
 
 // Project includes
-#include "startup.h"
+#include "macros.h"
+#include "types.h"
 #include "game_types.h"
 #include "math.h"
 #include "intrinsics.h"

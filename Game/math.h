@@ -7,10 +7,20 @@
 // Mathematical definitions and functions
 
 #include <math.h>
-#include "startup.h"
+#include "types.h"
+
+
+// Utilities
+// -----------------------------------------------------------------------------
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
+
+/**
+ * Greatest common divisor
+ */
+uint32 gcd(uint32 a, uint32 b);
+
 
 // 2D vectors.
 // -----------------------------------------------------------------------------

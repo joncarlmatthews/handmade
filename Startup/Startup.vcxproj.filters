@@ -15,12 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="macros.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="startup.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -1,10 +1,50 @@
 #ifndef HEADER_HH_FILESYSTEM
 #define HEADER_HH_FILESYSTEM
 
-#include "game_types.h"
+//
+// FILESYSTEM.H
+//==============================================================================
+// Stuff related to working with the files and directories
+
+#include "types.h"
 
 #define BITMAP_FILE_ID 0x4D42
 #define BITMAP_INFO_HEADER_V5_SIZE 124
+
+/*
+ * Convert kibibytes, mebibytes and gibibytes to bytes (IEC binary standard)
+ *
+ * @see https://en.wikipedia.org/wiki/Byte#Multiple-byte_units
+ * @see https://www.quora.com/Is-1-GB-equal-to-1024-MB-or-1000-MB
+ */
+
+/**
+ * Kilobytes to bytes.
+ *
+ * 1 KiB = 1,024 bytes
+ */
+size_t utilKibibytesToBytes(uint32 kibibytes);
+
+/**
+ * Megabytes to bytes.
+ *
+ * 1 MiB = 1,048,576 bytes
+ */
+sizet utilMebibytesToBytes(uint32 mebibytes);
+
+/**
+ * Gigabytes to bytes.
+ *
+ * 1 GiB = 1,073,741,824 bytes
+ */
+sizet utilGibibytesToBytes(uint32 gibibytes);
+
+/**
+ * Terabytes to bytes.
+ *
+ * 1 Tb = 1,099,511,627,776 bytes
+ */
+sizet utilTebibyteToBytes(uint32 tebibytes);
 
 #pragma pack(push, 1)
 typedef struct bitmapFileHeader
@@ -96,48 +136,48 @@ typedef struct BitmapFile
     void *memory;
 } BitmapFile;
 
-typedef struct PlatformThreadContext PlatformThreadContext;
-typedef struct GameMemory GameMemory;
-
 #if HANDMADE_LOCAL_BUILD
 
-typedef struct DEBUG_file
-{
-    void *memory;
-    uint32 sizeinBytes;
+    typedef struct PlatformThreadContext PlatformThreadContext;
+    typedef struct GameMemory GameMemory;
 
-} DEBUG_file;
+    typedef struct DEBUG_file
+    {
+        void *memory;
+        uint32 sizeinBytes;
 
-/*
-* Read an entire file into memory
-*
-* @note call DEBUG_platformFreeFileMemory in a subsequent call.
-*/
-#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, const char *exeAbsPath, const char *filename)
-typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
+    } DEBUG_file;
 
-/*
-* Free file memory read from DEBUG_platformReadEntireFile
-*/
-#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(PlatformThreadContext *thread, DEBUG_file *file)
-typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
+    /*
+     * Read an entire file into memory
+     *
+     * @note call DEBUG_platformFreeFileMemory in a subsequent call.
+     */
+    #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, const char *exeAbsPath, const char *filename)
+    typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
 
-/*
-* Write bytes into a new file
-*/
-#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(PlatformThreadContext *thread, \
-                                                            const char *exeAbsPath, \
-                                                            const char *filename, \
-                                                            void *memory, \
-                                                            uint32 memorySizeInBytes)
-typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
+    /*
+     * Free file memory read from DEBUG_platformReadEntireFile
+     */
+    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(PlatformThreadContext *thread, DEBUG_file *file)
+    typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
+
+    /*
+     * Write bytes into a new file
+     */
+    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(PlatformThreadContext *thread, \
+                                                                const char *exeAbsPath, \
+                                                                const char *filename, \
+                                                                void *memory, \
+                                                                uint32 memorySizeInBytes)
+    typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
 
 
-void DEBUGReadBMP(PlatformThreadContext *thread,
-                    DEBUGPlatformReadEntireFile *playformreadFile,
-                    const char *absPath,
-                    const char *filename,
-                    BitmapFile *bitmapFIle);
+    void DEBUGReadBMP(PlatformThreadContext *thread,
+                        DEBUGPlatformReadEntireFile *playformreadFile,
+                        const char *absPath,
+                        const char *filename,
+                        BitmapFile *bitmapFIle);
 
 #endif
 

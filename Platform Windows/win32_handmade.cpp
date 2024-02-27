@@ -5,7 +5,6 @@
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
 
-#include "startup.h" // Startup stuff
 #include "game.h" // Game layer specific function signatures
 #include "win32_handmade.h" // Platform layer specific function signatures
 
