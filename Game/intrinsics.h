@@ -1,7 +1,7 @@
 #ifndef HEADER_HH_INTRINSICS
 #define HEADER_HH_INTRINSICS
 
-#include "startup.h"
+#include "types.h"
 
 // Compiler/OS includes
 #if COMPILER_MSVC

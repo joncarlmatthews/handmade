@@ -1,7 +1,8 @@
 #ifndef HEADER_HH_RANDOM
 #define HEADER_HH_RANDOM
 
-#include "game_types.h"
+#include "macros.h"
+#include "types.h"
 
 // Random numbers between 0 and 1,000,000,000 in base 16
 // @see https://www.random.org/integers/?mode=advanced

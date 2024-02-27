@@ -1,7 +1,7 @@
 #ifndef HEADER_HH_UTILITIES
 #define HEADER_HH_UTILITIES
 
-#include "startup.h"
+#include "types.h"
 
 uint32 u32RoundUpDivide(uint32 dividend, uint32 divisor);
 

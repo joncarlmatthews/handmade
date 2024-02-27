@@ -1,6 +1,4 @@
-// Windows API. Visual Studio freaks out if it's not the first include.
-#include <windows.h>
-
+#include <windows.h> // Windows API.
 #include <strsafe.h> // sprintf_s support
 #include <dsound.h>  // Direct Sound for audio output.
 #include <xinput.h>  // Xinput for receiving controller input.
@@ -1905,6 +1903,35 @@ void win32PlatformLog(const wchar_t *str, ...)
 
     // Output to the debugger
     OutputDebugString(buffer);
+}
+
+uint32 gcd(uint32 a, uint32 b)
+{
+    if(b == 0){
+        return a;
+    } else{
+        return gcd(b, a % b);
+    }
+}
+
+size_t utilKibibytesToBytes(uint32 kibibytes)
+{
+    return (size_t)((uint32)1024 * kibibytes);
+}
+
+size_t utilMebibytesToBytes(uint32 mebibytes)
+{
+    return (size_t)(((uint32)1024 * utilKibibytesToBytes(1)) * mebibytes);
+}
+
+size_t utilGibibytesToBytes(uint32 gibibytes)
+{
+    return (size_t)(((uint32)1024 * utilMebibytesToBytes(1)) * gibibytes);
+}
+
+size_t utilTebibyteToBytes(uint32 tebibytes)
+{
+    return (size_t)(((uint32)1024 * utilGibibytesToBytes(1)) * tebibytes);
 }
 
 #if HANDMADE_LOCAL_BUILD

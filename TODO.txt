@@ -6,8 +6,7 @@ Day 043
 
 Ongoing:
 =======
- -[] Rename Startup to Core?? Shared??
- -[] Move 
+ -[] Static library project for the few shared functions I have? (GCD and byte conversions) Or just include .cpp file? 
  -[] shift and mask to store chunk and tile in the same 32 bit integer?
  -[] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
  -[] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function

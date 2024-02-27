@@ -24,12 +24,14 @@
     <ClInclude Include="game.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="intrinsics.h" />
+    <ClInclude Include="macros.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="tilemap.h" />
     <ClInclude Include="game_types.h" />
+    <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
     <ClInclude Include="world.h" />
   </ItemGroup>
@@ -161,7 +163,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>startup.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR
@@ -194,7 +196,7 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>startup.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR
@@ -224,7 +226,7 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>startup.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -265,7 +267,7 @@ IF %ERRORLEVEL% LEQ 8 EXIT 0</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(SolutionDir)build\Windows\$(PlatformShortname)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>startup.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>robocopy "$(SolutionDir)data" "$(TargetDir)data" /E /PURGE /MIR

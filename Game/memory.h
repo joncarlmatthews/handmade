@@ -1,7 +1,7 @@
 #ifndef HEADER_HH_MEMORY
 #define HEADER_HH_MEMORY
 
-#include "game_types.h"
+#include "types.h"
 
 /**
  * @NOTE(JM)
