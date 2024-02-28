@@ -21,32 +21,6 @@
 #include "tilemap.h"
 #include "player.h"
 
-/**
- * Preprocessor definitions
- */
-
-// Scroll type. Defaults to smooth
-#define SCROLL_TYPE_SMOOTH 1
-//#define SCROLL_TYPE_SCREEN 1
-
-#if (!defined(SCROLL_TYPE_SMOOTH))
-#define SCROLL_TYPE_SMOOTH 0
-#endif
-
-#if (!defined(SCROLL_TYPE_SCREEN))
-#define SCROLL_TYPE_SCREEN 0
-#endif
-
-#if (!SCROLL_TYPE_SMOOTH) && (!SCROLL_TYPE_SCREEN)
-
-#undef SCROLL_TYPE_SMOOTH
-#define SCROLL_TYPE_SMOOTH 1
-
-#endif
-
-#if (SCROLL_TYPE_SMOOTH) && (SCROLL_TYPE_SCREEN)
-    assert(!"Both scroll types cannot be enabled at the same time")
-#endif
 
 //==============================================================================
 //==============================================================================

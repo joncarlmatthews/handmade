@@ -4,7 +4,7 @@
 //
 // MACROS.H
 //==============================================================================
-// Macros that are shared across both platform and game layers
+// Object-like macro definitions and function-like macro definitions.
 
 
 // Compiler stuff.
@@ -14,30 +14,31 @@
 // 
 // MSVC
 #if (!defined(COMPILER_MSVC))
-#define COMPILER_MSVC 0
+    #define COMPILER_MSVC 0
 #endif
 
 // LLVM/Clang
 #if (!defined(COMPILER_LLVM))
-#define COMPILER_LLVM 0
+    #define COMPILER_LLVM 0
 #endif
 
  // If neither are explicitly specified, try and determine which is being used
 #if (!COMPILER_MSVC) && (!COMPILER_LLVM)
-#ifdef _MSC_VER
-#undef COMPILER_MSVC
-#define COMPILER_MSVC 1
-#else
-#ifdef __llvm__
-#undef COMPILER_LLVM
-#define COMPILER_LLVM 1
-#endif
-#endif
+    #ifdef _MSC_VER
+        #undef COMPILER_MSVC
+        #define COMPILER_MSVC 1
+    #else
+        #ifdef __llvm__
+            #undef COMPILER_LLVM
+            #define COMPILER_LLVM 1
+        #endif
+    #endif
 #endif
 
 #if (COMPILER_MSVC) && (COMPILER_LLVM)
-assert(!"only 1 target compiler can be specified")
+    assert(!"only 1 target compiler can be specified")
 #endif
+
 
 
 // Runtime debug settings.
@@ -51,18 +52,18 @@ assert(!"only 1 target compiler can be specified")
     //#define HANDMADE_DEBUG_LIVE_LOOP_EDITING
     //#define HANDMADE_DEBUG_TILE_POS
     //#define HANDMADE_WALK_THROUGH_WALLS
-    #endif
+#endif
 
 
-    // Function-like Macros
-    // -----------------------------------------------------------------------------
+// Function-like macros.
+// -----------------------------------------------------------------------------
 
-    // Return the number of elements in a static array
-    #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
+// Return the number of elements in a static array
+#define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-    // Assertion
-    #if HANDMADE_LOCAL_BUILD
-        // NOLINTBEGIN
+// Assertion
+#if HANDMADE_LOCAL_BUILD
+    // NOLINTBEGIN
     #define assert(expression) \
         if (!(expression)) { \
             __pragma(warning(push)) \
@@ -72,19 +73,19 @@ assert(!"only 1 target compiler can be specified")
             __pragma(warning(pop)) \
         }
     // NOLINTEND
-    #else
+#else
     #define assert(expression)
-    #endif
+#endif
 
-    // DLL function export syntax
-    #if COMPILER_MSVC
+// DLL function export syntax
+#if COMPILER_MSVC
     #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
-    #else
+#else
     assert(!"TODO: Support for DLL function exports for non-Win32 platforms");
 #endif
 
 
-// Object-like Macros
+// Object-like macros.
 // -----------------------------------------------------------------------------
 
 // variables considered global
@@ -101,7 +102,6 @@ assert(!"only 1 target compiler can be specified")
 // Game settings
 // -----------------------------------------------------------------------------
 
-
 // Game resolution. @see https://en.wikipedia.org/wiki/Display_resolution
 // WXGA (16:9)
 #define FRAME_BUFFER_PIXEL_WIDTH  1280
@@ -115,5 +115,28 @@ assert(!"only 1 target compiler can be specified")
 #define MAX_CONTROLLERS 5
 #define GAME_PI 3.14159265358979323846   // pi
 #define GAME_MAX_PATH 260
+
+// Scroll type. Defaults to smooth
+#define SCROLL_TYPE_SMOOTH 1
+//#define SCROLL_TYPE_SCREEN 1
+
+#if (!defined(SCROLL_TYPE_SMOOTH))
+    #define SCROLL_TYPE_SMOOTH 0
+#endif
+
+#if (!defined(SCROLL_TYPE_SCREEN))
+    #define SCROLL_TYPE_SCREEN 0
+#endif
+
+#if (!SCROLL_TYPE_SMOOTH) && (!SCROLL_TYPE_SCREEN)
+
+    #undef SCROLL_TYPE_SMOOTH
+    #define SCROLL_TYPE_SMOOTH 1
+
+#endif
+
+#if (SCROLL_TYPE_SMOOTH) && (SCROLL_TYPE_SCREEN)
+    assert(!"Both scroll types cannot be enabled at the same time")
+#endif
 
 #endif
