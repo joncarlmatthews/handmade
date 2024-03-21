@@ -1,8 +1,11 @@
 Day 043
 =======
-- [x] Algebra
-- [ ] Gustavo (game-physics-engine-programming)
-- [ ] Complete day 43
+-[x] Algebra
+-[ ] Gustavo (game-physics-engine-programming)
+-[ ] Simplify Win32 message queue code as per SDL project
+-[ ] Refactor delta time as per SDL.
+-[ ] All movement values are "per second"
+-[ ] Complete day 43
 
 Ongoing:
 =======
