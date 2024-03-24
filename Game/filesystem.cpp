@@ -25,8 +25,8 @@ size_t utilTebibyteToBytes(uint32 tebibytes)
 
     void DEBUGReadBMP(PlatformThreadContext *thread,
                         DEBUGPlatformReadEntireFile *playformreadFile,
-                        const char *abspath,
-                        const char *filename,
+                        wchar_t *abspath,
+                        wchar_t *filename,
                         BitmapFile *bitmapFIle)
     {
 

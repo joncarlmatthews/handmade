@@ -11,6 +11,7 @@
 // -----------------------------------------------------------------------------
 #include <stddef.h> // size_t
 #include <stdbool.h> // true, false, bool
+#include <wchar.h> // wchar_t for wide character support (unicode)
 
 
 // Custom typedefs that specify exact-width types for increased code portability.

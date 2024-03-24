@@ -45,13 +45,10 @@
 // -----------------------------------------------------------------------------
 
 #if HANDMADE_LOCAL_BUILD
-    //#define HANDMADE_DEBUG_FPS
-    //#define HANDMADE_DEBUG_CLOCKCYCLES
-    //#define HANDMADE_DEBUG_AUDIO
-    #define HANDMADE_LIVE_LOOP_EDITING
-    //#define HANDMADE_DEBUG_LIVE_LOOP_EDITING
-    //#define HANDMADE_DEBUG_TILE_POS
-    //#define HANDMADE_WALK_THROUGH_WALLS
+//#define HANDMADE_DEBUG_AUDIO
+//#define HANDMADE_LIVE_LOOP_EDITING
+//#define HANDMADE_DEBUG_TILE_POS
+//#define HANDMADE_WALK_THROUGH_WALLS
 #endif
 
 
@@ -96,7 +93,7 @@
 
 // Functions that are only available within the translation unit they're declared in.
 // This helps the compiler out by knowing that there is no external linking to be done.
-#define internal_func static
+#define internal static
 
 
 // Game settings
@@ -114,7 +111,12 @@
 // Maximum number of supported controllers. 1 keyboard, 4 gamepad controllers.
 #define MAX_CONTROLLERS 5
 #define GAME_PI 3.14159265358979323846   // pi
+
+#if COMPILER_MSVC
 #define GAME_MAX_PATH 260
+#else
+assert(!"TODO: Define max path for non-Win32 platforms");
+#endif
 
 // Scroll type. Defaults to smooth
 #define SCROLL_TYPE_SMOOTH 1

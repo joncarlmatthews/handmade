@@ -1,10 +1,15 @@
 #ifndef HEADER_WIN32
 #define HEADER_WIN32
 
-#define TARGET_FPS 60
+#ifdef _DEBUG
+#define _DEBUG_FPS
+//#define _DEBUG_CLOCKCYCLES
+//#define _DEBUG_LIVE_LOOP_EDITING
+#endif
 
-#define FRAME_RATE_CAP_MODE_SPIN_LOCK   0x1
-#define FRAME_RATE_CAP_MODE_SLEEP       0x2
+#define TARGET_FPS 60
+#define CAP_FPS false
+#define _ASSERT_FPS true
 
 // Custom message ID for sending to the window when we consider
 // the app ready.
@@ -101,9 +106,6 @@ typedef struct Win32AudioBuffer
 
 typedef struct Win32FixedFrameRate {
 
-    // Sleep or spin lock.
-    uint8 capMode;
-
     // Monitor refresh rate in Hertz.
     uint8 monitorRefreshRate;
 
@@ -150,30 +152,31 @@ typedef struct Win32State
 
 } Win32State;
 
-internal_func
+internal
 LRESULT CALLBACK win32MainWindowCallback(HWND window,
                                             UINT message,
                                             WPARAM wParam,
                                             LPARAM lParam);
 
 /*
- * Creates and returns the current time via QueryPerformanceCounter
+ * Creates and returns the current time elapsed in MS since program execution
+ * started via QueryPerformanceCounter
  */
-internal_func LARGE_INTEGER win32GetTime();
+internal LARGE_INTEGER win32GetTime();
 
 /*
  * Calculates the time elapsed (milliseconds) between time a (startCounter) and time b (endCounter)
  * relative to a counters per second value
  */
-internal_func float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
+internal float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
 
 /*
  * Calculates the time elapsed (in seconds) between time a (startCounter) and time b (endCounter)
  * relative to a counters per second value
  */
-internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
+internal float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
 
-internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height);
+internal void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height);
 
 /*
  * @param deviceHandleForWindow     The window handle
@@ -181,19 +184,19 @@ internal_func void win32InitFrameBuffer(PlatformThreadContext *thread, Win32Fram
  * @param clientWindowWidth         The window's width
  * @param clientWindowHeight        The window's height
  */
-internal_func
+internal
 void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                                 Win32FrameBuffer buffer,
                                 uint32 clientWindowWidth,
                                 uint32 clientWindowHeight);
 
-internal_func win32ClientDimensions win32GetClientDimensions(HWND window);
+internal win32ClientDimensions win32GetClientDimensions(HWND window);
 
-internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState);
+internal DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState);
 
-internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration);
+internal DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration);
 
-internal_func void win32LoadXInputDLLFunctions(void);
+internal void win32LoadXInputDLLFunctions(void);
 
 /**
  * @brief Loads game code from DLL
@@ -202,38 +205,37 @@ internal_func void win32LoadXInputDLLFunctions(void);
  * @param gameCode 
  * @return void
 */
-internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode);
-internal_func void win32GetAbsolutePath(wchar_t *path);
+internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode);
+internal void win32GetAbsolutePath(wchar_t *path);
 
-internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
+internal void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
 
-internal_func void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer);
-internal_func void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer);
+internal void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer);
+internal void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer);
 
-internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
+internal void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
                                             DWORD lockOffsetInBytes,
                                             DWORD lockSizeInBytes,
                                             GameAudioBuffer *audioBuffer);
 
-internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
+internal void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit);
 
 
-internal_func void win32ProcessMessages(HWND window, GameInput *gameInput, GameInput oldGameInput, Win32State *win32State);
+internal void win32ProcessMessages(HWND window, GameInput *gameInput, GameInput oldGameInput, Win32State *win32State);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
  * the code will assert if the value passed in is larger than 4 bytes
  */
-internal_func uint32 win32TruncateToUint32Safe(uint64 value);
+internal uint32 win32TruncateToUint32Safe(uint64 value);
 
-internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
+internal FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
 
-internal_func void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
+internal void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 
-internal_func
-void win32PlatformLog(const wchar_t *str, ...);
+internal void win32PlatformLog(const wchar_t *str, ...);
 
 //===========================================
 // Game-required platform layer signatures
@@ -254,17 +256,17 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile);
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
 
-internal_func void win32BeginInputRecording(Win32State *win32State);
+internal void win32BeginInputRecording(Win32State *win32State);
 
-internal_func void win32EndInputRecording(Win32State *win32State);
+internal void win32EndInputRecording(Win32State *win32State);
 
-internal_func void win32RecordInput(Win32State *win32State, GameInput *inputNewInstance);
+internal void win32RecordInput(Win32State *win32State, GameInput *inputNewInstance);
 
-internal_func void win32BeginRecordingPlayback(Win32State *win32State);
+internal void win32BeginRecordingPlayback(Win32State *win32State);
 
-internal_func void win32EndRecordingPlayback(Win32State *win32State);
+internal void win32EndRecordingPlayback(Win32State *win32State);
 
-internal_func void win32PlaybackInput(Win32State *win32State, GameInput *inputNewInstance);
+internal void win32PlaybackInput(Win32State *win32State, GameInput *inputNewInstance);
 
 #endif
 

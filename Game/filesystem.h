@@ -153,7 +153,7 @@ typedef struct BitmapFile
      *
      * @note call DEBUG_platformFreeFileMemory in a subsequent call.
      */
-    #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, const char *exeAbsPath, const char *filename)
+    #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, wchar_t *exeAbsPath, wchar_t *filename)
     typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
 
     /*

@@ -5,7 +5,10 @@ Day 043
 -[ ] Simplify Win32 message queue code as per SDL project
 -[ ] Refactor delta time as per SDL.
 -[ ] All movement values are "per second"
+-[ ] Better full screen control
+-[ ] Better window scaling calculations
 -[ ] Complete day 43
+-[ ] Get rid of temp game_types.h
 
 Ongoing:
 =======
@@ -13,7 +16,6 @@ Ongoing:
  -[] shift and mask to store chunk and tile in the same 32 bit integer?
  -[] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
  -[] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
- -[] deprecate math.h?
  -[] Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
  -[] Support for drawing bitmap at different size to that of the original asset.
  -[] Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.

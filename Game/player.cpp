@@ -15,8 +15,7 @@ void playerHandleMovement(GameState *gameState,
     bool playerAttemptingMove = false;
 
     // Normalise pixel movement regardless of framerate
-    float32 speed = (gameState->player1.movementSpeedMPS * gameInput->deltaTime);
-    float32 pixelsPerFrame = (speed * gameState->world.pixelsPerMeter);
+    float32 pixelsPerFrame = (gameState->player1.movementSpeedMPS * gameState->world.pixelsPerMeter) * gameInput->deltaTime;
 
     // Any movement to take?
     if (pixelsPerFrame < 1.0f){
@@ -390,7 +389,7 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
                             gameState->world.tilemap);
 }
 
-internal_func bool playerHasSwitchedActiveTile(GameState *gameState)
+internal bool playerHasSwitchedActiveTile(GameState *gameState)
 {
     TilemapPosition posData;
     setTilemapPositionData(&posData,

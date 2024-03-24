@@ -18,7 +18,7 @@
 // Average male running speed
 // https://www.calculateme.com/speed/miles-per-hour/to-meters-per-second/8
 //#define PLAYER_SPEED 3.57632f
-#define PLAYER_SPEED 15.57632f
+#define PLAYER_SPEED_METERS_PER_SECOND 15.57632f
 
 typedef struct PlayerBitmap {
     BitmapFile torso;
@@ -124,6 +124,6 @@ void playerHandleMovement(GameState *gameState,
                             GameInput *gameInput,
                             uint8 selectedController);
 
-internal_func bool playerHasSwitchedActiveTile(GameState *gameState);
+internal bool playerHasSwitchedActiveTile(GameState *gameState);
 
 #endif

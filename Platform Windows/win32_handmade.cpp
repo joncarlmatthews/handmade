@@ -75,7 +75,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     windowClass.hInstance = instance;
     windowClass.lpszClassName = TEXT("handmadeHeroWindowClass");
     windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-#ifdef HANDMADE_LOCAL_BUILD
+#ifdef _DEBUG
     ShowCursor(TRUE);
 #else
     ShowCursor(FALSE);
@@ -127,15 +127,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     win32State.window = &window;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef _DEBUG
     win32State.inputRecording = 0;
     win32State.inputPlayback = 0;
 #endif
 
     // Calculate the absolute path to this executable.
-    wchar_t absPath[MAX_PATH] = { 0 };
-    win32GetAbsolutePath(absPath);
-    wcsncpy_s(win32State.absPath, MAX_PATH, absPath, MAX_PATH);
+    win32GetAbsolutePath(win32State.absPath);
+
+    //DEBUG_platformWriteEntireFile(&thread, win32State.absPath, "debug.log")
 
     GameCode gameCode = { 0 };
     win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
@@ -143,10 +143,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     /*
      * Game memory
      */
-#if HANDMADE_LOCAL_BUILD
-    uint64 memoryStartAddress = utilTebibyteToBytes(4);
-#else
     uint64 memoryStartAddress = 0;
+#ifdef _DEBUG
+    memoryStartAddress = utilTebibyteToBytes(4);
 #endif
 
     // Allocate all required memory for the game from within our platform layer
@@ -179,12 +178,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformControllerVibrate = &platformControllerVibrate;
     memory.platformToggleFullscreen = &platformToggleFullscreen;
 
-    size_t len;
-    if (wcstombs_s(&len, memory.platformAbsPath, sizeof(memory.platformAbsPath), absPath, wcslen(absPath)) != 0) {
-        assert(!"Error converting absPath string\n");
-    }
+    wcscat_s(memory.platformAbsPath, countArray(memory.platformAbsPath), win32State.absPath);
 
-#if HANDMADE_LOCAL_BUILD
+#if _DEBUG
     memory.DEBUG_platformLog = &DEBUG_platformLog;
     memory.DEBUG_platformReadEntireFile = &DEBUG_platformReadEntireFile;
     memory.DEBUG_platformWriteEntireFile = &DEBUG_platformWriteEntireFile;
@@ -208,7 +204,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
          * Framerate fixing.
          */
         Win32FixedFrameRate win32FixedFrameRate = {0};
-        win32FixedFrameRate.capMode = FRAME_RATE_CAP_MODE_SLEEP;
         win32FixedFrameRate.monitorRefreshRate = 60;
         win32FixedFrameRate.gameTargetFPS = TARGET_FPS;
         win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
@@ -224,10 +219,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // so that calls to the Windows Sleep() function are more
         // granular. E.g. the wake from the Sleep() will be checked
         // every 1ms, rather than the system default.
-        if (win32FixedFrameRate.capMode == FRAME_RATE_CAP_MODE_SLEEP){
-            win32FixedFrameRate.timeOutIntervalMS = 1;
-            win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
-        }
+        win32FixedFrameRate.timeOutIntervalMS = 1;
+        win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
 
         // Get the handle to the monitor containing the window
         HMONITOR hMonitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
@@ -309,54 +302,40 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         gameInput->controllers[0] = keyboard; // Assign the first game input controller as the keyboard
         controllerCounts.connectedControllers = 1; // @TODO(JM) Support for multiple controllers
 
-#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_CLOCKCYCLES)
+#ifdef _DEBUG_CLOCKCYCLES
         // Get the number of processor clock cycles
         uint64 runningProcessorClockCyclesCounter = __rdtsc();
 #endif
 
         PostMessage(window, WM_HANDMADE_HERO_READY, 0, 0);
 
-        // Time delta is defined as "the time elapsed between the last frame and the one preceding it."
-        // Hold the last three frames worth of times
-        LARGE_INTEGER preGameLoopTime = win32GetTime();
-        LARGE_INTEGER frameTimes[3] = { preGameLoopTime };
-        frameTimes[0] = preGameLoopTime;
-        frameTimes[1] = preGameLoopTime;
-        frameTimes[2] = preGameLoopTime;
-
         // Current frame index
         sizet frameIndex = 0;
+
+        LARGE_INTEGER prevFrameTimestamp = win32GetTime();
 
         /**
          * MAIN GAME LOOP
          */
         while (running) {
 
-            uint8 deltaFrameIndex = (frameIndex % 3);
+            LARGE_INTEGER frameStartTimestamp = win32GetTime();
 
-            // What was the previous frame's frame time index?
-            int8 prevFrameIndex = (deltaFrameIndex - 1);
-            if (prevFrameIndex < 0) {
-                prevFrameIndex = 2;
-            }
+            // Delta time (in seconds)
+            // The time taken between this frame starting and the program
+            // execution to make it all the way back around to here again.
+            gameInput->deltaTime = win32GetElapsedTimeS(prevFrameTimestamp,
+                                                        frameStartTimestamp,
+                                                        globalQPCFrequency);
 
-            // What was the frame preceding the previous frame time's index?
-            uint8 precedingPrevFrameIndex = ((deltaFrameIndex + 1) % 3);
+            prevFrameTimestamp = win32GetTime();
 
-            // Calculate the delta time for the frame.
-            gameInput->deltaTime = win32GetElapsedTimeS(frameTimes[precedingPrevFrameIndex], frameTimes[prevFrameIndex], globalQPCFrequency);
-
-            if(false){
-                char output[100] = { 0 };
-                sprintf_s(output, sizeof(output),
-                            "Delta time frame %zu: %f seconds\n",
-                            frameIndex,
-                            gameInput->deltaTime);
-                OutputDebugStringA(output);
-            }
-
-            // Get the current time for profiling FPS
-            LARGE_INTEGER netFrameTime = win32GetTime();
+#ifdef _DEBUG_FPS
+            win32PlatformLog(L"Delta time frame %zu: %f seconds\n",
+                                frameIndex,
+                                gameInput->deltaTime);
+#endif
+            
 
             // Get the position of the mouse
             win32GetMousePosition(window, &gameInput->mouse);
@@ -648,140 +627,86 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             // Save how long this frame look to compute (excluding rendering and auido
             // which is handled by the OS and we dont have control over)
-            LARGE_INTEGER gameLoopTime = win32GetTime();
+            LARGE_INTEGER frameEndTimestamp = win32GetTime();
 
-            frameTimes[deltaFrameIndex] = gameLoopTime;
+            float32 frameProcessingDuration = win32GetElapsedTimeMS(frameStartTimestamp,
+                                                                    frameEndTimestamp,
+                                                                    globalQPCFrequency);
 
-            float32 millisecondsElapsedForFrame = win32GetElapsedTimeMS(netFrameTime, gameLoopTime, globalQPCFrequency);
+#ifdef _DEBUG_FPS
+            win32PlatformLog(L"Time for frame to be processed: %f milliseconds\n",
+                            frameProcessingDuration);
 
-#if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
-
-            {
-                char output[100] = { 0 };
-                sprintf_s(output, sizeof(output),
-                            "Time for frame to complete: %f milliseconds\n",
-                            millisecondsElapsedForFrame);
-                OutputDebugStringA(output);
-            }
-
-            {
-                char output[100] = { 0 };
-                sprintf_s(output, sizeof(output),
-                            "Target time for frame to complete: %f milliseconds\n",
+            win32PlatformLog(L"Target time for frame to complete: %f milliseconds\n",
                             win32FixedFrameRate.gameTargetMSPerFrame);
-                OutputDebugStringA(output);
-            }
 #endif
                 
             // Cap frame rate to target FPS if we're running ahead. We do this before rendering
             // and audio intentionally.
-            if (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame){
+            if (frameProcessingDuration < win32FixedFrameRate.gameTargetMSPerFrame){
 
-                float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - millisecondsElapsedForFrame);
+#if CAP_FPS
 
-                #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
-                {
-                    char output[100] = { 0 };
-                    sprintf_s(output, sizeof(output),
-                                "Need to sleep for: %f milliseconds (%f)\n",
-                                needToSleepForMS, (millisecondsElapsedForFrame + needToSleepForMS));
-                    OutputDebugStringA(output);
-                }
-                #endif
+                float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - frameProcessingDuration);
 
-                // Win32 Sleep?
-                if (win32FixedFrameRate.capMode == FRAME_RATE_CAP_MODE_SLEEP) {
+#ifdef _DEBUG_FPS
+                win32PlatformLog(L"Need to sleep for: %f milliseconds (%f)\n",
+                                    needToSleepForMS, (frameProcessingDuration + needToSleepForMS));
+#endif
 
-                    INT msToSleepI = (INT)needToSleepForMS;
+                INT msToSleepI = (INT)needToSleepForMS;
 
-                    #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
-                    {
-                        char output[100] = { 0 };
-                        sprintf_s(output, sizeof(output),
-                                    "Sleeping for... %i\n",
-                                    msToSleepI);
-                        OutputDebugStringA(output);
-                    }
-                    #endif
 
-                    Sleep(msToSleepI);
+#ifdef _DEBUG_FPS
+                win32PlatformLog(L"Sleeping for... %i\n", msToSleepI);
+#endif
 
-                    // Update the MS taken for this frame
-                    millisecondsElapsedForFrame = win32GetElapsedTimeMS(gameLoopTime, win32GetTime(), globalQPCFrequency);
+                Sleep(msToSleepI);
 
-                    // Spin lock for any fractions of time left
-                    if (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
-                        while (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
-                            millisecondsElapsedForFrame = win32GetElapsedTimeMS(gameLoopTime, win32GetTime(), globalQPCFrequency);
-                        }
-                    }
+#endif // CAP_FPS
 
-                } else {
-
-                    // Spin lock for full duration of time
-                    #if defined(HANDMADE_LOCAL_BUILD) && defined(HANDMADE_DEBUG_FPS)
-                        OutputDebugStringA("Entering spin lock...\n");
-                    #endif
-
-                    while (millisecondsElapsedForFrame < win32FixedFrameRate.gameTargetMSPerFrame) {
-                        millisecondsElapsedForFrame = win32GetElapsedTimeMS(gameLoopTime, win32GetTime(), globalQPCFrequency);
-                    }
-                }
-
-            }else if((INT)millisecondsElapsedForFrame > (INT)win32FixedFrameRate.gameTargetMSPerFrame){
+            }else if((INT)frameProcessingDuration > (INT)win32FixedFrameRate.gameTargetMSPerFrame){
 
                 // @TODO(JM) Missed target framerate. Log.
+#if _ASSERT_FPS
+                //memory.DEBUG_platformWriteEntireFile(&thread, )
+                assert(!"Framerate missed");
+#endif // _ASSERT_FPS
 
-                #if defined(HANDMADE_DEBUG_FPS)
-                    {
-                        //assert("missed framerate");
-                        char output[500] = { 0 };
-                        sprintf_s(output, sizeof(output),
-                                    "======================================MISSED================================ (%f > %f)\n",
-                                    millisecondsElapsedForFrame,
+#ifdef _DEBUG_FPS
+                win32PlatformLog(L"======================================MISSED================================ (%f > %f)\n",
+                                    frameProcessingDuration,
                                     win32FixedFrameRate.gameTargetMSPerFrame);
-                        OutputDebugStringA(output);
-                    }
-                #endif
+#endif
             }
 
             // Calculate the net frame time (E.g. 33.33ms or 16.66ms)
-            #if defined(HANDMADE_DEBUG_FPS)
-            {
-                char output[100] = { 0 };
-                sprintf_s(output, sizeof(output),
-                            "Net time for frame to complete: %f milliseconds\n\n",
-                            millisecondsElapsedForFrame);
+#ifdef _DEBUG_FPS
+            win32PlatformLog(L"Net time for frame to complete: %f milliseconds\n\n",
+                                win32GetElapsedTimeMS(frameStartTimestamp,
+                                                        win32GetTime(),
+                                                        globalQPCFrequency));
+#endif
 
-                OutputDebugStringA(output);
-            }
-            #endif
+#ifdef _DEBUG_CLOCKCYCLES
+            // Calculate how many processor clock cycles elapsed for this frame.
+            // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
+            uint64 processorClockCyclesAfterFrame = __rdtsc();
+            int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
+            float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
 
-            #if defined(HANDMADE_DEBUG_CLOCKCYCLES)
-            {
-                // Calculate how many processor clock cycles elapsed for this frame.
-                // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
-                uint64 processorClockCyclesAfterFrame = __rdtsc();
-                int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
-                float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
+            // Calculate the FPS given the speed of this current frame.
+            float32 fps = (1000.0f / (float32)frameProcessingDuration);
 
-                // Calculate the FPS given the speed of this current frame.
-                float32 fps = (1000.0f / (float32)millisecondsElapsedForFrame);
+            // Calculate the processor running speed in GHz
+            float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
 
-                // Calculate the processor running speed in GHz
-                float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
+            // Reset the running clock cycles.
+            runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
 
-                // Reset the running clock cycles.
-                runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
-
-                // Console log the speed:
-                char output[100] = { 0 };
-                sprintf_s(output, sizeof(output),
-                            "Cycles: %.1fm (%.2f GHz).\n",
-                            clockCycles_mega, processorSpeed);
-                OutputDebugStringA(output);
-            }
-            #endif
+            // Console log the speed:
+            win32PlatformLog(L"Cycles: %.1fm (%.2f GHz).\n", clockCycles_mega, processorSpeed);
+#endif
 
             // Output the audio buffer in Windows.
             win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
@@ -811,10 +736,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         } // game loop
 
-        if (win32FixedFrameRate.capMode == FRAME_RATE_CAP_MODE_SLEEP) {
-            if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
-                timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
-            }
+        if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
+            timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
         }
 
     }else{
@@ -848,7 +771,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
  *
  * When the app is closed it sends WM_CLOSE
  */
-internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
+internal LRESULT CALLBACK win32MainWindowCallback(HWND window,
                                                         UINT message,
                                                         WPARAM wParam,
                                                         LPARAM lParam)
@@ -951,7 +874,7 @@ internal_func LRESULT CALLBACK win32MainWindowCallback(HWND window,
  * @param int                   height      The height of the window's viewport
  * 
  */
-internal_func void win32InitFrameBuffer(PlatformThreadContext *thread,
+internal void win32InitFrameBuffer(PlatformThreadContext *thread,
                                         Win32FrameBuffer *buffer,
                                         uint32 width,
                                         int32 height)
@@ -1002,7 +925,7 @@ internal_func void win32InitFrameBuffer(PlatformThreadContext *thread,
  * width and height then the window will simply clip the graphics
  *
  */
-internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow, 
+internal void win32DisplayFrameBuffer(HDC deviceHandleForWindow, 
                                             Win32FrameBuffer buffer,
                                             uint32 clientWindowWidth,
                                             uint32 clientWindowHeight)
@@ -1089,7 +1012,7 @@ internal_func void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
                     SRCCOPY);
 }
 
-internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer)
+internal void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer)
 {
     win32AudioBuffer->bufferSuccessfulyCreated = FALSE;
 
@@ -1204,7 +1127,7 @@ internal_func void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32Audi
 #endif
 }
 
-internal_func void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer)
+internal void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer)
 {
     DWORD pdwStatus;
     if (SUCCEEDED(win32AudioBuffer->buffer->GetStatus(&pdwStatus))) {
@@ -1214,7 +1137,7 @@ internal_func void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer
     }
 }
 
-internal_func void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer)
+internal void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer)
 {
     DWORD pdwStatus;
     if (SUCCEEDED(win32AudioBuffer->buffer->GetStatus(&pdwStatus))) {
@@ -1224,7 +1147,7 @@ internal_func void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer
     }
 }
 
-internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
+internal void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
                                             DWORD lockOffsetInBytes,
                                             DWORD lockSizeInBytes,
                                             GameAudioBuffer *gameAudioBuffer)
@@ -1319,7 +1242,7 @@ internal_func void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
  * Gets the height and width of the actual window. This changes if the window is
  * resized, maximised etc
  */
-internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
+internal win32ClientDimensions win32GetClientDimensions(HWND window)
 {
     RECT clientRect;
     GetClientRect(window, &clientRect);
@@ -1332,7 +1255,7 @@ internal_func win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal_func void win32ProcessMessages(HWND window,
+internal void win32ProcessMessages(HWND window,
                                         GameInput *gameInput,
                                         GameInput oldGameInput,
                                         Win32State *win32State)
@@ -1486,30 +1409,30 @@ internal_func void win32ProcessMessages(HWND window,
     } // PeekMessage loop
 }
 
-internal_func LARGE_INTEGER win32GetTime()
+internal LARGE_INTEGER win32GetTime()
 {
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
     return counter;
 }
 
-internal_func float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond)
+internal float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond)
 {
     return ( ((float32)(endCounter.QuadPart - startCounter.QuadPart) * 1000.0f) / (float32)countersPerSecond);
 }
 
-internal_func float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond)
+internal float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond)
 {
     return ((float32)(endCounter.QuadPart - startCounter.QuadPart) / (float32)countersPerSecond);
 }
 
-internal_func uint32 win32TruncateToUint32Safe(uint64 value)
+internal uint32 win32TruncateToUint32Safe(uint64 value)
 {
     assert((value <= 0xffffffff));
     return (uint32)value;
 }
 
-internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
+internal void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
                                                         XINPUT_GAMEPAD *gamepad,
                                                         uint16 gamepadButtonBit)
 {
@@ -1519,17 +1442,17 @@ internal_func void win32ProcessXInputControllerButton(GameControllerBtnState *cu
 //=======================================
 // Library loading
 //=======================================
-internal_func DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState)
+internal DWORD WINAPI XInputGetStateStub(DWORD dwUserIndex, XINPUT_STATE *pState)
 {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-internal_func DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
+internal DWORD WINAPI XInputSetStateStub(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
 {
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-internal_func void win32LoadXInputDLLFunctions(void)
+internal void win32LoadXInputDLLFunctions(void)
 {
     HMODULE libHandle = LoadLibrary(TEXT("XInput1_4.dll"));
 
@@ -1557,7 +1480,7 @@ internal_func void win32LoadXInputDLLFunctions(void)
     }
 }
 
-internal_func void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, GameCode *gameCode)
+internal void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, GameCode *gameCode)
 {
     // Load code from given DLL
     HMODULE libHandle = LoadLibrary(absPathToDLL);
@@ -1593,7 +1516,7 @@ internal_func void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, Game
             valid = 0;
         }
 
-        #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+        #if defined(_DEBUG_LIVE_LOOP_EDITING)
             win32PlatformLog(L"Loading library complete\n");
         #endif
 
@@ -1613,7 +1536,7 @@ internal_func void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, Game
     }
 }
 
-internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
+internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
 {
     // Calculate absolute path to the Game.dll
     wchar_t gameDLLFilePath[MAX_PATH] = { 0 };
@@ -1649,13 +1572,13 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 
         // Game_copy.dll does not yet exist...
 
-        #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+        #if defined(_DEBUG_LIVE_LOOP_EDITING)
             win32PlatformLog(L"Game_copy.dll doesnt exist, going to create it...\n");
         #endif
 
         BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
         
-        #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+        #if defined(_DEBUG_LIVE_LOOP_EDITING)
             if(res){
                 win32PlatformLog(L"Game_copy.dll successfully created.\n");
             } else{
@@ -1672,7 +1595,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 
         loadGameCode = true;
 
-        #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+        #if defined(_DEBUG_LIVE_LOOP_EDITING)
             win32PlatformLog(L"No game code loaded. Performing first load from Game_copy.dll\n");
         #endif
 
@@ -1687,7 +1610,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 
         if (CompareFileTime(&lastWriteTimeGame, &lastWriteTimeGameCopy) != 0) {
 
-            #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+            #if defined(_DEBUG_LIVE_LOOP_EDITING)
                 win32PlatformLog(L"Game_copy.dll needs to be overwritten by Game.dll as Game.dll is newer.\n");
             #endif
 
@@ -1695,14 +1618,14 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
             // free the lock...
             if (gameCode->dllHandle != 0x0) {
 
-                #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+                #if defined(_DEBUG_LIVE_LOOP_EDITING)
                     win32PlatformLog(L"Freeing Game_copy.dll library before doing the copy\n");
                 #endif
 
                 BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
 
                 if(!res){
-                    #if defined(HANDMADE_DEBUG_LIVE_LOOP_EDITING)
+                    #if defined(_DEBUG_LIVE_LOOP_EDITING)
                         win32PlatformLog(L"Could not free DLL handle lock: %d. Will try again next loop.\n", GetLastError());
                     #endif
                     return;
@@ -1723,7 +1646,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
                 // to addresses that no longer exist
                 loadGameCode = true;
 
-                #ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
+                #ifdef _DEBUG_LIVE_LOOP_EDITING
                     // 32L = "The process cannot access the file because it is being used by another process."
                     // See winerror.h for full list of errors.
                     win32PlatformLog(L"DLL copy failed: %d. Will retry copy on next loop\n", GetLastError());
@@ -1733,7 +1656,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 
                 loadGameCode = true;
 
-                #ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
+                #ifdef _DEBUG_LIVE_LOOP_EDITING
                     win32PlatformLog(L"DLL copy succeeded <-----------\n");
                 #endif
             }
@@ -1744,7 +1667,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
 
     if (loadGameCode) {
 
-        #ifdef HANDMADE_DEBUG_LIVE_LOOP_EDITING
+        #ifdef _DEBUG_LIVE_LOOP_EDITING
             win32PlatformLog(L"About to load game code from Game_copy.dll\n");
         #endif
 
@@ -1752,7 +1675,7 @@ internal_func void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCod
     }
 }
 
-internal_func void win32GetAbsolutePath(wchar_t *path)
+internal void win32GetAbsolutePath(wchar_t *path)
 {
     // Get the module path for the running exe
     wchar_t modulePath[MAX_PATH] = { 0 };
@@ -1790,7 +1713,7 @@ internal_func void win32GetAbsolutePath(wchar_t *path)
     */
 }
 
-internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
+internal FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
 {
     WIN32_FILE_ATTRIBUTE_DATA fileData = { 0 };
 
@@ -1803,7 +1726,7 @@ internal_func FILETIME win32GetFileLastWriteDate(const wchar_t *filename)
     return fileData.ftLastWriteTime;
 }
 
-internal_func void win32GetMousePosition(HWND window, GameMouseInput *mouseInput)
+internal void win32GetMousePosition(HWND window, GameMouseInput *mouseInput)
 {
     if (paused){
         return;
@@ -1886,7 +1809,7 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
     XInputSetState(controllerIndex, &pVibration);
 }
 
-internal_func
+internal
 void win32PlatformLog(const wchar_t *str, ...)
 {
     // Reserve a buffer for the formatted string
@@ -1934,7 +1857,7 @@ size_t utilTebibyteToBytes(uint32 tebibytes)
     return (size_t)(((uint32)1024 * utilGibibytesToBytes(1)) * tebibytes);
 }
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef _DEBUG
 
 DEBUG_PLATFORM_LOG(DEBUG_platformLog)
 {
@@ -1953,18 +1876,19 @@ DEBUG_PLATFORM_LOG(DEBUG_platformLog)
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
 {
     // Concatenate the exe abs path and the relative filename into fullFilename
-    char fullFilename[MAX_PATH] = {0};
+    wchar_t fullFilename[MAX_PATH] = {0};
 
-    if (strcat_s(fullFilename, sizeof(fullFilename), exeAbsPath) != 0 ||
-        strcat_s(fullFilename, sizeof(fullFilename), filename) != 0) {
-        assert(!"Error concatenating file paths")
+    if ( (wcscat_s(fullFilename, sizeof(fullFilename), exeAbsPath)) != 0 ||
+            (wcscat_s(fullFilename, sizeof(fullFilename), filename)) != 0 ){
+        assert(!"Error concatenating file paths");
     }
 
     DEBUG_file file = { 0 };
-    bool32 res;
+    BOOL res;
 
     // Open the file for reading.
-    HANDLE handle = CreateFileA(fullFilename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE handle = CreateFileW(fullFilename, GENERIC_READ, FILE_SHARE_READ,
+                                NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (INVALID_HANDLE_VALUE == handle) {
         OutputDebugStringA("Cannot read file");
@@ -2013,7 +1937,7 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
     CloseHandle(handle);
 
     return file;
-    }
+}
 
 DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
 {
@@ -2032,10 +1956,10 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
         assert(!"Error concatenating file paths")
     }
 
-    bool32 res;
-
     // Open the file for writing.
-    HANDLE handle = CreateFileA(fullFilename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE handle = CreateFileA(fullFilename,
+                                GENERIC_WRITE, 0, NULL,
+                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (INVALID_HANDLE_VALUE == handle) {
         OutputDebugStringA("Cannot read file");
@@ -2044,7 +1968,7 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
 
     // Write the bytes.
     DWORD bytesWritten;
-    res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
+    BOOL res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
 
     if ((!res) || (bytesWritten != memorySizeInBytes)) {
         OutputDebugStringA("Could not write file to location");
@@ -2061,18 +1985,18 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
 
-internal_func void win32BeginInputRecording(Win32State *win32State)
+internal void win32BeginInputRecording(Win32State *win32State)
 {
     CopyMemory(win32State->gameMemoryRecordedState, win32State->gameMemory, win32State->gameMemorySize);
     win32State->inputRecording = 1;
 }
 
-internal_func void win32EndInputRecording(Win32State *win32State)
+internal void win32EndInputRecording(Win32State *win32State)
 {
     win32State->inputRecording = 0;
 }
 
-internal_func void win32RecordInput(Win32State *win32State, GameInput *gameInput)
+internal void win32RecordInput(Win32State *win32State, GameInput *gameInput)
 {
     uint64 offset = 0;
     if (win32State->recordingWriteFrameIndex >= 1) {
@@ -2082,20 +2006,20 @@ internal_func void win32RecordInput(Win32State *win32State, GameInput *gameInput
     win32State->recordingWriteFrameIndex += 1;
 }
 
-internal_func void win32BeginRecordingPlayback(Win32State *win32State)
+internal void win32BeginRecordingPlayback(Win32State *win32State)
 {
     // Read out the copy of the game's memory from the recorded memory block.
     CopyMemory(win32State->gameMemory, win32State->gameMemoryRecordedState, win32State->gameMemorySize);
     win32State->inputPlayback = 1;
 }
 
-internal_func void win32EndRecordingPlayback(Win32State *win32State)
+internal void win32EndRecordingPlayback(Win32State *win32State)
 {
     win32State->recordingReadFrameIndex = 0;
     win32State->inputPlayback = 0;
 }
 
-internal_func void win32PlaybackInput(Win32State *win32State, GameInput *gameInput)
+internal void win32PlaybackInput(Win32State *win32State, GameInput *gameInput)
 {
     uint64 offset = 0;
     if (win32State->recordingReadFrameIndex >= 1) {

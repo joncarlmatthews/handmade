@@ -12,6 +12,7 @@
 #include "math.h"
 #include "intrinsics.h"
 #include "utility.h"
+#include "physics.h"
 #include "filesystem.h"
 #include "random.h"
 #include "memory.h"
@@ -277,7 +278,7 @@ typedef struct GameMemory
     bool32 initialised;
 
     // Absolute path to the folder that contains the running program
-    char platformAbsPath[GAME_MAX_PATH];
+    wchar_t platformAbsPath[GAME_MAX_PATH];
 
     // Pointers to memory allocation deallocation functions with the platform layer
     PlatformAllocateMemory *platformAllocateMemory;

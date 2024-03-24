@@ -27,6 +27,7 @@
     <ClInclude Include="macros.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="memory.h" />
+    <ClInclude Include="physics.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="tilemap.h" />

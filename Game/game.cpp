@@ -40,7 +40,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         initTilemap(&memory->permanentStorage,
                     gameState,
                     &gameState->tileChunksMemoryBlock,
-                    WORLD_PIXELS_PER_METER,
+                    PIXELS_PER_METER,
                     TILE_DIMENSIONS_BIT_SHIFT,
                     TILE_CHUNK_DIMENSIONS_BIT_SHIFT,
                     TILEMAP_Z_PLANES,
@@ -49,7 +49,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                     frameBuffer);
 
         // Init the World
-        gameState->world.pixelsPerMeter  = (uint16)WORLD_PIXELS_PER_METER;
+        gameState->world.pixelsPerMeter  = (uint16)PIXELS_PER_METER;
         gameState->world.worldHeightPx   = (gameState->world.tilemap.tileHeightPx * gameState->world.tilemap.tileDimensions);
         gameState->world.worldWidthPx    = gameState->world.worldHeightPx;
 
@@ -68,7 +68,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         assert(gameState->world.tilemap.tileWidthPx > gameState->player1.widthPx);
 
         // Movement speed (assume always running)
-        gameState->player1.movementSpeedMPS = PLAYER_SPEED;
+        gameState->player1.movementSpeedMPS = PLAYER_SPEED_METERS_PER_SECOND;
         gameState->player1.totalJumpMovement = 15.0f;
 
         // Initial character starting position. Start the player in the middle
