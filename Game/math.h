@@ -118,12 +118,12 @@ void v2PerpendicularVector(Vec2 *rv, Vec2 v);
 void v2Normal(Vec2 *rv, Vec2 v);
 
 /**
- * From the given vector V, a new vector is written to RV that has the same
- * direction as V but has a set length of 1 which is also known as its
- * "unit normal" or "normalized vector." 
+ * Rotates vector V around its origin by the given radians. Writes the result
+ * into vector RV.
  * 
  * @param rv 
- * @param v 
+ * @param v
+ * @param radians
  */
 void v2Rotate(Vec2 *rv, Vec2 v, float32 radians);
 

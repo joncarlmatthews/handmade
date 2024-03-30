@@ -7,9 +7,10 @@
 //#define _DEBUG_LIVE_LOOP_EDITING
 #endif
 
+
 #define TARGET_FPS 60
-#define CAP_FPS false
-#define _ASSERT_FPS true
+#define CAP_FPS true
+#define _ASSERT_FPS false
 
 // Custom message ID for sending to the window when we consider
 // the app ready.
@@ -32,6 +33,23 @@ typedef int                 INT;
 typedef unsigned int        UINT;
 typedef long                LONG;   (int32)
 typedef unsigned long       ULONG;
+
+Win32 string typedefs and their primitive equivalent:
+
+Typedef                 Definition
+CHAR	                char
+PSTR or LPSTR	        char*
+PCSTR or LPCSTR	        const char*
+PWSTR or LPWSTR	        wchar_t*
+PCWSTR or LPCWSTR	    const wchar_t*
+
+Typedef                 Unicode definition  ANSII definition
+TCHAR	                wchar_t	            char
+TEXT("x") or _T("x")	L"x"	            "x"
+
+Details:
+https://learn.microsoft.com/en-us/windows/win32/learnwin32/working-with-strings
+
 */
 
 /**
@@ -141,7 +159,7 @@ typedef struct Win32State
     xyuint monitorDims;
     xyuint monitorAspectRatio;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LOCAL_BUILD
     void *gameMemoryRecordedState;
     void *gameMemoryRecordedInput;
     uint64 recordingWriteFrameIndex;
@@ -152,11 +170,10 @@ typedef struct Win32State
 
 } Win32State;
 
-internal
-LRESULT CALLBACK win32MainWindowCallback(HWND window,
-                                            UINT message,
-                                            WPARAM wParam,
-                                            LPARAM lParam);
+internal LRESULT CALLBACK win32MainWindowCallback(HWND window,
+                                                    UINT message,
+                                                    WPARAM wParam,
+                                                    LPARAM lParam);
 
 /*
  * Creates and returns the current time elapsed in MS since program execution
@@ -214,16 +231,19 @@ internal void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer);
 internal void win32AudioBufferToggleStop(Win32AudioBuffer *win32AudioBuffer);
 
 internal void win32WriteAudioBuffer(Win32AudioBuffer *win32AudioBuffer,
-                                            DWORD lockOffsetInBytes,
-                                            DWORD lockSizeInBytes,
-                                            GameAudioBuffer *audioBuffer);
+                                    DWORD lockOffsetInBytes,
+                                    DWORD lockSizeInBytes,
+                                    GameAudioBuffer *audioBuffer);
 
 internal void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
-                                                        XINPUT_GAMEPAD *gamepad,
-                                                        uint16 gamepadButtonBit);
+                                                    XINPUT_GAMEPAD *gamepad,
+                                                    uint16 gamepadButtonBit);
 
 
-internal void win32ProcessMessages(HWND window, GameInput *gameInput, GameInput oldGameInput, Win32State *win32State);
+internal void win32ProcessMessages(HWND window,
+                                    GameInput *gameInput,
+                                    GameInput oldGameInput,
+                                    Win32State *win32State);
 
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
@@ -245,7 +265,7 @@ PLATFORM_FREE_MEMORY(platformFreeMemory);
 PLATFORM_TOGGLE_FULLSCREEN(platformToggleFullscreen);
 PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate);
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LOCAL_BUILD
 
 DEBUG_PLATFORM_LOG(DEBUG_platformLog);
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile);

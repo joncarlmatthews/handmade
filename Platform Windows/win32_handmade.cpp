@@ -111,7 +111,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // TODO(JM) Log error.
         OutputDebugStringA("Error 2. window not created via CreateWindowEx\n");
-        return FALSE;
+        return(0);
     }
 
     // Usually you would call GetDC, do your work and then call ReleaseDC within
@@ -135,8 +135,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // Calculate the absolute path to this executable.
     win32GetAbsolutePath(win32State.absPath);
 
-    //DEBUG_platformWriteEntireFile(&thread, win32State.absPath, "debug.log")
-
     GameCode gameCode = { 0 };
     win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 
@@ -155,6 +153,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     sizet memoryTotalSize = (permanentStorageSizeInBytes + transientStorageSizeInBytes);
 
     void *platformMemory = platformAllocateMemory(&thread, memoryStartAddress, memoryTotalSize);
+
+    if(NULL == platformMemory){
+        //@TODO(JM) gracefully error if not enough memory could be allocated
+        OutputDebugString(L"Error allocating game memory. Unable to run game\n");
+        return(0);
+    }
 
     // Init game memory
     GameMemory memory = {0};
@@ -178,7 +182,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformControllerVibrate = &platformControllerVibrate;
     memory.platformToggleFullscreen = &platformToggleFullscreen;
 
-    wcscat_s(memory.platformAbsPath, countArray(memory.platformAbsPath), win32State.absPath);
+    // Concatenate the source string to the destination buffer
+    HRESULT hr;
+    hr = StringCchCatW(memory.platformAbsPath, GAME_MAX_PATH, win32State.absPath);
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
 
 #if _DEBUG
     memory.DEBUG_platformLog = &DEBUG_platformLog;
@@ -187,561 +196,558 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.DEBUG_platformFreeFileMemory = &DEBUG_platformFreeFileMemory;
 #endif
 
-    if (memory.permanentStorage.bytes && memory.transientStorage.bytes) {
-
-        win32State.gameMemorySize = memoryTotalSize;
-        win32State.gameMemory = memory.permanentStorage.bytes;
+    win32State.gameMemorySize = memoryTotalSize;
+    win32State.gameMemory = memory.permanentStorage.bytes;
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
-        memory.recordingStorageGameState   = platformAllocateMemory(&thread, (memoryStartAddress + memoryTotalSize), memoryTotalSize);
-        memory.recordingStorageInput       = platformAllocateMemory(&thread, (memoryStartAddress + (memoryTotalSize * 2)), memoryTotalSize);
+    memory.recordingStorageGameState   = platformAllocateMemory(&thread, (memoryStartAddress + memoryTotalSize), memoryTotalSize);
+    memory.recordingStorageInput       = platformAllocateMemory(&thread, (memoryStartAddress + (memoryTotalSize * 2)), memoryTotalSize);
 
-        win32State.gameMemoryRecordedState = memory.recordingStorageGameState;
-        win32State.gameMemoryRecordedInput = memory.recordingStorageInput;
+    win32State.gameMemoryRecordedState = memory.recordingStorageGameState;
+    win32State.gameMemoryRecordedInput = memory.recordingStorageInput;
 #endif
 
-        /*
-         * Framerate fixing.
-         */
-        Win32FixedFrameRate win32FixedFrameRate = {0};
-        win32FixedFrameRate.monitorRefreshRate = 60;
-        win32FixedFrameRate.gameTargetFPS = TARGET_FPS;
-        win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
+    /*
+        * Framerate fixing.
+        */
+    Win32FixedFrameRate win32FixedFrameRate = {0};
+    win32FixedFrameRate.monitorRefreshRate = 60;
+    win32FixedFrameRate.gameTargetFPS = TARGET_FPS;
+    win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
 
-        // Get the refresh rate of the monitor from the Windows API.
-        int32 gdcRes = GetDeviceCaps(deviceHandleForWindow, VREFRESH);
+    // Get the refresh rate of the monitor from the Windows API.
+    int32 gdcRes = GetDeviceCaps(deviceHandleForWindow, VREFRESH);
 
-        if (gdcRes > 1) {
-            win32FixedFrameRate.monitorRefreshRate = (uint8)gdcRes;
-        }
+    if (gdcRes > 1) {
+        win32FixedFrameRate.monitorRefreshRate = (uint8)gdcRes;
+    }
 
-        // Set the system's minimum timer resolution to 1 millisecond
-        // so that calls to the Windows Sleep() function are more
-        // granular. E.g. the wake from the Sleep() will be checked
-        // every 1ms, rather than the system default.
-        win32FixedFrameRate.timeOutIntervalMS = 1;
-        win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
+    // Set the system's minimum timer resolution to 1 millisecond
+    // so that calls to the Windows Sleep() function are more
+    // granular. E.g. the wake from the Sleep() will be checked
+    // every 1ms, rather than the system default.
+    win32FixedFrameRate.timeOutIntervalMS = 1;
+    win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
 
-        // Get the handle to the monitor containing the window
-        HMONITOR hMonitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
+    // Get the handle to the monitor containing the window
+    HMONITOR hMonitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
 
-        // Get the monitor information
-        MONITORINFO monitorInfo;
-        monitorInfo.cbSize = sizeof(MONITORINFO);
-        GetMonitorInfo(hMonitor, &monitorInfo);
+    // Get the monitor information
+    MONITORINFO monitorInfo;
+    monitorInfo.cbSize = sizeof(MONITORINFO);
+    GetMonitorInfo(hMonitor, &monitorInfo);
 
-        // Calculate the width and height of the monitor
-        uint32 monitorWidth = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
-        uint32 monitorHeight = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+    // Calculate the width and height of the monitor
+    uint32 monitorWidth = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+    uint32 monitorHeight = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
 
-        // Get the height/width and ratio of the monitor
-        uint32 ratio = gcd(monitorHeight, monitorWidth);
-        uint32 ratioX = (max(monitorHeight, monitorWidth) / ratio);
-        uint32 ratioY = (min(monitorHeight, monitorWidth) / ratio);
+    // Get the height/width and ratio of the monitor
+    uint32 ratio = gcd(monitorHeight, monitorWidth);
+    uint32 ratioX = (max(monitorHeight, monitorWidth) / ratio);
+    uint32 ratioY = (min(monitorHeight, monitorWidth) / ratio);
 
-        win32State.monitorDims.x = monitorWidth;
-        win32State.monitorDims.y = monitorHeight;
+    win32State.monitorDims.x = monitorWidth;
+    win32State.monitorDims.y = monitorHeight;
 
-        win32State.monitorAspectRatio.x = ratioX;
-        win32State.monitorAspectRatio.y = ratioY;
+    win32State.monitorAspectRatio.x = ratioX;
+    win32State.monitorAspectRatio.y = ratioY;
 
-        /*
-         * Audio
-         */
+    /*
+        * Audio
+        */
 
-        // Create the Windows audio buffer
-        Win32AudioBuffer win32AudioBuffer = {0};
-        win32InitAudioBuffer(window, &win32AudioBuffer);
+    // Create the Windows audio buffer
+    Win32AudioBuffer win32AudioBuffer = {0};
+    win32InitAudioBuffer(window, &win32AudioBuffer);
 
-        // Kick off playing the Windows audio buffer
-        win32AudioBufferTogglePlay(&win32AudioBuffer);
+    // Kick off playing the Windows audio buffer
+    win32AudioBufferTogglePlay(&win32AudioBuffer);
 
-        // Create the game audio buffer.
-        GameAudioBuffer gameAudioBuffer = {0};
-        gameAudioBuffer.writeEntireBuffer = FALSE;
-        gameAudioBuffer.minFramesWorthOfAudio = 4;
+    // Create the game audio buffer.
+    GameAudioBuffer gameAudioBuffer = {0};
+    gameAudioBuffer.writeEntireBuffer = FALSE;
+    gameAudioBuffer.minFramesWorthOfAudio = 4;
 
-        /*
-         * Graphics
-         */
+    /*
+        * Graphics
+        */
 
-        // Create the Windows frame buffer
-        win32InitFrameBuffer(&thread,
-                                &win32FrameBuffer,
-                                FRAME_BUFFER_PIXEL_WIDTH,
-                                FRAME_BUFFER_PIXEL_HEIGHT);
+    // Create the Windows frame buffer
+    win32InitFrameBuffer(&thread,
+                            &win32FrameBuffer,
+                            FRAME_BUFFER_PIXEL_WIDTH,
+                            FRAME_BUFFER_PIXEL_HEIGHT);
 
-        /*
-         * Controllers
-         */
+    /*
+        * Controllers
+        */
 
-        // How many controllers does the platform layer support?
-        ControllerCounts controllerCounts = {0};
-        controllerCounts.gameMaxControllers = MAX_CONTROLLERS;
-        controllerCounts.platformMaxControllers = XUSER_MAX_COUNT;
+    // How many controllers does the platform layer support?
+    ControllerCounts controllerCounts = {0};
+    controllerCounts.gameMaxControllers = MAX_CONTROLLERS;
+    controllerCounts.platformMaxControllers = XUSER_MAX_COUNT;
 
-        // An array to hold pointers to the old and new instances of the inputs.
-        GameInput GameInputInstances[2] = {0};
+    // An array to hold pointers to the old and new instances of the inputs.
+    GameInput GameInputInstances[2] = {0};
 
-        // We save a copy of what we've written to the inputs (in the old instance variable)
-        // so we can compare last frame's values to this frame's values.
-        GameInput *gameInput        = &GameInputInstances[0];
-        GameInput *gameInputOld     = &GameInputInstances[1];
+    // We save a copy of what we've written to the inputs (in the old instance variable)
+    // so we can compare last frame's values to this frame's values.
+    GameInput *gameInput        = &GameInputInstances[0];
+    GameInput *gameInputOld     = &GameInputInstances[1];
 
-        // Mouse support
-        GameMouseInput mouse = { 0 };
+    // Mouse support
+    GameMouseInput mouse = { 0 };
 
-        // Assign the mouse object to the game input
-        gameInput->mouse = mouse;
+    // Assign the mouse object to the game input
+    gameInput->mouse = mouse;
 
-        // Keyboard support
-        GameControllerInput keyboard = { 0 };
-        keyboard.isConnected = 1; // @TODO(JM) check that it's actually is connected.
+    // Keyboard support
+    GameControllerInput keyboard = { 0 };
+    keyboard.isConnected = 1; // @TODO(JM) check that it's actually is connected.
 
-        // Assign the keyboard object to the game input
-        gameInput->controllers[0] = keyboard; // Assign the first game input controller as the keyboard
-        controllerCounts.connectedControllers = 1; // @TODO(JM) Support for multiple controllers
+    // Assign the keyboard object to the game input
+    gameInput->controllers[0] = keyboard; // Assign the first game input controller as the keyboard
+    controllerCounts.connectedControllers = 1; // @TODO(JM) Support for multiple controllers
 
 #ifdef _DEBUG_CLOCKCYCLES
-        // Get the number of processor clock cycles
-        uint64 runningProcessorClockCyclesCounter = __rdtsc();
+    // Get the number of processor clock cycles
+    uint64 runningProcessorClockCyclesCounter = __rdtsc();
 #endif
 
-        PostMessage(window, WM_HANDMADE_HERO_READY, 0, 0);
+    PostMessage(window, WM_HANDMADE_HERO_READY, 0, 0);
 
-        // Current frame index
-        sizet frameIndex = 0;
+    // Current frame index
+    sizet frameIndex = 0;
 
-        LARGE_INTEGER prevFrameTimestamp = win32GetTime();
+    LARGE_INTEGER prevFrameTimestamp = win32GetTime();
 
-        /**
-         * MAIN GAME LOOP
-         */
-        while (running) {
+    /**
+        * ============== 
+        * MAIN GAME LOOP
+        * ==============
+        */
+    while (running) {
 
-            LARGE_INTEGER frameStartTimestamp = win32GetTime();
+        LARGE_INTEGER frameStartTimestamp = win32GetTime();
 
-            // Delta time (in seconds)
-            // The time taken between this frame starting and the program
-            // execution to make it all the way back around to here again.
-            gameInput->deltaTime = win32GetElapsedTimeS(prevFrameTimestamp,
-                                                        frameStartTimestamp,
-                                                        globalQPCFrequency);
+        // Delta time (in seconds)
+        // The time taken between this frame starting and the program
+        // execution to make it all the way back around to here again.
+        gameInput->deltaTime = win32GetElapsedTimeS(prevFrameTimestamp,
+                                                    frameStartTimestamp,
+                                                    globalQPCFrequency);
 
-            prevFrameTimestamp = win32GetTime();
+        prevFrameTimestamp = win32GetTime();
 
 #ifdef _DEBUG_FPS
-            win32PlatformLog(L"Delta time frame %zu: %f seconds\n",
-                                frameIndex,
-                                gameInput->deltaTime);
+        win32PlatformLog(L"Delta time frame %zu: %f seconds\n",
+                            frameIndex,
+                            gameInput->deltaTime);
 #endif
             
 
-            // Get the position of the mouse
-            win32GetMousePosition(window, &gameInput->mouse);
+        // Get the position of the mouse
+        win32GetMousePosition(window, &gameInput->mouse);
 
-            // Handle the Win32 message loop and handle mouse and keyboard input
-            win32ProcessMessages(window, gameInput, *gameInputOld, &win32State);
+        // Handle the Win32 message loop and handle mouse and keyboard input
+        win32ProcessMessages(window, gameInput, *gameInputOld, &win32State);
 
-            if (paused) {
-                win32AudioBufferToggleStop(&win32AudioBuffer);
+        if (paused) {
+            win32AudioBufferToggleStop(&win32AudioBuffer);
+            continue;
+        } else {
+            win32AudioBufferTogglePlay(&win32AudioBuffer);
+        }
+
+        // After processing our messages, we can now (in our "while running = true"
+        // loop) do what we like..!
+
+        /*
+            * Controller input stuff
+            */
+
+        // Iterate over each controller and get its state.
+        DWORD dwResult;
+
+        uint8 gamePadsAdded = 0;
+
+        for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
+
+            XINPUT_STATE xinputControllerInstance = { 0 };
+            SecureZeroMemory(&xinputControllerInstance, sizeof(XINPUT_STATE));
+
+            // Simply get the state of the controller from XInput.
+            dwResult = XInputGetState(controllerIndex, &xinputControllerInstance);
+
+            if (dwResult != ERROR_SUCCESS) {
+                // Controller is not connected/available.
                 continue;
-            } else {
-                win32AudioBufferTogglePlay(&win32AudioBuffer);
             }
 
-            // After processing our messages, we can now (in our "while running = true"
-            // loop) do what we like..!
+            // ...controller connected/available
+            gamePadsAdded++;
 
-            /*
-             * Controller input stuff
-             */
+            // Make sure we dont add more than our supported controller count.
+            if (gamePadsAdded >= (controllerCounts.gameMaxControllers - 1)) {
+                continue;
+            }
 
-            // Iterate over each controller and get its state.
-            DWORD dwResult;
+            controllerCounts.connectedControllers = (controllerCounts.connectedControllers + 1);
 
-            uint8 gamePadsAdded = 0;
+            // Fetch the gamepad
+            XINPUT_GAMEPAD *gamepad = &xinputControllerInstance.Gamepad;
 
-            for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
+            uint8 ourControllerIndex = ((uint8)controllerIndex + 1);
 
-                XINPUT_STATE xinputControllerInstance = { 0 };
-                SecureZeroMemory(&xinputControllerInstance, sizeof(XINPUT_STATE));
+            GameControllerInput *gameController = &gameInput->controllers[ourControllerIndex];
 
-                // Simply get the state of the controller from XInput.
-                dwResult = XInputGetState(controllerIndex, &xinputControllerInstance);
+            gameController->isConnected = true;
 
-                if (dwResult != ERROR_SUCCESS) {
-                    // Controller is not connected/available.
-                    continue;
+            win32ProcessXInputControllerButton(&gameController->dPadUp,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_DPAD_UP);
+
+            win32ProcessXInputControllerButton(&gameController->dPadDown,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_DPAD_DOWN);
+
+            win32ProcessXInputControllerButton(&gameController->dPadLeft,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_DPAD_LEFT);
+
+            win32ProcessXInputControllerButton(&gameController->dPadRight,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_DPAD_RIGHT);
+
+            win32ProcessXInputControllerButton(&gameController->up,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_Y);
+
+            win32ProcessXInputControllerButton(&gameController->down,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_A);
+
+            win32ProcessXInputControllerButton(&gameController->right,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_B);
+
+            win32ProcessXInputControllerButton(&gameController->left,
+                                                gamepad,
+                                                XINPUT_GAMEPAD_X);
+
+            // Left controller thumbstick support...
+            // Normalise the axis values so the values are between -1.0 and 1.0
+            // @see maximum signed short values
+            float32 leftThumbstickX = 0.0f;
+            if (gamepad->sThumbLX > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+                leftThumbstickX = ((float32)gamepad->sThumbLX / 32512.0f);
+            }
+            else if (gamepad->sThumbLX < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+                leftThumbstickX = ((float32)gamepad->sThumbLX / 32768.0f);
+            }
+
+            float32 leftThumbstickY = 0.0f;
+            if (gamepad->sThumbLY > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+                leftThumbstickY = ((float32)(gamepad->sThumbLY - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) / (32512.0f - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE));
+            }
+            else if (gamepad->sThumbLY < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+                leftThumbstickY = ((float32)(gamepad->sThumbLY + XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) / (32768.0f - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE));
+            }
+
+            gameController->leftThumbstick.position.x = leftThumbstickX;
+            gameController->leftThumbstick.position.y = leftThumbstickY;
+
+            // If the user is using the thumbstick, then set the controller
+            // to analog mode, if they're using the D-pad set to non-alanlog mode
+            if (!gameController->isAnalog) {
+                if ((leftThumbstickX != 0.0f) || (leftThumbstickY != 0.0f)) {
+                    gameController->isAnalog = true;
+                }
+            }
+
+            if (gameController->isAnalog) {
+                if ((gameController->dPadUp.endedDown)
+                    || (gameController->dPadDown.endedDown)
+                    || (gameController->dPadLeft.endedDown)
+                    || (gameController->dPadRight.endedDown)
+                    ) {
+                    gameController->isAnalog = false;
+                }
+            }
+
+        } // controller loop
+
+        // Size, in bytes, of the portion of the buffer to write.
+        DWORD lockSizeInBytes = 0;
+
+        // Offset, in bytes, from the start of the buffer to the point where the lock begins.
+        // We Mod the result by the total number of bytes so that the value wraps.
+        // Result will look like this: 0, 4, 8, 12, 16, 24 etc...
+        DWORD lockOffsetInBytes = 0;
+
+        // Start playing sound. (Write a dummy wave sound)
+        // Each single "sample" is a 16-bit value. 8 bits for the left channel, and 8 bits for the right channel.
+        // They both go together.
+        // Each individual sample gets output at a time, thus outputting to both the left and right channels
+        // at the same time. The sound buffer (win32AudioBuffer.buffer) contains all of these 16-bit audio samples.
+
+        // The IDirectSoundBuffer8::GetCurrentPosition method retrieves 
+        // the position of the play and write cursors in the sound buffer.
+        if (win32AudioBuffer.bufferSuccessfulyCreated) {
+
+            DWORD playCursorOffsetInBytes   = NULL; // Offset, in bytes, of the play cursor
+            DWORD writeCursorOffsetInBytes  = NULL; // Offset, in bytes, of the write cursor
+            DWORD writePlayDifference       = 0; // Difference in bytes between the play and the write cursors.
+
+            struct AuidioLatency {
+                uint32 samplesLatent;
+                float32 samplesLatentAsPercentageOfBuffer;
+                float32 latencyInMS;
+            } audioLatency = {0};
+
+            HRESULT res = win32AudioBuffer.buffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
+
+            if ((DS_OK == res) && (win32AudioBuffer.bufferSizeInBytes > 0)) {
+
+                // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
+                // write and returns pointers to which data can be written
+
+                lockOffsetInBytes = (writeCursorOffsetInBytes % win32AudioBuffer.bufferSizeInBytes);
+
+                // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
+                // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
+                // one chuck of data.
+                if (writeCursorOffsetInBytes > playCursorOffsetInBytes) {
+                    lockSizeInBytes = (win32AudioBuffer.bufferSizeInBytes - (writeCursorOffsetInBytes - playCursorOffsetInBytes));
+                    writePlayDifference = (writeCursorOffsetInBytes - playCursorOffsetInBytes);
+                } else if (writeCursorOffsetInBytes < playCursorOffsetInBytes) {
+                    lockSizeInBytes = ((win32AudioBuffer.bufferSizeInBytes - (win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
+                    writePlayDifference = ((win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes) + writeCursorOffsetInBytes);
                 }
 
-                // ...controller connected/available
-                gamePadsAdded++;
-
-                // Make sure we dont add more than our supported controller count.
-                if (gamePadsAdded >= (controllerCounts.gameMaxControllers - 1)) {
-                    continue;
-                }
-
-                controllerCounts.connectedControllers = (controllerCounts.connectedControllers + 1);
-
-                // Fetch the gamepad
-                XINPUT_GAMEPAD *gamepad = &xinputControllerInstance.Gamepad;
-
-                uint8 ourControllerIndex = ((uint8)controllerIndex + 1);
-
-                GameControllerInput *gameController = &gameInput->controllers[ourControllerIndex];
-
-                gameController->isConnected = true;
-
-                win32ProcessXInputControllerButton(&gameController->dPadUp,
-                                                    gamepad,
-                                                    XINPUT_GAMEPAD_DPAD_UP);
-
-                win32ProcessXInputControllerButton(&gameController->dPadDown,
-                                                    gamepad,
-                                                    XINPUT_GAMEPAD_DPAD_DOWN);
-
-                win32ProcessXInputControllerButton(&gameController->dPadLeft,
-                                                    gamepad,
-                                                    XINPUT_GAMEPAD_DPAD_LEFT);
-
-                win32ProcessXInputControllerButton(&gameController->dPadRight,
-                                                    gamepad,
-                                                    XINPUT_GAMEPAD_DPAD_RIGHT);
-
-                win32ProcessXInputControllerButton(&gameController->up,
-                                                    gamepad,
-                                                    XINPUT_GAMEPAD_Y);
-
-                win32ProcessXInputControllerButton(&gameController->down,
-                                                    gamepad,
-                                                    XINPUT_GAMEPAD_A);
-
-                win32ProcessXInputControllerButton(&gameController->right,
-                                                    gamepad,
-                                                    XINPUT_GAMEPAD_B);
-
-                win32ProcessXInputControllerButton(&gameController->left,
-                                                    gamepad,
-                                                    XINPUT_GAMEPAD_X);
-
-                // Left controller thumbstick support...
-                // Normalise the axis values so the values are between -1.0 and 1.0
-                // @see maximum signed short values
-                float32 leftThumbstickX = 0.0f;
-                if (gamepad->sThumbLX > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
-                    leftThumbstickX = ((float32)gamepad->sThumbLX / 32512.0f);
-                }
-                else if (gamepad->sThumbLX < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
-                    leftThumbstickX = ((float32)gamepad->sThumbLX / 32768.0f);
-                }
-
-                float32 leftThumbstickY = 0.0f;
-                if (gamepad->sThumbLY > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
-                    leftThumbstickY = ((float32)(gamepad->sThumbLY - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) / (32512.0f - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE));
-                }
-                else if (gamepad->sThumbLY < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
-                    leftThumbstickY = ((float32)(gamepad->sThumbLY + XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) / (32768.0f - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE));
-                }
-
-                gameController->leftThumbstick.position.x = leftThumbstickX;
-                gameController->leftThumbstick.position.y = leftThumbstickY;
-
-                // If the user is using the thumbstick, then set the controller
-                // to analog mode, if they're using the D-pad set to non-alanlog mode
-                if (!gameController->isAnalog) {
-                    if ((leftThumbstickX != 0.0f) || (leftThumbstickY != 0.0f)) {
-                        gameController->isAnalog = true;
-                    }
-                }
-
-                if (gameController->isAnalog) {
-                    if ((gameController->dPadUp.endedDown)
-                        || (gameController->dPadDown.endedDown)
-                        || (gameController->dPadLeft.endedDown)
-                        || (gameController->dPadRight.endedDown)
-                        ) {
-                        gameController->isAnalog = false;
-                    }
-                }
-
-            } // controller loop
-
-            // Size, in bytes, of the portion of the buffer to write.
-            DWORD lockSizeInBytes = 0;
-
-            // Offset, in bytes, from the start of the buffer to the point where the lock begins.
-            // We Mod the result by the total number of bytes so that the value wraps.
-            // Result will look like this: 0, 4, 8, 12, 16, 24 etc...
-            DWORD lockOffsetInBytes = 0;
-
-            // Start playing sound. (Write a dummy wave sound)
-            // Each single "sample" is a 16-bit value. 8 bits for the left channel, and 8 bits for the right channel.
-            // They both go together.
-            // Each individual sample gets output at a time, thus outputting to both the left and right channels
-            // at the same time. The sound buffer (win32AudioBuffer.buffer) contains all of these 16-bit audio samples.
-
-            // The IDirectSoundBuffer8::GetCurrentPosition method retrieves 
-            // the position of the play and write cursors in the sound buffer.
-            if (win32AudioBuffer.bufferSuccessfulyCreated) {
-
-                DWORD playCursorOffsetInBytes   = NULL; // Offset, in bytes, of the play cursor
-                DWORD writeCursorOffsetInBytes  = NULL; // Offset, in bytes, of the write cursor
-                DWORD writePlayDifference       = 0; // Difference in bytes between the play and the write cursors.
-
-                struct AuidioLatency {
-                    uint32 samplesLatent;
-                    float32 samplesLatentAsPercentageOfBuffer;
-                    float32 latencyInMS;
-                } audioLatency = {0};
-
-                HRESULT res = win32AudioBuffer.buffer->GetCurrentPosition(&playCursorOffsetInBytes, &writeCursorOffsetInBytes);
-
-                if ((DS_OK == res) && (win32AudioBuffer.bufferSizeInBytes > 0)) {
-
-                    // IDirectSoundBuffer8::Lock Readies all or part of the buffer for a data 
-                    // write and returns pointers to which data can be written
-
-                    lockOffsetInBytes = (writeCursorOffsetInBytes % win32AudioBuffer.bufferSizeInBytes);
-
-                    // Is the current lock offset ahead of the current play cursor? If yes, we'll get back 
-                    // two chucks of data from IDirectSoundBuffer8::Lock, otherwise we'll only get back
-                    // one chuck of data.
-                    if (writeCursorOffsetInBytes > playCursorOffsetInBytes) {
-                        lockSizeInBytes = (win32AudioBuffer.bufferSizeInBytes - (writeCursorOffsetInBytes - playCursorOffsetInBytes));
-                        writePlayDifference = (writeCursorOffsetInBytes - playCursorOffsetInBytes);
-                    } else if (writeCursorOffsetInBytes < playCursorOffsetInBytes) {
-                        lockSizeInBytes = ((win32AudioBuffer.bufferSizeInBytes - (win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes)) - writeCursorOffsetInBytes);
-                        writePlayDifference = ((win32AudioBuffer.bufferSizeInBytes - playCursorOffsetInBytes) + writeCursorOffsetInBytes);
-                    }
-
-                    audioLatency.samplesLatent = (writePlayDifference / win32AudioBuffer.bytesPerSample);
-                    audioLatency.samplesLatentAsPercentageOfBuffer = ((((float32)audioLatency.samplesLatent * 100.0f) / ((float32)win32AudioBuffer.samplesPerSecond * (float32)win32AudioBuffer.secondsWorthOfAudio)) / 100.0f);
-                    audioLatency.latencyInMS = ((1000.f * win32AudioBuffer.secondsWorthOfAudio) * audioLatency.samplesLatentAsPercentageOfBuffer);
+                audioLatency.samplesLatent = (writePlayDifference / win32AudioBuffer.bytesPerSample);
+                audioLatency.samplesLatentAsPercentageOfBuffer = ((((float32)audioLatency.samplesLatent * 100.0f) / ((float32)win32AudioBuffer.samplesPerSecond * (float32)win32AudioBuffer.secondsWorthOfAudio)) / 100.0f);
+                audioLatency.latencyInMS = ((1000.f * win32AudioBuffer.secondsWorthOfAudio) * audioLatency.samplesLatentAsPercentageOfBuffer);
                    
-                    // If we're opting to *not* write the entire audio buffer, calculate how much to write here...
-                    if ((!gameAudioBuffer.writeEntireBuffer) && (gameAudioBuffer.minFramesWorthOfAudio >= 1)) {
+                // If we're opting to *not* write the entire audio buffer, calculate how much to write here...
+                if ((!gameAudioBuffer.writeEntireBuffer) && (gameAudioBuffer.minFramesWorthOfAudio >= 1)) {
 
-                        // How many samples do we need to write? (number of samples in MS)
-                        // Write at least the audio latency (in ms)
-                        float32 msToWrite = audioLatency.latencyInMS;
+                    // How many samples do we need to write? (number of samples in MS)
+                    // Write at least the audio latency (in ms)
+                    float32 msToWrite = audioLatency.latencyInMS;
 
-                        // If the game's target frame rate (in ms) is larger than the audio latency (in ms)
-                        // then set that as our minimum latency.
-                        if (win32FixedFrameRate.gameTargetMSPerFrame > audioLatency.latencyInMS) {
-                            msToWrite = win32FixedFrameRate.gameTargetMSPerFrame;
-                        }
-                        // Now add up to the margin of safety
-                        float32 marginTotalInMS = (win32FixedFrameRate.gameTargetMSPerFrame * (float32)gameAudioBuffer.minFramesWorthOfAudio);
-                        if (marginTotalInMS > msToWrite) {
-                            msToWrite = (msToWrite + (marginTotalInMS - msToWrite));
-                        }
-
-                        float32 samplesToWrite = ((float32)win32AudioBuffer.samplesPerSecond * (((msToWrite * 100.0f) / 1000.0f) / 100));
-                        uint32 noOfBytesToWrite = (uint32)(samplesToWrite * win32AudioBuffer.bytesPerSample);
-
-                        if (noOfBytesToWrite > win32AudioBuffer.bufferSizeInBytes) {
-                            // We've somehow ended up with a calculation that's bigger than
-                            // the audio buffer available. Don't overwrite the lockSizeInBytes
-                            assert(!"noOfBytesToWrite calculation is > win32AudioBuffer.bufferSizeInBytes");
-                        } else {
-                            // Overwrite the lockSizeInBytes to match our smaller lock size.
-                            lockSizeInBytes = noOfBytesToWrite;
-                        }
+                    // If the game's target frame rate (in ms) is larger than the audio latency (in ms)
+                    // then set that as our minimum latency.
+                    if (win32FixedFrameRate.gameTargetMSPerFrame > audioLatency.latencyInMS) {
+                        msToWrite = win32FixedFrameRate.gameTargetMSPerFrame;
                     }
+                    // Now add up to the margin of safety
+                    float32 marginTotalInMS = (win32FixedFrameRate.gameTargetMSPerFrame * (float32)gameAudioBuffer.minFramesWorthOfAudio);
+                    if (marginTotalInMS > msToWrite) {
+                        msToWrite = (msToWrite + (marginTotalInMS - msToWrite));
+                    }
+
+                    float32 samplesToWrite = ((float32)win32AudioBuffer.samplesPerSecond * (((msToWrite * 100.0f) / 1000.0f) / 100));
+                    uint32 noOfBytesToWrite = (uint32)(samplesToWrite * win32AudioBuffer.bytesPerSample);
+
+                    if (noOfBytesToWrite > win32AudioBuffer.bufferSizeInBytes) {
+                        // We've somehow ended up with a calculation that's bigger than
+                        // the audio buffer available. Don't overwrite the lockSizeInBytes
+                        assert(!"noOfBytesToWrite calculation is > win32AudioBuffer.bufferSizeInBytes");
+                    } else {
+                        // Overwrite the lockSizeInBytes to match our smaller lock size.
+                        lockSizeInBytes = noOfBytesToWrite;
+                    }
+                }
                     
 
 #if defined(HANDMADE_DEBUG_AUDIO)
 
-                    gameAudioBuffer.playCursorPosition = playCursorOffsetInBytes;
-                    gameAudioBuffer.writeCursorPosition = writeCursorOffsetInBytes;
-                    gameAudioBuffer.lockSizeInBytes = lockSizeInBytes;
+                gameAudioBuffer.playCursorPosition = playCursorOffsetInBytes;
+                gameAudioBuffer.writeCursorPosition = writeCursorOffsetInBytes;
+                gameAudioBuffer.lockSizeInBytes = lockSizeInBytes;
 
-                    // @TODO(JM) Make audio latency match a single frame
-                    if (win32AudioBuffer.bufferSizeInBytes > 0) {
-                        char buff[200] = { 0 };
-                        sprintf_s(buff,
-                            sizeof(buff),
-                            "Audio latency: %.2fms (%.2f frames)\n",
-                            audioLatency.latencyInMS,
-                            (audioLatency.latencyInMS / win32FixedFrameRate.gameTargetMSPerFrame));
-                        OutputDebugStringA(buff);
-                    }
-
-#endif
-                } else {
-                    OutputDebugStringA("Could not get the position of the play and write cursors in the secondary sound buffer");
+                // @TODO(JM) Make audio latency match a single frame
+                if (win32AudioBuffer.bufferSizeInBytes > 0) {
+                    char buff[200] = { 0 };
+                    sprintf_s(buff,
+                        sizeof(buff),
+                        "Audio latency: %.2fms (%.2f frames)\n",
+                        audioLatency.latencyInMS,
+                        (audioLatency.latencyInMS / win32FixedFrameRate.gameTargetMSPerFrame));
+                    OutputDebugStringA(buff);
                 }
 
-            } // Audio buffer created.
+#endif
+            } else {
+                OutputDebugStringA("Could not get the position of the play and write cursors in the secondary sound buffer");
+            }
+
+        } // Audio buffer created.
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
 
-            // Recording/playback
-            if (win32State.inputRecording) {
-                win32RecordInput(&win32State, gameInput);
-            }
+        // Recording/playback
+        if (win32State.inputRecording) {
+            win32RecordInput(&win32State, gameInput);
+        }
 
-            if (win32State.inputPlayback) {
-               win32PlaybackInput(&win32State, gameInput);
-            }
+        if (win32State.inputPlayback) {
+            win32PlaybackInput(&win32State, gameInput);
+        }
 #endif
 
-            // Create the game's audio buffer
-            if (gameCode.gameInitAudioBuffer){ // C6011 NULL pointer warning
-                gameCode.gameInitAudioBuffer(&thread,
-                                                &memory,
-                                                &gameAudioBuffer,
-                                                lockSizeInBytes,
-                                                win32AudioBuffer.bytesPerSample,
-                                                win32AudioBuffer.bufferSizeInBytes);
-            }
+        // Create the game's audio buffer
+        if (gameCode.gameInitAudioBuffer){ // C6011 NULL pointer warning
+            gameCode.gameInitAudioBuffer(&thread,
+                                            &memory,
+                                            &gameAudioBuffer,
+                                            lockSizeInBytes,
+                                            win32AudioBuffer.bytesPerSample,
+                                            win32AudioBuffer.bufferSizeInBytes);
+        }
             
-            // Create the game's frame buffer
-            GameFrameBuffer gameFrameBuffer = {0};
+        // Create the game's frame buffer
+        GameFrameBuffer gameFrameBuffer = {0};
             
-            if (gameCode.gameInitFrameBuffer){ // C6011 NULL pointer warning
-                gameCode.gameInitFrameBuffer(&thread,
-                                                &gameFrameBuffer,
-                                                win32FrameBuffer.height,
-                                                win32FrameBuffer.width,
-                                                win32FrameBuffer.bytesPerPixel,
-                                                win32FrameBuffer.byteWidthPerRow,
-                                                win32FrameBuffer.memory);
-            }
+        if (gameCode.gameInitFrameBuffer){ // C6011 NULL pointer warning
+            gameCode.gameInitFrameBuffer(&thread,
+                                            &gameFrameBuffer,
+                                            win32FrameBuffer.height,
+                                            win32FrameBuffer.width,
+                                            win32FrameBuffer.bytesPerPixel,
+                                            win32FrameBuffer.byteWidthPerRow,
+                                            win32FrameBuffer.memory);
+        }
             
 
-            // Main game code.
-            if (gameCode.gameUpdate){ // C6011 NULL pointer warning
-                gameCode.gameUpdate(&thread,
-                                    (void *)&win32State,
-                                    NULL,
-                                    NULL,
-                                    &memory,
-                                    &gameFrameBuffer,
-                                    &gameAudioBuffer,
-                                    GameInputInstances,
-                                    &controllerCounts);
-            }
+        // Main game code.
+        if (gameCode.gameUpdate){ // C6011 NULL pointer warning
+            gameCode.gameUpdate(&thread,
+                                (void *)&win32State,
+                                NULL,
+                                NULL,
+                                &memory,
+                                &gameFrameBuffer,
+                                &gameAudioBuffer,
+                                GameInputInstances,
+                                &controllerCounts);
+        }
 
-            // Save how long this frame look to compute (excluding rendering and auido
-            // which is handled by the OS and we dont have control over)
-            LARGE_INTEGER frameEndTimestamp = win32GetTime();
+        // Save how long this frame look to compute (excluding rendering and auido
+        // which is handled by the OS and we dont have control over)
+        LARGE_INTEGER frameEndTimestamp = win32GetTime();
 
-            float32 frameProcessingDuration = win32GetElapsedTimeMS(frameStartTimestamp,
-                                                                    frameEndTimestamp,
-                                                                    globalQPCFrequency);
+        float32 frameProcessingDuration = win32GetElapsedTimeMS(frameStartTimestamp,
+                                                                frameEndTimestamp,
+                                                                globalQPCFrequency);
 
 #ifdef _DEBUG_FPS
-            win32PlatformLog(L"Time for frame to be processed: %f milliseconds\n",
-                            frameProcessingDuration);
+        win32PlatformLog(L"Time for frame to be processed: %f milliseconds\n",
+                        frameProcessingDuration);
 
-            win32PlatformLog(L"Target time for frame to complete: %f milliseconds\n",
-                            win32FixedFrameRate.gameTargetMSPerFrame);
+        win32PlatformLog(L"Target time for frame to complete: %f milliseconds\n",
+                        win32FixedFrameRate.gameTargetMSPerFrame);
 #endif
                 
-            // Cap frame rate to target FPS if we're running ahead. We do this before rendering
-            // and audio intentionally.
-            if (frameProcessingDuration < win32FixedFrameRate.gameTargetMSPerFrame){
+        // Cap frame rate to target FPS if we're running ahead. We do this before rendering
+        // and audio intentionally.
+        if (frameProcessingDuration < win32FixedFrameRate.gameTargetMSPerFrame){
 
 #if CAP_FPS
 
-                float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - frameProcessingDuration);
+            float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - frameProcessingDuration);
 
 #ifdef _DEBUG_FPS
-                win32PlatformLog(L"Need to sleep for: %f milliseconds (%f)\n",
-                                    needToSleepForMS, (frameProcessingDuration + needToSleepForMS));
+            win32PlatformLog(L"Need to sleep for: %f milliseconds (%f)\n",
+                                needToSleepForMS, (frameProcessingDuration + needToSleepForMS));
 #endif
 
-                INT msToSleepI = (INT)needToSleepForMS;
+            INT msToSleepI = (INT)needToSleepForMS;
 
 
 #ifdef _DEBUG_FPS
-                win32PlatformLog(L"Sleeping for... %i\n", msToSleepI);
+            win32PlatformLog(L"Sleeping for... %i\n", msToSleepI);
 #endif
 
-                Sleep(msToSleepI);
+            Sleep(msToSleepI);
 
 #endif // CAP_FPS
 
-            }else if((INT)frameProcessingDuration > (INT)win32FixedFrameRate.gameTargetMSPerFrame){
+        }else if((INT)frameProcessingDuration > (INT)win32FixedFrameRate.gameTargetMSPerFrame){
 
-                // @TODO(JM) Missed target framerate. Log.
+            // @TODO(JM) Missed target framerate. Log.
 #if _ASSERT_FPS
-                //memory.DEBUG_platformWriteEntireFile(&thread, )
+            if (frameIndex > 1){
                 assert(!"Framerate missed");
+            }
 #endif // _ASSERT_FPS
 
 #ifdef _DEBUG_FPS
-                win32PlatformLog(L"======================================MISSED================================ (%f > %f)\n",
-                                    frameProcessingDuration,
-                                    win32FixedFrameRate.gameTargetMSPerFrame);
+            win32PlatformLog(L"======================================MISSED================================ (%f > %f)\n",
+                                frameProcessingDuration,
+                                win32FixedFrameRate.gameTargetMSPerFrame);
 #endif
-            }
+        }
 
-            // Calculate the net frame time (E.g. 33.33ms or 16.66ms)
+        // Calculate the net frame time (E.g. 33.33ms or 16.66ms)
 #ifdef _DEBUG_FPS
-            win32PlatformLog(L"Net time for frame to complete: %f milliseconds\n\n",
-                                win32GetElapsedTimeMS(frameStartTimestamp,
-                                                        win32GetTime(),
-                                                        globalQPCFrequency));
+        win32PlatformLog(L"Net time for frame to complete: %f milliseconds\n\n",
+                            win32GetElapsedTimeMS(frameStartTimestamp,
+                                                    win32GetTime(),
+                                                    globalQPCFrequency));
 #endif
 
 #ifdef _DEBUG_CLOCKCYCLES
-            // Calculate how many processor clock cycles elapsed for this frame.
-            // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
-            uint64 processorClockCyclesAfterFrame = __rdtsc();
-            int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
-            float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
+        // Calculate how many processor clock cycles elapsed for this frame.
+        // @NOTE(JM) __rdtsc is only for dev and not for relying on for shipped code that will run on end user's machine.
+        uint64 processorClockCyclesAfterFrame = __rdtsc();
+        int64 processorClockCyclesElapsedForFrame = (processorClockCyclesAfterFrame - runningProcessorClockCyclesCounter);
+        float32 clockCycles_mega = ((float32)processorClockCyclesElapsedForFrame / 1000000.0f); // processorClockCyclesElapsedForFrame is in the millions, dividing by 1m to give us a "mega" (e.g. megahertz) value.
 
-            // Calculate the FPS given the speed of this current frame.
-            float32 fps = (1000.0f / (float32)frameProcessingDuration);
+        // Calculate the FPS given the speed of this current frame.
+        float32 fps = (1000.0f / (float32)frameProcessingDuration);
 
-            // Calculate the processor running speed in GHz
-            float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
+        // Calculate the processor running speed in GHz
+        float32 processorSpeed = ((uint64)(fps * clockCycles_mega) / 100.0f);
 
-            // Reset the running clock cycles.
-            runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
+        // Reset the running clock cycles.
+        runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
 
-            // Console log the speed:
-            win32PlatformLog(L"Cycles: %.1fm (%.2f GHz).\n", clockCycles_mega, processorSpeed);
+        // Console log the speed:
+        win32PlatformLog(L"Cycles: %.1fm (%.2f GHz).\n", clockCycles_mega, processorSpeed);
 #endif
 
-            // Output the audio buffer in Windows.
-            win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
+        // Output the audio buffer in Windows.
+        win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
 
-            // Display the frame buffer in Windows. AKA "flip the frame" or "page flip"...
+        // Display the frame buffer in Windows. AKA "flip the frame" or "page flip"...
 
-            // Get the window's height and width
-            win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
+        // Get the window's height and width
+        win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
 
-            // Display the buffer to the screen
-            win32DisplayFrameBuffer(deviceHandleForWindow,
-                                    win32FrameBuffer,
-                                    clientDimensions.width,
-                                    clientDimensions.height);
+        // Display the buffer to the screen
+        win32DisplayFrameBuffer(deviceHandleForWindow,
+                                win32FrameBuffer,
+                                clientDimensions.width,
+                                clientDimensions.height);
 
-            // Take a copy of this frame's controller inputs
-            gameInputOld->mouse = gameInput->mouse;
-            gameInputOld->controllers[0] = gameInput->controllers[0];
+        // Take a copy of this frame's controller inputs
+        gameInputOld->mouse = gameInput->mouse;
+        gameInputOld->controllers[0] = gameInput->controllers[0];
 
-            // Increment frame index
-            frameIndex++;
+        // Increment frame index
+        frameIndex++;
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
-            // Reload game code
-            win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
+        // Reload game code
+        win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 #endif
 
-        } // game loop
+    } // game loop
 
-        if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
-            timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
-        }
-
-    }else{
-        OutputDebugStringA("Error allocating game memory. Unable to run game\n");
+    if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
+        timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
     }
 
     // Close the application.
@@ -1540,8 +1546,19 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
 {
     // Calculate absolute path to the Game.dll
     wchar_t gameDLLFilePath[MAX_PATH] = { 0 };
-    wcscat_s(gameDLLFilePath, countArray(gameDLLFilePath), absPath);
-    wcscat_s(gameDLLFilePath, countArray(gameDLLFilePath), L"Game.dll");
+
+    // Concatenate the source string to the destination buffer
+    HRESULT hr;
+
+    hr = StringCchCatW(gameDLLFilePath, MAX_PATH, absPath);
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
+
+    hr = StringCchCatW(gameDLLFilePath, MAX_PATH, L"Game.dll");
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
 
 #if !defined(HANDMADE_LIVE_LOOP_EDITING)
     win32LoadGameDLLFunctionsFromFile(gameDLLFilePath, gameCode);
@@ -1562,8 +1579,17 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
 
     // Calculate absolute path to the Game_copy.dll
     wchar_t gameCopyDLLFilePath[MAX_PATH] = { 0 };
-    wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), absPath);
-    wcscat_s(gameCopyDLLFilePath, countArray(gameCopyDLLFilePath), L"Game_copy.dll");
+
+    // Concatenate the source string to the destination buffer
+    hr = StringCchCatW(gameCopyDLLFilePath, MAX_PATH, absPath);
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
+
+    hr = StringCchCatW(gameCopyDLLFilePath, MAX_PATH, L"Game_copy.dll");
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
 
     // Does the copy exist yet?
     DWORD dwAttrib = GetFileAttributes(gameCopyDLLFilePath);
@@ -1876,10 +1902,20 @@ DEBUG_PLATFORM_LOG(DEBUG_platformLog)
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
 {
     // Concatenate the exe abs path and the relative filename into fullFilename
-    wchar_t fullFilename[MAX_PATH] = {0};
+    wchar_t fullFilename[MAX_PATH] = { 0 };
 
-    if ( (wcscat_s(fullFilename, sizeof(fullFilename), exeAbsPath)) != 0 ||
-            (wcscat_s(fullFilename, sizeof(fullFilename), filename)) != 0 ){
+    // Concatenate the source string to the destination buffer
+    HRESULT hr;
+
+    hr = StringCchCatW(fullFilename, MAX_PATH, exeAbsPath);
+
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
+
+    hr = StringCchCatW(fullFilename, MAX_PATH, filename);
+
+    if(!SUCCEEDED(hr)){
         assert(!"Error concatenating file paths");
     }
 
@@ -1949,15 +1985,25 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
 DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
 {
     // Concatenate the exe abs path and the relative filename into fullFilename
-    char fullFilename[MAX_PATH] = { 0 };
+    wchar_t fullFilename[MAX_PATH] = { 0 };
 
-    if(strcat_s(fullFilename, sizeof(fullFilename), exeAbsPath) != 0 ||
-        strcat_s(fullFilename, sizeof(fullFilename), filename) != 0){
-        assert(!"Error concatenating file paths")
+    // Concatenate the source string to the destination buffer
+    HRESULT hr;
+
+    hr = StringCchCatW(fullFilename, MAX_PATH, exeAbsPath);
+
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
+
+    hr = StringCchCatW(fullFilename, MAX_PATH, filename);
+
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
     }
 
     // Open the file for writing.
-    HANDLE handle = CreateFileA(fullFilename,
+    HANDLE handle = CreateFile(fullFilename,
                                 GENERIC_WRITE, 0, NULL,
                                 CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 

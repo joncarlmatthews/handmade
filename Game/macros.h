@@ -44,11 +44,12 @@
 // Runtime debug settings.
 // -----------------------------------------------------------------------------
 
-#if HANDMADE_LOCAL_BUILD
-//#define HANDMADE_DEBUG_AUDIO
-//#define HANDMADE_LIVE_LOOP_EDITING
-//#define HANDMADE_DEBUG_TILE_POS
-//#define HANDMADE_WALK_THROUGH_WALLS
+#ifdef _DEBUG
+    #define HANDMADE_LOCAL_BUILD
+    //#define HANDMADE_DEBUG_AUDIO
+    //#define HANDMADE_LIVE_LOOP_EDITING
+    //#define HANDMADE_DEBUG_TILE_POS
+    //#define HANDMADE_WALK_THROUGH_WALLS
 #endif
 
 
@@ -59,7 +60,7 @@
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 // Assertion
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LOCAL_BUILD
     // NOLINTBEGIN
     #define assert(expression) \
         if (!(expression)) { \
@@ -113,9 +114,9 @@
 #define GAME_PI 3.14159265358979323846   // pi
 
 #if COMPILER_MSVC
-#define GAME_MAX_PATH 260
+    #define GAME_MAX_PATH 260
 #else
-assert(!"TODO: Define max path for non-Win32 platforms");
+    assert(!"TODO: Define max path for non-Win32 platforms");
 #endif
 
 // Scroll type. Defaults to smooth

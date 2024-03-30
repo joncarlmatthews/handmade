@@ -6,6 +6,7 @@
 //==============================================================================
 // Stuff related to working with the files and directories
 
+#include "macros.h"
 #include "types.h"
 
 #define BITMAP_FILE_ID 0x4D42
@@ -136,48 +137,51 @@ typedef struct BitmapFile
     void *memory;
 } BitmapFile;
 
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LOCAL_BUILD
 
-    typedef struct PlatformThreadContext PlatformThreadContext;
-    typedef struct GameMemory GameMemory;
+typedef struct PlatformThreadContext PlatformThreadContext;
+typedef struct GameMemory GameMemory;
 
-    typedef struct DEBUG_file
-    {
-        void *memory;
-        uint32 sizeinBytes;
+typedef struct DEBUG_file
+{
+    void *memory;
+    uint32 sizeinBytes;
 
-    } DEBUG_file;
+} DEBUG_file;
 
-    /*
-     * Read an entire file into memory
-     *
-     * @note call DEBUG_platformFreeFileMemory in a subsequent call.
-     */
-    #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, wchar_t *exeAbsPath, wchar_t *filename)
-    typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
+/*
+ * Read an entire file into memory
+ *
+ * @note call DEBUG_platformFreeFileMemory in a subsequent call.
+ */
+#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) DEBUG_file name(PlatformThreadContext *thread, \
+                                                                const wchar_t *exeAbsPath, \
+                                                                const wchar_t *filename)
+typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile);
 
-    /*
-     * Free file memory read from DEBUG_platformReadEntireFile
-     */
-    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(PlatformThreadContext *thread, DEBUG_file *file)
-    typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
+/*
+ * Free file memory read from DEBUG_platformReadEntireFile
+ */
+#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(PlatformThreadContext *thread, \
+                                                        DEBUG_file *file)
+typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory);
 
-    /*
-     * Write bytes into a new file
-     */
-    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(PlatformThreadContext *thread, \
-                                                                const char *exeAbsPath, \
-                                                                const char *filename, \
-                                                                void *memory, \
-                                                                uint32 memorySizeInBytes)
-    typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
+/*
+ * Write bytes into a new file
+ */
+#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(PlatformThreadContext *thread, \
+                                                            const wchar_t *exeAbsPath, \
+                                                            const wchar_t *filename, \
+                                                            void *memory, \
+                                                            uint32 memorySizeInBytes)
+typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile);
 
 
-    void DEBUGReadBMP(PlatformThreadContext *thread,
-                        DEBUGPlatformReadEntireFile *playformreadFile,
-                        const char *absPath,
-                        const char *filename,
-                        BitmapFile *bitmapFIle);
+void DEBUGReadBMP(PlatformThreadContext *thread,
+                    DEBUGPlatformReadEntireFile *platformReadFile,
+                    const wchar_t *absPath,
+                    const wchar_t *filename,
+                    BitmapFile *bitmapFIle);
 
 #endif
 

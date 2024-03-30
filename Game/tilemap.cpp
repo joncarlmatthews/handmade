@@ -174,7 +174,7 @@ void setTileValue(MemoryRegion memoryRegion,
     TileChunk *tileChunk = getTileChunkForAbsTile(absTileX, absTileY, absTileZ, tilemap);
 
     // Is this tile chunk out of the sparse storage memory bounds?
-#if HANDMADE_LOCAL_BUILD
+#ifdef HANDMADE_LOCAL_BUILD
     if ((uint8 *)tileChunk > gameState->tileChunksMemoryBlock.lastAddressReserved
         || (uint8 *)tileChunk < gameState->tileChunksMemoryBlock.startingAddress){
         assert(!"Cannot set tile value for an absolute tile that sits outside of the available tile chunks")

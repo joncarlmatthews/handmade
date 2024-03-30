@@ -11,7 +11,7 @@
 // -----------------------------------------------------------------------------
 #include <stddef.h> // size_t
 #include <stdbool.h> // true, false, bool
-#include <wchar.h> // wchar_t for wide character support (unicode)
+#include <wchar.h> // wchar_t, L for wide character support (unicode)
 
 
 // Custom typedefs that specify exact-width types for increased code portability.
@@ -50,6 +50,9 @@ typedef int8                bool8;
 typedef int16               bool16;
 typedef int32               bool32;
 typedef int64               bool64;
+
+
+typedef wchar_t             wchar;
 
 // TEMP:
 #include "game_types.h"

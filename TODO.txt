@@ -1,27 +1,29 @@
 Day 043
 =======
 -[x] Algebra
--[ ] Gustavo (game-physics-engine-programming)
+-[ ] Gustavo
+-[x] Refactor delta time as per SDL
+-[ ] Implement vector movement in conjuction with deltatime
 -[ ] Simplify Win32 message queue code as per SDL project
--[ ] Refactor delta time as per SDL.
--[ ] All movement values are "per second"
+-[ ] Note: all movement values are "per second"
 -[ ] Better full screen control
 -[ ] Better window scaling calculations
 -[ ] Complete day 43
 -[ ] Get rid of temp game_types.h
+-[ ] Runtime error with live loop editing enabled
 
 Ongoing:
 =======
- -[] Static library project for the few shared functions I have? (GCD and byte conversions) Or just include .cpp file? 
- -[] shift and mask to store chunk and tile in the same 32 bit integer?
- -[] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
- -[] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
- -[] Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
- -[] Support for drawing bitmap at different size to that of the original asset.
- -[] Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
- -[] Add linter as part of pre-commit hook. Something like Stylecop?
- -[] Revisit build.bat code analysis crap. Think I can rip all of this out as I only use built.bat as a convenient utility to enable hot-reloading in certain scenarios. Not for my main build pipeline (where i would want to catch those types of errors)
+ -[ ] Static library project for the few shared functions I have? (GCD and byte conversions) Or just include .cpp file? 
+ -[ ] shift and mask to store chunk and tile in the same 32 bit integer?
+ -[ ] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
+ -[ ] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
+ -[ ] Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
+ -[ ] Support for drawing bitmap at different size to that of the original asset.
+ -[ ] Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
+ -[ ] Add linter as part of pre-commit hook. Something like Stylecop?
+ -[ ] Revisit build.bat code analysis crap. Think I can rip all of this out as I only use built.bat as a convenient utility to enable hot-reloading in certain scenarios. Not for my main build pipeline (where i would want to catch those types of errors)
 
 Random Thoughts:
 ================
-- [] As per common wisdom, I blit to screen after calculating frame time. Is this blit causing the frame rate jerkiness? Won't refactor as waitng for writing as renderer.
+- [ ] As per common wisdom, I blit to screen after calculating frame time. Is this blit causing the jerkiness? Won't refactor as waitng for writing as renderer.
