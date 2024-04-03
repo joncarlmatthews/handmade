@@ -33,7 +33,7 @@ pixelsPerFrame);
     }
 #endif
 
-    struct Vec2 playerNewPosTmp = {0, 0};
+    static Vec2 playerNewPosTmp = {0, 0};
     playerNewPosTmp.x = gameState->player1.absolutePosition.x;
     playerNewPosTmp.y = gameState->player1.absolutePosition.y;
 
@@ -90,31 +90,9 @@ pixelsPerFrame);
     if (playerAttemptingMove) {
 
         // Wrap the player movement for toroidal world
-        struct Vec2 playerNewPos = { 0, 0 };
+        Vec2 playerNewPos = { 0, 0 };
         playerNewPos.x = fmodf(playerNewPosTmp.x, (float32)gameState->world.worldWidthPx);
         playerNewPos.y = fmodf(playerNewPosTmp.y, (float32)gameState->world.worldHeightPx);
-
-        // Player movement direction
-        uint32 movedUp = 0;
-        uint32 movedDown = 0;
-        uint32 movedLeft = 0;
-        uint32 movedRight = 0;
-        uint32 lastMoveDirections = 0;
-
-        if (playerNewPos.y > gameState->player1.absolutePosition.y) {
-            movedUp += (1 << 0); // UP
-        }
-        if (playerNewPos.y < gameState->player1.absolutePosition.y) {
-            movedDown += (1 << 1); // DOWN
-        }
-        if (playerNewPos.x < gameState->player1.absolutePosition.x) {
-            movedLeft += (1 << 2); // LEFT
-        }
-        if (playerNewPos.x > gameState->player1.absolutePosition.x) {
-            movedRight += (1 << 3); // RIGHT
-        }
-
-        lastMoveDirections = (movedUp | movedDown | movedLeft | movedRight);
 
         // Tilemap collision detection
         PlayerPositionData middle;
@@ -178,8 +156,6 @@ gameState->player1.gamePosition.y);
             // Sense check that the player actually moved
             if ( (gameState->player1.absolutePosition.x != playerNewPos.x)
                 || (gameState->player1.absolutePosition.y != playerNewPos.y) ){
-
-                gameState->player1.lastMoveDirections = lastMoveDirections;
 
                 setPlayerPosition(playerNewPos.x,
                                     playerNewPos.y,

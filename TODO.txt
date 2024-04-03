@@ -11,6 +11,7 @@ Day 043
 -[ ] Complete day 43
 -[ ] Get rid of temp game_types.h
 -[ ] Runtime error with live loop editing enabled
+-[ ] Draw from player middle rather than bottom left
 
 Ongoing:
 =======

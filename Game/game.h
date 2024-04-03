@@ -30,17 +30,16 @@
 //==============================================================================
 
 
-
 /*
  * Useage:
  * char buff[50] = {0};
  * memory->DEBUG_platformLog(buff, sizeof(buff), "Hello world\n");
  */
 #ifdef HANDMADE_LOCAL_BUILD
-    #define DEBUG_PLATFORM_LOG(name) int name(char* const buffer, \
-                                                sizet const sizeOfBuffer, \
-                                                char const* const format, ...)
-    typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
+#define DEBUG_PLATFORM_LOG(name) int name(char* const buffer, \
+                                            sizet const sizeOfBuffer, \
+                                            char const* const format, ...)
+typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
 #endif
 
 

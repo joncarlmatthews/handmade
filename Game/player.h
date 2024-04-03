@@ -45,9 +45,6 @@ typedef struct Player {
     // is set to screen scrolling
     struct Vec2 fixedPosition;
 
-    // Last direction the player moved in (up, down, left, right)
-    uint32 lastMoveDirections;
-
     // Player bitmaps
     PlayerBitmap bitmaps[4];
     uint32 currentBitmapIndex;

@@ -207,28 +207,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     win32State.gameMemoryRecordedInput = memory.recordingStorageInput;
 #endif
 
-    /*
-        * Framerate fixing.
-        */
-    Win32FixedFrameRate win32FixedFrameRate = {0};
-    win32FixedFrameRate.monitorRefreshRate = 60;
-    win32FixedFrameRate.gameTargetFPS = TARGET_FPS;
-    win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
-
-    // Get the refresh rate of the monitor from the Windows API.
-    int32 gdcRes = GetDeviceCaps(deviceHandleForWindow, VREFRESH);
-
-    if (gdcRes > 1) {
-        win32FixedFrameRate.monitorRefreshRate = (uint8)gdcRes;
-    }
-
-    // Set the system's minimum timer resolution to 1 millisecond
-    // so that calls to the Windows Sleep() function are more
-    // granular. E.g. the wake from the Sleep() will be checked
-    // every 1ms, rather than the system default.
-    win32FixedFrameRate.timeOutIntervalMS = 1;
-    win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
-
     // Get the handle to the monitor containing the window
     HMONITOR hMonitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
 
@@ -253,8 +231,39 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     win32State.monitorAspectRatio.y = ratioY;
 
     /*
-        * Audio
-        */
+     * Framerate fixing.
+     */
+    Win32FixedFrameRate win32FixedFrameRate = { 0 };
+    win32FixedFrameRate.gameTargetFPS = TARGET_FPS;
+
+    // Get the refresh rate of the monitor from the Windows API.
+    DEVMODE dm;
+    dm.dmSize = sizeof(dm);
+    if(EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm) != 0){
+
+        win32FixedFrameRate.monitorRefreshRate = dm.dmDisplayFrequency;
+
+        // Match the target FPS with the monitor's refresh rate if our target
+        // is higher than what the monitor can support (to avoid wasting resources)
+        if (dm.dmDisplayFrequency >= 30 && dm.dmDisplayFrequency < TARGET_FPS){
+            win32FixedFrameRate.gameTargetFPS = dm.dmDisplayFrequency;
+        }
+        
+    }
+
+    win32FixedFrameRate.gameTargetMSPerFrame = (1000.0f / (float32)win32FixedFrameRate.gameTargetFPS);
+
+    // Set the system's minimum timer resolution to 1 millisecond
+    // so that calls to the Windows Sleep() function are more
+    // granular. E.g. the wake from the Sleep() will be checked
+    // every 1ms, rather than the system default.
+    win32FixedFrameRate.timeOutIntervalMS = 1;
+    win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
+
+
+    /*
+     * Audio
+     */
 
     // Create the Windows audio buffer
     Win32AudioBuffer win32AudioBuffer = {0};
@@ -269,8 +278,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     gameAudioBuffer.minFramesWorthOfAudio = 4;
 
     /*
-        * Graphics
-        */
+     * Graphics
+     */
 
     // Create the Windows frame buffer
     win32InitFrameBuffer(&thread,
@@ -279,8 +288,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                             FRAME_BUFFER_PIXEL_HEIGHT);
 
     /*
-        * Controllers
-        */
+     * Controllers
+     */
 
     // How many controllers does the platform layer support?
     ControllerCounts controllerCounts = {0};
@@ -330,7 +339,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         LARGE_INTEGER frameStartTimestamp = win32GetTime();
 
-        // Delta time (in seconds)
+        // Delta time (expressed in seconds)
         // The time taken between this frame starting and the program
         // execution to make it all the way back around to here again.
         gameInput->deltaTime = win32GetElapsedTimeS(prevFrameTimestamp,
@@ -654,7 +663,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // and audio intentionally.
         if (frameProcessingDuration < win32FixedFrameRate.gameTargetMSPerFrame){
 
-#if CAP_FPS
 
             float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - frameProcessingDuration);
 
@@ -665,14 +673,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
             INT msToSleepI = (INT)needToSleepForMS;
 
-
 #ifdef _DEBUG_FPS
             win32PlatformLog(L"Sleeping for... %i\n", msToSleepI);
 #endif
 
             Sleep(msToSleepI);
-
-#endif // CAP_FPS
 
         }else if((INT)frameProcessingDuration > (INT)win32FixedFrameRate.gameTargetMSPerFrame){
 

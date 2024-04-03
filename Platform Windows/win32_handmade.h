@@ -2,15 +2,14 @@
 #define HEADER_WIN32
 
 #ifdef _DEBUG
-#define _DEBUG_FPS
+//#define _DEBUG_FPS
 //#define _DEBUG_CLOCKCYCLES
 //#define _DEBUG_LIVE_LOOP_EDITING
 #endif
 
 
-#define TARGET_FPS 60
-#define CAP_FPS true
-#define _ASSERT_FPS false
+#define TARGET_FPS 120
+#define _ASSERT_FPS FALSE
 
 // Custom message ID for sending to the window when we consider
 // the app ready.
@@ -125,10 +124,10 @@ typedef struct Win32AudioBuffer
 typedef struct Win32FixedFrameRate {
 
     // Monitor refresh rate in Hertz.
-    uint8 monitorRefreshRate;
+    uint32 monitorRefreshRate;
 
     // Target FPS.
-    uint8 gameTargetFPS;
+    uint32 gameTargetFPS;
 
     // Target FPS in milliseconds.
     float32 gameTargetMSPerFrame;
