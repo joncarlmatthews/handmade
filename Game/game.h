@@ -31,9 +31,9 @@
 
 
 /*
- * Useage:
- * char buff[50] = {0};
- * memory->DEBUG_platformLog(buff, sizeof(buff), "Hello world\n");
+  Useage:
+  char buff[50] = {0};
+  memory->DEBUG_platformLog(buff, sizeof(buff), "Hello world\n");
  */
 #ifdef HANDMADE_LOCAL_BUILD
 #define DEBUG_PLATFORM_LOG(name) int name(char* const buffer, \
@@ -80,16 +80,6 @@ typedef PLATFORM_FREE_MEMORY(PlatformFreeMemory);
 */
 #define PLATFORM_CONTROLLER_VIBRATE(name) void name(PlatformThreadContext *thread, uint8 controllerIndex, uint16 motor1Speed, uint16 motor2Speed)
 typedef PLATFORM_CONTROLLER_VIBRATE(PlarformControllerVibrate);
-
-/**
- * Toggle the fullscreen mode each time function is called.
- *
- * @param address Pointer to the memory block
- *
- * @return void
-*/
-#define PLATFORM_TOGGLE_FULLSCREEN(name) void name(void *platformStateWindows, void *platformStateMacOS, void *platformStateLinux)
-typedef PLATFORM_TOGGLE_FULLSCREEN(PlatformToggleFullscreen);
 
 //==============================================================================
 //==============================================================================
@@ -184,13 +174,6 @@ typedef struct GameAudioBuffer
 // Controller/input
 //==============================================================================
 
-typedef struct ControllerCounts
-{
-    uint8 gameMaxControllers;
-    uint8 platformMaxControllers;
-    uint8 connectedControllers;
-} ControllerCounts;
-
 typedef struct GameControllerBtnState
 {
     bool endedDown;
@@ -245,19 +228,23 @@ typedef struct GameControllerInput
 
 typedef struct GameMouseInput {
     bool isConnected;
-    GameControllerBtnState leftClick;
-    GameControllerBtnState rightClick;
+    GameControllerBtnState leftButton;
+    GameControllerBtnState rightButton;
     struct position {
         int32 x;
         int32 y;
     } position;
 } GameMouseInput;
 
+// A single game input struct contains all state information for all of the
+// connected devices. E.g. 1 mouse, 1 keyboard and (up to) 4 gamepads.
 typedef struct GameInput
 {
     GameMouseInput mouse;
-    GameControllerInput controllers[MAX_CONTROLLERS];
-    float32 deltaTime; // The time elapsed between the last frame and the one preceding it express in seconds
+    GameControllerInput keyboard;
+    GameControllerInput gamepads[GAME_MAX_GAMEPADS];
+    uint32 maxGamepads;
+    float32 deltaTime;
 } GameInput;
 
 //
@@ -286,8 +273,6 @@ typedef struct GameMemory
     // Pointers to memory allocation deallocation functions with the platform layer
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
-
-    PlatformToggleFullscreen *platformToggleFullscreen;
 
     // @NOTE(JM) Move this??
     PlarformControllerVibrate *platformControllerVibrate;
@@ -327,8 +312,7 @@ typedef struct GameMemory
                                 GameMemory *memory, \
                                 GameFrameBuffer *frameBuffer, \
                                 GameAudioBuffer *audioBuffer, \
-                                GameInput inputInstances[], \
-                                ControllerCounts *controllerCounts)
+                                GameInput inputInstances[])
 typedef GAME_UPDATE(GameUpdate);
 
 /**

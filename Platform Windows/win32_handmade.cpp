@@ -39,6 +39,17 @@ global_var int64 globalQPCFrequency;
 // For full screen toggle functionality
 global_var WINDOWPLACEMENT globalWindowPosition = { sizeof(globalWindowPosition) };
 
+global_var uint32 supportedWidths[MAX_FRAME_BUFFER_WIDTH] = { 0 };
+global_var uint32 supportedHeights[MAX_FRAME_BUFFER_WIDTH] = { 0 };
+
+// Win32 state object to hold persistent data for the platform layer.
+global_var Win32State win32State = { 0 };
+
+// We save a copy of what we've written to the inputs (in the old instance variable)
+// so we can compare last frame's values to this frame's values.
+global_var GameInput gameInput = { 0 };
+global_var GameInput gameInputPrevState = { 0 };
+
 /*
  * The entry point for this graphical Windows-based application.
  * 
@@ -59,6 +70,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     QueryPerformanceFrequency(&perfFrequencyCounterRes);
     globalQPCFrequency = perfFrequencyCounterRes.QuadPart;
 
+    // Check aspect ratio
+    {
+        float height = (((float32)MAX_FRAME_BUFFER_WIDTH * FRAME_BUFFER_RATIO_Y) / FRAME_BUFFER_RATIO_X);
+        int intPart = (int)height;
+        if(height != intPart){
+            assert(!"Max frame buffer width must be a valid aspect ratio");
+        }
+    }
+
+    {
+        float height = (((float32)MIN_FRAME_BUFFER_WIDTH * FRAME_BUFFER_RATIO_Y) / FRAME_BUFFER_RATIO_X);
+        int intPart = (int)height;
+        if(height != intPart){
+            assert(!"Min frame buffer width must be a valid aspect ratio");
+        }
+    }
+
     // Load XInput DLL functions.
     win32LoadXInputDLLFunctions();
 
@@ -75,6 +103,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     windowClass.hInstance = instance;
     windowClass.lpszClassName = TEXT("handmadeHeroWindowClass");
     windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+
 #ifdef _DEBUG
     ShowCursor(TRUE);
 #else
@@ -121,9 +150,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     // Get the thread's content (@TODO JM)
     PlatformThreadContext thread = { 0 };
-
-    // Create a Win32 state object to hold persistent data for the platform layer.
-    Win32State win32State = { 0 };
 
     win32State.window = &window;
 
@@ -180,7 +206,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformAllocateMemory = &platformAllocateMemory;
     memory.platformFreeMemory = &platformFreeMemory;
     memory.platformControllerVibrate = &platformControllerVibrate;
-    memory.platformToggleFullscreen = &platformToggleFullscreen;
 
     // Concatenate the source string to the destination buffer
     HRESULT hr;
@@ -281,49 +306,46 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
      * Graphics
      */
 
+    // What size should the frame buffer be..?
+
+    // Calculate all possible supported screen widths 
+    setSupportedClientWidths(countArray(supportedWidths));
+
     // Create the Windows frame buffer
-    win32InitFrameBuffer(&thread,
-                            &win32FrameBuffer,
-                            FRAME_BUFFER_PIXEL_WIDTH,
-                            FRAME_BUFFER_PIXEL_HEIGHT);
+    win32InitFrameBuffer(&thread, &win32FrameBuffer, monitorWidth);
 
     /*
      * Controllers
      */
 
-    // How many controllers does the platform layer support?
-    ControllerCounts controllerCounts = {0};
-    controllerCounts.gameMaxControllers = MAX_CONTROLLERS;
-    controllerCounts.platformMaxControllers = XUSER_MAX_COUNT;
-
-    // An array to hold pointers to the old and new instances of the inputs.
-    GameInput GameInputInstances[2] = {0};
-
-    // We save a copy of what we've written to the inputs (in the old instance variable)
-    // so we can compare last frame's values to this frame's values.
-    GameInput *gameInput        = &GameInputInstances[0];
-    GameInput *gameInputOld     = &GameInputInstances[1];
-
-    // Mouse support
-    GameMouseInput mouse = { 0 };
-
-    // Assign the mouse object to the game input
-    gameInput->mouse = mouse;
-
-    // Keyboard support
-    GameControllerInput keyboard = { 0 };
-    keyboard.isConnected = 1; // @TODO(JM) check that it's actually is connected.
-
-    // Assign the keyboard object to the game input
-    gameInput->controllers[0] = keyboard; // Assign the first game input controller as the keyboard
-    controllerCounts.connectedControllers = 1; // @TODO(JM) Support for multiple controllers
+    // How many gamepads does the platform layer support?
+    if(XUSER_MAX_COUNT < GAME_MAX_GAMEPADS){
+        gameInput.maxGamepads = XUSER_MAX_COUNT;
+    }else{
+        gameInput.maxGamepads = GAME_MAX_GAMEPADS;
+    }
+    
+    gameInput.keyboard.isConnected = true; // @TODO(JM) check connected.
+    
+    GameInput *gameInputStates[2] = { &gameInput, &gameInputPrevState };
 
 #ifdef _DEBUG_CLOCKCYCLES
     // Get the number of processor clock cycles
     uint64 runningProcessorClockCyclesCounter = __rdtsc();
 #endif
 
+    // Window ready
     PostMessage(window, WM_HANDMADE_HERO_READY, 0, 0);
+
+#ifdef _DEBUG
+#if OPEN_FULLSCREEN
+    toggleFullscreen(window);
+#endif
+#else
+    toggleFullscreen(window);// Always open fullscreen in release mode
+#endif
+
+    MSG msg = { 0 };
 
     // Current frame index
     sizet frameIndex = 0;
@@ -331,10 +353,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     LARGE_INTEGER prevFrameTimestamp = win32GetTime();
 
     /**
-        * ============== 
-        * MAIN GAME LOOP
-        * ==============
-        */
+     * ============== 
+     * MAIN GAME LOOP
+     * ==============
+     */
     while (running) {
 
         LARGE_INTEGER frameStartTimestamp = win32GetTime();
@@ -342,7 +364,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Delta time (expressed in seconds)
         // The time taken between this frame starting and the program
         // execution to make it all the way back around to here again.
-        gameInput->deltaTime = win32GetElapsedTimeS(prevFrameTimestamp,
+        gameInput.deltaTime = win32GetElapsedTimeS(prevFrameTimestamp,
                                                     frameStartTimestamp,
                                                     globalQPCFrequency);
 
@@ -351,15 +373,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #ifdef _DEBUG_FPS
         win32PlatformLog(L"Delta time frame %zu: %f seconds\n",
                             frameIndex,
-                            gameInput->deltaTime);
+                            gameInput.deltaTime);
 #endif
-            
+
+        // Process Win32 message loop. Callbacks are made to win32MainWindowCallback.
+        // win32MainWindowCallback sets the gameInput.keyboard state.
+        while(PeekMessage(&msg, window, 0, 0, PM_REMOVE)){
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+
+        // After processing the Win32 messages, we can now do what we like...
 
         // Get the position of the mouse
-        win32GetMousePosition(window, &gameInput->mouse);
-
-        // Handle the Win32 message loop and handle mouse and keyboard input
-        win32ProcessMessages(window, gameInput, *gameInputOld, &win32State);
+        //win32GetMousePosition(window, &gameInput.mouse);
 
         if (paused) {
             win32AudioBufferToggleStop(&win32AudioBuffer);
@@ -367,48 +394,32 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         } else {
             win32AudioBufferTogglePlay(&win32AudioBuffer);
         }
-
-        // After processing our messages, we can now (in our "while running = true"
-        // loop) do what we like..!
-
+        
         /*
-            * Controller input stuff
-            */
+         * Controller input. Sets each of the gameInput.gamepads states.
+         */
 
-        // Iterate over each controller and get its state.
-        DWORD dwResult;
+        // gameInput controller index
+        uint32 giControllerIndex = 0;
 
-        uint8 gamePadsAdded = 0;
-
-        for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
+        // Iterate over each xinput controller and get its state.
+        for (DWORD xiControllerIndex = 0; xiControllerIndex < gameInput.maxGamepads; xiControllerIndex++) {
 
             XINPUT_STATE xinputControllerInstance = { 0 };
             SecureZeroMemory(&xinputControllerInstance, sizeof(XINPUT_STATE));
 
             // Simply get the state of the controller from XInput.
-            dwResult = XInputGetState(controllerIndex, &xinputControllerInstance);
+            DWORD dwResult = XInputGetState(xiControllerIndex, &xinputControllerInstance);
 
             if (dwResult != ERROR_SUCCESS) {
                 // Controller is not connected/available.
                 continue;
             }
 
-            // ...controller connected/available
-            gamePadsAdded++;
-
-            // Make sure we dont add more than our supported controller count.
-            if (gamePadsAdded >= (controllerCounts.gameMaxControllers - 1)) {
-                continue;
-            }
-
-            controllerCounts.connectedControllers = (controllerCounts.connectedControllers + 1);
-
             // Fetch the gamepad
             XINPUT_GAMEPAD *gamepad = &xinputControllerInstance.Gamepad;
 
-            uint8 ourControllerIndex = ((uint8)controllerIndex + 1);
-
-            GameControllerInput *gameController = &gameInput->controllers[ourControllerIndex];
+            GameControllerInput *gameController = &gameInput.gamepads[giControllerIndex];
 
             gameController->isConnected = true;
 
@@ -484,7 +495,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                 }
             }
 
+            giControllerIndex++;
+
         } // controller loop
+
+        /*
+         * Audio
+         */
 
         // Size, in bytes, of the portion of the buffer to write.
         DWORD lockSizeInBytes = 0;
@@ -598,11 +615,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Recording/playback
         if (win32State.inputRecording) {
-            win32RecordInput(&win32State, gameInput);
+            win32RecordInput(&win32State);
         }
 
         if (win32State.inputPlayback) {
-            win32PlaybackInput(&win32State, gameInput);
+            win32PlaybackInput(&win32State);
         }
 #endif
 
@@ -639,8 +656,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 &memory,
                                 &gameFrameBuffer,
                                 &gameAudioBuffer,
-                                GameInputInstances,
-                                &controllerCounts);
+                                *gameInputStates);
         }
 
         // Save how long this frame look to compute (excluding rendering and auido
@@ -737,10 +753,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 clientDimensions.width,
                                 clientDimensions.height);
 
-        // Take a copy of this frame's controller inputs
-        gameInputOld->mouse = gameInput->mouse;
-        gameInputOld->controllers[0] = gameInput->controllers[0];
-
         // Increment frame index
         frameIndex++;
 
@@ -749,7 +761,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         win32LoadGameDLLFunctions(win32State.absPath, &gameCode);
 #endif
 
-    } // game loop
+    } // end game loop
 
     if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
         timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
@@ -847,18 +859,98 @@ internal LRESULT CALLBACK win32MainWindowCallback(HWND window,
             EndPaint(window, &paint);
         } break;
 
-        // Keyboard messages. Now handled within our Win32 game loop.
-        case WM_KEYDOWN:
         case WM_KEYUP:
+        case WM_KEYDOWN: {
+
+            GameControllerBtnState state = { 0 };
+
+            if(message == WM_KEYDOWN){
+                state.endedDown = true;
+            }else{
+                state.endedDown = false;
+            }
+
+            // Which key was pressed?
+            switch(wParam){
+                case VK_ESCAPE: {
+                    if(message == WM_KEYUP){
+                        DWORD dwStyle = GetWindowLong(window, GWL_STYLE);
+                        if(!(dwStyle & WS_OVERLAPPEDWINDOW)){
+                            toggleFullscreen(window);
+                        }else{
+                            running = false;
+                        }
+                    }
+                } break;
+                case 'F': {
+                    if (message == WM_KEYUP){
+                        toggleFullscreen(window);
+                    }
+                } break;
+                case 'Q': {
+                    if(message == WM_KEYUP){
+                        running = false;
+                    }
+                } break;
+                case 'W':  {
+                    state.wasDown = gameInputPrevState.keyboard.dPadUp.endedDown;
+                    gameInput.keyboard.dPadUp = state;
+                } break;
+                case 'A': {
+                    state.wasDown = gameInputPrevState.keyboard.dPadLeft.endedDown;
+                    gameInput.keyboard.dPadLeft = state;
+                } break;
+                case 'S': {
+                    state.wasDown = gameInputPrevState.keyboard.dPadDown.endedDown;
+                    gameInput.keyboard.dPadDown = state;
+                } break;
+                case 'D': {
+                    state.wasDown = gameInputPrevState.keyboard.dPadRight.endedDown;
+                    gameInput.keyboard.dPadRight = state;
+                } break;
+                case 'E': {
+                    state.wasDown = gameInputPrevState.keyboard.shoulderR1.endedDown;
+                    gameInput.keyboard.shoulderR1 = state;
+                } break;
+                case 'P':{
+                    if(message == WM_KEYDOWN){
+                        if(paused){
+                            paused = false;
+                        } else{
+                            paused = true;
+                        }
+                    }
+                } break;
+
+#ifdef HANDMADE_LIVE_LOOP_EDITING
+                // Playback recording/looping
+                case 'L': {
+                    if(message == WM_KEYDOWN){
+                        if(0 == win32State.inputPlayback){ // Lock the developer into the loop. Have to rebuild to exit.
+                            if(!win32State.inputRecording){
+                                win32BeginInputRecording(&win32State);
+                            } else{
+                                win32EndInputRecording(&win32State);
+                                win32BeginRecordingPlayback(&win32State);
+                            }
+                        }
+                    }
+                } break;
+#endif
+
+            }
+
+            // Take a copy of the current game input state
+            gameInputPrevState = gameInput;
+
+        } break; // WM_KEYUP/WM_KEYDOWN
+
         case WM_SYSKEYDOWN: 
         case WM_SYSKEYUP: {
         } break;
 
         // The standard request from GetMessage().
         default: {
-
-            //OutputDebugStringA("default\n");
-
             // The default window procedure to provide default processing for 
             // any window messages not explicitly handled. It's required by the
             // Win32 API that every message is handled. And the docs specify
@@ -887,28 +979,24 @@ internal LRESULT CALLBACK win32MainWindowCallback(HWND window,
  */
 internal void win32InitFrameBuffer(PlatformThreadContext *thread,
                                         Win32FrameBuffer *buffer,
-                                        uint32 width,
-                                        int32 height)
+                                        uint32 monitorWidth)
 {
-
-    // buffer->foo is a dereferencing shorthand for (*buffer).foo
-
-    // Does the bitmapMemory already exist from a previous WM_SIZE call?
+    // Already initialised?
     if (buffer->memory != NULL) {
-
-        // Yes, then free the memorty allocated.
-        // We do this because we have to redraw it as this method
-        // (win32InitFrameBuffer) is called on a window resize.
-        VirtualFree(buffer->memory, NULL, MEM_RELEASE);
+        return;
     }
 
+    uint32 widthPx = getClosestSupportedWidth(countArray(supportedWidths),
+                                                monitorWidth);
+    uint32 heightPx = aspectRatioHeightFromWidth(widthPx);
+
     buffer->bytesPerPixel   = 4;
-    buffer->width           = width;
-    buffer->height          = height;
+    buffer->width           = widthPx;
+    buffer->height          = heightPx;
 
     buffer->info.bmiHeader.biSize           = sizeof(buffer->info.bmiHeader);
-    buffer->info.bmiHeader.biWidth          = width;
-    buffer->info.bmiHeader.biHeight         = -height; // If negative, it's drawn top down. If positive, it's drawn bottom up.
+    buffer->info.bmiHeader.biWidth          = widthPx;
+    buffer->info.bmiHeader.biHeight         = ((int32)heightPx*-1); // If negative, it's drawn top down. If positive, it's drawn bottom up.
     buffer->info.bmiHeader.biPlanes         = 1;
     buffer->info.bmiHeader.biBitCount       = (buffer->bytesPerPixel * 8); // 32-bits per pixel
     buffer->info.bmiHeader.biCompression    = BI_RGB;
@@ -924,6 +1012,14 @@ internal void win32InitFrameBuffer(PlatformThreadContext *thread,
 
     // Calculate the width in bytes per row.
     buffer->byteWidthPerRow = (buffer->width * buffer->bytesPerPixel);
+
+#ifdef _DEBUG
+    char output[100] = { 0 };
+    sprintf_s(output, sizeof(output),
+                "Win32: Frame buffer size: %.1fmb. W: %i H: %i\n",
+                ((float32)bitmapMemorySizeInBytes / (1024.0f * 1024.0f)), widthPx, heightPx);
+    OutputDebugStringA(output);
+#endif
 }
 
 /*
@@ -953,57 +1049,27 @@ internal void win32DisplayFrameBuffer(HDC deviceHandleForWindow,
     // source width and height are). This will help us when it comes to learning how
     // to write our renderer.
 
-    // As a minimum force the destination to be at least the size of the buffer.
-    // If the window is physically smaller that the desination width/height then
-    // the game rendering will be clipped. To have the game render at the exact
-    // size of the window, set the destination width/height to clientWindowWidth
-    // and clientWindowHeight. This will make the game rendering stretch.
-    uint32 destinationWidth = buffer.width;
-    uint32 destinationHeight = buffer.height;
+    // Calculate what the blits drawing size should be within the window
+    uint32 destinationWidth = getClosestSupportedWidth(countArray(supportedWidths), clientWindowWidth);
+    uint32 destinationHeight = aspectRatioHeightFromWidth(destinationWidth);
 
-    uint32 destinationMinWidth = (buffer.width / 2);
-    uint32 destinationMinHeight = (buffer.height / 2);
-
-    // Draw the frame with margin?
-    int32 offsetX = 0;
-    int32 offsetY = 0;
-
-    // @TODO(JM) Attempting to better support various window sizes for a best fit.
-    // This needs lots more ifs/elses for maximum support.
-    if ((buffer.width > clientWindowWidth)
-            || (buffer.height > clientWindowHeight)) {
-
-        if (clientWindowHeight < buffer.height){
-
-            float32 co = ((float32)clientWindowHeight / (float32)buffer.height);
-
-            destinationHeight = (uint32)((float32)buffer.height * co);
-            destinationWidth = (uint32)((float32)buffer.width * co);
-            
-        }else if (clientWindowWidth < buffer.width){
-
-            float32 co = ((float32)clientWindowWidth / (float32)buffer.width);
-
-            destinationHeight = (uint32)((float32)buffer.height * co);
-            destinationWidth = (uint32)((float32)buffer.width * co);
-
-        }
+    if(destinationHeight > clientWindowHeight){
+        uint32 desinationMaxHeight = getClosestSupportedHeight(countArray(supportedHeights), clientWindowHeight);
+        destinationWidth = aspectRatioWidthFromHeight(desinationMaxHeight);
+        destinationHeight = aspectRatioHeightFromWidth(destinationWidth);
     }
 
-    // Force a min width/height for the game
-    if ((destinationWidth < destinationMinWidth)
-            || (destinationHeight < destinationMinHeight)) {
-        destinationWidth = destinationMinWidth;
-        destinationHeight = destinationMinHeight;
+    // Center the buffer for when the aspect ratio isnt an exact fit
+    uint32 offsetX = 0;
+    float32 diffX = ((float32)clientWindowWidth - (float32)destinationWidth);
+    if(diffX > 0.0f){
+        offsetX = (uint32)(diffX / 2);
     }
-    
-    // If the height and width of the window are at least twice as large as the
-    // height and width of our buffer, then upscale our desination width/height
-    // graphics by 2x.
-    if ( (clientWindowWidth >= (buffer.width * 2))
-            || (clientWindowHeight >= (buffer.height * 2)) ){
-        destinationWidth = buffer.width * 2;
-        destinationHeight = buffer.height * 2;
+
+    uint32 offsetY = 0;
+    float32 diffY = ((float32)clientWindowHeight - (float32)destinationHeight);
+    if(diffY > 0.0f){
+        offsetY = (uint32)(diffY / 2);
     }
 
     // If the physical window is larger than our destination width/height, then
@@ -1266,160 +1332,6 @@ internal win32ClientDimensions win32GetClientDimensions(HWND window)
     return dim;
 }
 
-internal void win32ProcessMessages(HWND window,
-                                        GameInput *gameInput,
-                                        GameInput oldGameInput,
-                                        Win32State *win32State)
-{
-    MSG message = {0};
-
-    // Win32 Message loop. Retrieves all messages (from the calling thread's message queue)
-    // that are sent to the window. E.g. clicks and key inputs.
-    while (PeekMessage(&message, window, 0, 0, PM_REMOVE)) {
-
-        switch (message.message) {
-
-            // If the message received was a quit message, then toggle our
-            // running flag to false to break out of this loop on the next
-            // iteration.
-            case WM_QUIT: {
-                running = false;
-            } break;
-
-            // Mouse left click
-            case WM_LBUTTONDOWN:
-            {
-                GameControllerBtnState state = {0};
-                state.endedDown = TRUE;
-                gameInput->mouse.leftClick = state;
-            } break;
-
-            case WM_LBUTTONUP:
-            {
-                GameControllerBtnState state = {0};
-                state.endedDown = FALSE;
-                gameInput->mouse.leftClick = state;
-            } break;
-
-            case WM_RBUTTONDOWN:
-            case WM_RBUTTONUP: {
-            } break;
-
-            case WM_KEYDOWN:
-            case WM_SYSKEYDOWN:
-            case WM_KEYUP:
-            case WM_SYSKEYUP:{
-
-                /*
-                 * lParam bitmask. Written from right to left
-                 *
-                 * @see https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
-                 *
-                 *  First two bytes              Second two bytes
-                 * |-------------------------|  |----------------|
-                 * 31 30 29 28-25 24 23-16      15-0
-                 * 0  0  0  0000  1  01001011   00000000 00000001
-                */
-
-                // Which key was pressed?
-                WPARAM vkCode = message.wParam;
-
-                // Was the button down or up?
-                BOOL keyDown = FALSE;
-
-                if (0 == (message.lParam & ((uint64)1 << 31))){
-                    keyDown = TRUE;
-                }
-
-                GameControllerBtnState state = { 0 };
-
-                if (keyDown) {
-                    state.endedDown = TRUE;
-                } else {
-                    state.endedDown = FALSE;
-                }
-
-                switch (vkCode) {
-                    case 'W': {
-                        state.wasDown = oldGameInput.controllers[0].dPadUp.endedDown;
-                        gameInput->controllers[0].dPadUp = state;
-                    } break;
-                    case 'A': {
-                        state.wasDown = oldGameInput.controllers[0].dPadLeft.endedDown;
-                        gameInput->controllers[0].dPadLeft = state;
-                    } break;
-                    case 'S': {
-                        state.wasDown = oldGameInput.controllers[0].dPadDown.endedDown;
-                        gameInput->controllers[0].dPadDown = state;
-                    } break;
-                    case 'D': {
-                        state.wasDown = oldGameInput.controllers[0].dPadRight.endedDown;
-                        gameInput->controllers[0].dPadRight = state;
-                    } break;
-                    case 'Q': {
-                        state.wasDown = oldGameInput.controllers[0].shoulderL1.endedDown;
-                        gameInput->controllers[0].shoulderL1 = state;
-                    } break;
-                    case 'E': {
-                        state.wasDown = oldGameInput.controllers[0].shoulderR1.endedDown;
-                        gameInput->controllers[0].shoulderR1 = state;
-                    } break;
-                    case 'F': {
-                        state.wasDown = oldGameInput.controllers[0].option1.endedDown;
-                        gameInput->controllers[0].option1 = state;
-                    } break;
-                    case VK_UP: {
-                        state.wasDown = oldGameInput.controllers[0].up.endedDown;
-                        gameInput->controllers[0].up = state;
-                    } break;
-                    case VK_DOWN: {
-                        state.wasDown = oldGameInput.controllers[0].down.endedDown;
-                        gameInput->controllers[0].down = state;
-                    } break;
-
-#ifdef HANDMADE_LIVE_LOOP_EDITING
-                    // Playback recording/looping
-                    case 'L': {
-                        if (keyDown) {
-                            if (0 == win32State->inputPlayback){ // Lock the developer into the loop. Have to rebuild to exit.
-                                if (!win32State->inputRecording) {
-                                    win32BeginInputRecording(win32State);
-                                }
-                                else {
-                                    win32EndInputRecording(win32State);
-                                    win32BeginRecordingPlayback(win32State);
-                                }
-                            }
-                        }
-                    } break;
-#endif
-
-                    case 'P':{
-                        if (keyDown) {
-                            if (paused) {
-                                paused = false;
-                            } else {
-                                paused = true;
-                            }
-                        }
-                    } break;
-                }
-            }
-
-            // The standard request from GetMessage().
-            default: {
-
-                // Dispatch the message to the application's window procedure win32MainWindowCallback()
-                TranslateMessage(&message); // Get the message ready for despatch.
-                DispatchMessage(&message); // Actually do the despatch
-
-            } break;
-
-        } // message switch
-
-    } // PeekMessage loop
-}
-
 internal LARGE_INTEGER win32GetTime()
 {
     LARGE_INTEGER counter;
@@ -1444,8 +1356,8 @@ internal uint32 win32TruncateToUint32Safe(uint64 value)
 }
 
 internal void win32ProcessXInputControllerButton(GameControllerBtnState *currentState,
-                                                        XINPUT_GAMEPAD *gamepad,
-                                                        uint16 gamepadButtonBit)
+                                                    XINPUT_GAMEPAD *gamepad,
+                                                    uint16 gamepadButtonBit)
 {
     (*currentState).endedDown = ((*gamepad).wButtons & gamepadButtonBit);
 }
@@ -1798,38 +1710,6 @@ PLATFORM_FREE_MEMORY(platformFreeMemory)
     VirtualFree(address, 0, MEM_RELEASE);
 }
 
-PLATFORM_TOGGLE_FULLSCREEN(platformToggleFullscreen)
-{
-    Win32State *state = (Win32State *)platformStateWindows;
-    HWND window = *state->window;
-
-    // Go full screen. Credit Raymond Chen
-    // @link https://devblogs.microsoft.com/oldnewthing/20100412-00/?p=14353
-
-    DWORD dwStyle = GetWindowLong(window, GWL_STYLE);
-    if (dwStyle & WS_OVERLAPPEDWINDOW) {
-        MONITORINFO mi = { sizeof(mi) };
-        if (GetWindowPlacement(window, &globalWindowPosition) &&
-            GetMonitorInfo(MonitorFromWindow(window,
-                MONITOR_DEFAULTTOPRIMARY), &mi)) {
-            SetWindowLong(window, GWL_STYLE,
-                          dwStyle & ~WS_OVERLAPPEDWINDOW);
-            SetWindowPos(window, HWND_TOP,
-                         mi.rcMonitor.left, mi.rcMonitor.top,
-                         mi.rcMonitor.right - mi.rcMonitor.left,
-                         mi.rcMonitor.bottom - mi.rcMonitor.top,
-                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-        }
-    } else {
-        SetWindowLong(window, GWL_STYLE,
-                      dwStyle | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(window, &globalWindowPosition);
-        SetWindowPos(window, NULL, 0, 0, 0, 0,
-                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-    }
-}
-
 PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
 {
     XINPUT_VIBRATION pVibration = { 0 };
@@ -1857,6 +1737,90 @@ void win32PlatformLog(const wchar_t *str, ...)
 
     // Output to the debugger
     OutputDebugString(buffer);
+}
+
+void setSupportedClientWidths(uint32 arrSize)
+{
+    uint32 lastWrittenIndex = 0;
+
+    for(uint32 i = 0; i < arrSize; i++){
+        uint32 width = (i + 1);
+
+        if(width < MIN_FRAME_BUFFER_WIDTH || width > MAX_FRAME_BUFFER_WIDTH){
+            continue;
+        }
+
+        float32 height = (((float32)width * FRAME_BUFFER_RATIO_Y) / FRAME_BUFFER_RATIO_X);
+
+        if(height < MIN_FRAME_BUFFER_HEIGHT || height > MAX_FRAME_BUFFER_HEIGHT){
+            continue;
+        }
+
+        int intPart = (int)height;
+        if(height == intPart){
+            supportedWidths[lastWrittenIndex] = width;
+            supportedHeights[lastWrittenIndex] = (uint32)height;
+            lastWrittenIndex++;
+        }
+    }
+}
+
+uint32 getClosestSupportedWidth(uint32 arrSize, uint32 width)
+{
+    for(int32 i = (arrSize - 1); i >= 0; i--){
+        if(supportedWidths[i] <= 0) continue;
+        if(supportedWidths[i] <= width){
+            return supportedWidths[i];
+        }
+    }
+    return supportedWidths[0];
+}
+
+uint32 getClosestSupportedHeight(uint32 arrSize, uint32 height)
+{
+    for(int32 i = (arrSize - 1); i >= 0; i--){
+        if(supportedHeights[i] <= 0) continue;
+        if(supportedHeights[i] <= height){
+            return supportedHeights[i];
+        }
+    }
+    return supportedHeights[0];
+}
+
+uint32 aspectRatioWidthFromHeight(uint32 height)
+{
+    return (uint32)((float32)height * (FRAME_BUFFER_RATIO_X / FRAME_BUFFER_RATIO_Y));
+}
+
+uint32 aspectRatioHeightFromWidth(uint32 width)
+{
+    return (uint32)((float32)width / (FRAME_BUFFER_RATIO_X / FRAME_BUFFER_RATIO_Y));
+}
+
+void toggleFullscreen(HWND hWnd)
+{
+    DWORD dwStyle = GetWindowLong(hWnd, GWL_STYLE);
+    if(dwStyle & WS_OVERLAPPEDWINDOW){
+        MONITORINFO mi = { sizeof(mi) };
+        if(GetWindowPlacement(hWnd, &globalWindowPosition) &&
+            GetMonitorInfo(MonitorFromWindow(hWnd,
+                MONITOR_DEFAULTTOPRIMARY), &mi)){
+            SetWindowLong(hWnd, GWL_STYLE,
+                          dwStyle & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(hWnd, HWND_TOP,
+                         mi.rcMonitor.left, mi.rcMonitor.top,
+                         mi.rcMonitor.right - mi.rcMonitor.left,
+                         mi.rcMonitor.bottom - mi.rcMonitor.top,
+                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        }
+    } else{
+        SetWindowLong(hWnd, GWL_STYLE,
+                      dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(hWnd, &globalWindowPosition);
+        SetWindowPos(hWnd, NULL, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+    }
 }
 
 uint32 gcd(uint32 a, uint32 b)
@@ -2047,13 +2011,13 @@ internal void win32EndInputRecording(Win32State *win32State)
     win32State->inputRecording = 0;
 }
 
-internal void win32RecordInput(Win32State *win32State, GameInput *gameInput)
+internal void win32RecordInput(Win32State *win32State)
 {
     uint64 offset = 0;
     if (win32State->recordingWriteFrameIndex >= 1) {
-        offset = ((sizeof(*gameInput)) * win32State->recordingWriteFrameIndex);
+        offset = ((sizeof(gameInput)) * win32State->recordingWriteFrameIndex);
     }
-    CopyMemory(((CHAR*)win32State->gameMemoryRecordedInput + offset), gameInput, sizeof(*gameInput));
+    CopyMemory(((CHAR*)win32State->gameMemoryRecordedInput + offset), &gameInput, sizeof(gameInput));
     win32State->recordingWriteFrameIndex += 1;
 }
 
@@ -2070,13 +2034,13 @@ internal void win32EndRecordingPlayback(Win32State *win32State)
     win32State->inputPlayback = 0;
 }
 
-internal void win32PlaybackInput(Win32State *win32State, GameInput *gameInput)
+internal void win32PlaybackInput(Win32State *win32State)
 {
     uint64 offset = 0;
     if (win32State->recordingReadFrameIndex >= 1) {
-        offset = ((sizeof(*gameInput)) * win32State->recordingReadFrameIndex);
+        offset = ((sizeof(gameInput)) * win32State->recordingReadFrameIndex);
     }
-    CopyMemory(gameInput, ((CHAR*)win32State->gameMemoryRecordedInput + offset), sizeof(*gameInput));
+    CopyMemory(&gameInput, ((CHAR*)win32State->gameMemoryRecordedInput + offset), sizeof(gameInput));
     win32State->recordingReadFrameIndex += 1;
 
     if (win32State->recordingReadFrameIndex == win32State->recordingWriteFrameIndex) {

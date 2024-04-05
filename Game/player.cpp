@@ -8,7 +8,8 @@ void playerHandleMovement(GameState *gameState,
                             GameInput *gameInput,
                             uint8 selectedController)
 {
-    GameControllerInput controller = gameInput->controllers[selectedController];
+    //GameControllerInput controller = gameInput->gamepads[selectedController];
+    GameControllerInput controller = gameInput->keyboard;
 
     // Basic player movement...
 
@@ -89,6 +90,34 @@ pixelsPerFrame);
 
     if (playerAttemptingMove) {
 
+#if false
+        char buff[50] = { 0 };
+        if (controller.dPadUp.endedDown){
+            memory->DEBUG_platformLog(buff, sizeof(buff),
+               "dPadUp  ended down: %i was down: %i\n",
+               controller.dPadUp.endedDown,
+               controller.dPadUp.wasDown);
+        }
+        if(controller.dPadDown.endedDown){
+            memory->DEBUG_platformLog(buff, sizeof(buff),
+               "dPadDown. ended down: %i was down: %i\n",
+               controller.dPadDown.endedDown,
+               controller.dPadDown.wasDown);
+        }
+        if(controller.dPadLeft.endedDown){
+            memory->DEBUG_platformLog(buff, sizeof(buff),
+               "dPadLeft. ended down: %i was down: %i\n",
+               controller.dPadLeft.endedDown,
+               controller.dPadLeft.wasDown);
+        }
+        if(controller.dPadRight.endedDown){
+            memory->DEBUG_platformLog(buff, sizeof(buff),
+               "dPadRight. ended down: %i was down: %i\n",
+               controller.dPadRight.endedDown,
+               controller.dPadRight.wasDown);
+        }
+#endif
+        
         // Wrap the player movement for toroidal world
         Vec2 playerNewPos = { 0, 0 };
         playerNewPos.x = fmodf(playerNewPosTmp.x, (float32)gameState->world.worldWidthPx);

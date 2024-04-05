@@ -100,17 +100,8 @@
 // Game settings
 // -----------------------------------------------------------------------------
 
-// Game resolution. @see https://en.wikipedia.org/wiki/Display_resolution
-// WXGA (16:9)
-#define FRAME_BUFFER_PIXEL_WIDTH  1280
-#define FRAME_BUFFER_PIXEL_HEIGHT 720
-
-// FHD (16:9)
-//#define FRAME_BUFFER_PIXEL_WIDTH  1920
-//#define FRAME_BUFFER_PIXEL_HEIGHT 1080
-
-// Maximum number of supported controllers. 1 keyboard, 4 gamepad controllers.
-#define MAX_CONTROLLERS 5
+// Maximum number of gamepads supported
+#define GAME_MAX_GAMEPADS 4
 #define GAME_PI 3.14159265358979323846   // pi
 
 #if COMPILER_MSVC

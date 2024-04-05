@@ -319,8 +319,8 @@ void writeBitmap(GameFrameBuffer *buffer,
 void drawVector(GameFrameBuffer *frameBuffer, Vec2 vector, Colour colour)
 {
     // Vector origins
-    uint32 vox = (FRAME_BUFFER_PIXEL_WIDTH / 2);
-    uint32 voy = (FRAME_BUFFER_PIXEL_HEIGHT / 2);
+    uint32 vox = (frameBuffer->widthPx / 2);
+    uint32 voy = (frameBuffer->heightPx / 2);
 
     // Pixels per point
     float32 pixelsPerPoint = 10.0f;

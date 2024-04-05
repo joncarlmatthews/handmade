@@ -1,24 +1,27 @@
 Day 043
 =======
 -[x] Algebra
--[ ] Gustavo
 -[x] Refactor delta time as per SDL
--[ ] Implement vector movement in conjuction with deltatime
--[ ] Simplify Win32 message queue code as per SDL project
--[ ] Note: all movement values are "per second"
--[ ] Better full screen control
--[ ] Better window scaling calculations
--[ ] Complete day 43
+-[x] Better full screen control
+-[x] Better window scaling calculations
+-[x] Simplify Win32 message queue code as per SDL project
+-[x] Reimplement game movement Win32 code
+-[x] Reimplement wasdown/isdown input/oldinput code
+-[x] Delete win32ProcessMessages code
+-[ ] Gustavo
+-[x] Remove "platform toggle fullscreen"
+-[ ] Implement vector movement in conjuction with deltatime and refactor player movement to be less hacky. Note: all movement values are "per second"
 -[ ] Get rid of temp game_types.h
 -[ ] Runtime error with live loop editing enabled
 -[ ] Draw from player middle rather than bottom left
+-[ ] Complete day 43
 
 Ongoing:
 =======
- -[ ] Static library project for the few shared functions I have? (GCD and byte conversions) Or just include .cpp file? 
+-[ ] xinput gamepad "wasDown" not yet implemented
+-[ ] Static library project for the few shared functions I have? (GCD and byte conversions) Or just include .cpp file? 
  -[ ] shift and mask to store chunk and tile in the same 32 bit integer?
  -[ ] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
- -[ ] Make DEBUG_platformWriteEntireFile relative to current working directory like the read function
  -[ ] Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
  -[ ] Support for drawing bitmap at different size to that of the original asset.
  -[ ] Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.

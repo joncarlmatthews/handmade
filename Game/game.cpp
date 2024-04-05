@@ -176,8 +176,8 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
         if (roomsFillScreen){
             // Make each room nicely fit the window size
-            roomTileDims_x = (uint32)(FRAME_BUFFER_PIXEL_WIDTH / gameState->world.tilemap.tileHeightPx);
-            roomTileDims_y = (uint32)(FRAME_BUFFER_PIXEL_HEIGHT / gameState->world.tilemap.tileWidthPx);
+            roomTileDims_x = (uint32)(frameBuffer->widthPx / gameState->world.tilemap.tileHeightPx);
+            roomTileDims_y = (uint32)(frameBuffer->heightPx / gameState->world.tilemap.tileWidthPx);
         }
         
         uint32 absTileX = 0;
@@ -406,15 +406,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     */
 
     // Main controller loop
-    // @TODO(JM) Support for multiple controllers.See below for single controller support.
-    /*
-    for (uint8 i = 0; i < controllerCounts->connectedControllers; i++){
-
-        if (!inputInstances->controllers[i].isConnected) {
-            continue;
-        }
-    }
-    */
+    // @TODO(JM) Support for multiple gamepads.
 
     // Which controller has the user selected as the main controller?
     // 0 = keyboard, 1 = first controller
@@ -426,14 +418,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                             audioBuffer,
                             &inputInstances[0],
                             userSelectedMainController);
-
-    GameControllerInput controller = inputInstances[0].controllers[userSelectedMainController];
-
-    if (controller.option1.endedDown){
-        memory->platformToggleFullscreen(memory->platformStateWindows,
-                                            memory->platformStateMacOS,
-                                            memory->platformStateLinux);
-    }
 
     /**
      * Audio stuff...
@@ -651,7 +635,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
 #if 0
     // Mouse input testing
-    if (inputInstances->mouse.leftClick.endedDown) {
+    if (inputInstances->mouse.leftButton.endedDown) {
         writeRectangleInt(frameBuffer,
                         inputInstances->mouse.position.x,
                         inputInstances->mouse.position.y,

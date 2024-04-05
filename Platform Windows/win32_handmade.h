@@ -5,9 +5,45 @@
 //#define _DEBUG_FPS
 //#define _DEBUG_CLOCKCYCLES
 //#define _DEBUG_LIVE_LOOP_EDITING
+#define OPEN_FULLSCREEN false
+#else
+#define OPEN_FULLSCREEN true
 #endif
 
+// Aspect ratio/resolution
+// 
+// Supported aspect ratio and min/max resolution. Current support is 16:9 and
+// letterboxing/pillarboxing the display for those using monitors with other
+// aspect ratios. Helpful utility: https://calculateaspectratio.com
+// -----------------------------------------------------------------------------
 
+// 16:9
+#define FRAME_BUFFER_RATIO_X 16.0f
+#define FRAME_BUFFER_RATIO_Y 9.0f
+#define MIN_FRAME_BUFFER_WIDTH 640
+#define MAX_FRAME_BUFFER_WIDTH 5120
+
+// Testing with 3:2
+/*
+#define FRAME_BUFFER_RATIO_X 3.0f
+#define FRAME_BUFFER_RATIO_Y 2.0f
+#define MIN_FRAME_BUFFER_WIDTH 480
+#define MAX_FRAME_BUFFER_WIDTH 2256
+*/
+
+// Testing with 64:27 LG ultrawide
+/*
+#define FRAME_BUFFER_RATIO_X 64.0f
+#define FRAME_BUFFER_RATIO_Y 27.0f
+#define MIN_FRAME_BUFFER_WIDTH 960
+#define MAX_FRAME_BUFFER_WIDTH 2560
+*/
+
+#define MAX_FRAME_BUFFER_HEIGHT (int32)((MAX_FRAME_BUFFER_WIDTH * FRAME_BUFFER_RATIO_Y) / FRAME_BUFFER_RATIO_X)
+#define MIN_FRAME_BUFFER_HEIGHT (int32)((MIN_FRAME_BUFFER_WIDTH * FRAME_BUFFER_RATIO_Y) / FRAME_BUFFER_RATIO_X)
+
+// FPS
+// -----------------------------------------------------------------------------
 #define TARGET_FPS 120
 #define _ASSERT_FPS FALSE
 
@@ -192,7 +228,9 @@ internal float32 win32GetElapsedTimeMS(const LARGE_INTEGER startCounter, const L
  */
 internal float32 win32GetElapsedTimeS(const LARGE_INTEGER startCounter, const LARGE_INTEGER endCounter, int64 countersPerSecond);
 
-internal void win32InitFrameBuffer(PlatformThreadContext *thread, Win32FrameBuffer *buffer, uint32 width, int32 height);
+internal void win32InitFrameBuffer(PlatformThreadContext *thread,
+                                    Win32FrameBuffer *buffer,
+                                    uint32 monitorWidth);
 
 /*
  * @param deviceHandleForWindow     The window handle
@@ -238,12 +276,6 @@ internal void win32ProcessXInputControllerButton(GameControllerBtnState *current
                                                     XINPUT_GAMEPAD *gamepad,
                                                     uint16 gamepadButtonBit);
 
-
-internal void win32ProcessMessages(HWND window,
-                                    GameInput *gameInput,
-                                    GameInput oldGameInput,
-                                    Win32State *win32State);
-
 /*
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
  * the code will assert if the value passed in is larger than 4 bytes
@@ -256,12 +288,18 @@ internal void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 
 internal void win32PlatformLog(const wchar_t *str, ...);
 
+internal void           setSupportedClientWidths(uint32 arrSize);
+internal uint32         getClosestSupportedWidth(uint32 arrSize, uint32 width);
+internal uint32         getClosestSupportedHeight(uint32 arrSize, uint32 height);
+internal void           toggleFullscreen(HWND hWnd);
+internal uint32         aspectRatioWidthFromHeight(uint32 height);
+internal uint32         aspectRatioHeightFromWidth(uint32 width);
+
 //===========================================
 // Game-required platform layer signatures
 //===========================================
 PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory);
 PLATFORM_FREE_MEMORY(platformFreeMemory);
-PLATFORM_TOGGLE_FULLSCREEN(platformToggleFullscreen);
 PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate);
 
 #ifdef HANDMADE_LOCAL_BUILD
@@ -279,13 +317,13 @@ internal void win32BeginInputRecording(Win32State *win32State);
 
 internal void win32EndInputRecording(Win32State *win32State);
 
-internal void win32RecordInput(Win32State *win32State, GameInput *inputNewInstance);
+internal void win32RecordInput(Win32State *win32State);
 
 internal void win32BeginRecordingPlayback(Win32State *win32State);
 
 internal void win32EndRecordingPlayback(Win32State *win32State);
 
-internal void win32PlaybackInput(Win32State *win32State, GameInput *inputNewInstance);
+internal void win32PlaybackInput(Win32State *win32State);
 
 #endif
 
