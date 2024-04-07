@@ -589,7 +589,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     v2Rotate(&a, a, gameState->angle);
     drawVector(frameBuffer, a, { 0xFF0000 });
 
-    gameState->angle += (0.1f * gameState->world.pixelsPerMeter) * inputInstances[0].deltaTime;
+    gameState->angle += (0.2f * gameState->world.pixelsPerMeter) * inputInstances[0].deltaTime;
 
     #if 0
     char buff[50] = { 0 };

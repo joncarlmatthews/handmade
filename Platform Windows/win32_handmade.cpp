@@ -1482,6 +1482,9 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
     return;
 #endif
 
+    // Do we need to reload the game code?
+    BOOL loadGameCode = false;
+
     // ================= //
     // Live loop editing //
     // ================= //
@@ -1508,30 +1511,41 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
         assert(!"Error concatenating file paths");
     }
 
-    // Does the copy exist yet?
+    // Does the DLL copy exist yet?
     DWORD dwAttrib = GetFileAttributes(gameCopyDLLFilePath);
 
     if(!(dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))){
 
         // Game_copy.dll does not yet exist...
 
-        #if defined(_DEBUG_LIVE_LOOP_EDITING)
-            win32PlatformLog(L"Game_copy.dll doesnt exist, going to create it...\n");
-        #endif
+#if defined(_DEBUG_LIVE_LOOP_EDITING)
+        win32PlatformLog(L"Game_copy.dll doesnt exist, going to create it...\n");
+#endif
 
         BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
         
-        #if defined(_DEBUG_LIVE_LOOP_EDITING)
-            if(res){
-                win32PlatformLog(L"Game_copy.dll successfully created.\n");
-            } else{
-                win32PlatformLog(L"Could not create Game_copy.dll: %d", GetLastError());
-            }
-        #endif
-    }
+#if defined(_DEBUG_LIVE_LOOP_EDITING)
+        if(res){
+            win32PlatformLog(L"Game_copy.dll successfully created.\n");
+        } else{
+            win32PlatformLog(L"Could not create Game_copy.dll: %d", GetLastError());
+        }
+#endif
 
-    // Do we need to reload the game code?
-    BOOL loadGameCode = false;
+    } else{
+
+        // Game_copy.dll already exists.
+
+#if defined(_DEBUG_LIVE_LOOP_EDITING)
+        win32PlatformLog(L"Game_copy.dll already exist...\n");
+#endif
+
+        // Is the copy that does exist out of date? E.g. has it been left
+        // behind from a previous build? We need to check here to avoid
+        // illegal pointers
+        performDLLCopyCheck(gameDLLFilePath, gameCopyDLLFilePath, gameCode, &loadGameCode);
+
+    }
 
     // Always load the game code if it hasnt yet been loaded
     if (gameCode->dllHandle == 0x0) {
@@ -1544,75 +1558,15 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
 
     }else{
 
-        // Check to see if we need to overwrite Game_copy.dll...
-
-        FILETIME lastWriteTimeGame = {};
-        lastWriteTimeGame = win32GetFileLastWriteDate(gameDLLFilePath);
-        FILETIME lastWriteTimeGameCopy = {};
-        lastWriteTimeGameCopy = win32GetFileLastWriteDate(gameCopyDLLFilePath);
-
-        if (CompareFileTime(&lastWriteTimeGame, &lastWriteTimeGameCopy) != 0) {
-
-            #if defined(_DEBUG_LIVE_LOOP_EDITING)
-                win32PlatformLog(L"Game_copy.dll needs to be overwritten by Game.dll as Game.dll is newer.\n");
-            #endif
-
-            // If the current gameCode object has a handle to Game_copy.dll, then
-            // free the lock...
-            if (gameCode->dllHandle != 0x0) {
-
-                #if defined(_DEBUG_LIVE_LOOP_EDITING)
-                    win32PlatformLog(L"Freeing Game_copy.dll library before doing the copy\n");
-                #endif
-
-                BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
-
-                if(!res){
-                    #if defined(_DEBUG_LIVE_LOOP_EDITING)
-                        win32PlatformLog(L"Could not free DLL handle lock: %d. Will try again next loop.\n", GetLastError());
-                    #endif
-                    return;
-                }
-            }
-
-            // Copy file contents of Game.dll to Game_copy.dll.
-            // @NOTE(JM) The copy can fail for a few game loops as it takes a second
-            // or two for the OS to actually release the lock on the DLL (even though
-            // the gameCode->dllHandle will show as empty instantly)
-            BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
-
-            if (!res) {
-
-                // If the copy fails, we still need to reload the game code
-                // as we freed the libray above. Therefore if we dont reload
-                // the code from the DLL the next game loop with fail with pointers
-                // to addresses that no longer exist
-                loadGameCode = true;
-
-                #ifdef _DEBUG_LIVE_LOOP_EDITING
-                    // 32L = "The process cannot access the file because it is being used by another process."
-                    // See winerror.h for full list of errors.
-                    win32PlatformLog(L"DLL copy failed: %d. Will retry copy on next loop\n", GetLastError());
-                #endif
-
-            }else {
-
-                loadGameCode = true;
-
-                #ifdef _DEBUG_LIVE_LOOP_EDITING
-                    win32PlatformLog(L"DLL copy succeeded <-----------\n");
-                #endif
-            }
-        }
+        performDLLCopyCheck(gameDLLFilePath, gameCopyDLLFilePath, gameCode, &loadGameCode);
 
     }
-    
 
     if (loadGameCode) {
 
-        #ifdef _DEBUG_LIVE_LOOP_EDITING
-            win32PlatformLog(L"About to load game code from Game_copy.dll\n");
-        #endif
+#ifdef _DEBUG_LIVE_LOOP_EDITING
+        win32PlatformLog(L"About to load game code from Game_copy.dll...\n");
+#endif
 
         win32LoadGameDLLFunctionsFromFile(gameCopyDLLFilePath, gameCode);
     }
@@ -1997,6 +1951,76 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
 }
 
 #endif
+
+internal void performDLLCopyCheck(const wchar_t *gameDLLFilePath,
+                                    const wchar_t *gameCopyDLLFilePath,
+                                    GameCode *gameCode,
+                                    BOOL *loadGameCode)
+{
+    // Check to see if we need to overwrite Game_copy.dll...
+    FILETIME lastWriteTimeGame = {};
+    lastWriteTimeGame = win32GetFileLastWriteDate(gameDLLFilePath);
+    FILETIME lastWriteTimeGameCopy = {};
+    lastWriteTimeGameCopy = win32GetFileLastWriteDate(gameCopyDLLFilePath);
+
+    if(CompareFileTime(&lastWriteTimeGame, &lastWriteTimeGameCopy) != 0){
+
+#if defined(_DEBUG_LIVE_LOOP_EDITING)
+        win32PlatformLog(L"Game_copy.dll needs to be overwritten by Game.dll as Game.dll is newer.\n");
+#endif
+
+        // If the current gameCode object has a handle to Game_copy.dll, then
+        // free the lock...
+        if(gameCode->dllHandle != 0x0){
+
+#if defined(_DEBUG_LIVE_LOOP_EDITING)
+            win32PlatformLog(L"Freeing Game_copy.dll library before doing the copy\n");
+#endif
+
+            BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
+
+            if(!res){
+#if defined(_DEBUG_LIVE_LOOP_EDITING)
+                win32PlatformLog(L"Could not free DLL handle lock: %d. Will try again next loop.\n", GetLastError());
+#endif
+                return;
+            }
+        }
+
+        // Copy file contents of Game.dll to Game_copy.dll.
+        // @NOTE(JM) The copy can fail for a few game loops as it takes a second
+        // or two for the OS to actually release the lock on the DLL (even though
+        // the gameCode->dllHandle will show as empty instantly)
+        BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
+
+        if(!res){
+
+            // If the copy fails, we still need to reload the game code
+            // as we freed the libray above. Therefore if we dont reload
+            // the code from the DLL the next game loop with fail with pointers
+            // to addresses that no longer exist
+            *loadGameCode = true;
+
+#ifdef _DEBUG_LIVE_LOOP_EDITING
+            // 32L = "The process cannot access the file because it is being used by another process."
+            // See winerror.h for full list of errors.
+            win32PlatformLog(L"DLL copy failed: %d. Will retry copy on next loop\n", GetLastError());
+#endif
+
+        } else{
+
+            *loadGameCode = true;
+
+#ifdef _DEBUG_LIVE_LOOP_EDITING
+        win32PlatformLog(L"DLL copy succeeded <-----------\n");
+#endif
+        }
+    } else{
+#ifdef _DEBUG_LIVE_LOOP_EDITING
+        win32PlatformLog(L"Game_copy.dll up to date. Nothing to do\n");
+#endif
+    }
+}
 
 #ifdef HANDMADE_LIVE_LOOP_EDITING
 

@@ -4,7 +4,7 @@
 //
 // MACROS.H
 //==============================================================================
-// Object-like macro definitions and function-like macro definitions.
+// Object-like and function-like macro definitions
 
 
 // Compiler stuff.
@@ -47,7 +47,7 @@
 #ifdef _DEBUG
     #define HANDMADE_LOCAL_BUILD
     //#define HANDMADE_DEBUG_AUDIO
-    //#define HANDMADE_LIVE_LOOP_EDITING
+    #define HANDMADE_LIVE_LOOP_EDITING
     //#define HANDMADE_DEBUG_TILE_POS
     //#define HANDMADE_WALK_THROUGH_WALLS
 #endif
@@ -105,7 +105,7 @@
 #define GAME_PI 3.14159265358979323846   // pi
 
 #if COMPILER_MSVC
-    #define GAME_MAX_PATH 260
+    #define GAME_MAX_PATH 260 // See Win32 MAX_PATH
 #else
     assert(!"TODO: Define max path for non-Win32 platforms");
 #endif

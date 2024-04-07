@@ -262,6 +262,23 @@ internal void win32LoadXInputDLLFunctions(void);
 internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode);
 internal void win32GetAbsolutePath(wchar_t *path);
 
+/**
+ * @brief Checks to see if we need to overwrite Game_copy.dll with Game.dll
+ * based on the comparing the files timestamps. Also writes to a flag as to
+ * whether the code needs to be loaded from the DLL
+ * 
+ * @param gameDLLFilePath 
+ * @param gameCopyDLLFilePath 
+ * @param gameCode 
+ * @param loadGameCode flag
+* 
+ * @return void
+ */
+internal void performDLLCopyCheck(const wchar_t *gameDLLFilePath,
+                                    const wchar_t *gameCopyDLLFilePath,
+                                    GameCode *gameCode,
+                                    BOOL *loadGameCode);
+
 internal void win32InitAudioBuffer(HWND window, Win32AudioBuffer *win32AudioBuffer);
 
 internal void win32AudioBufferTogglePlay(Win32AudioBuffer *win32AudioBuffer);
