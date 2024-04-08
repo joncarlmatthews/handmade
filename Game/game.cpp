@@ -589,18 +589,17 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     v2Rotate(&a, a, gameState->angle);
     drawVector(frameBuffer, a, { 0xFF0000 });
 
-    gameState->angle += (0.2f * gameState->world.pixelsPerMeter) * inputInstances[0].deltaTime;
+    gameState->angle += (0.1f * gameState->world.pixelsPerMeter) * inputInstances[0].deltaTime;
 
     #if 0
-    char buff[50] = { 0 };
-    memory->DEBUG_platformLog(buff, sizeof(buff), "V3 dot product: x:%f y:%f z:%f \n", f.x, f.y, f.z);
+    memory->platformLog(L"V3 dot product: x:%f y:%f z:%f \n", f.x, f.y, f.z);
     #endif
 
     #if 0
     float32 dotproduct = (v2GetDotProduct(v2, v3));
 
     char buff[50] = { 0 };
-    memory->DEBUG_platformLog(buff, sizeof(buff), "Dot product: %f\n", dotproduct);
+    memory->platformLog(buff, sizeof(buff), "Dot product: %f\n", dotproduct);
     #endif
 
     #if 0

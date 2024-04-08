@@ -22,6 +22,10 @@
 #include "tilemap.h"
 #include "player.h"
 
+typedef struct PlatformThreadContext
+{
+    uint8 placeholder;
+} PlatformThreadContext;
 
 //==============================================================================
 //==============================================================================
@@ -29,25 +33,13 @@
 //==============================================================================
 //==============================================================================
 
-
 /*
-  Useage:
+  Usage:
   char buff[50] = {0};
-  memory->DEBUG_platformLog(buff, sizeof(buff), "Hello world\n");
+  memory->platformLog(buff, sizeof(buff), "Hello world\n");
  */
-#ifdef HANDMADE_LOCAL_BUILD
-#define DEBUG_PLATFORM_LOG(name) int name(char* const buffer, \
-                                            sizet const sizeOfBuffer, \
-                                            char const* const format, ...)
-typedef DEBUG_PLATFORM_LOG(DEBUGPlatformLog);
-#endif
-
-
-
-typedef struct PlatformThreadContext
-{
-    uint8 placeholder;
-} PlatformThreadContext;
+#define PLATFORM_LOG(name) void name(const wchar_t *str, ...)
+typedef PLATFORM_LOG(PlatformLog);
 
 /**
  * @brief Requests the platform layer allocated @link bytes worth of memory
@@ -273,12 +265,12 @@ typedef struct GameMemory
     // Pointers to memory allocation deallocation functions with the platform layer
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
+    PlatformLog *platformLog;
 
     // @NOTE(JM) Move this??
     PlarformControllerVibrate *platformControllerVibrate;
 
 #ifdef HANDMADE_LOCAL_BUILD
-    DEBUGPlatformLog *DEBUG_platformLog;
     DEBUGPlatformReadEntireFile *DEBUG_platformReadEntireFile;
     DEBUGPlatformFreeFileMemory *DEBUG_platformFreeFileMemory;
     DEBUGPlatformWriteEntireFile *DEBUG_platformWriteEntireFile;

@@ -26,7 +26,7 @@ void playerHandleMovement(GameState *gameState,
 #if 0
     {
         char buff[400] = {};
-        memory->DEBUG_platformLog(buff, sizeof(buff),
+        memory->platformLog(buff, sizeof(buff),
             "Delta time (s): %f. \
 Pixels per frame: %f\n",
 gameInput->deltaTime,
@@ -93,25 +93,25 @@ pixelsPerFrame);
 #if false
         char buff[50] = { 0 };
         if (controller.dPadUp.endedDown){
-            memory->DEBUG_platformLog(buff, sizeof(buff),
+            memory->platformLog(buff, sizeof(buff),
                "dPadUp  ended down: %i was down: %i\n",
                controller.dPadUp.endedDown,
                controller.dPadUp.wasDown);
         }
         if(controller.dPadDown.endedDown){
-            memory->DEBUG_platformLog(buff, sizeof(buff),
+            memory->platformLog(buff, sizeof(buff),
                "dPadDown. ended down: %i was down: %i\n",
                controller.dPadDown.endedDown,
                controller.dPadDown.wasDown);
         }
         if(controller.dPadLeft.endedDown){
-            memory->DEBUG_platformLog(buff, sizeof(buff),
+            memory->platformLog(buff, sizeof(buff),
                "dPadLeft. ended down: %i was down: %i\n",
                controller.dPadLeft.endedDown,
                controller.dPadLeft.wasDown);
         }
         if(controller.dPadRight.endedDown){
-            memory->DEBUG_platformLog(buff, sizeof(buff),
+            memory->platformLog(buff, sizeof(buff),
                "dPadRight. ended down: %i was down: %i\n",
                controller.dPadRight.endedDown,
                controller.dPadRight.wasDown);
@@ -174,7 +174,7 @@ gameState->player1.absolutePosition.x,
 gameState->player1.absolutePosition.y,
 gameState->player1.gamePosition.x,
 gameState->player1.gamePosition.y);
-            memory->DEBUG_platformLog(buff);
+            memory->platformLog(buff);
 #endif
 #endif
 
@@ -224,7 +224,7 @@ gameState->worldPosition.chunkIndex.x, gameState->worldPosition.chunkIndex.y,
 gameState->worldPosition.chunkRelativeTileIndex.x, gameState->worldPosition.chunkRelativeTileIndex.y,
 gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRelativePixelPos.y,
 );
-                memory->DEBUG_platformLog(buff);
+                memory->platformLog(buff);
 #endif
             }
 

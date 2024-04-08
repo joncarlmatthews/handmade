@@ -297,14 +297,9 @@ internal void win32ProcessXInputControllerButton(GameControllerBtnState *current
  * Truncates 8-bytes (uint64) to 4-bytes (uint32). If in debug mode,
  * the code will assert if the value passed in is larger than 4 bytes
  */
-internal uint32 win32TruncateToUint32Safe(uint64 value);
-
-internal FILETIME win32GetFileLastWriteDate(const wchar_t *filename);
-
-internal void win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
-
-internal void win32PlatformLog(const wchar_t *str, ...);
-
+internal uint32         win32TruncateToUint32Safe(uint64 value);
+internal FILETIME       win32GetFileLastWriteDate(const wchar_t *filename);
+internal void           win32GetMousePosition(HWND window, GameMouseInput* mouseInput);
 internal void           setSupportedClientWidths(uint32 arrSize);
 internal uint32         getClosestSupportedWidth(uint32 arrSize, uint32 width);
 internal uint32         getClosestSupportedHeight(uint32 arrSize, uint32 height);
@@ -318,10 +313,10 @@ internal uint32         aspectRatioHeightFromWidth(uint32 width);
 PLATFORM_ALLOCATE_MEMORY(platformAllocateMemory);
 PLATFORM_FREE_MEMORY(platformFreeMemory);
 PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate);
+PLATFORM_LOG(platformLog);
 
 #ifdef HANDMADE_LOCAL_BUILD
 
-DEBUG_PLATFORM_LOG(DEBUG_platformLog);
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile);
 DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory);
 DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile);
@@ -331,15 +326,10 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile);
 #ifdef HANDMADE_LIVE_LOOP_EDITING
 
 internal void win32BeginInputRecording(Win32State *win32State);
-
 internal void win32EndInputRecording(Win32State *win32State);
-
 internal void win32RecordInput(Win32State *win32State);
-
 internal void win32BeginRecordingPlayback(Win32State *win32State);
-
 internal void win32EndRecordingPlayback(Win32State *win32State);
-
 internal void win32PlaybackInput(Win32State *win32State);
 
 #endif

@@ -63,6 +63,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         _In_ LPWSTR commandLine,
                         _In_ int showCode)
 {
+    platformLog(L"foo bar\n");
+
     // Get the current performance-counter frequency, in counts per second.
     // @see https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancefrequency
     // @see https://www.codeproject.com/Questions/480201/whatplusQueryPerformanceFrequencyplusfor-3f
@@ -193,6 +195,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     memory.platformStateMacOS = NULL;
     memory.platformStateLinux = NULL;
 
+    memory.platformLog = &platformLog;
+
     memory.permanentStorage.bytes = platformMemory;
     memory.permanentStorage.sizeInBytes = permanentStorageSizeInBytes;
     memory.permanentStorage.bytesUsed = 0;
@@ -215,7 +219,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     }
 
 #if _DEBUG
-    memory.DEBUG_platformLog = &DEBUG_platformLog;
     memory.DEBUG_platformReadEntireFile = &DEBUG_platformReadEntireFile;
     memory.DEBUG_platformWriteEntireFile = &DEBUG_platformWriteEntireFile;
     memory.DEBUG_platformFreeFileMemory = &DEBUG_platformFreeFileMemory;
@@ -371,7 +374,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         prevFrameTimestamp = win32GetTime();
 
 #ifdef _DEBUG_FPS
-        win32PlatformLog(L"Delta time frame %zu: %f seconds\n",
+        platformLog(L"Delta time frame %zu: %f seconds\n",
                             frameIndex,
                             gameInput.deltaTime);
 #endif
@@ -668,10 +671,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                                                 globalQPCFrequency);
 
 #ifdef _DEBUG_FPS
-        win32PlatformLog(L"Time for frame to be processed: %f milliseconds\n",
+        platformLog(L"Time for frame to be processed: %f milliseconds\n",
                         frameProcessingDuration);
 
-        win32PlatformLog(L"Target time for frame to complete: %f milliseconds\n",
+        platformLog(L"Target time for frame to complete: %f milliseconds\n",
                         win32FixedFrameRate.gameTargetMSPerFrame);
 #endif
                 
@@ -683,14 +686,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
             float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - frameProcessingDuration);
 
 #ifdef _DEBUG_FPS
-            win32PlatformLog(L"Need to sleep for: %f milliseconds (%f)\n",
+            platformLog(L"Need to sleep for: %f milliseconds (%f)\n",
                                 needToSleepForMS, (frameProcessingDuration + needToSleepForMS));
 #endif
 
             INT msToSleepI = (INT)needToSleepForMS;
 
 #ifdef _DEBUG_FPS
-            win32PlatformLog(L"Sleeping for... %i\n", msToSleepI);
+            platformLog(L"Sleeping for... %i\n", msToSleepI);
 #endif
 
             Sleep(msToSleepI);
@@ -705,7 +708,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #endif // _ASSERT_FPS
 
 #ifdef _DEBUG_FPS
-            win32PlatformLog(L"======================================MISSED================================ (%f > %f)\n",
+            platformLog(L"======================================MISSED================================ (%f > %f)\n",
                                 frameProcessingDuration,
                                 win32FixedFrameRate.gameTargetMSPerFrame);
 #endif
@@ -713,7 +716,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Calculate the net frame time (E.g. 33.33ms or 16.66ms)
 #ifdef _DEBUG_FPS
-        win32PlatformLog(L"Net time for frame to complete: %f milliseconds\n\n",
+        platformLog(L"Net time for frame to complete: %f milliseconds\n\n",
                             win32GetElapsedTimeMS(frameStartTimestamp,
                                                     win32GetTime(),
                                                     globalQPCFrequency));
@@ -736,7 +739,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         runningProcessorClockCyclesCounter = processorClockCyclesAfterFrame;
 
         // Console log the speed:
-        win32PlatformLog(L"Cycles: %.1fm (%.2f GHz).\n", clockCycles_mega, processorSpeed);
+        platformLog(L"Cycles: %.1fm (%.2f GHz).\n", clockCycles_mega, processorSpeed);
 #endif
 
         // Output the audio buffer in Windows.
@@ -1440,7 +1443,7 @@ internal void win32LoadGameDLLFunctionsFromFile(wchar_t *absPathToDLL, GameCode 
         }
 
         #if defined(_DEBUG_LIVE_LOOP_EDITING)
-            win32PlatformLog(L"Loading library complete\n");
+            platformLog(L"Loading library complete\n");
         #endif
 
     } else {
@@ -1519,16 +1522,16 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
         // Game_copy.dll does not yet exist...
 
 #if defined(_DEBUG_LIVE_LOOP_EDITING)
-        win32PlatformLog(L"Game_copy.dll doesnt exist, going to create it...\n");
+        platformLog(L"Game_copy.dll doesnt exist, going to create it...\n");
 #endif
 
         BOOL res = CopyFile(gameDLLFilePath, gameCopyDLLFilePath, false);
         
 #if defined(_DEBUG_LIVE_LOOP_EDITING)
         if(res){
-            win32PlatformLog(L"Game_copy.dll successfully created.\n");
+            platformLog(L"Game_copy.dll successfully created.\n");
         } else{
-            win32PlatformLog(L"Could not create Game_copy.dll: %d", GetLastError());
+            platformLog(L"Could not create Game_copy.dll: %d", GetLastError());
         }
 #endif
 
@@ -1537,7 +1540,7 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
         // Game_copy.dll already exists.
 
 #if defined(_DEBUG_LIVE_LOOP_EDITING)
-        win32PlatformLog(L"Game_copy.dll already exist...\n");
+        platformLog(L"Game_copy.dll already exist...\n");
 #endif
 
         // Is the copy that does exist out of date? E.g. has it been left
@@ -1553,7 +1556,7 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
         loadGameCode = true;
 
         #if defined(_DEBUG_LIVE_LOOP_EDITING)
-            win32PlatformLog(L"No game code loaded. Performing first load from Game_copy.dll\n");
+            platformLog(L"No game code loaded. Performing first load from Game_copy.dll\n");
         #endif
 
     }else{
@@ -1565,7 +1568,7 @@ internal void win32LoadGameDLLFunctions(wchar_t *absPath, GameCode *gameCode)
     if (loadGameCode) {
 
 #ifdef _DEBUG_LIVE_LOOP_EDITING
-        win32PlatformLog(L"About to load game code from Game_copy.dll...\n");
+        platformLog(L"About to load game code from Game_copy.dll...\n");
 #endif
 
         win32LoadGameDLLFunctionsFromFile(gameCopyDLLFilePath, gameCode);
@@ -1674,8 +1677,7 @@ PLATFORM_CONTROLLER_VIBRATE(platformControllerVibrate)
     XInputSetState(controllerIndex, &pVibration);
 }
 
-internal
-void win32PlatformLog(const wchar_t *str, ...)
+PLATFORM_LOG(platformLog)
 {
     // Reserve a buffer for the formatted string
     wchar_t buffer[500] = { 0 };
@@ -1806,21 +1808,7 @@ size_t utilTebibyteToBytes(uint32 tebibytes)
     return (size_t)(((uint32)1024 * utilGibibytesToBytes(1)) * tebibytes);
 }
 
-#ifdef _DEBUG
-
-DEBUG_PLATFORM_LOG(DEBUG_platformLog)
-{
-    va_list args;
-    va_start(args, format);
-
-    int res = vsnprintf(buffer, sizeOfBuffer, format, args);
-
-    va_end(args);
-
-    OutputDebugStringA(buffer);
-
-    return res;
-}
+#ifdef HANDMADE_LOCAL_BUILD
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
 {
@@ -1966,7 +1954,7 @@ internal void performDLLCopyCheck(const wchar_t *gameDLLFilePath,
     if(CompareFileTime(&lastWriteTimeGame, &lastWriteTimeGameCopy) != 0){
 
 #if defined(_DEBUG_LIVE_LOOP_EDITING)
-        win32PlatformLog(L"Game_copy.dll needs to be overwritten by Game.dll as Game.dll is newer.\n");
+        platformLog(L"Game_copy.dll needs to be overwritten by Game.dll as Game.dll is newer.\n");
 #endif
 
         // If the current gameCode object has a handle to Game_copy.dll, then
@@ -1974,14 +1962,14 @@ internal void performDLLCopyCheck(const wchar_t *gameDLLFilePath,
         if(gameCode->dllHandle != 0x0){
 
 #if defined(_DEBUG_LIVE_LOOP_EDITING)
-            win32PlatformLog(L"Freeing Game_copy.dll library before doing the copy\n");
+            platformLog(L"Freeing Game_copy.dll library before doing the copy\n");
 #endif
 
             BOOL res = FreeLibrary((HMODULE)gameCode->dllHandle);
 
             if(!res){
 #if defined(_DEBUG_LIVE_LOOP_EDITING)
-                win32PlatformLog(L"Could not free DLL handle lock: %d. Will try again next loop.\n", GetLastError());
+                platformLog(L"Could not free DLL handle lock: %d. Will try again next loop.\n", GetLastError());
 #endif
                 return;
             }
@@ -2004,7 +1992,7 @@ internal void performDLLCopyCheck(const wchar_t *gameDLLFilePath,
 #ifdef _DEBUG_LIVE_LOOP_EDITING
             // 32L = "The process cannot access the file because it is being used by another process."
             // See winerror.h for full list of errors.
-            win32PlatformLog(L"DLL copy failed: %d. Will retry copy on next loop\n", GetLastError());
+            platformLog(L"DLL copy failed: %d. Will retry copy on next loop\n", GetLastError());
 #endif
 
         } else{
@@ -2012,12 +2000,12 @@ internal void performDLLCopyCheck(const wchar_t *gameDLLFilePath,
             *loadGameCode = true;
 
 #ifdef _DEBUG_LIVE_LOOP_EDITING
-        win32PlatformLog(L"DLL copy succeeded <-----------\n");
+        platformLog(L"DLL copy succeeded <-----------\n");
 #endif
         }
     } else{
 #ifdef _DEBUG_LIVE_LOOP_EDITING
-        win32PlatformLog(L"Game_copy.dll up to date. Nothing to do\n");
+        platformLog(L"Game_copy.dll up to date. Nothing to do\n");
 #endif
     }
 }
