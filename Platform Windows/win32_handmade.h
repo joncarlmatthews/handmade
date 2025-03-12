@@ -2,7 +2,7 @@
 #define HEADER_WIN32
 
 #ifdef _DEBUG
-//#define _DEBUG_FPS
+#define _DEBUG_FPS
 //#define _DEBUG_CLOCKCYCLES
 //#define _DEBUG_LIVE_LOOP_EDITING
 #define OPEN_FULLSCREEN false

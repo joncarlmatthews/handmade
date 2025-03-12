@@ -10,9 +10,11 @@ Day 043
 -[x] Delete win32ProcessMessages code
 -[x] Remove "platform toggle fullscreen"
 -[x] Fix runtime error with live loop editing enabled
+-[ ] Finish tidying up compiler and linker flags
 -[ ] Gustavo
 -[ ] Implement vector movement in conjuction with deltatime and refactor player movement to be less hacky. Note: all movement values are "per second"
 -[ ] Get rid of temp game_types.h
+-[ ] Start to split Win32 platform layer into multiple files
 -[ ] Complete day 43
 
 Ongoing:

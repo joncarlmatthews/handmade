@@ -662,8 +662,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 *gameInputStates);
         }
 
-        // Save how long this frame look to compute (excluding rendering and auido
-        // which is handled by the OS and we dont have control over)
+        // Process the audio buffer.
+        win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
+
+        // Hand the display buffer off to the OS for rendering. AKA "flip the
+        // frame" or "page flip"...
+        win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
+        win32DisplayFrameBuffer(deviceHandleForWindow,
+                                win32FrameBuffer,
+                                clientDimensions.width,
+                                clientDimensions.height);
+
+        // Save how long this frame look to compute
         LARGE_INTEGER frameEndTimestamp = win32GetTime();
 
         float32 frameProcessingDuration = win32GetElapsedTimeMS(frameStartTimestamp,
@@ -678,10 +688,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                         win32FixedFrameRate.gameTargetMSPerFrame);
 #endif
                 
-        // Cap frame rate to target FPS if we're running ahead. We do this before rendering
-        // and audio intentionally.
+        // Cap frame rate to target FPS if we're running ahead.
+        // Inentionally done before we render frame and audio
         if (frameProcessingDuration < win32FixedFrameRate.gameTargetMSPerFrame){
-
 
             float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - frameProcessingDuration);
 
@@ -690,13 +699,34 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 needToSleepForMS, (frameProcessingDuration + needToSleepForMS));
 #endif
 
-            INT msToSleepI = (INT)needToSleepForMS;
+            if (needToSleepForMS > 10){
+
+                INT msToSleepI = (INT)(needToSleepForMS * 0.5);
+
+                if (msToSleepI > 0){
 
 #ifdef _DEBUG_FPS
-            platformLog(L"Sleeping for... %i\n", msToSleepI);
+                    platformLog(L"Calling Sleep() for  %i\n", msToSleepI);
 #endif
 
-            Sleep(msToSleepI);
+                    Sleep(msToSleepI);
+                }
+            }
+
+            float32 msRemaining = ((1000.0f / (float32)TARGET_FPS) - win32GetElapsedTimeMS(frameStartTimestamp,
+                                                                                                win32GetTime(),
+                                                                                                globalQPCFrequency));
+
+            // Spin lock for remainder with a busy-wait loop: keep checking until
+            // enough time has passed
+            while(msRemaining > 0){
+                /*
+                float32 now = win32GetTime();
+                QueryPerformanceCounter(&currentTime);
+                deltaTime = (float)(currentTime.QuadPart - lastFrameTime.QuadPart) / (float)frequency.QuadPart;
+                sleepTime = TARGET_FRAME_TIME - deltaTime;
+                */
+            }
 
         }else if((INT)frameProcessingDuration > (INT)win32FixedFrameRate.gameTargetMSPerFrame){
 
@@ -741,20 +771,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
         // Console log the speed:
         platformLog(L"Cycles: %.1fm (%.2f GHz).\n", clockCycles_mega, processorSpeed);
 #endif
-
-        // Output the audio buffer in Windows.
-        win32WriteAudioBuffer(&win32AudioBuffer, lockOffsetInBytes, lockSizeInBytes, &gameAudioBuffer);
-
-        // Display the frame buffer in Windows. AKA "flip the frame" or "page flip"...
-
-        // Get the window's height and width
-        win32ClientDimensions clientDimensions = win32GetClientDimensions(window);
-
-        // Display the buffer to the screen
-        win32DisplayFrameBuffer(deviceHandleForWindow,
-                                win32FrameBuffer,
-                                clientDimensions.width,
-                                clientDimensions.height);
 
         // Increment frame index
         frameIndex++;
@@ -1695,6 +1711,138 @@ PLATFORM_LOG(platformLog)
     OutputDebugString(buffer);
 }
 
+#ifdef HANDMADE_LOCAL_BUILD
+
+DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
+{
+    // Concatenate the exe abs path and the relative filename into fullFilename
+    wchar_t fullFilename[MAX_PATH] = { 0 };
+
+    // Concatenate the source string to the destination buffer
+    HRESULT hr;
+
+    hr = StringCchCatW(fullFilename, MAX_PATH, exeAbsPath);
+
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
+
+    hr = StringCchCatW(fullFilename, MAX_PATH, filename);
+
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
+
+    DEBUG_file file = { 0 };
+    BOOL res;
+
+    // Open the file for reading.
+    HANDLE handle = CreateFileW(fullFilename, GENERIC_READ, FILE_SHARE_READ,
+                                NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if(INVALID_HANDLE_VALUE == handle){
+        OutputDebugStringA("Cannot read file");
+        return file;
+    }
+
+    // Get the size of the file in bytes.
+    LARGE_INTEGER sizeStruct;
+    res = GetFileSizeEx(handle, &sizeStruct);
+
+    if(!res){
+        OutputDebugStringA("Cannot get file size");
+        CloseHandle(handle);
+        return file;
+    }
+
+    uint64 sizeInBytes = sizeStruct.QuadPart;
+
+    // As GetFileSizeEx can read files larger than 4-bytes, but ReadFile can only
+    // take a maximum of 4-bytes, lets make sure we're not reading files larger
+    // than 4GB.
+    uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
+
+    // Allocate enough memory for the file.
+    file.memory = platformAllocateMemory(thread, 0, sizeInBytes);
+
+    if(NULL == file.memory){
+        OutputDebugStringA("Cannot allocate memory for file");
+        CloseHandle(handle);
+        return file;
+    }
+
+    // Read the file into the memory.
+    DWORD bytesRead;
+    res = ReadFile(handle, file.memory, sizeInBytes32, &bytesRead, NULL);
+
+    if((!res) || (bytesRead != sizeInBytes32)){
+        OutputDebugStringA("Cannot read file into memory");
+        //DEBUG_platformFreeFileMemory(&file);
+        //CloseHandle(handle);
+        //return file;
+    }
+
+    file.sizeinBytes = bytesRead;
+
+    CloseHandle(handle);
+
+    return file;
+}
+
+DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
+{
+    VirtualFree(file->memory, 0, MEM_RELEASE);
+    file->memory = 0;
+    file->sizeinBytes = 0;
+}
+
+DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
+{
+    // Concatenate the exe abs path and the relative filename into fullFilename
+    wchar_t fullFilename[MAX_PATH] = { 0 };
+
+    // Concatenate the source string to the destination buffer
+    HRESULT hr;
+
+    hr = StringCchCatW(fullFilename, MAX_PATH, exeAbsPath);
+
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
+
+    hr = StringCchCatW(fullFilename, MAX_PATH, filename);
+
+    if(!SUCCEEDED(hr)){
+        assert(!"Error concatenating file paths");
+    }
+
+    // Open the file for writing.
+    HANDLE handle = CreateFile(fullFilename,
+                                GENERIC_WRITE, 0, NULL,
+                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if(INVALID_HANDLE_VALUE == handle){
+        OutputDebugStringA("Cannot read file");
+        return false;
+    }
+
+    // Write the bytes.
+    DWORD bytesWritten;
+    BOOL res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
+
+    if((!res) || (bytesWritten != memorySizeInBytes)){
+        OutputDebugStringA("Could not write file to location");
+        CloseHandle(handle);
+        return false;
+    }
+
+    CloseHandle(handle);
+
+    return true;
+}
+
+#endif
+
 void setSupportedClientWidths(uint32 arrSize)
 {
     uint32 lastWrittenIndex = 0;
@@ -1807,138 +1955,6 @@ size_t utilTebibyteToBytes(uint32 tebibytes)
 {
     return (size_t)(((uint32)1024 * utilGibibytesToBytes(1)) * tebibytes);
 }
-
-#ifdef HANDMADE_LOCAL_BUILD
-
-DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUG_platformReadEntireFile)
-{
-    // Concatenate the exe abs path and the relative filename into fullFilename
-    wchar_t fullFilename[MAX_PATH] = { 0 };
-
-    // Concatenate the source string to the destination buffer
-    HRESULT hr;
-
-    hr = StringCchCatW(fullFilename, MAX_PATH, exeAbsPath);
-
-    if(!SUCCEEDED(hr)){
-        assert(!"Error concatenating file paths");
-    }
-
-    hr = StringCchCatW(fullFilename, MAX_PATH, filename);
-
-    if(!SUCCEEDED(hr)){
-        assert(!"Error concatenating file paths");
-    }
-
-    DEBUG_file file = { 0 };
-    BOOL res;
-
-    // Open the file for reading.
-    HANDLE handle = CreateFileW(fullFilename, GENERIC_READ, FILE_SHARE_READ,
-                                NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    if (INVALID_HANDLE_VALUE == handle) {
-        OutputDebugStringA("Cannot read file");
-        return file;
-    }
-
-    // Get the size of the file in bytes.
-    LARGE_INTEGER sizeStruct;
-    res = GetFileSizeEx(handle, &sizeStruct);
-
-    if (!res) {
-        OutputDebugStringA("Cannot get file size");
-        CloseHandle(handle);
-        return file;
-    }
-
-    uint64 sizeInBytes = sizeStruct.QuadPart;
-
-    // As GetFileSizeEx can read files larger than 4-bytes, but ReadFile can only
-    // take a maximum of 4-bytes, lets make sure we're not reading files larger
-    // than 4GB.
-    uint32 sizeInBytes32 = win32TruncateToUint32Safe(sizeInBytes);
-
-    // Allocate enough memory for the file.
-    file.memory = platformAllocateMemory(thread, 0, sizeInBytes);
-
-    if (NULL == file.memory) {
-        OutputDebugStringA("Cannot allocate memory for file");
-        CloseHandle(handle);
-        return file;
-    }
-
-    // Read the file into the memory.
-    DWORD bytesRead;
-    res = ReadFile(handle, file.memory, sizeInBytes32, &bytesRead, NULL);
-
-    if ((!res) || (bytesRead != sizeInBytes32)) {
-        OutputDebugStringA("Cannot read file into memory");
-        //DEBUG_platformFreeFileMemory(&file);
-        //CloseHandle(handle);
-        //return file;
-    }
-
-    file.sizeinBytes = bytesRead;
-
-    CloseHandle(handle);
-
-    return file;
-}
-
-DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUG_platformFreeFileMemory)
-{
-    VirtualFree(file->memory, 0, MEM_RELEASE);
-    file->memory = 0;
-    file->sizeinBytes = 0;
-}
-
-DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
-{
-    // Concatenate the exe abs path and the relative filename into fullFilename
-    wchar_t fullFilename[MAX_PATH] = { 0 };
-
-    // Concatenate the source string to the destination buffer
-    HRESULT hr;
-
-    hr = StringCchCatW(fullFilename, MAX_PATH, exeAbsPath);
-
-    if(!SUCCEEDED(hr)){
-        assert(!"Error concatenating file paths");
-    }
-
-    hr = StringCchCatW(fullFilename, MAX_PATH, filename);
-
-    if(!SUCCEEDED(hr)){
-        assert(!"Error concatenating file paths");
-    }
-
-    // Open the file for writing.
-    HANDLE handle = CreateFile(fullFilename,
-                                GENERIC_WRITE, 0, NULL,
-                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    if (INVALID_HANDLE_VALUE == handle) {
-        OutputDebugStringA("Cannot read file");
-        return false;
-    }
-
-    // Write the bytes.
-    DWORD bytesWritten;
-    BOOL res = WriteFile(handle, memory, memorySizeInBytes, &bytesWritten, 0);
-
-    if ((!res) || (bytesWritten != memorySizeInBytes)) {
-        OutputDebugStringA("Could not write file to location");
-        CloseHandle(handle);
-        return false;
-    }
-
-    CloseHandle(handle);
-
-    return true;
-}
-
-#endif
 
 internal void performDLLCopyCheck(const wchar_t *gameDLLFilePath,
                                     const wchar_t *gameCopyDLLFilePath,
