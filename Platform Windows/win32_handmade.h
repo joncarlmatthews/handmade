@@ -44,7 +44,7 @@
 
 // FPS
 // -----------------------------------------------------------------------------
-#define TARGET_FPS 120
+#define TARGET_FPS 60.0f
 #define _ASSERT_FPS FALSE
 
 // Custom message ID for sending to the window when we consider
@@ -163,7 +163,7 @@ typedef struct Win32FixedFrameRate {
     uint32 monitorRefreshRate;
 
     // Target FPS.
-    uint32 gameTargetFPS;
+    float32 gameTargetFPS;
 
     // Target FPS in milliseconds.
     float32 gameTargetMSPerFrame;
@@ -171,8 +171,8 @@ typedef struct Win32FixedFrameRate {
     // System's minimum timer resolution.
     UINT timeOutIntervalMS;
 
-    // Boolean did the system set the minimum timer resolution successfully.
-    MMRESULT timeOutIntervalSet;
+    // TIMERR_NOERROR if call to timeBeginPeriod is successful.
+    MMRESULT timeBeginPeriodRes;
 
 } Win32FixedFrameRate;
 
@@ -306,6 +306,14 @@ internal uint32         getClosestSupportedHeight(uint32 arrSize, uint32 height)
 internal void           toggleFullscreen(HWND hWnd);
 internal uint32         aspectRatioWidthFromHeight(uint32 height);
 internal uint32         aspectRatioHeightFromWidth(uint32 width);
+
+/**
+ * Truncats a floating point number at two decimal places and returns the result
+ * as an integer.
+ *
+ * E.g. 33.33456 becomes 3333
+ */
+internal inline int truncateToTwoDecimals(float num);
 
 //===========================================
 // Game-required platform layer signatures

@@ -273,8 +273,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
         // Match the target FPS with the monitor's refresh rate if our target
         // is higher than what the monitor can support (to avoid wasting resources)
-        if (dm.dmDisplayFrequency >= 30 && dm.dmDisplayFrequency < TARGET_FPS){
-            win32FixedFrameRate.gameTargetFPS = dm.dmDisplayFrequency;
+        if (dm.dmDisplayFrequency >= 30 && dm.dmDisplayFrequency < win32FixedFrameRate.gameTargetFPS){
+            win32FixedFrameRate.gameTargetFPS = (float32)dm.dmDisplayFrequency;
         }
         
     }
@@ -286,7 +286,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
     // granular. E.g. the wake from the Sleep() will be checked
     // every 1ms, rather than the system default.
     win32FixedFrameRate.timeOutIntervalMS = 1;
-    win32FixedFrameRate.timeOutIntervalSet = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
+    win32FixedFrameRate.timeBeginPeriodRes = timeBeginPeriod(win32FixedFrameRate.timeOutIntervalMS);
 
 
     /*
@@ -371,9 +371,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                                     frameStartTimestamp,
                                                     globalQPCFrequency);
 
-        prevFrameTimestamp = win32GetTime();
+        prevFrameTimestamp = frameStartTimestamp;
 
-#ifdef _DEBUG_FPS
+#ifdef _DEBUG_DT
         platformLog(L"Delta time frame %zu: %f seconds\n",
                             frameIndex,
                             gameInput.deltaTime);
@@ -673,6 +673,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                 clientDimensions.width,
                                 clientDimensions.height);
 
+
+        // ============================
+        // END OF FRAME RENDER PIPELINE
+        // ============================
+
+
         // Save how long this frame look to compute
         LARGE_INTEGER frameEndTimestamp = win32GetTime();
 
@@ -681,54 +687,59 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
                                                                 globalQPCFrequency);
 
 #ifdef _DEBUG_FPS
-        platformLog(L"Time for frame to be processed: %f milliseconds\n",
-                        frameProcessingDuration);
-
-        platformLog(L"Target time for frame to complete: %f milliseconds\n",
+        platformLog(L"\nTarget time for frame to complete: %fms\n",
                         win32FixedFrameRate.gameTargetMSPerFrame);
+        platformLog(L"Actual time for frame to be processed: %fms\n",
+                        frameProcessingDuration);
 #endif
                 
         // Cap frame rate to target FPS if we're running ahead.
-        // Inentionally done before we render frame and audio
         if (frameProcessingDuration < win32FixedFrameRate.gameTargetMSPerFrame){
 
             float32 needToSleepForMS = (win32FixedFrameRate.gameTargetMSPerFrame - frameProcessingDuration);
 
 #ifdef _DEBUG_FPS
-            platformLog(L"Need to sleep for: %f milliseconds (%f)\n",
-                                needToSleepForMS, (frameProcessingDuration + needToSleepForMS));
+            platformLog(L"Need to wait for: %fms\n",
+                                needToSleepForMS);
 #endif
 
+            // Only call Win32 Sleep, if we have more than 10ms to wait for
             if (needToSleepForMS > 10){
 
+                // Only Sleep for 50% of the required wait time
                 INT msToSleepI = (INT)(needToSleepForMS * 0.5);
 
                 if (msToSleepI > 0){
 
 #ifdef _DEBUG_FPS
-                    platformLog(L"Calling Sleep() for  %i\n", msToSleepI);
+                    platformLog(L"Calling Sleep for  %ims (50%% of required wait time)\n", msToSleepI);
 #endif
 
                     Sleep(msToSleepI);
                 }
             }
 
-            float32 msRemaining = ((1000.0f / (float32)TARGET_FPS) - win32GetElapsedTimeMS(frameStartTimestamp,
-                                                                                                win32GetTime(),
-                                                                                                globalQPCFrequency));
+            float32 msRemaining = (win32FixedFrameRate.gameTargetMSPerFrame - win32GetElapsedTimeMS(frameStartTimestamp,
+                                                                                                    win32GetTime(),
+                                                                                                    globalQPCFrequency));
 
             // Spin lock for remainder with a busy-wait loop: keep checking until
             // enough time has passed
             while(msRemaining > 0){
-                /*
-                float32 now = win32GetTime();
-                QueryPerformanceCounter(&currentTime);
-                deltaTime = (float)(currentTime.QuadPart - lastFrameTime.QuadPart) / (float)frequency.QuadPart;
-                sleepTime = TARGET_FRAME_TIME - deltaTime;
-                */
+                msRemaining = (win32FixedFrameRate.gameTargetMSPerFrame - win32GetElapsedTimeMS(frameStartTimestamp,
+                                                                                                    win32GetTime(),
+                                                                                                    globalQPCFrequency));
             }
 
-        }else if((INT)frameProcessingDuration > (INT)win32FixedFrameRate.gameTargetMSPerFrame){
+
+        }
+
+        // After any potential wait time, how long did the frame take to complete?
+        float32 netFrameTime = win32GetElapsedTimeMS(frameStartTimestamp,
+                                                    win32GetTime(),
+                                                    globalQPCFrequency);
+
+        if(truncateToTwoDecimals(netFrameTime) > truncateToTwoDecimals(win32FixedFrameRate.gameTargetMSPerFrame)){
 
             // @TODO(JM) Missed target framerate. Log.
 #if _ASSERT_FPS
@@ -738,19 +749,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 #endif // _ASSERT_FPS
 
 #ifdef _DEBUG_FPS
-            platformLog(L"======================================MISSED================================ (%f > %f)\n",
-                                frameProcessingDuration,
+            platformLog(L"=================MISSED================= (%f > %f)\n\n",
+                                netFrameTime,
                                 win32FixedFrameRate.gameTargetMSPerFrame);
 #endif
         }
-
-        // Calculate the net frame time (E.g. 33.33ms or 16.66ms)
-#ifdef _DEBUG_FPS
-        platformLog(L"Net time for frame to complete: %f milliseconds\n\n",
-                            win32GetElapsedTimeMS(frameStartTimestamp,
-                                                    win32GetTime(),
-                                                    globalQPCFrequency));
-#endif
 
 #ifdef _DEBUG_CLOCKCYCLES
         // Calculate how many processor clock cycles elapsed for this frame.
@@ -782,7 +785,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance,
 
     } // end game loop
 
-    if (TIMERR_NOERROR == win32FixedFrameRate.timeOutIntervalSet) {
+    if (TIMERR_NOERROR == win32FixedFrameRate.timeBeginPeriodRes) {
         timeEndPeriod(win32FixedFrameRate.timeOutIntervalMS);
     }
 
@@ -1934,6 +1937,11 @@ uint32 gcd(uint32 a, uint32 b)
     } else{
         return gcd(b, a % b);
     }
+}
+
+internal inline int truncateToTwoDecimals(float num)
+{
+    return (int)(num * 100);
 }
 
 size_t utilKibibytesToBytes(uint32 kibibytes)
