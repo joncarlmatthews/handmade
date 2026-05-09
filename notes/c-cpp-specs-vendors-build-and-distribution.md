@@ -168,7 +168,8 @@ It handles `#include`, `#define`, `#if`, `#ifdef`, and `defined(...)`.
 Input: your original source files.
 
 Output: expanded source text, with includes/macros/conditional compilation
-resolved.
+resolved. This is often not saved as a normal project file, but some compilers
+can emit it for inspection, for example `game.i`, `game.ii`, or `game.pp`.
 
 Example:
 
@@ -190,6 +191,8 @@ Input: expanded source text from the preprocessor.
 
 Output: usually assembly or object code. Conceptually, the compiler produces
 assembly for the assembler, even if the toolchain hides that intermediate file.
+If saved, assembly files might look like `game.asm` on Windows or `game.s` on
+macOS/Linux.
 
 MSVC and Clang are compilers/toolchains. They also provide compiler-specific
 predefined macros and extensions, which is why shared headers need compiler
@@ -213,7 +216,8 @@ code and data waiting to be linked together.
 
 Input: assembly emitted by the compiler.
 
-Output: object files.
+Output: object files, for example `game.obj` on Windows or `game.o` on
+macOS/Linux.
 
 This step is often hidden because tools like `cl.exe`, `clang`, and `clang++`
 act as compiler drivers. They may run preprocessing, compiling, assembling, and
@@ -230,7 +234,9 @@ file or library that actually provides `gameUpdate`.
 
 Input: object files from the assembler, plus libraries and linker settings.
 
-Output: an executable, dynamic library, or static library.
+Output: an executable, dynamic library, or static library. Examples:
+`Handmade Hero.exe`, `Game.dll`, `Handmade Hero.app`, `libgame.a`,
+or `libgame.dylib`.
 
 The linker also decides which libraries become part of the final executable and
 which dynamic libraries the executable expects to load at runtime.
