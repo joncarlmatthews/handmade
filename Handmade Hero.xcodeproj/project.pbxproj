@@ -9,7 +9,6 @@
 /* Begin PBXFileReference section */
 		AE071B152FAFC19A00D28216 /* Platform macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Platform macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE8410F12FAFC30300397832 /* current_state.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = current_state.png; sourceTree = "<group>"; };
-		AE8411322FAFC30300397832 /* NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOTES.md; sourceTree = "<group>"; };
 		AE8411332FAFC30300397832 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AE8411342FAFC30300397832 /* TODO.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -67,7 +66,6 @@
 				AE8411062FAFC30300397832 /* data */,
 				AE84110E2FAFC30300397832 /* dist */,
 				AE8411312FAFC30300397832 /* Game */,
-				AE8411322FAFC30300397832 /* NOTES.md */,
 				AE8411332FAFC30300397832 /* README.md */,
 				AE8411342FAFC30300397832 /* TODO.txt */,
 				AE071B172FAFC19A00D28216 /* Platform macOS */,

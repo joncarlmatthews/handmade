@@ -147,7 +147,7 @@ define the C/C++ language. They describe what files to compile, what compiler
 flags to use, what libraries to link, where outputs go, and how debugging/running
 is configured.
 
-### Build And Runtime Pieces
+### Build Pieces
 
 The build pipeline is roughly:
 
@@ -241,7 +241,20 @@ or `libgame.dylib`.
 The linker also decides which libraries become part of the final executable and
 which dynamic libraries the executable expects to load at runtime.
 
-**5. C runtime and standard library implementation**
+### Runtime Pieces
+
+The runtime startup pipeline is roughly:
+
+```text
+user launches program
+  -> OS loader maps executable into memory
+  -> dynamic libraries/frameworks are loaded
+  -> C/C++ runtime startup runs
+  -> main / platform entry point is called
+  -> your program runs
+```
+
+**1. C runtime and standard library implementation**
 
 The runtime is support code linked into or used by the program while it runs.
 It helps with process startup, calling `main`, static initialization, heap
@@ -259,18 +272,7 @@ Some runtime code can be linked directly into the executable, and some can be
 loaded from shared libraries. Which one happens depends on compiler/linker flags
 and platform conventions.
 
-**6. OS loader and program startup**
-
-The runtime startup pipeline is roughly:
-
-```text
-user launches program
-  -> OS loader maps executable into memory
-  -> dynamic libraries/frameworks are loaded
-  -> C/C++ runtime startup runs
-  -> main / platform entry point is called
-  -> your program runs
-```
+**2. OS loader and program startup**
 
 When a user runs the program, the operating system loader maps the executable
 into memory and loads the dynamic libraries/frameworks it depends on.
