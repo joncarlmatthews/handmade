@@ -31,7 +31,9 @@ Executable / dynamic library
   .exe/.dll on Windows, .app/.dylib on macOS.
 ```
 
-## Segment 1: Specs And Implementations
+## Making sense of the moving pieces
+
+### Specs And Implementations
 
 **1. C/C++ language specification**
 
@@ -108,9 +110,28 @@ This is why the preprocessor can run: it is part of the installed compiler
 toolchain. It is not provided by the C language spec and it is not provided by
 your program's runtime.
 
-## Segment 2: Build And Runtime Pieces
+**5. Platform API and SDK**
 
-**5. Preprocessor**
+Platform APIs are operating-system-specific services:
+
+- Win32, DirectSound, XInput on Windows.
+- AppKit, CoreGraphics, CoreAudio, POSIX/mach APIs on macOS.
+
+This project's platform layers should hide those APIs from the game layer.
+
+The SDK is the bundle of headers, libraries, metadata, and tools that lets code
+compile against those platform APIs.
+
+**6. Build system / IDE**
+
+Visual Studio projects, Xcode projects, `.bat` scripts, Make, and CMake do not
+define the C/C++ language. They describe what files to compile, what compiler
+flags to use, what libraries to link, where outputs go, and how debugging/running
+is configured.
+
+### Build And Runtime Pieces
+
+**1. Preprocessor**
 
 The preprocessor is an early text-processing stage in the compiler toolchain.
 It handles `#include`, `#define`, `#if`, `#ifdef`, and `defined(...)`.
@@ -126,7 +147,7 @@ Example:
 `defined(...)` is built into the preprocessor. It is not a function, not a macro
 I define myself, and not part of the C runtime.
 
-**6. Compiler**
+**2. Compiler**
 
 The compiler turns preprocessed C/C++ into object code. MSVC and Clang are
 compilers/toolchains. They also provide compiler-specific predefined macros and
@@ -142,7 +163,7 @@ Examples:
 #endif
 ```
 
-**7. C runtime and standard library implementation**
+**3. C runtime and standard library implementation**
 
 The runtime is support code linked into or used by the program while it runs.
 It helps with process startup, calling `main`, static initialization, heap
@@ -160,7 +181,7 @@ Some runtime code can be linked directly into the executable, and some can be
 loaded from shared libraries. Which one happens depends on compiler/linker flags
 and platform conventions.
 
-**8. Linker**
+**4. Linker**
 
 The linker combines object files and resolves external symbols from libraries.
 If one file calls `gameUpdate`, the linker is responsible for finding the object
@@ -169,26 +190,7 @@ file or library that actually provides `gameUpdate`.
 The linker also decides which libraries become part of the final executable and
 which dynamic libraries the executable expects to load at runtime.
 
-**9. Platform API and SDK**
-
-Platform APIs are operating-system-specific services:
-
-- Win32, DirectSound, XInput on Windows.
-- AppKit, CoreGraphics, CoreAudio, POSIX/mach APIs on macOS.
-
-This project's platform layers should hide those APIs from the game layer.
-
-The SDK is the bundle of headers, libraries, metadata, and tools that lets code
-compile against those platform APIs.
-
-**10. Build system / IDE**
-
-Visual Studio projects, Xcode projects, `.bat` scripts, Make, and CMake do not
-define the C/C++ language. They describe what files to compile, what compiler
-flags to use, what libraries to link, where outputs go, and how debugging/running
-is configured.
-
-## Segment 3: Running On An End User's Machine
+### Running On An End User's Machine
 
 There are usually two different machines to think about:
 
@@ -200,7 +202,7 @@ There are usually two different machines to think about:
 An end user normally does not need the compiler or SDK. They need the executable
 and whatever runtime/data/library files the executable depends on.
 
-### Windows
+#### Windows
 
 For a simple Windows C/C++ program, distribution can be as simple as:
 
@@ -246,7 +248,7 @@ dist/
     data/
 ```
 
-### macOS
+#### macOS
 
 On macOS, the usual user-facing artifact is an app bundle:
 
@@ -273,7 +275,7 @@ Like Windows, the app still needs its assets and any dynamic libraries it depend
 on. macOS apps may also need signing/notarization for smooth distribution outside
 your own machine, especially if other people download the app from the internet.
 
-### Build Once, Run Elsewhere
+#### Build Once, Run Elsewhere
 
 In normal C/C++ distribution, users do not rebuild the program themselves. The
 developer builds a binary for a target platform and architecture, then ships the
