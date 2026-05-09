@@ -76,15 +76,6 @@ Examples:
 | GNU / Linux ecosystem | GCC compiler, GNU linker/binutils or LLVM linker alternatives, glibc on many distributions, POSIX/Linux headers and libraries, build tools like Make | Linux is less one-vendor-shaped. A distribution assembles compiler, libc, linker, kernel headers, debugger, and package manager pieces. |
 | musl ecosystem | musl C library implementation, often paired with GCC or Clang | musl is an alternative libc commonly used for small/static Linux systems. It is a standard library/runtime implementation, not a compiler by itself. |
 
-The key idea is:
-
-```text
-specification
-  describes what should exist and how it should behave
-
-implementation
-  real vendor code/tools installed on your machine
-```
 
 **4. Getting C/C++ on your machine**
 
@@ -121,6 +112,33 @@ This project's platform layers should hide those APIs from the game layer.
 
 The SDK is the bundle of headers, libraries, metadata, and tools that lets code
 compile against those platform APIs.
+
+Platform APIs are not usually "inside" the C standard library implementation.
+They sit beside it as part of the operating system and platform SDK.
+
+In simple terms:
+
+```text
+C standard library implementation
+  portable C functions like malloc, printf, fopen, memcpy
+
+Platform SDK
+  OS-specific headers and link-time information
+
+Operating system libraries/frameworks
+  actual OS-specific implementation loaded when the program runs
+```
+
+On Windows, the Windows SDK gives you headers such as `windows.h` and link-time
+libraries such as `user32.lib`, `gdi32.lib`, and `kernel32.lib`. At runtime,
+Windows provides DLLs such as `user32.dll`, `gdi32.dll`, and `kernel32.dll`.
+
+On macOS, the macOS SDK gives you headers, framework metadata, and `.tbd` stub
+libraries for frameworks such as AppKit, CoreGraphics, and CoreAudio. At
+runtime, macOS provides the actual system frameworks.
+
+So the C runtime and platform APIs often arrive from the same vendor/toolchain
+install, but conceptually they are different buckets.
 
 **6. Build system / IDE**
 
