@@ -40,6 +40,11 @@
 			path = Game;
 			sourceTree = "<group>";
 		};
+		AE8416212FAFCFAE00397832 /* notes */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = notes;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +61,7 @@
 		AE071B0C2FAFC19A00D28216 = {
 			isa = PBXGroup;
 			children = (
+				AE8416212FAFCFAE00397832 /* notes */,
 				AE8410F02FAFC30300397832 /* build */,
 				AE8410F12FAFC30300397832 /* current_state.png */,
 				AE8411062FAFC30300397832 /* data */,

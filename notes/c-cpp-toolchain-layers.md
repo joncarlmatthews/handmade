@@ -31,15 +31,86 @@ Executable / dynamic library
   .exe/.dll on Windows, .app/.dylib on macOS.
 ```
 
-## Roles And Responsibilities
+## Segment 1: Specs And Implementations
 
-**C/C++ language**
+**1. C/C++ language specification**
 
 The language is the syntax and rules: variables, structs, pointers, functions,
 `if`, `while`, templates, overloads, etc. It is not the compiler and it is not
 the standard library.
 
-**Preprocessor**
+The language specification describes what valid C/C++ code means. It does not
+tell you which executable program compiles that code on your machine.
+
+**2. C standard library specification**
+
+The C standard library is primarily a specification: it says functions like
+`malloc`, `free`, `printf`, `fopen`, `memcpy`, and `strlen` exist and describes
+how they should behave.
+
+The standard library specification is a contract. It is not, by itself, a folder
+of source files you download from the C language committee.
+
+**3. Vendors and implementations**
+
+Vendors provide the concrete tools and libraries that make the specs usable on a
+real machine. A vendor might provide a compiler, preprocessor, linker, headers,
+standard library implementation, runtime pieces, platform SDKs, debugger
+integration, and IDE/build-system support.
+
+Examples:
+
+- Windows/MSVC: Microsoft C runtime, nowadays commonly the Universal C Runtime.
+- macOS/Clang: Clang compiles the code, while Apple's system libraries provide
+  the C library implementation.
+- Linux: often glibc or musl, regardless of whether GCC or Clang compiles the
+  code.
+
+| Vendor / ecosystem | What they provide | Notes |
+| --- | --- | --- |
+| Microsoft / MSVC | `cl.exe` compiler, preprocessor, `link.exe` linker, Windows SDK integration, MSVC headers, Universal C Runtime, MSVC runtime libraries, Visual Studio debugger/IDE/build tools | This is the normal Windows path for this project. The runtime gets installed with Visual Studio/Build Tools and may be installed for end users via the Visual C++ Redistributable. |
+| Apple / Xcode | Apple Clang compiler, Apple linker tooling, macOS SDK, system headers, AppKit/CoreAudio/CoreGraphics frameworks, Apple system C library/runtime support, Xcode debugger/IDE/build tools | This is the normal macOS path for this project. Clang compiles the code, while Apple's SDK and system libraries provide the platform APIs and runtime/library pieces. |
+| LLVM / Clang | Clang compiler frontend, preprocessor behavior, diagnostics, optimizer/backend via LLVM, compiler builtins and related toolchain pieces | Clang is mostly the compiler/toolchain technology, not automatically the whole C runtime. On macOS it is paired with Apple system libraries; on Linux it may be paired with glibc or musl; on Windows it can target MSVC-compatible runtimes. |
+| GNU / Linux ecosystem | GCC compiler, GNU linker/binutils or LLVM linker alternatives, glibc on many distributions, POSIX/Linux headers and libraries, build tools like Make | Linux is less one-vendor-shaped. A distribution assembles compiler, libc, linker, kernel headers, debugger, and package manager pieces. |
+| musl ecosystem | musl C library implementation, often paired with GCC or Clang | musl is an alternative libc commonly used for small/static Linux systems. It is a standard library/runtime implementation, not a compiler by itself. |
+
+The key idea is:
+
+```text
+specification
+  describes what should exist and how it should behave
+
+implementation
+  real vendor code/tools installed on your machine
+```
+
+**4. Getting C/C++ on your machine**
+
+You do not install "C" itself. You install a toolchain and SDK that let you
+write, compile, link, debug, and run C/C++ programs on a specific platform.
+
+On Windows for this project, that usually means installing Visual Studio or the
+Visual Studio Build Tools with the Desktop development with C++ workload. That
+puts MSVC's compiler, preprocessor, linker, headers, libraries, Windows SDK
+pieces, and runtime support on the machine.
+
+End-user Windows machines may also need runtime DLLs. Those can arrive from the
+Microsoft Visual C++ Redistributable, from Windows itself for some Universal C
+Runtime pieces, or from an application installer that bundles the needed DLLs.
+
+On macOS for this project, that means installing Xcode or the Xcode Command Line
+Tools. That provides Apple Clang, Apple linker tooling, SDK headers, SDK stubs,
+framework metadata, and the pieces needed to build against Apple's system
+libraries. The actual system C library/runtime support is provided by macOS and
+Apple's developer tools.
+
+This is why the preprocessor can run: it is part of the installed compiler
+toolchain. It is not provided by the C language spec and it is not provided by
+your program's runtime.
+
+## Segment 2: Build And Runtime Pieces
+
+**5. Preprocessor**
 
 The preprocessor is an early text-processing stage in the compiler toolchain.
 It handles `#include`, `#define`, `#if`, `#ifdef`, and `defined(...)`.
@@ -55,7 +126,7 @@ Example:
 `defined(...)` is built into the preprocessor. It is not a function, not a macro
 I define myself, and not part of the C runtime.
 
-**Compiler**
+**6. Compiler**
 
 The compiler turns preprocessed C/C++ into object code. MSVC and Clang are
 compilers/toolchains. They also provide compiler-specific predefined macros and
@@ -71,28 +142,34 @@ Examples:
 #endif
 ```
 
-**C standard library**
-
-The C standard library is primarily a specification: it says functions like
-`malloc`, `free`, `printf`, `fopen`, `memcpy`, and `strlen` exist and describes
-how they should behave.
-
-The actual implementation comes from the platform/toolchain:
-
-- Windows/MSVC: Microsoft C runtime, nowadays commonly the Universal C Runtime.
-- macOS/Clang: Clang compiles the code, while Apple's system libraries provide
-  the C library implementation.
-- Linux: often glibc or musl, regardless of whether GCC or Clang compiles the
-  code.
-
-**C runtime**
+**7. C runtime and standard library implementation**
 
 The runtime is support code linked into or used by the program while it runs.
 It helps with process startup, calling `main`, static initialization, heap
 support, and standard library behavior. It is runtime support, not
 preprocessor logic.
 
-**Platform API**
+There are usually two sides:
+
+- **Build-time pieces:** headers, import libraries, SDK stubs, startup object
+  files, and linker metadata used while building.
+- **Run-time pieces:** shared libraries or system libraries that the executable
+  loads when it runs.
+
+Some runtime code can be linked directly into the executable, and some can be
+loaded from shared libraries. Which one happens depends on compiler/linker flags
+and platform conventions.
+
+**8. Linker**
+
+The linker combines object files and resolves external symbols from libraries.
+If one file calls `gameUpdate`, the linker is responsible for finding the object
+file or library that actually provides `gameUpdate`.
+
+The linker also decides which libraries become part of the final executable and
+which dynamic libraries the executable expects to load at runtime.
+
+**9. Platform API and SDK**
 
 Platform APIs are operating-system-specific services:
 
@@ -101,50 +178,12 @@ Platform APIs are operating-system-specific services:
 
 This project's platform layers should hide those APIs from the game layer.
 
-**Build system / IDE**
+The SDK is the bundle of headers, libraries, metadata, and tools that lets code
+compile against those platform APIs.
+
+**10. Build system / IDE**
 
 Visual Studio projects, Xcode projects, `.bat` scripts, Make, and CMake do not
 define the C/C++ language. They describe what files to compile, what compiler
 flags to use, what libraries to link, where outputs go, and how debugging/running
 is configured.
-
-## Handmade Project Split
-
-```text
-Game/
-  Platform-independent game code.
-  Should not include Win32, AppKit, DirectSound, CoreAudio, etc.
-
-Platform Windows/
-  Windows-specific platform layer.
-  Owns Win32 windowing, input, timing, file I/O, DirectSound, XInput, and
-  loading/reloading the game DLL.
-
-Platform macOS/
-  macOS-specific platform layer.
-  Owns AppKit windowing, input, timing, file I/O, framebuffer display, and later
-  CoreAudio/dylib loading.
-```
-
-The game layer defines what services it needs from a platform in `Game/game.h`.
-Each platform layer implements those services using its own operating-system APIs.
-
-## Key Distinction
-
-```text
-#if defined(DEBUG)
-```
-
-This is compile-time preprocessor logic.
-
-```c
-if (debugMode) {
-}
-```
-
-This is runtime program logic.
-
-That distinction matters because preprocessor branches can completely remove code
-before the compiler proper sees it, while runtime `if` statements compile into
-the program and execute later.
-
