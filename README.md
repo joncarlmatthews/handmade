@@ -29,17 +29,16 @@ To develop or build the game's source code first install [Visual Studio Communit
 
 ### Code Structure
 
-There are three distinct parts to the code.
+There are two distinct parts to the code.
 
 1. The Platform Layer (handles the creation of the window, loading assets etc)
 2. The Game Layer (handles the platform agnositc game engine and gameplay code)
-3. Startup Library (Provided shared utilities and definitions)
 
-Each distinct part is a separate Visual Studio [project](https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#solutions). All three projects are held within a single [solution](https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#projects).
+Each part is a separate Visual Studio [project](https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#solutions). All three projects are held within a single [solution](https://learn.microsoft.com/en-us/visualstudio/ide/solutions-and-projects-in-visual-studio?view=vs-2022#projects).
 
-The solution's build order is: `Startup` > `Game` > `Platform`, as `Platform` depends on both `Game` and `Startup` and `Game` depends on `Startup`.
+The solution's build order is: `Game` > `Platform`, as `Platform` depends on `Game` being compiled.
 
-Building the solution compiles all three projects automatically, in the order defined above. The platform layer, game layer and startup library are all built into the same build directory (`build/<platform>/<arch>/<buildmode>/`). The platform code is built as an executable, the game layer is built as a [dynamic link library](https://learn.microsoft.com/en-us/troubleshoot/windows-client/deployment/dynamic-link-library) (.dll) and the startup library is built as a [static library](https://en.wikipedia.org/wiki/Static_library) (.lib)
+Building the solution compiles both projects automatically, in the order defined above. The platform layer and game layer are built into the same build directory (`build/<platform>/<arch>/<buildmode>/`). The platform code is built as an executable, the game layer is built as a [dynamic link library](https://learn.microsoft.com/en-us/troubleshoot/windows-client/deployment/dynamic-link-library) (.dll)
 
 #### Platform Layer
 
@@ -52,12 +51,6 @@ The platform layer code resides within the `Platform Windows/` directory and ass
 The game layer (which includes the game engine and gameplay code) resides within the `Game/` directory and associated VS project. 
 
 The game layer is built as a dynamic link library (.dll). The resulting DLL code is loaded into the platform executable at run time.
-
-#### Startup Library
-
-The startup library code resides within the `Startup/` directory and associated VS project. 
-
-The starup code is built as a static library (.lib). The resulting .lib file is automatically copied into the code during the build process by the linker. `Startup.lib` is explicitly defined as an additional dependancy of both `Game` and `Platform`. 
 
 ### Coding Style
 
