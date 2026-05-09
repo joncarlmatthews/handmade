@@ -1,39 +1,8 @@
 # C/C++ Specs, Vendors, Build, and Distribution
 
-This is the mental model I want to keep while moving this project between
-Windows/MSVC and macOS/Clang.
+Making sense of the moving pieces
 
-```text
-Source files
-  Game/*.cpp, Platform Windows/*.cpp, Platform macOS/*.mm
-        |
-        v
-Preprocessor
-  Expands #include, #define, #if, #ifdef, defined(...)
-  This is part of the compiler toolchain, not the C runtime.
-        |
-        v
-Compiler
-  Parses C/C++, type-checks, optimizes, emits object code.
-  Examples: MSVC cl.exe, Clang/LLVM.
-        |
-        v
-Object files
-  .obj on Windows, .o on macOS/Linux.
-        |
-        v
-Linker
-  Combines object files and resolves external symbols from libraries.
-  Examples: MSVC link.exe, Apple ld via Clang/Xcode.
-        |
-        v
-Executable / dynamic library
-  .exe/.dll on Windows, .app/.dylib on macOS.
-```
-
-## Making sense of the moving pieces
-
-### Specs And Implementations
+## Specs And Implementations
 
 **1. C/C++ language specification**
 
@@ -147,7 +116,7 @@ define the C/C++ language. They describe what files to compile, what compiler
 flags to use, what libraries to link, where outputs go, and how debugging/running
 is configured.
 
-### Build Pieces
+## Build Pieces
 
 The build pipeline is roughly:
 
@@ -241,7 +210,7 @@ or `libgame.dylib`.
 The linker also decides which libraries become part of the final executable and
 which dynamic libraries the executable expects to load at runtime.
 
-### Runtime Pieces
+## Runtime Pieces
 
 The runtime startup pipeline is roughly:
 
@@ -291,7 +260,7 @@ For Handmade Hero, this means the platform layer is the real entry point for the
 program. It starts up first, creates the window/audio/input services, then calls
 into the game layer.
 
-### Running On An End User's Machine
+## Running On An End User's Machine
 
 There are usually two different machines to think about:
 
@@ -303,7 +272,7 @@ There are usually two different machines to think about:
 An end user normally does not need the compiler or SDK. They need the executable
 and whatever runtime/data/library files the executable depends on.
 
-#### Windows
+### Windows
 
 For a simple Windows C/C++ program, distribution can be as simple as:
 
@@ -349,7 +318,7 @@ dist/
     data/
 ```
 
-#### macOS
+### macOS
 
 On macOS, the usual user-facing artifact is an app bundle:
 
@@ -376,7 +345,7 @@ Like Windows, the app still needs its assets and any dynamic libraries it depend
 on. macOS apps may also need signing/notarization for smooth distribution outside
 your own machine, especially if other people download the app from the internet.
 
-#### Build Once, Run Elsewhere
+### Build Once, Run Elsewhere
 
 In normal C/C++ distribution, users do not rebuild the program themselves. The
 developer builds a binary for a target platform and architecture, then ships the
