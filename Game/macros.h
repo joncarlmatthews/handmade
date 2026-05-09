@@ -10,8 +10,8 @@
 // Compiler stuff.
 // -----------------------------------------------------------------------------
 
-// Which compiler is being used?
-// 
+// Which compiler/toolchain is compiling this? (Use compiler checks for syntax/toolchain details)
+
 // MSVC
 #if (!defined(COMPILER_MSVC))
     #define COMPILER_MSVC 0
@@ -39,6 +39,19 @@
     assert(!"only 1 target compiler can be specified")
 #endif
 
+// Platform stuff.
+// -----------------------------------------------------------------------------
+
+// Which OS/platform will the resulting program run on? (Use platform checks for platform-specific rules)
+
+#if PLATFORM_WINDOWS
+    // Win32
+#elif PLATFORM_MACOS
+    // AppKit/CoreAudio/POSIX
+#elif PLATFORM_LINUX
+    // X11/Wayland/ALSA/Pulse/POSIX
+#endif
+
 
 
 // Runtime debug settings.
@@ -61,16 +74,24 @@
 
 // Assertion
 #if defined(HANDMADE_LOCAL_BUILD)
-    // NOLINTBEGIN
+    #if COMPILER_MSVC
+        // NOLINTBEGIN
+        #define assert(expression) \
+            if (!(expression)) { \
+                __pragma(warning(push)) \
+                __pragma(warning(disable: 6011)) \
+                int *address = 0x0; \
+                *address = 0; \
+                __pragma(warning(pop)) \
+            }
+        // NOLINTEND
+    #endif
+#else
     #define assert(expression) \
         if (!(expression)) { \
-            __pragma(warning(push)) \
-            __pragma(warning(disable: 6011)) \
-            int *address = 0x0; \
-            *address = 0; \
-            __pragma(warning(pop)) \
+            __builtin_trap(); \
         }
-    // NOLINTEND
+#endif
 #else
     #define assert(expression)
 #endif
