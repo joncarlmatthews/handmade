@@ -149,6 +149,28 @@ is configured.
 
 ### Build And Runtime Pieces
 
+The build pipeline is roughly:
+
+```text
+source code
+  -> preprocessor
+  -> compiler
+  -> assembler
+  -> linker
+  -> executable / dynamic library
+```
+
+The runtime startup pipeline is roughly:
+
+```text
+user launches program
+  -> OS loader maps executable into memory
+  -> dynamic libraries/frameworks are loaded
+  -> C/C++ runtime startup runs
+  -> main / platform entry point is called
+  -> your program runs
+```
+
 **1. Preprocessor**
 
 The preprocessor is an early text-processing stage in the compiler toolchain.
@@ -181,7 +203,29 @@ Examples:
 #endif
 ```
 
-**3. C runtime and standard library implementation**
+**3. Assembler**
+
+The assembler turns assembly into object files. Object files are not finished
+programs yet; they are chunks of compiled code and data waiting to be linked
+together.
+
+This step is often hidden because tools like `cl.exe`, `clang`, and `clang++`
+act as compiler drivers. They may run preprocessing, compiling, assembling, and
+sometimes linking through one command.
+
+On Windows, object files usually use `.obj`. On macOS/Linux, they usually use
+`.o`.
+
+**4. Linker**
+
+The linker combines object files and resolves external symbols from libraries.
+If one file calls `gameUpdate`, the linker is responsible for finding the object
+file or library that actually provides `gameUpdate`.
+
+The linker also decides which libraries become part of the final executable and
+which dynamic libraries the executable expects to load at runtime.
+
+**5. C runtime and standard library implementation**
 
 The runtime is support code linked into or used by the program while it runs.
 It helps with process startup, calling `main`, static initialization, heap
@@ -199,14 +243,19 @@ Some runtime code can be linked directly into the executable, and some can be
 loaded from shared libraries. Which one happens depends on compiler/linker flags
 and platform conventions.
 
-**4. Linker**
+**6. OS loader and program startup**
 
-The linker combines object files and resolves external symbols from libraries.
-If one file calls `gameUpdate`, the linker is responsible for finding the object
-file or library that actually provides `gameUpdate`.
+When a user runs the program, the operating system loader maps the executable
+into memory and loads the dynamic libraries/frameworks it depends on.
 
-The linker also decides which libraries become part of the final executable and
-which dynamic libraries the executable expects to load at runtime.
+Before your own code really starts, runtime startup code runs. In a console C
+program, that startup code eventually calls `main`. In a Windows graphical app,
+it may call `WinMain`/`wWinMain`. In a macOS app, AppKit startup eventually
+enters the application delegate/event loop.
+
+For Handmade Hero, this means the platform layer is the real entry point for the
+program. It starts up first, creates the window/audio/input services, then calls
+into the game layer.
 
 ### Running On An End User's Machine
 
