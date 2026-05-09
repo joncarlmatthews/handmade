@@ -39,7 +39,7 @@ Examples:
 
 | Vendor / ecosystem | What they provide | Notes |
 | --- | --- | --- |
-| Microsoft / MSVC | `cl.exe` compiler, preprocessor, `link.exe` linker, Windows SDK integration, MSVC headers, Universal C Runtime, MSVC runtime libraries, Visual Studio debugger/IDE/build tools | This is the normal Windows path for this project. The runtime gets installed with Visual Studio/Build Tools and may be installed for end users via the Visual C++ Redistributable. |
+| Microsoft / MSVC | `cl.exe` compiler, preprocessor, `link.exe` linker, Windows SDK integration, MSVC headers, Universal C Runtime, MSVC runtime libraries, Visual Studio debugger/IDE/build tools | This is the normal Windows path for this project. Runtime pieces for development get installed with Visual Studio/Build Tools, and may be installed for end users via the Visual C++ Redistributable. |
 | Apple / Xcode | Apple Clang compiler, Apple linker tooling, macOS SDK, system headers, AppKit/CoreAudio/CoreGraphics frameworks, Apple system C library/runtime support, Xcode debugger/IDE/build tools | This is the normal macOS path for this project. Clang compiles the code, while Apple's SDK and system libraries provide the platform APIs and runtime/library pieces. |
 | LLVM / Clang | Clang compiler frontend, preprocessor behavior, diagnostics, optimizer/backend via LLVM, compiler builtins and related toolchain pieces | Clang is mostly the compiler/toolchain technology, not automatically the whole C runtime. On macOS it is paired with Apple system libraries; on Linux it may be paired with glibc or musl; on Windows it can target MSVC-compatible runtimes. |
 | GNU / Linux ecosystem | GCC compiler, GNU linker/binutils or LLVM linker alternatives, glibc on many distributions, POSIX/Linux headers and libraries, build tools like Make | Linux is less one-vendor-shaped. A distribution assembles compiler, libc, linker, kernel headers, debugger, and package manager pieces. |
@@ -336,6 +336,8 @@ Handmade Hero.app/
       Handmade Hero
     Resources/
       data/
+    Frameworks/
+      optional dynamic libraries/frameworks
 ```
 
 The user double-clicks the `.app`, and macOS launches the executable inside
