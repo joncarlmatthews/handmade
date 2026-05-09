@@ -44,7 +44,7 @@
 // Runtime debug settings.
 // -----------------------------------------------------------------------------
 
-#ifdef _DEBUG
+#if defined(DEBUG) || defined(_DEBUG)
     #define HANDMADE_LOCAL_BUILD
     //#define HANDMADE_DEBUG_AUDIO
     #define HANDMADE_LIVE_LOOP_EDITING
@@ -60,7 +60,7 @@
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 // Assertion
-#ifdef HANDMADE_LOCAL_BUILD
+#if defined(HANDMADE_LOCAL_BUILD)
     // NOLINTBEGIN
     #define assert(expression) \
         if (!(expression)) { \
@@ -107,7 +107,7 @@
 #if COMPILER_MSVC
     #define GAME_MAX_PATH 260 // See Win32 MAX_PATH
 #else
-    assert(!"TODO: Define max path for non-Win32 platforms");
+    #define GAME_MAX_PATH 1024
 #endif
 
 // Scroll type. Defaults to smooth

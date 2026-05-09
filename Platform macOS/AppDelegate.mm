@@ -1,11 +1,5 @@
-//
-//  AppDelegate.m
-//  Platform macOS
-//
-//  Created by Jon Matthews on 09/05/2026.
-//
-
 #import "AppDelegate.h"
+#import "mac_handmade.h"
 
 @interface AppDelegate ()
 
@@ -15,12 +9,14 @@
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    // Insert code here to initialize your application
+    (void)aNotification;
+    MacHandmadeApplicationDidFinishLaunching(self.window);
 }
 
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
-    // Insert code here to tear down your application
+    (void)aNotification;
+    MacHandmadeApplicationWillTerminate();
 }
 
 

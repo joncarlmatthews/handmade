@@ -6,13 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		AE84113C2FAFC30300397832 /* current_state.png in Resources */ = {isa = PBXBuildFile; fileRef = AE8410F12FAFC30300397832 /* current_state.png */; };
-		AE84113D2FAFC30300397832 /* NOTES.md in Resources */ = {isa = PBXBuildFile; fileRef = AE8411322FAFC30300397832 /* NOTES.md */; };
-		AE84114D2FAFC30300397832 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AE8411332FAFC30300397832 /* README.md */; };
-		AE8411512FAFC30300397832 /* TODO.txt in Resources */ = {isa = PBXBuildFile; fileRef = AE8411342FAFC30300397832 /* TODO.txt */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		AE071B152FAFC19A00D28216 /* Platform macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Platform macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE8410F12FAFC30300397832 /* current_state.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = current_state.png; sourceTree = "<group>"; };
@@ -101,9 +94,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AE071B172FAFC19A00D28216 /* Platform macOS */,
-				AE8410F02FAFC30300397832 /* build */,
 				AE8411062FAFC30300397832 /* data */,
-				AE84110E2FAFC30300397832 /* dist */,
 				AE8411312FAFC30300397832 /* Game */,
 			);
 			name = "Platform macOS";
@@ -151,10 +142,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AE84113C2FAFC30300397832 /* current_state.png in Resources */,
-				AE84113D2FAFC30300397832 /* NOTES.md in Resources */,
-				AE84114D2FAFC30300397832 /* README.md in Resources */,
-				AE8411512FAFC30300397832 /* TODO.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
