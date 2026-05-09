@@ -1,4 +1,4 @@
-# C/C++ Toolchain Layers
+# C/C++ Specs, Vendors, Build, and Distribution
 
 This is the mental model I want to keep while moving this project between
 Windows/MSVC and macOS/Clang.
@@ -187,3 +187,111 @@ Visual Studio projects, Xcode projects, `.bat` scripts, Make, and CMake do not
 define the C/C++ language. They describe what files to compile, what compiler
 flags to use, what libraries to link, where outputs go, and how debugging/running
 is configured.
+
+## Segment 3: Running On An End User's Machine
+
+There are usually two different machines to think about:
+
+- **Build machine:** the developer machine that has the compiler, linker, SDKs,
+  headers, debugger, and build system installed.
+- **User machine:** the machine that only needs enough files and runtime support
+  to run the finished program.
+
+An end user normally does not need the compiler or SDK. They need the executable
+and whatever runtime/data/library files the executable depends on.
+
+### Windows
+
+For a simple Windows C/C++ program, distribution can be as simple as:
+
+```text
+Handmade Hero.exe
+```
+
+The user double-clicks the `.exe` and Windows loads it.
+
+In practice, a game often needs more than the `.exe`:
+
+```text
+Handmade Hero.exe
+Game.dll
+data/
+  test/
+    test_hero_front_head.bmp
+    ...
+```
+
+The `.exe` is the platform layer. The `.dll` may be the game layer. The `data/`
+folder contains assets. Those files need to be placed where the program expects
+to find them.
+
+The executable may also depend on runtime DLLs, for example MSVC runtime DLLs.
+Those can be handled in a few common ways:
+
+- Install the Microsoft Visual C++ Redistributable on the user's machine.
+- Bundle the required runtime DLLs next to the `.exe`, when the license and
+  project settings allow it.
+- Link some runtime pieces statically, so fewer external runtime DLLs are needed.
+
+The target architecture matters. A 64-bit Windows build produces a 64-bit `.exe`
+for 64-bit Windows. A 32-bit Windows build produces a 32-bit `.exe` that can run
+on many 64-bit Windows machines through compatibility support, but not vice
+versa. For this project, a release folder might look like:
+
+```text
+dist/
+  Windows_64bit/
+    Handmade Hero.exe
+    Game.dll
+    data/
+```
+
+### macOS
+
+On macOS, the usual user-facing artifact is an app bundle:
+
+```text
+Handmade Hero.app
+```
+
+It looks like a single app in Finder, but it is really a directory with a
+specific structure:
+
+```text
+Handmade Hero.app/
+  Contents/
+    MacOS/
+      Handmade Hero
+    Resources/
+      data/
+```
+
+The user double-clicks the `.app`, and macOS launches the executable inside
+`Contents/MacOS/`.
+
+Like Windows, the app still needs its assets and any dynamic libraries it depends
+on. macOS apps may also need signing/notarization for smooth distribution outside
+your own machine, especially if other people download the app from the internet.
+
+### Build Once, Run Elsewhere
+
+In normal C/C++ distribution, users do not rebuild the program themselves. The
+developer builds a binary for a target platform and architecture, then ships the
+resulting executable/app plus its dependencies.
+
+For this Handmade project, the mental model is:
+
+```text
+Windows build machine
+  -> build Windows x64 exe/dll
+  -> ship dist/Windows_64bit/
+  -> user runs Handmade Hero.exe
+
+macOS build machine
+  -> build macOS app
+  -> ship Handmade Hero.app plus assets
+  -> user runs Handmade Hero.app
+```
+
+Cross-compiling is possible in C/C++, but it is an extra setup problem. The
+simple path is to build Windows binaries on Windows and macOS binaries on macOS.
