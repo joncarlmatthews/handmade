@@ -160,21 +160,15 @@ source code
   -> executable / dynamic library
 ```
 
-The runtime startup pipeline is roughly:
-
-```text
-user launches program
-  -> OS loader maps executable into memory
-  -> dynamic libraries/frameworks are loaded
-  -> C/C++ runtime startup runs
-  -> main / platform entry point is called
-  -> your program runs
-```
-
 **1. Preprocessor**
 
 The preprocessor is an early text-processing stage in the compiler toolchain.
 It handles `#include`, `#define`, `#if`, `#ifdef`, and `defined(...)`.
+
+Input: your original source files.
+
+Output: expanded source text, with includes/macros/conditional compilation
+resolved.
 
 Example:
 
@@ -189,9 +183,17 @@ I define myself, and not part of the C runtime.
 
 **2. Compiler**
 
-The compiler turns preprocessed C/C++ into object code. MSVC and Clang are
-compilers/toolchains. They also provide compiler-specific predefined macros and
-extensions, which is why shared headers need compiler branches.
+The compiler takes the preprocessor's expanded source text, parses it,
+type-checks it, optimizes it, and emits assembly or object code.
+
+Input: expanded source text from the preprocessor.
+
+Output: usually assembly or object code. Conceptually, the compiler produces
+assembly for the assembler, even if the toolchain hides that intermediate file.
+
+MSVC and Clang are compilers/toolchains. They also provide compiler-specific
+predefined macros and extensions, which is why shared headers need compiler
+branches.
 
 Examples:
 
@@ -205,9 +207,13 @@ Examples:
 
 **3. Assembler**
 
-The assembler turns assembly into object files. Object files are not finished
-programs yet; they are chunks of compiled code and data waiting to be linked
-together.
+The assembler takes the compiler's assembly output and turns it into object
+files. Object files are not finished programs yet; they are chunks of compiled
+code and data waiting to be linked together.
+
+Input: assembly emitted by the compiler.
+
+Output: object files.
 
 This step is often hidden because tools like `cl.exe`, `clang`, and `clang++`
 act as compiler drivers. They may run preprocessing, compiling, assembling, and
@@ -221,6 +227,10 @@ On Windows, object files usually use `.obj`. On macOS/Linux, they usually use
 The linker combines object files and resolves external symbols from libraries.
 If one file calls `gameUpdate`, the linker is responsible for finding the object
 file or library that actually provides `gameUpdate`.
+
+Input: object files from the assembler, plus libraries and linker settings.
+
+Output: an executable, dynamic library, or static library.
 
 The linker also decides which libraries become part of the final executable and
 which dynamic libraries the executable expects to load at runtime.
@@ -245,8 +255,24 @@ and platform conventions.
 
 **6. OS loader and program startup**
 
+The runtime startup pipeline is roughly:
+
+```text
+user launches program
+  -> OS loader maps executable into memory
+  -> dynamic libraries/frameworks are loaded
+  -> C/C++ runtime startup runs
+  -> main / platform entry point is called
+  -> your program runs
+```
+
 When a user runs the program, the operating system loader maps the executable
 into memory and loads the dynamic libraries/frameworks it depends on.
+
+Input: the executable/dynamic libraries produced by the linker, plus any runtime
+libraries and system libraries they depend on.
+
+Output: a running process.
 
 Before your own code really starts, runtime startup code runs. In a console C
 program, that startup code eventually calls `main`. In a Windows graphical app,
