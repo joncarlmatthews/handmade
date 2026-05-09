@@ -85,13 +85,12 @@
                 __pragma(warning(pop)) \
             }
         // NOLINTEND
+    #else
+        #define assert(expression) \
+            if (!(expression)) { \
+                __builtin_trap(); \
+            }
     #endif
-#else
-    #define assert(expression) \
-        if (!(expression)) { \
-            __builtin_trap(); \
-        }
-#endif
 #else
     #define assert(expression)
 #endif

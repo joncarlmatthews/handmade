@@ -127,9 +127,13 @@ This `build.bat` build script has been coded to match the Visual Studio build co
 
 ### Useful links
 
+#### C language specification
+
+ - [The C language specification on cppreference.com](https://en.cppreference.com/c/language)
+
 #### C standard library (libc)
 
- - C types: en.cppreference.com/w/c/types/**&lt;type&gt;** E.g. [https://en.cppreference.com/w/c/types/size_t](https://en.cppreference.com/w/c/types/size_t)
+ - C types: en.cppreference.com/c/types/**&lt;type&gt;** E.g. [https://en.cppreference.com/c/types/size_t](https://en.cppreference.com/c/types/size_t)
  - [C standard library header files](https://en.cppreference.com/w/c/header)
 
 #### C-runtime library
