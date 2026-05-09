@@ -6,14 +6,45 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AE84113C2FAFC30300397832 /* current_state.png in Resources */ = {isa = PBXBuildFile; fileRef = AE8410F12FAFC30300397832 /* current_state.png */; };
+		AE84113D2FAFC30300397832 /* NOTES.md in Resources */ = {isa = PBXBuildFile; fileRef = AE8411322FAFC30300397832 /* NOTES.md */; };
+		AE84114D2FAFC30300397832 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AE8411332FAFC30300397832 /* README.md */; };
+		AE8411512FAFC30300397832 /* TODO.txt in Resources */ = {isa = PBXBuildFile; fileRef = AE8411342FAFC30300397832 /* TODO.txt */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		AE071B152FAFC19A00D28216 /* Platform macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Platform macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE8410F12FAFC30300397832 /* current_state.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = current_state.png; sourceTree = "<group>"; };
+		AE8411322FAFC30300397832 /* NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOTES.md; sourceTree = "<group>"; };
+		AE8411332FAFC30300397832 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		AE8411342FAFC30300397832 /* TODO.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AE071B172FAFC19A00D28216 /* Platform macOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Platform macOS";
+			sourceTree = "<group>";
+		};
+		AE8410F02FAFC30300397832 /* build */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = build;
+			sourceTree = "<group>";
+		};
+		AE8411062FAFC30300397832 /* data */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = data;
+			sourceTree = "<group>";
+		};
+		AE84110E2FAFC30300397832 /* dist */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = dist;
+			sourceTree = "<group>";
+		};
+		AE8411312FAFC30300397832 /* Game */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Game;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +63,14 @@
 		AE071B0C2FAFC19A00D28216 = {
 			isa = PBXGroup;
 			children = (
+				AE8410F02FAFC30300397832 /* build */,
+				AE8410F12FAFC30300397832 /* current_state.png */,
+				AE8411062FAFC30300397832 /* data */,
+				AE84110E2FAFC30300397832 /* dist */,
+				AE8411312FAFC30300397832 /* Game */,
+				AE8411322FAFC30300397832 /* NOTES.md */,
+				AE8411332FAFC30300397832 /* README.md */,
+				AE8411342FAFC30300397832 /* TODO.txt */,
 				AE071B172FAFC19A00D28216 /* Platform macOS */,
 				AE071B162FAFC19A00D28216 /* Products */,
 			);
@@ -62,6 +101,10 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AE071B172FAFC19A00D28216 /* Platform macOS */,
+				AE8410F02FAFC30300397832 /* build */,
+				AE8411062FAFC30300397832 /* data */,
+				AE84110E2FAFC30300397832 /* dist */,
+				AE8411312FAFC30300397832 /* Game */,
 			);
 			name = "Platform macOS";
 			packageProductDependencies = (
@@ -84,7 +127,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AE071B102FAFC19A00D28216 /* Build configuration list for PBXProject "Platform macOS" */;
+			buildConfigurationList = AE071B102FAFC19A00D28216 /* Build configuration list for PBXProject "Handmade Hero" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -108,6 +151,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE84113C2FAFC30300397832 /* current_state.png in Resources */,
+				AE84113D2FAFC30300397832 /* NOTES.md in Resources */,
+				AE84114D2FAFC30300397832 /* README.md in Resources */,
+				AE8411512FAFC30300397832 /* TODO.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,7 +337,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AE071B102FAFC19A00D28216 /* Build configuration list for PBXProject "Platform macOS" */ = {
+		AE071B102FAFC19A00D28216 /* Build configuration list for PBXProject "Handmade Hero" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AE071B232FAFC19B00D28216 /* Debug */,
