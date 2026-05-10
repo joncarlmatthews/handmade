@@ -90,76 +90,76 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_back_head.bmp",
+                        L"data/test/test_hero_back_head.bmp",
                         &gameState->player1.bitmaps[0].head);
 
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_back_cape.bmp",
+                        L"data/test/test_hero_back_cape.bmp",
                         &gameState->player1.bitmaps[0].cape);
 
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_front_torso.bmp",
+                        L"data/test/test_hero_front_torso.bmp",
                         &gameState->player1.bitmaps[0].torso);
 
         // Right
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_right_head.bmp",
+                        L"data/test/test_hero_right_head.bmp",
                         &gameState->player1.bitmaps[1].head);
 
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_right_cape.bmp",
+                        L"data/test/test_hero_right_cape.bmp",
                         &gameState->player1.bitmaps[1].cape);
 
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_right_torso.bmp",
+                        L"data/test/test_hero_right_torso.bmp",
                         &gameState->player1.bitmaps[1].torso);
 
         // Front
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_front_head.bmp",
+                        L"data/test/test_hero_front_head.bmp",
                         &gameState->player1.bitmaps[2].head);
 
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_front_cape.bmp",
+                        L"data/test/test_hero_front_cape.bmp",
                         &gameState->player1.bitmaps[2].cape);
 
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_front_torso.bmp",
+                        L"data/test/test_hero_front_torso.bmp",
                         &gameState->player1.bitmaps[2].torso);
 
         // Left
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_left_head.bmp",
+                        L"data/test/test_hero_left_head.bmp",
                         &gameState->player1.bitmaps[3].head);
 
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_left_cape.bmp",
+                        L"data/test/test_hero_left_cape.bmp",
                         &gameState->player1.bitmaps[3].cape);
 
         DEBUGReadBMP(thread,
                         memory->DEBUG_platformReadEntireFile,
                         memory->platformAbsPath,
-                        L"data\\test\\test_hero_left_torso.bmp",
+                        L"data/test/test_hero_left_torso.bmp",
                         &gameState->player1.bitmaps[3].torso);
 
 #endif

@@ -245,7 +245,7 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUG_platformWriteEntireFile)
 
 - (BOOL)isFlipped
 {
-    return YES;
+    return FALSE;
 }
 
 - (void)drawRect:(NSRect)dirtyRect

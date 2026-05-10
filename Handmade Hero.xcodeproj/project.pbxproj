@@ -11,6 +11,7 @@
 		AE8410F12FAFC30300397832 /* current_state.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = current_state.png; sourceTree = "<group>"; };
 		AE8411332FAFC30300397832 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AE8411342FAFC30300397832 /* TODO.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO.txt; sourceTree = "<group>"; };
+		AE8416232FB0686D00397832 /* Handmade Hero.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "Handmade Hero.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -44,6 +45,11 @@
 			path = notes;
 			sourceTree = "<group>";
 		};
+		AE84162E2FB0686D00397832 /* Platform macOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Platform macOS";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +66,8 @@
 		AE071B0C2FAFC19A00D28216 = {
 			isa = PBXGroup;
 			children = (
+				AE8416232FB0686D00397832 /* Handmade Hero.xcodeproj */,
+				AE84162E2FB0686D00397832 /* Platform macOS */,
 				AE8416212FAFCFAE00397832 /* notes */,
 				AE8410F02FAFC30300397832 /* build */,
 				AE8410F12FAFC30300397832 /* current_state.png */,
@@ -78,6 +86,11 @@
 			children = (
 				AE071B152FAFC19A00D28216 /* Platform macOS.app */,
 			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AE84162F2FB0686D00397832 /* Products */ = {
+			isa = PBXGroup;
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -100,6 +113,7 @@
 				AE071B172FAFC19A00D28216 /* Platform macOS */,
 				AE8411062FAFC30300397832 /* data */,
 				AE8411312FAFC30300397832 /* Game */,
+				AE84162E2FB0686D00397832 /* Platform macOS */,
 			);
 			name = "Platform macOS";
 			packageProductDependencies = (
@@ -134,6 +148,12 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AE071B162FAFC19A00D28216 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = AE84162F2FB0686D00397832 /* Products */;
+					ProjectRef = AE8416232FB0686D00397832 /* Handmade Hero.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				AE071B142FAFC19A00D28216 /* Platform macOS */,
