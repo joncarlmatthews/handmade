@@ -73,6 +73,9 @@
 #define countArray(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 // Assertion
+#ifdef assert
+    #undef assert
+#endif
 #if defined(HANDMADE_LOCAL_BUILD)
     #if COMPILER_MSVC
         // NOLINTBEGIN

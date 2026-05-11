@@ -1,9 +1,5 @@
 #include "game.h"
 
-// Internals
-// ...
-// #include "xyz.h"
-
 EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 {
     /**
