@@ -2,14 +2,15 @@
 
 REM =========================================================================================
 REM
-REM Builds the Game DLL. Debug build only, as this is used as a tool to hot reload the game code
+REM Builds the Game DLL.
 REM 
 REM You need to set the shell environment by running shell_x64.bat or shell_x86.bat once per
 REM shell before running this build script. 
 REM 
-REM Usage: build.bat <PlatformArch>
+REM Usage: build.bat <PlatformArch> [Configuration]
 REM 
-REM E.g. build.bat x86
+REM E.g. build.bat x64 Debug
+REM E.g. build.bat x64 Release
 REM
 REM To view the build options Visual Studio is using:
 REM 
@@ -26,10 +27,20 @@ REM ============================================================================
 IF [%1]==[] GOTO usage
 
 SET BuildToolsVersion=vc143
-SET Configuration=Debug
 SET Timestamp=%date:~6,4%-%date:~3,2%-%date:~0,2%-%time:~0,2%-%time:~3,2%-%time:~6,2%
 
 SET PlatformArg=%1
+SET ConfigurationArg=%2
+
+IF [%ConfigurationArg%]==[] (
+    SET Configuration=Debug
+) else if %ConfigurationArg% == Debug (
+    SET Configuration=Debug
+) else if %ConfigurationArg% == Release (
+    SET Configuration=Release
+) else (
+    GOTO configuration_usage
+)
 
 REM PlatformFolder to match Visual Studio's build directory structures
 if %PlatformArg% == x64 (
@@ -46,7 +57,7 @@ if %PlatformArg% == x64 (
 )
 
 ECHO =============
-ECHO Building %Platform%
+ECHO Building %Platform% %Configuration%
 ECHO =============
 
 REM Root build folder for Solution and Project
@@ -111,25 +122,33 @@ REM /Gd cdecl calling convention for functions
 REM /TC Treat all source files as C, not C++
 REM /std:clatest Use MSVC's latest available C standard mode. At time of writing this is the C23-era mode.
 
+SET CommonCompilerFlags=/c /TC /std:clatest /nologo /W4 /WX /diagnostics:column /sdl /GS /fp:precise /Gd /FC /wd4201 /wd4100 /wd4505
+SET DebugCompilerFlags=/Od /JMC /Zi /RTC1 /MDd /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE
+SET ReleaseCompilerFlags=/O2 /Oi /MD /D NDEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE
+
 REM 32-bit builds
 IF %Platform% == x86 (
 
-    SET CompilerFlags=/c /TC /std:clatest /sdl /Od /RTC1 /MDd /GS /fp:precise /Gd ^
-        /diagnostics:column /nologo ^
-        /W4 /WX /wd4201 /wd4100 /wd4505 ^
-        /D WIN32 /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE ^
-        /Fo"%IntermediatesConfigurationFolder%" ^
-        /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
+    IF %Configuration% == Debug (
+        SET CompilerFlags=%CommonCompilerFlags% %DebugCompilerFlags% /D WIN32 /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
+        SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /DLL
+    ) else (
+        SET CompilerFlags=%CommonCompilerFlags% %ReleaseCompilerFlags% /D WIN32 /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
+        SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /OPT:REF /OPT:ICF /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /DLL
+    )
 
-    SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /DLL
 )
 
 REM 64-bit builds
 IF %Platform% == x64 (
 
-    SET CompilerFlags=/c /TC /std:clatest /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /RTC1 /MDd /GS /fp:precise /Gd /FC /wd4201 /wd4100 /wd4505 /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
-
-    SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /MANIFEST /NXCOMPAT /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /IMPLIB:"%BuildConfigurationFolder%Game.lib" /DEBUG /DLL /MACHINE:X64 /INCREMENTAL /SUBSYSTEM:WINDOWS /MANIFESTUAC:NO /ManifestFile:"%IntermediatesConfigurationFolder%Game.dll.intermediate.manifest" /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO /LIBPATH:"%BuildConfigurationFolder%" /TLBID:1
+    IF %Configuration% == Debug (
+        SET CompilerFlags=%CommonCompilerFlags% %DebugCompilerFlags% /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
+        SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /MANIFEST /NXCOMPAT /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /IMPLIB:"%BuildConfigurationFolder%Game.lib" /DEBUG /DLL /MACHINE:X64 /INCREMENTAL /SUBSYSTEM:WINDOWS /MANIFESTUAC:NO /ManifestFile:"%IntermediatesConfigurationFolder%Game.dll.intermediate.manifest" /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO /LIBPATH:"%BuildConfigurationFolder%" /TLBID:1
+    ) else (
+        SET CompilerFlags=%CommonCompilerFlags% %ReleaseCompilerFlags% /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
+        SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /MANIFEST /NXCOMPAT /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /IMPLIB:"%BuildConfigurationFolder%Game.lib" /DEBUG /DLL /MACHINE:X64 /INCREMENTAL:NO /OPT:REF /OPT:ICF /SUBSYSTEM:WINDOWS /MANIFESTUAC:NO /ManifestFile:"%IntermediatesConfigurationFolder%Game.dll.intermediate.manifest" /NOLOGO /LIBPATH:"%BuildConfigurationFolder%" /TLBID:1
+    )
 )
 
 REM Compile the source code
@@ -141,9 +160,13 @@ link %LinkerFlags% %icf%game.obj %icf%intrinsics.obj %icf%utility.obj %icf%memor
 GOTO :eof
 
 :usage
-ECHO Usage: %0 ^<PlatformArch^>
+ECHO Usage: %0 ^<PlatformArch^> [Configuration]
 exit /B 1
 
 :platform_usage
 ECHO Invalid platform architecture. Supported platforms: x86, x64
+exit /B 1
+
+:configuration_usage
+ECHO Invalid configuration. Supported configurations: Debug, Release
 exit /B 1
