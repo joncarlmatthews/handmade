@@ -1,15 +1,15 @@
 add_library(Game SHARED
-        game.cpp
-        intrinsics.cpp
-        utility.cpp
-        memory.cpp
-        player.cpp
-        world.cpp
-        tilemap.cpp
-        graphics.cpp
-        audio.cpp
-        filesystem.cpp
-        math.cpp
+        game.c
+        intrinsics.c
+        utility.c
+        memory.c
+        player.c
+        world.c
+        tilemap.c
+        graphics.c
+        audio.c
+        filesystem.c
+        math.c
 )
 
 target_compile_definitions(Game PRIVATE
@@ -29,9 +29,9 @@ target_compile_options(Game PRIVATE
 )
 
 set_target_properties(Game PROPERTIES
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED ON
-        CXX_EXTENSIONS ON
+        C_STANDARD 23
+        C_STANDARD_REQUIRED ON
+        C_EXTENSIONS ON
         PREFIX ""
         OUTPUT_NAME "Game"
         MACOSX_RPATH ON

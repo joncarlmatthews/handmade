@@ -65,37 +65,37 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="game.cpp">
+    <ClCompile Include="game.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="utility.cpp">
+    <ClCompile Include="utility.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="player.cpp">
+    <ClCompile Include="player.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="world.cpp">
+    <ClCompile Include="world.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tilemap.cpp">
+    <ClCompile Include="tilemap.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="memory.cpp">
+    <ClCompile Include="memory.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="graphics.cpp">
+    <ClCompile Include="graphics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="filesystem.cpp">
+    <ClCompile Include="filesystem.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="audio.cpp">
+    <ClCompile Include="audio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="intrinsics.cpp">
+    <ClCompile Include="intrinsics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="math.cpp">
+    <ClCompile Include="math.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

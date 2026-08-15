@@ -1,6 +1,6 @@
 @echo off
 
-set Wildcard=*.h *.cpp *.c *.ini
+set Wildcard=*.h *.c *.ini
 
 echo =============
 echo STATICS FOUND

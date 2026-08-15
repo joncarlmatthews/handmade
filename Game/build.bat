@@ -113,13 +113,12 @@ REM /Zc:wchar_t Align the wchar_t implementation with the C++ standard requireme
 REM /Zc:forScope enforces the updated scoping rules introduced in C++17 for loop control variables.
 REM /Zc:inline Standard conformance for inline functions
 REM /Gd cdecl calling convention for functions
-REM /TP Treat all source files as C++, not C
+REM /TC Treat all source files as C, not C++
 
 REM 32-bit builds
 IF %Platform% == x86 (
 
-    SET CompilerFlags=/c /TP /sdl /Od /EHsc /RTC1 /MDd /GS /fp:precise /permissive- ^
-        /Zc:wchar_t /Zc:forScope /Zc:inline ^
+    SET CompilerFlags=/c /TC /sdl /Od /RTC1 /MDd /GS /fp:precise ^
         /diagnostics:column /nologo ^
         /W4 /WX /wd4201 /wd4100 /wd4505 ^
         /D WIN32 /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE ^
@@ -132,13 +131,13 @@ IF %Platform% == x86 (
 REM 64-bit builds
 IF %Platform% == x64 (
 
-    SET CompilerFlags=/c /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Gd /TP /FC /wd4201 /wd4100 /wd4505 /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
+    SET CompilerFlags=/c /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /RTC1 /MDd /GS /fp:precise /Gd /TC /FC /wd4201 /wd4100 /wd4505 /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
 
     SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /MANIFEST /NXCOMPAT /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /IMPLIB:"%BuildConfigurationFolder%Game.lib" /DEBUG /DLL /MACHINE:X64 /INCREMENTAL /SUBSYSTEM:WINDOWS /MANIFESTUAC:NO /ManifestFile:"%IntermediatesConfigurationFolder%Game.dll.intermediate.manifest" /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO /LIBPATH:"%BuildConfigurationFolder%" /TLBID:1
 )
 
 REM Compile the source code
-cl %CompilerFlags% %~dp0game.cpp %~dp0intrinsics.cpp %~dp0utility.cpp %~dp0memory.cpp %~dp0player.cpp %~dp0world.cpp %~dp0tilemap.cpp %~dp0graphics.cpp %~dp0audio.cpp %~dp0filesystem.cpp %~dp0math.cpp
+cl %CompilerFlags% %~dp0game.c %~dp0intrinsics.c %~dp0utility.c %~dp0memory.c %~dp0player.c %~dp0world.c %~dp0tilemap.c %~dp0graphics.c %~dp0audio.c %~dp0filesystem.c %~dp0math.c
 
 REM Link all of the compiled code together into a DLL
 link %LinkerFlags% %icf%game.obj %icf%intrinsics.obj %icf%utility.obj %icf%memory.obj %icf%player.obj %icf%world.obj %icf%tilemap.obj %icf%graphics.obj %icf%audio.obj %icf%filesystem.obj %icf%math.obj

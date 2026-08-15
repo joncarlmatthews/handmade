@@ -47,16 +47,11 @@ sources=()
 objects=()
 for name in "${source_names[@]}"; do
     source_file="$script_dir/$name.c"
-    fallback_source_file="$script_dir/$name.cpp"
     object_file="$intermediates_configuration_folder/$name.o"
 
     if [[ ! -f "$source_file" ]]; then
-        if [[ -f "$fallback_source_file" ]]; then
-            source_file="$fallback_source_file"
-        else
-            echo "Missing source: $script_dir/$name.c or $script_dir/$name.cpp" >&2
-            exit 1
-        fi
+        echo "Missing source: $source_file" >&2
+        exit 1
     fi
 
     sources+=("$source_file")

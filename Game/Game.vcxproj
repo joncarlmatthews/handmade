@@ -37,17 +37,17 @@
     <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="audio.cpp" />
-    <ClCompile Include="filesystem.cpp" />
-    <ClCompile Include="game.cpp" />
-    <ClCompile Include="graphics.cpp" />
-    <ClCompile Include="intrinsics.cpp" />
-    <ClCompile Include="math.cpp" />
-    <ClCompile Include="memory.cpp" />
-    <ClCompile Include="player.cpp" />
-    <ClCompile Include="tilemap.cpp" />
-    <ClCompile Include="utility.cpp" />
-    <ClCompile Include="world.cpp" />
+    <ClCompile Include="audio.c" />
+    <ClCompile Include="filesystem.c" />
+    <ClCompile Include="game.c" />
+    <ClCompile Include="graphics.c" />
+    <ClCompile Include="intrinsics.c" />
+    <ClCompile Include="math.c" />
+    <ClCompile Include="memory.c" />
+    <ClCompile Include="player.c" />
+    <ClCompile Include="tilemap.c" />
+    <ClCompile Include="utility.c" />
+    <ClCompile Include="world.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="build.bat" />

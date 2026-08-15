@@ -9,7 +9,9 @@
 #include <sys/mman.h>
 #include <wchar.h>
 
+extern "C" {
 #include "../Game/game.h"
+}
 
 extern "C" GAME_UPDATE(gameUpdate);
 extern "C" GAME_INIT_FRAME_BUFFER(gameInitFrameBuffer);
