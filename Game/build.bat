@@ -103,27 +103,23 @@ REM /diagnostics:column Compile error format. Include the column where the issue
 REM /sdl Enables recommended Security Development Lifecycle (SDL) checks.
 REM /Od Turns off all optimizations in the program and speeds compilation.
 REM /D Preprocessor definitions
-REM /EHsc Enable s & c error handling behaviour
 REM /RTC1 enable run-time error checks
 REM /MDd Include the DLL-specific version of the run-time library in the .obj file
 REM /GS Buffer security checks and stack buffer overrun protection
 REM /fp:precise Precise floating point spec implementation
-REM /permissive- specify standards-conforming compiler behavior.
-REM /Zc:wchar_t Align the wchar_t implementation with the C++ standard requirements.
-REM /Zc:forScope enforces the updated scoping rules introduced in C++17 for loop control variables.
-REM /Zc:inline Standard conformance for inline functions
 REM /Gd cdecl calling convention for functions
 REM /TC Treat all source files as C, not C++
+REM /std:clatest Use MSVC's latest available C standard mode. At time of writing this is the C23-era mode.
 
 REM 32-bit builds
 IF %Platform% == x86 (
 
-    SET CompilerFlags=/c /TC /sdl /Od /RTC1 /MDd /GS /fp:precise ^
+    SET CompilerFlags=/c /TC /std:clatest /sdl /Od /RTC1 /MDd /GS /fp:precise /Gd ^
         /diagnostics:column /nologo ^
         /W4 /WX /wd4201 /wd4100 /wd4505 ^
         /D WIN32 /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE ^
         /Fo"%IntermediatesConfigurationFolder%" ^
-        /Fd"%IntermediatesConfigurationFolder%vc142_%Timestamp%.pdb"
+        /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
 
     SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /INCREMENTAL /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:NO /manifest:embed /DEBUG /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"%BuildConfigurationFolder%Game.lib" /MACHINE:X86 /DLL
 )
@@ -131,7 +127,7 @@ IF %Platform% == x86 (
 REM 64-bit builds
 IF %Platform% == x64 (
 
-    SET CompilerFlags=/c /JMC /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /RTC1 /MDd /GS /fp:precise /Gd /TC /FC /wd4201 /wd4100 /wd4505 /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
+    SET CompilerFlags=/c /TC /std:clatest /nologo /W4 /WX /diagnostics:column /sdl /Od /D _DEBUG /D GAME_EXPORTS /D _WINDOWS /D _USRDLL /D _WINDLL /D _UNICODE /D UNICODE /RTC1 /MDd /GS /fp:precise /Gd /FC /wd4201 /wd4100 /wd4505 /Fo"%IntermediatesConfigurationFolder%" /Fd"%IntermediatesConfigurationFolder%%BuildToolsVersion%_%Timestamp%.pdb"
 
     SET LinkerFlags=/OUT:"%BuildConfigurationFolder%Game.dll" /MANIFEST /NXCOMPAT /PDB:"%BuildConfigurationFolder%Game_%Timestamp%.pdb" /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /IMPLIB:"%BuildConfigurationFolder%Game.lib" /DEBUG /DLL /MACHINE:X64 /INCREMENTAL /SUBSYSTEM:WINDOWS /MANIFESTUAC:NO /ManifestFile:"%IntermediatesConfigurationFolder%Game.dll.intermediate.manifest" /ILK:"%IntermediatesConfigurationFolder%Game.ilk" /NOLOGO /LIBPATH:"%BuildConfigurationFolder%" /TLBID:1
 )
