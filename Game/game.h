@@ -244,10 +244,6 @@ typedef struct GameInput
 //==============================================================================
 typedef struct GameMemory
 {
-    void *platformStateWindows;
-    void *platformStateMacOS;
-    void *platformStateLinux;
-
     MemoryRegion permanentStorage;
     MemoryRegion transientStorage;
 
@@ -262,7 +258,7 @@ typedef struct GameMemory
     // Absolute path to the folder that contains the running program
     wchar_t platformAbsPath[GAME_MAX_PATH];
 
-    // Pointers to memory allocation deallocation functions with the platform layer
+    // Pointers to memory allocation deallocation functions within the platform layer
     PlatformAllocateMemory *platformAllocateMemory;
     PlatformFreeMemory *platformFreeMemory;
     PlatformLog *platformLog;
@@ -298,9 +294,6 @@ typedef struct GameMemory
  * @return void
 */
 #define GAME_UPDATE(name) void name(PlatformThreadContext *thread, \
-                                void *platformStateWindows, \
-                                void *platformStateMacOS, \
-                                void *platformStateLinux, \
                                 GameMemory *memory, \
                                 GameFrameBuffer *frameBuffer, \
                                 GameAudioBuffer *audioBuffer, \
@@ -398,8 +391,8 @@ typedef struct GameState
 
     TilemapPosition cameraPosition;
 
+    // Temp test code:
     SineWave sineWave;
-
     float32 angle;
 
 } GameState;

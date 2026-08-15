@@ -11,10 +11,6 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
     if (!memory->initialised) {
 
-        memory->platformStateWindows = platformStateWindows;
-        memory->platformStateMacOS = platformStateMacOS;
-        memory->platformStateLinux = platformStateLinux;
-
         memory->permanentStorage.bytesUsed = sizeof(GameState);
         memory->permanentStorage.bytesFree = (memory->permanentStorage.sizeInBytes - sizeof(GameState));
 
@@ -536,6 +532,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
     struct Vec2 playerPositionData = gameState->player1.canonicalAbsolutePosition;
 #endif
 
+    // Draw torso
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,
@@ -545,6 +542,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 -34.0f,
                 playerBitmap.torso);
 
+    // Draw cape
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,
@@ -554,6 +552,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 -34.0f,
                 playerBitmap.cape);
 
+    // Draw head
     writeBitmap(frameBuffer,
                 playerPositionData.x,
                 playerPositionData.y,

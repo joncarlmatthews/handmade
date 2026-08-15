@@ -10,3 +10,5 @@ build/*
 *.ilk
 *.user
 enc_temp_folder
+# CLion
+.idea

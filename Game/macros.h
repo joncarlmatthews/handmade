@@ -76,6 +76,7 @@
 #ifdef assert
     #undef assert
 #endif
+
 #if defined(HANDMADE_LOCAL_BUILD)
     #if COMPILER_MSVC
         // NOLINTBEGIN

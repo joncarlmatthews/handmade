@@ -419,9 +419,6 @@ static void MacUpdateAndRender(NSTimer *timer)
 
     PlatformThreadContext thread = {};
     gameUpdate(&thread,
-               NULL,
-               &macState,
-               NULL,
                &gameMemory,
                &gameFrameBuffer,
                &gameAudioBuffer,
@@ -466,9 +463,6 @@ static void MacInitialiseGameMemory(void)
         return;
     }
 
-    gameMemory.platformStateWindows = NULL;
-    gameMemory.platformStateMacOS = &macState;
-    gameMemory.platformStateLinux = NULL;
     gameMemory.platformLog = &platformLog;
 
     gameMemory.permanentStorage.bytes = platformMemory;

@@ -27,7 +27,7 @@ void DEBUGReadBMP(PlatformThreadContext *thread,
                     DEBUGPlatformReadEntireFile *platformReadFile,
                     const wchar_t *absPath,
                     const wchar_t *filename,
-                    BitmapFile *bitmapFIle)
+                    BitmapFile *bitmapFile)
 {
 
     DEBUG_file file = platformReadFile(thread, absPath, filename);
@@ -54,14 +54,14 @@ void DEBUGReadBMP(PlatformThreadContext *thread,
 
     void *memory = (void *)((uint8 *)file.memory + fileHeader->bfOffBits);
 
-    bitmapFIle->heightPx = fileInfo->biHeight;
-    bitmapFIle->widthPx = fileInfo->biWidth;
-    bitmapFIle->fileSize = fileInfo->biSizeImage;
-    bitmapFIle->redMask = fileInfoV5->bV5RedMask;
-    bitmapFIle->greenMask = fileInfoV5->bV5GreenMask;
-    bitmapFIle->blueMask = fileInfoV5->bV5BlueMask;
-    bitmapFIle->alphaMask = fileInfoV5->bV5AlphaMask;
-    bitmapFIle->memory = memory;
+    bitmapFile->heightPx = fileInfo->biHeight;
+    bitmapFile->widthPx = fileInfo->biWidth;
+    bitmapFile->fileSize = fileInfo->biSizeImage;
+    bitmapFile->redMask = fileInfoV5->bV5RedMask;
+    bitmapFile->greenMask = fileInfoV5->bV5GreenMask;
+    bitmapFile->blueMask = fileInfoV5->bV5BlueMask;
+    bitmapFile->alphaMask = fileInfoV5->bV5AlphaMask;
+    bitmapFile->memory = memory;
 
     return;
 }
