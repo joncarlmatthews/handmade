@@ -145,7 +145,7 @@ typedef struct Vec3 {
  * @param v vector
  * @return magnitude
  */
-float32 v3GetMagnitude(Vec3 v);
+float32 v3GetMagnitude(struct Vec3 v);
 
 /**
  * Computes and returns the dot product of a.b
@@ -154,7 +154,7 @@ float32 v3GetMagnitude(Vec3 v);
  * @param b  The vector to multiply by
  * @return The scalar dot product value
  */
-float32 v3GetDotProduct(Vec3 a, Vec3 b);
+float32 v3GetDotProduct(struct Vec3 a, struct Vec3 b);
 
 /**
  * Adds vector A to vector B and writes the resulting vector into rv
@@ -163,7 +163,7 @@ float32 v3GetDotProduct(Vec3 a, Vec3 b);
  * @param a The initial vector
  * @param b  The vector to add
  */
-void v3Add(Vec3 *rv, Vec3 a, Vec3 b);
+void v3Add(struct Vec3 *rv, struct Vec3 a, struct Vec3 b);
 
 /**
  * Subtracts vector A vector from B and writes the resulting vector into rv
@@ -172,7 +172,7 @@ void v3Add(Vec3 *rv, Vec3 a, Vec3 b);
  * @param a The initial vector
  * @param b  The vector to subtract
  */
-void v3Subtract(Vec3 *rv, Vec3 a, Vec3 b);
+void v3Subtract(struct Vec3 *rv, struct Vec3 a, struct Vec3 b);
 
 /**
  * Multiplies vector A by scalar and writes the resulting vector into rv
@@ -181,7 +181,7 @@ void v3Subtract(Vec3 *rv, Vec3 a, Vec3 b);
  * @param a The initial vector
  * @param scalar The amount to multiply the vector by
  */
-void v3ScalarMultiply(Vec3 *rv, Vec3 a, float32 scalar);
+void v3ScalarMultiply(struct Vec3 *rv, struct Vec3 a, float32 scalar);
 
 /**
  * Calculates the cross product of 3D vector A and 3D vector B and writes the
@@ -194,7 +194,7 @@ void v3ScalarMultiply(Vec3 *rv, Vec3 a, float32 scalar);
  * @param a
  * @param b
  */
-void v3CrossProduct(Vec3 *rv, Vec3 a, Vec3 b);
+void v3CrossProduct(struct Vec3 *rv, struct Vec3 a, struct Vec3 b);
 
 /**
  * From the given vector V, a new vector is written to RV that has the same
@@ -204,6 +204,6 @@ void v3CrossProduct(Vec3 *rv, Vec3 a, Vec3 b);
  * @param rv 
  * @param v 
  */
-void v3Normal(Vec3 *rv, Vec3 v);
+void v3Normal(struct Vec3 *rv, struct Vec3 v);
 
 #endif

@@ -101,13 +101,12 @@
 
 // DLL function export syntax
 #if COMPILER_MSVC
-    #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
+    #define EXTERN_DLL_EXPORT extern __declspec(dllexport)
 #elif COMPILER_LLVM
-    #define EXTERN_DLL_EXPORT extern "C"
+    #define EXTERN_DLL_EXPORT extern
 #else
-    assert(!"TODO: Support for DLL function exports for non-Win32 platforms");
+assert(!"TODO: Support for DLL function exports for non-Win32/LLVM platforms");
 #endif
-
 
 // Object-like macros.
 // -----------------------------------------------------------------------------

@@ -65,41 +65,36 @@ typedef struct Player {
 
 } Player;
 
-enum class PLAYER_POINT_POS {
-    TOP_LEFT,
-    TOP_MIDDLE,
-    TOP_RIGHT,
-    MIDDLE_LEFT,
-    MIDDLE,
-    MIDDLE_RIGHT,
-    BOTTOM_LEFT,
-    BOTTOM_MIDDLE,
-    BOTTOM_RIGHT,
-    RAW,
-};
+typedef enum {
+    PLAYER_POINT_POS_TOP_LEFT,
+    PLAYER_POINT_POS_TOP_MIDDLE,
+    PLAYER_POINT_POS_TOP_RIGHT,
 
-enum class PlayerMovementDirection {
-    NONE = 0,
-    UP = 1,
-    DOWN = 2,
-    LEFT = 4,
-    RIGHT = 8
-};
+    PLAYER_POINT_POS_MIDDLE_LEFT,
+    PLAYER_POINT_POS_MIDDLE,
+    PLAYER_POINT_POS_MIDDLE_RIGHT,
 
-enum jumpDirection {
-    JUMP_UP,
-    JUMP_DOWN
-};
+    PLAYER_POINT_POS_BOTTOM_LEFT,
+    PLAYER_POINT_POS_BOTTOM_MIDDLE,
+    PLAYER_POINT_POS_BOTTOM_RIGHT,
+
+    PLAYER_POINT_POS_RAW
+} PlayerPointPosition;
+
+typedef enum {
+    PLAYER_JUMP_UP,
+    PLAYER_JUMP_DOWN
+} PlayerJumpDirection;
 
 typedef struct PlayerPositionData {
-    PLAYER_POINT_POS pointPosition;
+    PlayerPointPosition pointPosition;
     TilemapPosition tilemapPosition;
 } PlayerPositionData;
 
 void getPositionDataForPlayer(PlayerPositionData *positionData,
                                 struct Vec2 playerPixelPos,
                                 uint32 zIndex,
-                                PLAYER_POINT_POS pointPos,
+                                PlayerPointPosition pointPos,
                                 GameState *gameState);
 
 

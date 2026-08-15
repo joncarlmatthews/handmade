@@ -563,16 +563,16 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
                 playerBitmap.head);
 
     // Vector stuff...
-    Vec2 a = {20.0f, 20.0f};
-    Vec2 b = { 100.0f, 100.0f };
-    Vec2 c = { 0 };
-    Vec3 d = { 1.0f ,6.0f,-8.0f };
-    Vec3 e = { 4.0f,-2.0f,-1.0f };
-    Vec3 f = { 0 };
-    Vec2 g = { 0 };
-    Vec2 h = { 0 };
-    Vec2 i = { 0 };
-    Vec3 j = { 10.0f, 20.0f, 3.0f };
+    struct Vec2 a = {20.0f, 20.0f};
+    struct Vec2 b = { 100.0f, 100.0f };
+    struct Vec2 c = { 0 };
+    struct Vec3 d = { 1.0f ,6.0f,-8.0f };
+    struct Vec3 e = { 4.0f,-2.0f,-1.0f };
+    struct Vec3 f = { 0 };
+    struct Vec2 g = { 0 };
+    struct Vec2 h = { 0 };
+    struct Vec2 i = { 0 };
+    struct Vec3 j = { 10.0f, 20.0f, 3.0f };
 
     #if 0
     drawVector(frameBuffer, a, { 0x00FF00 });
@@ -582,7 +582,7 @@ EXTERN_DLL_EXPORT GAME_UPDATE(gameUpdate)
 
 
     v2Rotate(&a, a, gameState->angle);
-    drawVector(frameBuffer, a, { 0xFF0000 });
+    drawVector(frameBuffer, a, (Colour){ 0xFF0000 });
 
     gameState->angle += (0.1f * gameState->world.pixelsPerMeter) * inputInstances[0].deltaTime;
 

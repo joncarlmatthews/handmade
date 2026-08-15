@@ -16,53 +16,53 @@ uint32 gcd(uint32 a, uint32 b)
 // 2D vectors.
 // -----------------------------------------------------------------------------
 
-float32 v2GetMagnitude(Vec2 v)
+float32 v2GetMagnitude(struct Vec2 v)
 {
     return intrin_sqrtf((v.x * v.x) + (v.y * v.y));
 }
 
-float32 v2GetDotProduct(Vec2 a, Vec2 b)
+float32 v2GetDotProduct(struct Vec2 a, struct Vec2 b)
 {
     return ((a.x * b.x) + (a.y * b.y));
 }
 
-float32 v2GetCrossProduct(Vec2 a, Vec2 b)
+float32 v2GetCrossProduct(struct Vec2 a, struct Vec2 b)
 {
     return (a.x * b.y - a.y * b.x);
 }
 
-void v2Add(Vec2 *rv, Vec2 a, Vec2 b)
+void v2Add(struct Vec2 *rv, struct Vec2 a, struct Vec2 b)
 {
     rv->x = (a.x + b.x);
     rv->y = (a.y + b.y);
 }
 
-void v2Subtract(Vec2 *rv, Vec2 a, Vec2 b)
+void v2Subtract(struct Vec2 *rv, struct Vec2 a, struct Vec2 b)
 {
     rv->x = (a.x - b.x);
     rv->y = (a.y - b.y);
 }
 
-void v2ScalarMultiply(Vec2 *rv, Vec2 a, float32 scalar)
+void v2ScalarMultiply(struct Vec2 *rv, struct Vec2 a, float32 scalar)
 {
     rv->x = (a.x * scalar);
     rv->y = (a.y * scalar);
 }
 
-void v2PerpendicularVector(Vec2 *rv, Vec2 v)
+void v2PerpendicularVector(struct Vec2 *rv, Vec2 v)
 {
     rv->x = v.y;
     rv->y = (v.x)*-1;
 }
 
-void v2Normal(Vec2 *rv, Vec2 v)
+void v2Normal(struct Vec2 *rv, struct Vec2 v)
 {
     float32 mag = v2GetMagnitude(v);
     rv->x = v.x / mag;
     rv->y = v.y / mag;
 }
 
-void v2Rotate(Vec2 *rv, Vec2 v, float32 radians)
+void v2Rotate(struct Vec2 *rv, struct Vec2 v, float32 radians)
 {
     rv->x = (v.x * intrin_cosf(radians)) - (v.y * intrin_sinf(radians));
     rv->y = (v.x * intrin_sinf(radians)) + (v.y * intrin_cosf(radians));
@@ -71,45 +71,45 @@ void v2Rotate(Vec2 *rv, Vec2 v, float32 radians)
 // 3D vectors.
 // -----------------------------------------------------------------------------
 
-float32 v3GetMagnitude(Vec3 v)
+float32 v3GetMagnitude(struct Vec3 v)
 {
     return intrin_sqrtf((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
 }
 
-float32 v3GetDotProduct(Vec3 a, Vec3 b)
+float32 v3GetDotProduct(struct Vec3 a, struct Vec3 b)
 {
     return ((a.x * b.x) + (a.y * b.y) + (a.z * b.z));
 }
 
-void v3Add(Vec3 *rv, Vec3 a, Vec3 b)
+void v3Add(struct Vec3 *rv, struct Vec3 a, struct Vec3 b)
 {
     rv->x = a.x + b.x;
     rv->y = a.y + b.y;
     rv->z = a.z + b.z;
 }
 
-void v3Subtract(Vec3 *rv, Vec3 a, Vec3 b)
+void v3Subtract(struct Vec3 *rv, struct Vec3 a, struct Vec3 b)
 {
     rv->x = (a.x - b.x);
     rv->y = (a.y - b.y);
     rv->z = (a.z - b.z);
 }
 
-void v3ScalarMultiply(Vec3 *rv, Vec3 a, float32 scalar)
+void v3ScalarMultiply(struct Vec3 *rv, struct Vec3 a, float32 scalar)
 {
     rv->x = (a.x * scalar);
     rv->y = (a.y * scalar);
     rv->z = (a.z * scalar);
 }
 
-void v3CrossProduct(Vec3 *rv, Vec3 a, Vec3 b)
+void v3CrossProduct(struct Vec3 *rv, struct Vec3 a, struct Vec3 b)
 {
     rv->x = (a.y * b.z) - (a.z * b.y);
     rv->y = (a.z * b.x) - (a.x * b.z);
     rv->z = (a.x * b.y) - (a.y * b.x);
 }
 
-void v3Normal(Vec3 *rv, Vec3 v)
+void v3Normal(struct Vec3 *rv, struct Vec3 v)
 {
     float32 mag = v3GetMagnitude(v);
     rv->x = v.x / mag;

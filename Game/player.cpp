@@ -128,21 +128,21 @@ pixelsPerFrame);
         getPositionDataForPlayer(&middle,
             playerNewPos,
             gameState->player1.zIndex,
-            PLAYER_POINT_POS::MIDDLE,
+            PLAYER_POINT_POS_MIDDLE,
             gameState);
 
         PlayerPositionData bottomLeft;
         getPositionDataForPlayer(&bottomLeft,
             playerNewPos,
             gameState->player1.zIndex,
-            PLAYER_POINT_POS::BOTTOM_LEFT,
+            PLAYER_POINT_POS_BOTTOM_LEFT,
             gameState);
 
         PlayerPositionData bottomRight;
         getPositionDataForPlayer(&bottomRight,
             playerNewPos,
             gameState->player1.zIndex,
-            PLAYER_POINT_POS::BOTTOM_RIGHT,
+            PLAYER_POINT_POS_BOTTOM_RIGHT,
             gameState);
 
 #ifdef HANDMADE_DEBUG_TILE_POS
@@ -256,9 +256,9 @@ gameState->worldPosition.tileRelativePixelPos.x, gameState->worldPosition.tileRe
         jumpSine = sinf(jumpRadians);
 
         if (jumpAngle >= 0.0f && jumpAngle <= 180.0f) {
-            gameState->player1.jumpDirection = JUMP_UP;
+            gameState->player1.jumpDirection = PLAYER_JUMP_UP;
         } else {
-            gameState->player1.jumpDirection = JUMP_DOWN;
+            gameState->player1.jumpDirection = PLAYER_JUMP_DOWN;
         }
 
         float32 amtToMove   = (gameState->player1.totalJumpMovement * jumpSine);
@@ -329,12 +329,12 @@ void setPlayerPosition(float32 absX,
 *
 * @param PlayerPositionData    positionData        The PlayerPositionData object to write the position data into
 * @param xyuint             playerPixelPos      The X and Y pixel coords to base the calculation on. This is the top left point
-* @param PLAYER_POINT_POS      pointPos            The offset from the playerPixelPos to apply
+* @param PlayerPointPosition      pointPos            The offset from the playerPixelPos to apply
 */
 void getPositionDataForPlayer(PlayerPositionData *positionData,
                                 struct Vec2 playerPixelPos,
                                 uint32 zIndex,
-                                PLAYER_POINT_POS pointPos,
+                                PlayerPointPosition pointPos,
                                 GameState *gameState)
 {
     float32 yInset = 0;
@@ -344,39 +344,39 @@ void getPositionDataForPlayer(PlayerPositionData *positionData,
     // Apply point the offsets...
     switch (pointPos)
     {
-    case PLAYER_POINT_POS::RAW:
+    case PLAYER_POINT_POS_RAW:
         x = playerPixelPos.x;
         y = playerPixelPos.y;
         break;
-    case PLAYER_POINT_POS::TOP_LEFT:
+    case PLAYER_POINT_POS_TOP_LEFT:
         x = playerPixelPos.x;
         y = playerPixelPos.y;
         break;
-    case PLAYER_POINT_POS::TOP_MIDDLE:
+    case PLAYER_POINT_POS_TOP_MIDDLE:
         x = (playerPixelPos.x + (float32)gameState->player1.widthPx / 2);
         y = (playerPixelPos.y + (float32)gameState->player1.heightPx - yInset);
         break;
-    case PLAYER_POINT_POS::MIDDLE_LEFT:
+    case PLAYER_POINT_POS_MIDDLE_LEFT:
         x = playerPixelPos.x;
         y = (playerPixelPos.y + ((float32)gameState->player1.heightPx / 2) - yInset);
         break;
-    case PLAYER_POINT_POS::MIDDLE:
+    case PLAYER_POINT_POS_MIDDLE:
         x = playerPixelPos.x + ((float32)gameState->player1.widthPx / 2);
         y = playerPixelPos.y + ((float32)gameState->player1.heightPx / 2);
         break;
-    case PLAYER_POINT_POS::MIDDLE_RIGHT:
+    case PLAYER_POINT_POS_MIDDLE_RIGHT:
         x = (playerPixelPos.x + (float32)gameState->player1.widthPx - yInset);
         y = (playerPixelPos.y + ((float32)gameState->player1.heightPx / 2) - yInset);
         break;
-    case PLAYER_POINT_POS::BOTTOM_MIDDLE:
+    case PLAYER_POINT_POS_BOTTOM_MIDDLE:
         x = (playerPixelPos.x + (float32)gameState->player1.widthPx / 2);
         y = (playerPixelPos.y + yInset);
         break;
-    case PLAYER_POINT_POS::BOTTOM_RIGHT:
+    case PLAYER_POINT_POS_BOTTOM_RIGHT:
         x = (playerPixelPos.x + (float32)gameState->player1.widthPx - yInset);
         y = (playerPixelPos.y + yInset);
         break;
-    case PLAYER_POINT_POS::BOTTOM_LEFT:
+    case PLAYER_POINT_POS_BOTTOM_LEFT:
         x = playerPixelPos.x;
         y = (playerPixelPos.y + yInset);
         break;

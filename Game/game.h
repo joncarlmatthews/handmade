@@ -178,7 +178,7 @@ typedef struct GameControllerThumbstickState
      * Thumstick X and Y values.
      * Maximum ranges are between 1.0 and -1.0
      */
-    struct position {
+    struct {
         float32 x;
         float32 y;
     } position;
@@ -222,7 +222,7 @@ typedef struct GameMouseInput {
     bool isConnected;
     GameControllerBtnState leftButton;
     GameControllerBtnState rightButton;
-    struct position {
+    struct {
         int32 x;
         int32 y;
     } position;

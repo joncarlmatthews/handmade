@@ -258,7 +258,7 @@ void setTileColour(Colour *tileColour, uint32 tileValue)
 
     case 4:
         // earth/grass
-        *tileColour = { 0.0f, (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f), 1.0f };
+        *tileColour = (Colour){ 0.0f, (102.0f/255.0f), (102.0f/255.0f), (51.0f/255.0f), 1.0f };
         break;
 
     case 5:

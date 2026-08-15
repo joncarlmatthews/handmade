@@ -29,8 +29,9 @@ target_compile_options(Game PRIVATE
 )
 
 set_target_properties(Game PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS ON
         PREFIX ""
         OUTPUT_NAME "Game"
         MACOSX_RPATH ON
