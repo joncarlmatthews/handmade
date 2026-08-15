@@ -2,23 +2,41 @@
 
 set -euo pipefail
 
-# Builds the Game dynamic library as C. This is intentionally separate from the
-# main CMake/CLion build so it can be used as a C23 refactor smoke test.
+# Builds the Game dynamic library as C.
 #
 # Usage:
-#   ./build.sh [arm64|x86_64]
+#   ./build.sh [arm64|x86_64] [Debug|Release]
+#
+# Aliases:
+#   Developer -> Debug
+#   Product   -> Release
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 solution_dir="$(cd "$script_dir/.." && pwd)"
 
-configuration="Debug"
 platform="${1:-$(uname -m)}"
+configuration_arg="${2:-Debug}"
 
 case "$platform" in
     arm64|x86_64)
         ;;
     *)
         echo "Invalid platform architecture. Supported platforms: arm64, x86_64" >&2
+        exit 1
+        ;;
+esac
+
+case "$configuration_arg" in
+    Debug|Developer|developer)
+        configuration="Debug"
+        build_mode_name="Developer"
+        ;;
+    Release|Product|product)
+        configuration="Release"
+        build_mode_name="Product"
+        ;;
+    *)
+        echo "Invalid configuration. Supported configurations: Debug, Release, Developer, Product" >&2
         exit 1
         ;;
 esac
@@ -65,17 +83,15 @@ else
 fi
 
 echo "============="
-echo "Building Game as C for macOS $platform $configuration"
+echo "Building Game as C for macOS $platform $configuration ($build_mode_name build)"
 echo "C standard: $c_standard"
 echo "============="
 
-compiler_flags=(
+common_compiler_flags=(
     -c
     -x c
     -std="$c_standard"
     -arch "$platform"
-    -g
-    -O0
     -fPIC
     -Wall
     -Wextra
@@ -86,22 +102,48 @@ compiler_flags=(
     -Wno-missing-field-initializers
     -Wno-gnu-anonymous-struct
     -Wno-nested-anon-types
-    -DDEBUG=1
-    -D_DEBUG=1
     -DGAME_EXPORTS=1
     -DPLATFORM_MACOS=1
     -DCOMPILER_LLVM=1
     -mmacosx-version-min=15.0
 )
 
-linker_flags=(
+debug_compiler_flags=(
+    -g
+    -O0
+    -fno-omit-frame-pointer
+    -DDEBUG=1
+    -D_DEBUG=1
+)
+
+release_compiler_flags=(
+    -O2
+    -DNDEBUG=1
+)
+
+common_linker_flags=(
     -dynamiclib
     -arch "$platform"
-    -g
     -Wl,-install_name,@rpath/Game.dylib
     -mmacosx-version-min=15.0
     -o "$build_configuration_folder/Game.dylib"
 )
+
+debug_linker_flags=(
+    -g
+)
+
+release_linker_flags=(
+    -Wl,-dead_strip
+)
+
+if [[ "$configuration" == "Debug" ]]; then
+    compiler_flags=("${common_compiler_flags[@]}" "${debug_compiler_flags[@]}")
+    linker_flags=("${common_linker_flags[@]}" "${debug_linker_flags[@]}")
+else
+    compiler_flags=("${common_compiler_flags[@]}" "${release_compiler_flags[@]}")
+    linker_flags=("${common_linker_flags[@]}" "${release_linker_flags[@]}")
+fi
 
 for index in "${!sources[@]}"; do
     source_file="${sources[$index]}"
