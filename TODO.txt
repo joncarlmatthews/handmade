@@ -1,16 +1,7 @@
 Day 043
 =======
--[x] Algebra
--[x] Refactor delta time as per SDL
--[x] Better full screen control
--[x] Better window scaling calculations
--[x] Simplify Win32 message queue code as per SDL project
--[x] Reimplement game movement Win32 code
--[x] Reimplement wasdown/isdown input/oldinput code
--[x] Delete win32ProcessMessages code
--[x] Remove "platform toggle fullscreen"
--[x] Fix runtime error with live loop editing enabled
--[ ] Finish tidying up compiler and linker flags
+-[x] Change Visual Studio build and run settings to compile the game layer in c23, not c++
+-[ ] Check that compiler and linker flags are in parity between Visual Studio and build.bat
 -[ ] Gustavo
 -[ ] Implement vector movement in conjuction with deltatime and refactor player movement to be less hacky. Note: all movement values are "per second"
 -[ ] Get rid of temp game_types.h

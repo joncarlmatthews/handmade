@@ -1,0 +1,96 @@
+/* ========================================================================
+   $File: C:\work\handmade\sources\intro_cutscene\intro_cutscene.txt $
+   $Date: $
+   $Revision: $
+   $Creator: Casey Muratori $
+   $Notice: (C) Copyright by Molly Rocket, Inc., All Rights Reserved. $
+   ======================================================================== */
+
+/* NOTE(casey): These are the assets for the introduction cut-scene.
+*/
+
+#hha "intro_cutscene"
+
+default
+{
+    Author = "Anna Rettberg";
+    Description = "These are the original assets for the intro cutscene and title screen.";
+};
+
+plate "title_screen.png" {Tags = TitleScreen,ShotIndex1,LayerIndex1;};
+
+music "music_test.wav"
+{
+    Author = "Casey Muratori";
+    Tags = TitleScreen;
+};
+
+default
+{
+    Author = "Yangtian Li";
+};
+
+plate "shot1_1.png" {Tags = IntroCutscene,ShotIndex1,LayerIndex1;};
+plate "shot1_2.png" {Tags = IntroCutscene,ShotIndex1,LayerIndex2;};
+plate "shot1_3.png" {Tags = IntroCutscene,ShotIndex1,LayerIndex3;};
+plate "shot1_4.png" {Tags = IntroCutscene,ShotIndex1,LayerIndex4;};
+plate "shot1_5.png" {Tags = IntroCutscene,ShotIndex1,LayerIndex5;};
+plate "shot1_6.png" {Tags = IntroCutscene,ShotIndex1,LayerIndex6;};
+plate "shot1_7.png" {Tags = IntroCutscene,ShotIndex1,LayerIndex7;};
+plate "shot1_8.png" {Tags = IntroCutscene,ShotIndex1,LayerIndex8;};
+
+plate "shot2_1.png" {Tags = IntroCutscene,ShotIndex2,LayerIndex1;};
+plate "shot2_2.png" {Tags = IntroCutscene,ShotIndex2,LayerIndex2;};
+plate "shot2_3.png" {Tags = IntroCutscene,ShotIndex2,LayerIndex3;};
+
+plate "shot3_1.png" {Tags = IntroCutscene,ShotIndex3,LayerIndex1;};
+plate "shot3_2.png" {Tags = IntroCutscene,ShotIndex3,LayerIndex2;};
+plate "shot3_3.png" {Tags = IntroCutscene,ShotIndex3,LayerIndex3;};
+plate "shot3_4.png" {Tags = IntroCutscene,ShotIndex3,LayerIndex4;};
+
+plate "shot4_1.png" {Tags = IntroCutscene,ShotIndex4,LayerIndex1;};
+plate "shot4_2.png" {Tags = IntroCutscene,ShotIndex4,LayerIndex2;};
+plate "shot4_3.png" {Tags = IntroCutscene,ShotIndex4,LayerIndex3;};
+plate "shot4_4.png" {Tags = IntroCutscene,ShotIndex4,LayerIndex4;};
+plate "shot4_5.png" {Tags = IntroCutscene,ShotIndex4,LayerIndex5;};
+
+plate "shot5_1.png" {Tags = IntroCutscene,ShotIndex5,LayerIndex1;};
+plate "shot5_2.png" {Tags = IntroCutscene,ShotIndex5,LayerIndex2;};
+plate "shot5_3.png" {Tags = IntroCutscene,ShotIndex5,LayerIndex3;};
+plate "shot5_4.png" {Tags = IntroCutscene,ShotIndex5,LayerIndex4;};
+plate "shot5_5.png" {Tags = IntroCutscene,ShotIndex5,LayerIndex5;};
+
+plate "shot6_1.png" {Tags = IntroCutscene,ShotIndex6,LayerIndex1;};
+plate "shot6_2.png" {Tags = IntroCutscene,ShotIndex6,LayerIndex2;};
+plate "shot6_3.png" {Tags = IntroCutscene,ShotIndex6,LayerIndex3;};
+plate "shot6_4.png" {Tags = IntroCutscene,ShotIndex6,LayerIndex4;};
+plate "shot6_5.png" {Tags = IntroCutscene,ShotIndex6,LayerIndex5;};
+plate "shot6_6.png" {Tags = IntroCutscene,ShotIndex6,LayerIndex6;};
+
+plate "shot7_1.png" {Tags = IntroCutscene,ShotIndex7,LayerIndex1;};
+plate "shot7_2.png" {Tags = IntroCutscene,ShotIndex7,LayerIndex2;};
+
+plate "shot8_1.png" {Tags = IntroCutscene,ShotIndex8,LayerIndex1;};
+plate "shot8_2.png" {Tags = IntroCutscene,ShotIndex8,LayerIndex2;};
+plate "shot8_3.png" {Tags = IntroCutscene,ShotIndex8,LayerIndex3;};
+plate "shot8_4.png" {Tags = IntroCutscene,ShotIndex8,LayerIndex4;};
+
+plate "shot9_1.png" {Tags = IntroCutscene,ShotIndex9,LayerIndex1;};
+plate "shot9_2.png" {Tags = IntroCutscene,ShotIndex9,LayerIndex2;};
+plate "shot9_3.png" {Tags = IntroCutscene,ShotIndex9,LayerIndex3;};
+plate "shot9_4.png" {Tags = IntroCutscene,ShotIndex9,LayerIndex4;};
+
+plate "shot10_1.png" {Tags = IntroCutscene,ShotIndex10,LayerIndex1;};
+plate "shot10_2.png" {Tags = IntroCutscene,ShotIndex10,LayerIndex2;};
+plate "shot10_3.png" {Tags = IntroCutscene,ShotIndex10,LayerIndex3;};
+plate "shot10_4.png" {Tags = IntroCutscene,ShotIndex10,LayerIndex4;};
+plate "shot10_5.png" {Tags = IntroCutscene,ShotIndex10,LayerIndex5;};
+plate "shot10_6.png" {Tags = IntroCutscene,ShotIndex10,LayerIndex6;};
+
+plate "shot11_1.png" {Tags = IntroCutscene,ShotIndex11,LayerIndex1;};
+plate "shot11_2.png" {Tags = IntroCutscene,ShotIndex11,LayerIndex2;};
+plate "shot11_3.png" {Tags = IntroCutscene,ShotIndex11,LayerIndex3;};
+plate "shot11_4.png" {Tags = IntroCutscene,ShotIndex11,LayerIndex4;};
+plate "shot11_5.png" {Tags = IntroCutscene,ShotIndex11,LayerIndex5;};
+plate "shot11_6.png" {Tags = IntroCutscene,ShotIndex11,LayerIndex6;};
+plate "shot11_7.png" {Tags = IntroCutscene,ShotIndex11,LayerIndex7;};

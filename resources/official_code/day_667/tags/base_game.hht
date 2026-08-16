@@ -1,0 +1,458 @@
+/* ========================================================================
+   $File: C:\work\handmade\sources\base_game\base_game.txt $
+   $Date: $
+   $Revision: $
+   $Creator: Casey Muratori $
+   $Notice: (C) Copyright by Molly Rocket, Inc., All Rights Reserved. $
+   ======================================================================== */
+
+#hha "base_game"
+
+#include "fonts/LiberationMono.hht"
+
+default
+{
+    Author = "Anna Rettberg";
+    Description = "These are the original in-game assets for the base game.";
+};
+
+block "block_forest_01.png"
+{
+    Name = "Forest Terrain";
+    Tags = floor, grass;
+};
+
+block "block_orphanage_01.png"
+{
+    Tags = wall, wood;
+};
+
+block "block_orphanage_02.png"
+{
+    Tags = floor, wood;
+};
+
+block "block_orphanage_03.png"
+{
+    Tags = floor, stone;
+};
+
+body "body_hero.png"
+{
+    Tags = hero;
+    Align[0,0][0] = 41277, 40575, 771, Default | ToParent;
+    Align[0,0][1] = 41068, 43028, 771, BaseOfNeck;
+    Align[0,1][0] = 40959, 40959, 771, Default | ToParent;
+    Align[0,1][1] = 41017, 44172, 771, BaseOfNeck;
+    Align[0,2][0] = 40863, 40575, 771, Default | ToParent;
+    Align[0,2][1] = 42035, 43203, 771, BaseOfNeck;
+    Align[0,3][0] = 40906, 40920, 771, Default | ToParent;
+    Align[0,3][1] = 40958, 43998, 771, BaseOfNeck;
+};
+
+body "body_orphan_01.png"
+{
+    Tags = sunny;
+};
+
+body "body_orphan_02.png"
+{
+    Tags = lambert;
+};
+
+body "body_orphan_03.png"
+{
+    Tags = carla;
+    Align[0,3][0] = 40745, 45043, 772, BaseOfNeck;
+};
+
+body "body_orphan_04.png"
+{
+    Tags = cassidy;
+    Align[0,3][0] = 41817, 45853, 771, BaseOfNeck;
+};
+
+body "body_orphan_05.png"
+{
+    Tags = drew;
+    Align[0,3][0] = 40885, 44499, 771, BaseOfNeck;
+};
+
+body "body_orphan_06.png"
+{
+    Tags = kline;
+};
+
+body "body_orphan_07.png"
+{
+    Tags = giles;
+    Align[0,3][0] = 40444, 44992, 771, BaseOfNeck;
+};
+
+body "body_orphan_08.png"
+{
+    Tags = slade;
+};
+
+body "body_orphan_09.png"
+{
+    Tags = brahm;
+    Align[0,3][0] = 40886, 45677, 771, BaseOfNeck;
+};
+
+body "body_orphan_10.png"
+{
+    Tags = baby;
+    Align[0,3][0] = 41009, 46533, 771, BaseOfNeck;
+};
+
+body "body_orphan_11.png"
+{
+    Tags = viva;
+};
+
+body "body_orphan_12.png"
+{
+    Tags = dylan;
+    Align[0,3][0] = 40810, 45065, 771, BaseOfNeck;
+};
+
+body "body_orphan_13.png"
+{
+    Tags = rhoda;
+};
+
+body "body_orphan_14.png"
+{
+    Tags = laird;
+};
+
+character "character_fred.png"
+{
+    Tags = fred;
+    Align[0,3][0] = 42179, 46401, 771, BaseOfNeck;
+    Align[0,3][1] = 42132, 39507, 771, Default | ToParent;
+    Align[0,7][0] = 41059, 39214, 864, Default | ToParent;
+};
+
+character "character_hannah.png"
+{
+    Tags = hannah;
+    Align[0,3][0] = 41722, 38500, 771, Default | ToParent;
+    Align[0,3][1] = 41816, 44967, 771, BaseOfNeck;
+    Align[0,7][0] = 41136, 37802, 771, Default | ToParent;
+};
+
+character "character_krampus.png"
+{
+    Tags = krampus;
+};
+
+character "character_molly.png"
+{
+    Tags = molly;
+    Align[0,3][0] = 41328, 47993, 774, BaseOfNeck;
+    Align[0,7][0] = 40962, 37791, 947, Default | ToParent;
+};
+
+character "character_mummy.png"
+{
+    Tags = undead, bones, wrapped;
+};
+
+character "character_skeleton.png"
+{
+    Tags = undead, bones;
+};
+
+character "character_skeleton_broken.png"
+{
+    Tags = undead, bones, broken;
+};
+
+character "character_skeleton_dark.png"
+{
+    Tags = undead, bones, dark;
+};
+
+hand "hand_fire.png"
+{
+    Tags = undead, bones, dark;
+};
+
+hand "hand_glove.png"
+{
+    Tags = glove, fingers;
+};
+
+hand "hand_skeleton.png"
+{
+    Tags = undead, bones;
+};
+
+head "head_hero.png"
+{
+    Tags = hero;
+    Align[0,0][0] = 40533, 39189, 771, Default | ToParent;
+    Align[0,1][0] = 40894, 39701, 771, Default | ToParent;
+    Align[0,2][0] = 41526, 39107, 771, Default | ToParent;
+    Align[0,3][0] = 40914, 38824, 771, Default | ToParent;
+    Align[0,0][1] = 40910, 40943, 771, TopOfHead;
+    Align[0,1][1] = 40959, 40959, 771, TopOfHead;
+    Align[0,2][1] = 40959, 40959, 771, TopOfHead;
+    Align[0,3][1] = 40959, 40959, 771, TopOfHead;
+};
+
+head "head_orphan_01.png"
+{
+    Tags = sunny;
+};
+
+head "head_orphan_02.png"
+{
+    Tags = lambert;
+};
+
+head "head_orphan_03.png"
+{
+    Tags = carla;
+    Align[0,3][0] = 40924, 36230, 771, Default | ToParent;
+};
+
+head "head_orphan_04.png"
+{
+    Tags = cassidy;
+    Align[0,3][0] = 40978, 39234, 771, Default | ToParent;
+};
+
+head "head_orphan_05.png"
+{
+    Tags = drew;
+    Align[0,3][0] = 41081, 38999, 772, Default | ToParent;
+};
+
+head "head_orphan_06.png"
+{
+    Tags = kline;
+};
+
+head "head_orphan_07.png"
+{
+    Tags = giles;
+    Align[0,3][0] = 40915, 36812, 771, Default | ToParent;
+};
+
+head "head_orphan_08.png"
+{
+    Tags = slade;
+};
+
+head "head_orphan_09.png"
+{
+    Tags = brahm;
+    Align[0,3][0] = 40983, 37006, 771, Default | ToParent;
+};
+
+head "head_orphan_10.png"
+{
+    Tags = baby;
+    Align[0,3][0] = 40911, 37368, 771, Default | ToParent;
+};
+
+head "head_orphan_11.png"
+{
+    Tags = viva;
+};
+
+head "head_orphan_12.png"
+{
+    Tags = dylan;
+    Align[0,3][0] = 40815, 38875, 771, Default | ToParent;
+};
+
+head "head_orphan_13.png"
+{
+    Tags = rhoda;
+};
+
+head "head_orphan_14.png"
+{
+    Tags = laird;
+};
+
+item "item_hat_01.png"
+{
+    Tags = hat, earth;
+};
+
+item "item_hat_02.png"
+{
+    Tags = hat, cook;
+};
+
+item "item_hat_03.png"
+{
+    Tags = hat, spring;
+};
+
+particle "particles_fire_01.png"
+{
+    Tags = particle, fire;
+};
+
+particle "particles_grass_01.png"
+{
+    Tags = cover;
+};
+
+particle "particles_grass_02.png"
+{
+    Tags = cover, large;
+};
+
+particle "particles_grass_03.png"
+{
+    Tags = flowers;
+};
+
+particle "particles_puffs_01.png"
+{
+    Tags = particle, smoke;
+};
+
+particle "particles_rocks_01.png"
+{
+    Tags = cover, stone;
+};
+
+particle "particles_stars_01.png"
+{
+    Tags = particle, stars;
+};
+
+scenery "scenery_chair_01.png"
+{
+    Tags = orphan, sofa;
+};
+
+scenery "scenery_chair_02.png"
+{
+    Tags = orphan, chair, variant(0);
+};
+
+scenery "scenery_chair_03.png"
+{
+    Tags = orphan, chair, variant(1);
+};
+
+scenery "scenery_chair_04.png"
+{
+    Tags = orphan, sofa, large;
+};
+
+scenery "scenery_lamp_01.png"
+{
+    Tags = orphan, lamp;
+};
+
+scenery "scenery_lamp_02.png"
+{
+    Tags = orphan, lamp, large;
+};
+
+scenery "scenery_rug_01.png"
+{
+    Tags = orphan, rug;
+};
+
+scenery "scenery_table_01.png"
+{
+    Tags = orphan, table;
+};
+
+scenery "scenery_tree_01.png"
+{
+    Tags = tree;
+    Align[0,0][0] = 41678, 37148, 1782, Default | ToParent;
+    Align[1,0][0] = 40348, 35832, 1747, Default | ToParent;
+};
+
+scenery "scenery_tree_02.png"
+{
+    Tags = tree, damaged;
+    Align[1,0][0] = 41498, 37907, 2251, Default | ToParent;
+    Align[0,0][0] = 40959, 40959, 1625, Default | ToParent;
+};
+
+scenery "scenery_tree_03.png"
+{
+    Tags = tree, fall;
+    Align[3,0][0] = 41085, 36237, 1890, Default | ToParent;
+    Align[2,0][0] = 41570, 37584, 2114, Default | ToParent;
+    Align[0,0][0] = 41665, 37191, 1868, Default | ToParent;
+};
+
+scenery "scenery_tree_04.png"
+{
+    Tags = tree, dark;
+    Align[1,0][0] = 41026, 37889, 2065, Default | ToParent;
+    Align[0,0][0] = 42661, 37076, 1590, Default | ToParent;
+};
+
+scenery "scenery_tree_05.png"
+{
+    Tags = tree, winter;
+    Align[1,0][0] = 39845, 36534, 1916, Default | ToParent;
+    Align[0,0][0] = 40748, 36820, 1820, Default | ToParent;
+};
+
+sound "bloop_00.wav"
+{
+    Tags = Bloop,Variant(0);
+};
+
+sound "bloop_01.wav"
+{
+    Tags = Bloop,Variant(1);
+};
+
+sound "bloop_02.wav"
+{
+    Tags = Bloop,Variant(2);
+};
+
+sound "bloop_03.wav"
+{
+    Tags = Bloop,Variant(3);
+};
+
+sound "bloop_04.wav"
+{
+    Tags = Bloop,Variant(4);
+};
+
+sound "crack_00.wav"
+{
+    Tags = Crack;
+};
+
+sound "drop_00.wav"
+{
+    Tags = Drop;
+};
+
+sound "glide_00.wav"
+{
+    Tags = Glide;
+};
+
+sound "puhp_00.wav"
+{
+    Tags = Puhp,Variant(0);
+};
+
+sound "puhp_01.wav"
+{
+    Tags = Puhp,Variant(1);
+};
+

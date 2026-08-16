@@ -1,0 +1,14 @@
+global b32 Global_Renderer_Camera_UseDebug = false;
+global r32 Global_Renderer_Camera_DebugDistance = 30.0f;
+global b32 Global_Renderer_Camera_RoomBased = true;
+global b32 Global_GroundChunks_Checkerboards = false;
+global b32 Global_GroundChunks_RecomputeOnEXEChange = true;
+global b32 Global_Renderer_TestWeirdDrawBufferSize = false;
+global b32 Global_GroundChunks_Outlines = false;
+global b32 Global_AI_Familiar_FollowsHero = true;
+global b32 Global_Particles_Test = false;
+global b32 Global_Particles_ShowGrid = false;
+global b32 Global_Simulation_UseSpaceOutlines = false;
+global b32 Global_GroundChunksOn = true;
+global r32 Global_Timestep_Percentage = 100.0f;
+global b32 Global_Lighting_ShowProbes = false;
