@@ -1,0 +1,26 @@
+Day 043
+=======
+- [x] Change Visual Studio build and run settings to compile the game layer in c23, not c++
+- [ ] Check that compiler and linker flags are in parity between Visual Studio and build.bat
+- [ ] Gustavo
+- [ ] Implement vector movement in conjuction with deltatime and refactor player movement to be less hacky. Note: all movement values are "per second"
+- [ ] Get rid of temp game_types.h
+- [ ] Start to split Win32 platform layer into multiple files
+- [ ] Complete day 43
+
+Ongoing:
+=======
+- [ ] Draw from player middle rather than bottom left
+- [ ] xinput gamepad "wasDown" not yet implemented
+- [ ] Static library project for the few shared functions I have? (GCD and byte conversions) Or just include .cpp file? 
+ - [ ] shift and mask to store chunk and tile in the same 32 bit integer?
+ - [ ] Collision detection bug where rounding means player doesnt get a close as possible to certain tiles when a move is invalid
+ - [ ] Move sub-includes from .h into .cpp. https://chat.openai.com/c/ff0b6e06-c7a7-4f12-bc8e-f045a159dedd
+ - [ ] Support for drawing bitmap at different size to that of the original asset.
+ - [ ] Support for scaling bitmaps. When the asset is drawn at smaller scale (via resizing the window) it tears.
+ - [ ] Add linter as part of pre-commit hook. Something like Stylecop?
+ - [ ] Revisit build.bat code analysis crap. Think I can rip all of this out as I only use built.bat as a convenient utility to enable hot-reloading in certain scenarios. Not for my main build pipeline (where i would want to catch those types of errors)
+ - [ ] Remove all Release build code from build.bat, as it's only ever used for live loop editing
+
+Random Thoughts:
+================
